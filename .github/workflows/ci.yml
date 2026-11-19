@@ -1,4 +1,3 @@
-# Correctness checks. CI never produces measurement results.
 name: CI
 
 on:
