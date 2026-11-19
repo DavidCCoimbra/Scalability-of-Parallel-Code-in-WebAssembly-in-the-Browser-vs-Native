@@ -1,0 +1,9 @@
+# Pinned nightly: WASM threads need `-Z build-std` (rebuild std with
+# +atomics), which is only available on nightly. A fixed date makes the
+# compiler, std and LLVM identical for native and WASM builds, on the Mac and
+# on the PC, for the whole study.
+[toolchain]
+channel = "nightly-2026-10-03"
+components = ["rust-src", "rustfmt", "clippy"]
+targets = ["wasm32-unknown-unknown"]
+profile = "minimal"
