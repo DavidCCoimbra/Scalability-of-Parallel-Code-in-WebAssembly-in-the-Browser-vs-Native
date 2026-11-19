@@ -1,8 +1,7 @@
 use super::Checksum;
 
-/// 64-bit FNV-1a fed piece by piece: http://www.isthe.com/chongo/tech/comp/fnv/
-/// Feeding the same bytes in the same order in several pieces gives the same hash as feeding
-/// them at once, so a checksum can stream over rows or counters without building a Vec.
+/// 64-bit FNV-1a: http://www.isthe.com/chongo/tech/comp/fnv/
+/// Fed piece by piece so a checksum can stream over rows or counters without building a Vec.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct Fnv1a(u64);
 

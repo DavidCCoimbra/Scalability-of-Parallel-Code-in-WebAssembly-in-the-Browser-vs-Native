@@ -8,11 +8,10 @@ impl Checksum {
         Fnv1a::default().write(bytes).finish()
     }
 
-    /// The checksum of the little-endian bytes of fixed-size words (counters, keys), hashed in
-    /// order without collecting them into one buffer. Callers pass `to_le_bytes`, never
-    /// `to_ne_bytes`: a fixed byte order makes the checksum depend only on the values, not on
-    /// the host CPU. WASM is little-endian by spec and x86-64 is too, so both give the same
-    /// bytes today; the fixed order keeps it so on any host.
+    /// Callers pass `to_le_bytes`, never `to_ne_bytes`: a fixed byte order makes the checksum
+    /// depend only on the values, not on the host CPU. WASM is little-endian by spec and
+    /// x86-64 is too, so both give the same bytes today; the fixed order keeps it so on any
+    /// host.
     pub fn of_words<const N: usize>(words: impl IntoIterator<Item = [u8; N]>) -> Self {
         words
             .into_iter()
@@ -20,7 +19,6 @@ impl Checksum {
             .finish()
     }
 
-    /// The checksum of several slices hashed one after the other, as if concatenated.
     pub fn of_slices<'a>(slices: impl IntoIterator<Item = &'a [u8]>) -> Self {
         slices
             .into_iter()
