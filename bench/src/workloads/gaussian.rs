@@ -6,7 +6,6 @@ use super::{BufferAddresses, Checksum, Grain, Workload};
 use crate::input::GrayImage;
 use kernel::{CENTRE, KERNEL, LEFT, RADIUS, RIGHT, blur_clamped, clamped_neighbours, normalize};
 
-// Adaptive: one row per chunk, and Rayon groups rows into tasks.
 const ROWS_PER_ADAPTIVE_CHUNK: usize = 1;
 
 pub struct GaussianBlur {
@@ -59,7 +58,7 @@ impl Workload for GaussianBlur {
             });
     }
 
-    // Only the width of each row: a padded output has the checksum of the unpadded one.
+    // Padding excluded, so the checksum does not depend on the pitch.
     fn checksum(&self) -> Checksum {
         Checksum::of_slices(self.output_rows())
     }
@@ -81,15 +80,13 @@ fn blur_row(source: &GrayImage, y: usize, row: &mut [u8]) {
     blur_interior(top, middle, bottom, &mut row[RADIUS..last]);
 }
 
-// inline(never) keeps blur_interior a named function in the final binary, so
-// scripts/check_simd.py can find it and check it uses SIMD (ADR 0017).
+// Kept as a named symbol so scripts/check_simd.py can find it and check it is vectorized.
 #[inline(never)]
 pub fn blur_interior(top: &[u8], middle: &[u8], bottom: &[u8], out: &mut [u8]) {
     let n = out.len();
-    // out[i] is output pixel x = i + 1 (blur_row passes row[1..last]), so t0[i], t1[i] and
-    // t2[i] are its left, centre and right neighbours in the top row. All nine slices have
-    // length n, so the compiler can prove every [i] in bounds, drop the checks and vectorize
-    // the loop.
+    // out[i] is pixel i + 1, so t0[i], t1[i] and t2[i] are its left, centre and right neighbours
+    // in the top row. Nine slices of length n let the compiler drop the bounds checks and
+    // vectorize.
     let (t0, t1, t2) = (
         &top[LEFT..n + LEFT],
         &top[CENTRE..n + CENTRE],

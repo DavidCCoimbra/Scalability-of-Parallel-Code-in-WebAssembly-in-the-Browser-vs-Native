@@ -123,8 +123,8 @@ in small PRs; development and the full history happened there.
 ## Code style
 
 - Comments only when they add information the code cannot carry: why,
-  a pitfall, or a reference (link to the paper, algorithm or ADR a value
-  or method comes from). Never comments that restate the code.
+  a pitfall, or a reference (link to the paper or algorithm a value or
+  method comes from). No ADR numbers in code comments. Never comments that restate the code.
 - Named constants instead of magic numbers.
 - Every module and submodule has a `README.md`: what it does, which file
   holds what, and a Mermaid flowchart of the flow.

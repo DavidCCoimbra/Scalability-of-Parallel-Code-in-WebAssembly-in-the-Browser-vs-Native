@@ -1,8 +1,6 @@
-/// Start addresses of a workload's image buffers. Two streams whose addresses agree in their low
-/// 12 bits (modulo 4096) can be mistaken for each other by the CPU's memory disambiguation (4K
-/// aliasing), and the offset modulo 64 says where a buffer starts in its cache line; recording
-/// both lets the analysis check whether placement explains a difference between runs. In WASM
-/// the address is the offset in linear memory.
+/// Recorded per run so the analysis can check whether buffer placement explains a difference
+/// between runs: addresses equal modulo 4096 can be confused by the CPU (4K aliasing), and the
+/// address modulo 64 is the offset in the cache line. In WASM it is the offset in linear memory.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub struct BufferAddresses {
     pub input: Option<usize>,

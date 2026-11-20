@@ -2,9 +2,8 @@ use std::num::NonZeroUsize;
 
 use rayon::iter::{IndexedParallelIterator, MaxLen};
 
-/// Task size of a parallel region (ADR 0066). `Adaptive` leaves the split to Rayon; `Fixed(n)`
-/// makes every task exactly n units (the filter's rows, the local histogram's KB) and stops
-/// Rayon from merging them, a sequential cutoff.
+/// `Fixed(n)` makes every task exactly n units (the filter's rows, the local histogram's KB)
+/// and stops Rayon from merging them, a sequential cutoff.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Grain {
     #[default]
@@ -37,9 +36,8 @@ impl Grain {
         }
     }
 
-    /// The chunks as tasks. Fixed: with_max_len(1) makes every chunk its own task, so Rayon may
-    /// not merge chunks and the task size is exactly the grain (ADR 0066). Adaptive:
-    /// usize::MAX is Rayon's own default maximum, so the split is Rayon's adaptive one.
+    /// Fixed: with_max_len(1) makes every chunk its own task. Adaptive: usize::MAX is Rayon's
+    /// own default maximum, so the split stays Rayon's.
     pub fn tasks<I: IndexedParallelIterator>(self, chunks: I) -> MaxLen<I> {
         chunks.with_max_len(self.max_chunks_per_task())
     }

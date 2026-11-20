@@ -3,8 +3,6 @@
 pub(super) const KERNEL: [[u16; 3]; 3] = [[1, 2, 1], [2, 4, 2], [1, 2, 1]];
 pub(super) const TAPS: usize = KERNEL.len();
 pub(super) const RADIUS: usize = TAPS / 2;
-// Tap offsets in a 3-wide window: slicing a row at LEFT, CENTRE or RIGHT shifts
-// it by 0, 1 or 2 pixels (see blur_interior).
 pub(super) const LEFT: usize = 0;
 pub(super) const CENTRE: usize = RADIUS;
 pub(super) const RIGHT: usize = TAPS - 1;
@@ -21,9 +19,8 @@ const fn kernel_sum() -> u16 {
     sum
 }
 
-// Checked at compile time, so a wrong kernel fails the build. The weights sum to 16, so
-// dividing by 16 is `>> 4`; the largest sum, 16 * 255 + 8 = 4088, fits in a u16, so the
-// 16-bit arithmetic (eight lanes per 128-bit SIMD register) cannot overflow.
+// The weights sum to 16, so the division is `>> 4`, and the largest sum (16 * 255 + 8) fits
+// in a u16, which gives eight SIMD lanes per 128-bit register.
 const _: () = assert!(kernel_sum() == 1 << KERNEL_SHIFT);
 const _: () = assert!(kernel_sum() as u32 * u8::MAX as u32 + ROUNDING as u32 <= u16::MAX as u32);
 
