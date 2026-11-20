@@ -1,4 +1,4 @@
-"""Check that every ADR in docs/adr has the required structure.
+"""Check that every ADR in docs/adr and docs/adr/extras has the required structure.
 
 Usage: python3 scripts/check_adrs.py [DIR]   (default: docs/adr)
 Exits 1 and prints one line per problem if any ADR is malformed.
@@ -11,6 +11,7 @@ from pathlib import Path
 
 DEFAULT_DIR = Path("docs/adr")
 ADR_GLOB = "[0-9][0-9][0-9][0-9]-*.md"
+EXTRAS_DIR = "extras"
 NUMBER_DIGITS = 4
 REQUIRED_HEADINGS = ("## Context", "## Decision", "## Consequences", "## Status")
 DATE_PREFIX = "Date: "
@@ -49,7 +50,8 @@ def main(argv: list[str]) -> int:
     adr_dir = Path(argv[0]) if argv else DEFAULT_DIR
     failed = False
     seen: dict[str, str] = {}
-    for path in sorted(adr_dir.glob(ADR_GLOB)):
+    paths = [*adr_dir.glob(ADR_GLOB), *(adr_dir / EXTRAS_DIR).glob(ADR_GLOB)]
+    for path in sorted(paths, key=lambda path: path.name):
         number = number_of(path)
         if number in seen:
             print(f"{path.name}: duplicate number {number} (also {seen[number]})")
