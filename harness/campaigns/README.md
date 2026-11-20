@@ -19,12 +19,17 @@ and the campaigns of earlier builds stay in the working repository.
 
 | Spec | What it measures |
 |---|---|
-| `extras-v2.json` | Private, shared and packed atomics, the local control, sorts. Its Firefox runs were run again after Firefox had updated itself to 160.0; the kept runs report 158.0 in their context |
+| `extras-v2.json` | Private, shared and packed atomics, the local control, sorts |
 | `weak-v2.json` | Weak scaling, 1024 rows per thread |
 | `simd-scalar-v2.json` | Filter, native and WASM without SIMD (`build` `scalar`) |
 | `simd-avx2-v2.json` | Filter, native with AVX2 (`build` `avx2`) |
 | `hybrid-v2.json` | P+E mask, `"hybrid": true`, N up to 20 |
 | `perf-v2.json` | Hardware counters of the atomic histogram (k 1 and 256, N 1 and 8), run by `scripts/perf-counters-v2.sh` |
+
+Firefox updated itself from 158.0 to 160.0 in the middle of the extras
+campaigns. Their Firefox runs were run again on a reinstalled 158.0, each in
+its planned position; the kept runs report 158.0 in their context, and the
+160.0 runs are kept apart in `excluded/` in each campaign's data folder.
 
 ## End-to-end checks
 
