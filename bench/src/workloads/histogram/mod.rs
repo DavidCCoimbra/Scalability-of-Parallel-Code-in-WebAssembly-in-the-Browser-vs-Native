@@ -1,8 +1,11 @@
+pub mod atomic;
 mod counter;
 mod counter_table;
 pub mod local;
+pub mod packed;
 mod packed_counter;
 pub mod padded_counter;
+pub mod private;
 
 pub use counter::Counter;
 pub use counter_table::CounterTable;

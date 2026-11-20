@@ -4,6 +4,7 @@ mod fnv1a;
 pub mod gaussian;
 mod grain;
 pub mod histogram;
+pub mod sort;
 mod workload;
 
 pub use buffer_addresses::BufferAddresses;
