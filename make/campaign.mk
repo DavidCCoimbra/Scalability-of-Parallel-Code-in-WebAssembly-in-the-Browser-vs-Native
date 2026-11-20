@@ -22,14 +22,14 @@ campaign: build-$(BUILD) ## Run SPEC into data/raw/<name> in quiet mode (QUIET=0
 # not stop the next ones; the target fails at the end if any did.
 cutoff-campaigns: ## The five cutoff campaigns in sequence, make status after each
 	$(QUIET_AROUND) failed=0; for side in $(CUTOFF_SIDES) control-512 control-2048; do \
-	  $(MAKE) campaign QUIET=0 SPEC=harness/campaigns/cutoff-$$side.json || failed=1; \
-	  $(MAKE) status SPEC=harness/campaigns/cutoff-$$side.json; \
+	  $(MAKE) campaign QUIET=0 SPEC=harness/campaigns/cutoff-$$side-v2.json || failed=1; \
+	  $(MAKE) status SPEC=harness/campaigns/cutoff-$$side-v2.json; \
 	done; exit $$failed
 
 grain-campaigns: ## The two grain sweep campaigns in sequence, make status after each
 	$(QUIET_AROUND) failed=0; for side in $(GRAIN_SIDES); do \
-	  $(MAKE) campaign QUIET=0 SPEC=harness/campaigns/grain-$$side.json || failed=1; \
-	  $(MAKE) status SPEC=harness/campaigns/grain-$$side.json; \
+	  $(MAKE) campaign QUIET=0 SPEC=harness/campaigns/grain-$$side-v2.json || failed=1; \
+	  $(MAKE) status SPEC=harness/campaigns/grain-$$side-v2.json; \
 	done; exit $$failed
 
 status: ## Progress of SPEC, running or finished: counts, problems, elapsed, ETA (read-only)
