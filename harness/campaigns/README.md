@@ -19,7 +19,7 @@ and the campaigns of earlier builds stay in the working repository.
 
 | Spec | What it measures |
 |---|---|
-| `extras-v2.json` | Private, shared and packed atomics, the local control, sorts; Firefox runs repeated on 158.0 |
+| `extras-v2.json` | Private, shared and packed atomics, the local control, sorts. Its Firefox runs were run again after Firefox had updated itself to 160.0; the kept runs report 158.0 in their context |
 | `weak-v2.json` | Weak scaling, 1024 rows per thread |
 | `simd-scalar-v2.json` | Filter, native and WASM without SIMD (`build` `scalar`) |
 | `simd-avx2-v2.json` | Filter, native with AVX2 (`build` `avx2`) |
