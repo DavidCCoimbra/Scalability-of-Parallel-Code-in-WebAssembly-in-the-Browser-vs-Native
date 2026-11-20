@@ -5,11 +5,13 @@ FNV-1a fingerprints that the Rust test `images_match_golden_fingerprints`
 expects. Run: python3 bench/tools/golden_inputs.py
 """
 
+from collections.abc import Iterator
+
 MASK = (1 << 64) - 1
 SEED = 0x5EED
 
 
-def splitmix64(seed):
+def splitmix64(seed: int) -> Iterator[int]:
     state = seed
     while True:
         state = (state + 0x9E3779B97F4A7C15) & MASK
@@ -19,18 +21,18 @@ def splitmix64(seed):
         yield z ^ (z >> 31)
 
 
-def noise(width, height, seed):
+def noise(width: int, height: int, seed: int) -> list[int]:
     rng = splitmix64(seed)
     return [next(rng) >> 56 for _ in range(width * height)]
 
 
-def few_colors(width, height, seed, k, consecutive=False):
+def few_colors(width: int, height: int, seed: int, k: int, consecutive: bool = False) -> list[int]:
     palette = list(range(k)) if consecutive else [i * 256 // k for i in range(k)]
     rng = splitmix64(seed)
     return [palette[next(rng) % k] for _ in range(width * height)]
 
 
-def fnv1a(pixels):
+def fnv1a(pixels: list[int]) -> int:
     value = 0xCBF29CE484222325
     for byte in pixels:
         value = ((value ^ byte) * 0x100000001B3) & MASK
