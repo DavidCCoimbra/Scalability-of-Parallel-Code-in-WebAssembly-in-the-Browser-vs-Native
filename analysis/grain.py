@@ -1,9 +1,9 @@
 """U-curves of the grain sweep campaigns.
 
 Usage: uv run --no-project --with matplotlib python -m analysis.grain
-       data/raw/grain-1024 data/raw/grain-8192
-       --points data/tables/grain/grain-points.csv
-       --best data/tables/grain/grain-best.csv
+       data/raw/grain-1024-v2 data/raw/grain-8192-v2
+       --points data/tables/grain-v2/grain-points.csv
+       --best data/tables/grain-v2/grain-best.csv
        [--figure paper/figures/grain-ucurve.pdf] [--paper-figure paper/figures/grain-ucurve-8192.pdf]
 Each directory is one image size, its own randomized campaign. A run's grain
 (rows per task for the filter, KB for the local histogram, none for Rayon's

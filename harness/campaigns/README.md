@@ -51,9 +51,8 @@ machine without sudo.
 |---|---|---|
 | `quick-rq1.json` | `quick-rq1` | The main campaign, filter at N 1 and 8 |
 | `quick-rq2.json` | `quick-rq2` | The main campaign, both histograms at k 1 and 256, N 8 |
-| `quick-headless.json`, `quick-ui.json` | `quick-headless`, `quick-ui` | A headless and a headful browser run, filter only |
+| `quick-headless.json` | `quick-headless` | One headless browser run per browser, filter only |
 | `quick-extras.json` | `quick-extras` | `extras-v2.json`, the extra workloads at k 1 |
 | `quick-weak.json` | `quick-weak` | `weak-v2.json` at N 1 and 8 |
 | `quick-simd-scalar.json`, `quick-simd-avx2.json` | `quick-simd` | The SIMD variants at N 1 and 8 |
 | `quick-hybrid.json` | `quick-hybrid` | `hybrid-v2.json` at N 1, 8 and 20 |
-| `quick-size-2048.json`, `quick-size-4096.json` | `quick-sizes` | The filter at two smaller sizes |

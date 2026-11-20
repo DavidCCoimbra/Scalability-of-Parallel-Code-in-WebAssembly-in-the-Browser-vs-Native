@@ -26,8 +26,6 @@ commands through `uv run --no-project --with matplotlib`, see `Makefile`).
 | `extras.build_variants` | Extra: SIMD build variants table and figure |
 | `cutoff` | Cutoff campaigns: table, break-even and worth-it sizes, fork-join model, figure |
 | `grain` | Grain sweep campaigns: U-curve points, best grain and flat region, 100:1 grain, figure. `datacheck` pools the grains of a configuration, so its order-drift lines mix grains |
-| `plot_warmup`, `plot_sizes`, `pilot_figures` | Pilot figures (the pilot data stays in the working repository) |
-| `warmup`, `runcount`, `compare` | Pilot decisions: W, runs and iterations, pilot against pilot |
 | `extras.jitdump` | Extra: one function's machine code from a V8 jitdump |
 
 | Module or package | Concept |
@@ -40,7 +38,6 @@ commands through `uv run --no-project --with matplotlib`, see `Makefile`).
 | `scaling/` | Speedup and efficiency tables |
 | `inference/` | The plan's contrasts and the primary family |
 | `quality/` | Clock, foreign CPU, order drift and iteration drift checks |
-| `pilot/` | Rules that sized the campaign from the pilots |
 | `figures/` | matplotlib figures |
 | `tests/` | unittest suite (`python3 -m unittest discover -s analysis/tests -t .`) |
 

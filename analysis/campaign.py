@@ -40,11 +40,6 @@ def is_hybrid(directory: Path) -> bool:
     return bool(campaign_spec(directory).get("hybrid", False))
 
 
-def image_side(directory: Path) -> int:
-    side: int = campaign_spec(directory)["width"]
-    return side
-
-
 def order_seed_and_build(directory: Path) -> Context:
     metadata = campaign_metadata(directory)
     if metadata is None:

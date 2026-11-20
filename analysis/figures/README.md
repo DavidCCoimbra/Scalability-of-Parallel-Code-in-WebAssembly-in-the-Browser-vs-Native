@@ -11,9 +11,6 @@ matplotlib; `points.py` is plain data, so the tests run without it.
 | `pyplot.py` | matplotlib with the Agg backend, chosen before pyplot is imported |
 | `panels.py` | A grid of panels, the line-and-band plot, reference lines and the common finish |
 | `campaign.py` | Speedup, efficiency, absolute ratio and RQ2 figures |
-| `pilot.py` | The pilot report figure, in Portuguese and in English |
-| `sizes.py` | Speedup at N = 8 against the image size |
-| `warmup.py` | Warm-up curves with the chosen W |
 | `build_variants.py` | Extra: filter efficiency per SIMD build |
 | `cutoff.py` | Speedup against the image side, one panel per cutoff workload |
 | `grain.py` | Time per pass against the grain, log-log, one panel per workload and size, adaptive split dashed; `sides` picks the paper's 8192^2 panels, in one row |
