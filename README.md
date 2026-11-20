@@ -102,6 +102,13 @@ flowchart LR
 Two options stay in the code without a measured campaign: the image `pitch` (row padding) and
 the `consecutive` palette.
 
+## License
+
+The code is under the [MIT License](LICENSE). The measured data (`data/`), the decision records
+(`docs/`) and the paper and reports (`paper/`) are under
+[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/): reuse them with credit (see
+[`data/LICENSE`](data/LICENSE)).
+
 ## Use of AI
 
 See [`AI_USE.md`](AI_USE.md).
