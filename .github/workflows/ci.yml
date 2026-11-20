@@ -110,4 +110,4 @@ jobs:
       - run: python3 -m unittest discover -s harness/tests -t .
       - run: python3 -m unittest discover -s analysis/tests -t .
       - run: pipx run uv run --no-project --with mypy --with matplotlib mypy --strict harness analysis scripts
-      - run: shellcheck bench/build-wasm.sh harness/env/*.sh
+      - run: shellcheck bench/build-wasm.sh harness/env/*.sh scripts/*.sh

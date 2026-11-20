@@ -1,0 +1,46 @@
+# scripts
+
+Repository checks that are not part of the study itself: ADR structure, SIMD
+parity of the built artifacts and the codegen-neutral check of a `bench/`
+refactor, plus the script behind the hardware counters extra. Standard library
+only; `mypy --strict` covers them (`make lint`).
+
+| File | What it does | Who calls it |
+|---|---|---|
+| `check_adrs.py` | Every `docs/adr/NNNN-*.md` has a matching title, a `Date:` line, the four required sections and a unique number | `make lint`, CI (`python` job) |
+| `check_simd.py` | `blur_interior` in an `objdump`/`wasm-objdump` listing contains packed 16-bit arithmetic | CI (`rust` job), on the final native binary and `bench.wasm` |
+| `codegen_diff.sh` | Builds a base ref and the working tree of `bench/` at the same path, every native and WASM variant, then runs `codegen_diff.py` on each pair | By hand, before merging a change in `bench/src`: `bash scripts/codegen_diff.sh [BASE_REF]` |
+| `codegen_diff.py` | Pairs the functions of two builds by name, normalizes addresses and data offsets, and reports which differ; exit 1 if a hot function differs | `codegen_diff.sh`, or by hand on two artifacts |
+| `perf-counters-v2.sh` | Extra: runs the perf-v2 campaign while `perf stat` counts the P-cores in 100 ms intervals | By hand, on the PC, nothing else running: `bash scripts/perf-counters-v2.sh` |
+| `tests/` | unittest suite of the checks (`python3 -m unittest discover -s scripts/tests -t .`) | `make test-python`, CI (`python` job) |
+
+## codegen_diff
+
+`codegen_diff.sh` takes `CODEGEN_DIFF_WORK` (scratch directory, default
+`${TMPDIR:-/tmp}/codegen-diff`) and `CODEGEN_DIFF_REUSE_BASE=1` (keep the
+base artifacts of an earlier run). Both sides are built in the same
+directory, so embedded paths such as panic locations do not differ.
+
+```mermaid
+flowchart TD
+    start[codegen_diff.sh BASE_REF] --> reuse{CODEGEN_DIFF_REUSE_BASE=1 and base built?}
+    reuse -->|no| base[git archive BASE_REF bench Makefile make into src/]
+    base --> buildbase[build native default, pad64, avx2, scalar and wasm default, pad64, scalar]
+    buildbase --> outbase[out/base]
+    reuse -->|yes| head
+    outbase --> head[rsync working tree bench into src/, touch files]
+    head --> buildhead[build the same variants]
+    buildhead --> outhead[out/head]
+    outhead --> pairs[for each variant: native binary, wasm raw and pkg]
+    pairs --> py[codegen_diff.py native or wasm BASE HEAD]
+    py --> parse{kind}
+    parse -->|native| objdump[objdump -d -C: functions, jump targets, loop heads]
+    parse -->|wasm| wat[wasm2wat, c++filt, wasm-objdump -x: functions, sizes, table]
+    objdump --> pair[pair by name without crate hashes and module paths]
+    wat --> pair
+    pair --> normalize[normalize addresses, RIP offsets, data constants, table indices]
+    normalize --> compare[compare each pair: identical, differs, only in base or head]
+    compare --> verdict{a hot function differs?}
+    verdict -->|yes| fail[exit 1]
+    verdict -->|no| ok[exit 0]
+```
