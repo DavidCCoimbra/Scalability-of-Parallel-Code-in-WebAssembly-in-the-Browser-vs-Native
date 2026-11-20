@@ -26,8 +26,8 @@ decisions, the understanding and the final say on every line are mine. So:
 - **Be critical about methodology** even when I don't ask: isolated
   variables, warm-up, repetitions, environment control, choice of statistical
   test given the data's shape, effect size.
-- Never edit `AI_USE.md`; I maintain it myself. After each ticket where
-  you helped, just remind me.
+- `AI_USE.md` is my declaration: change it only when I ask, and never
+  remind me about it in reviews.
 
 ## Study
 
@@ -108,8 +108,9 @@ in small PRs; development and the full history happened there.
   description with a Mermaid diagram and the paper figure, how to handle
   the review). You may help with the mechanics (branch, commits, push,
   PR). Never push to `main`; I squash-merge. No Claude/AI attribution
-  lines in commits or PRs (AI use is declared in `AI_USE.md`, which I
-  write).
+  lines in commits, PRs or GitHub comments, including the
+  "Generated with Claude Code" footer (AI use is declared in
+  `AI_USE.md`).
 - **AI review:** `claude[bot]` reviews each PR as a double check. Minor
   findings are ignored; anything that looks critical comes to me before
   any reply or change.
