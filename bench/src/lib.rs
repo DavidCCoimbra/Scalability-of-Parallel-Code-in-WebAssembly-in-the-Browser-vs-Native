@@ -1,8 +1,11 @@
+pub mod build_info;
 pub mod calibration;
 pub mod config;
 pub mod experiment;
 pub mod input;
 pub mod measurement;
+pub mod platform;
+pub mod pool;
 pub mod results;
 #[cfg(test)]
 mod test_support;
