@@ -10,4 +10,6 @@ pub mod results;
 pub mod run;
 #[cfg(test)]
 mod test_support;
+#[cfg(target_arch = "wasm32")]
+pub mod wasm;
 pub mod workloads;

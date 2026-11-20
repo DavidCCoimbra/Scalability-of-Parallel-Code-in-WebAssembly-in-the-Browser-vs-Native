@@ -44,5 +44,35 @@ jobs:
       - run: cargo fmt --check
       - run: cargo clippy --release --all-targets -- -D warnings
       - run: cargo clippy --release --all-targets --features pad64 -- -D warnings
+      - run: cargo clippy --release --lib --target wasm32-unknown-unknown -Z build-std=panic_abort,std -- -D warnings
       - run: cargo test --release
       - run: cargo test --release --features pad64
+      - run: cargo build-wasm
+      - name: SIMD check, final wasm32 module (simd128)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq wabt
+          wasm-objdump -d target/wasm32-unknown-unknown/release/bench.wasm > bench.wasm.dis
+          python3 ../scripts/check_simd.py bench.wasm.dis wasm32
+      - run: cargo build-wasm --features pad64
+      - id: wasm-bindgen
+        run: echo "version=$(sed -n 's/^wasm-bindgen = "=\(.*\)"$/\1/p' Cargo.toml)" >> "$GITHUB_OUTPUT"
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-bindgen@${{ steps.wasm-bindgen.outputs.version }}
+      - name: Browser package from a clean checkout
+        run: |
+          ./build-wasm.sh
+          test -f www/pkg/bench.js
+          test -f www/pkg/bench_bg.wasm
+      - name: SIMD check, native x86-64 binary (SSE2)
+        run: |
+          cargo build --release --bin native
+          objdump -d -C --no-show-raw-insn target/release/native > native.dis
+          python3 ../scripts/check_simd.py native.dis x86_64
+
+  scripts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 -m unittest discover -s scripts/tests -t .

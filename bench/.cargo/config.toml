@@ -1,0 +1,25 @@
+# Flags for the WASM build only. Native builds use the default target
+# baseline (x86-64 SSE2 on the PC), so nothing is set for them here.
+[target.wasm32-unknown-unknown]
+rustflags = [
+    # Threads (atomics), memory.copy/fill (bulk-memory), mutable globals
+    # (used for the thread-local stack pointer) and 128-bit SIMD.
+    "-C", "target-feature=+atomics,+bulk-memory,+mutable-globals,+simd128",
+    # Memory is shared between workers (SharedArrayBuffer) and created by
+    # JS, which passes the same memory to every worker.
+    "-C", "link-arg=--shared-memory",
+    "-C", "link-arg=--import-memory",
+    # Shared memory must declare a maximum: 4 GiB, the wasm32 limit.
+    "-C", "link-arg=--max-memory=4294967296",
+    # Each worker must set up its own thread-local storage on start-up;
+    # wasm-bindgen needs these symbols exported to do it.
+    "-C", "link-arg=--export=__wasm_init_tls",
+    "-C", "link-arg=--export=__tls_size",
+    "-C", "link-arg=--export=__tls_align",
+    "-C", "link-arg=--export=__tls_base",
+]
+
+# The prebuilt std for wasm32 was compiled without +atomics, so it has to be
+# rebuilt with the flags above (`-Z build-std`, nightly only).
+[alias]
+build-wasm = "build --release --target wasm32-unknown-unknown --lib -Z build-std=panic_abort,std"
