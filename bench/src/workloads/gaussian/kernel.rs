@@ -42,7 +42,6 @@ fn weighted_sum(window: &[u8], weights: [u16; TAPS]) -> u16 {
         .sum()
 }
 
-// Adding half the divisor before the flooring shift rounds sum / 16 to the nearest.
 pub(super) fn normalize(sum: u16) -> u8 {
     ((sum + ROUNDING) >> KERNEL_SHIFT) as u8
 }
