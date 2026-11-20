@@ -108,5 +108,6 @@ jobs:
       - uses: actions/checkout@v4
       - run: python3 -m unittest discover -s scripts/tests -t .
       - run: python3 -m unittest discover -s harness/tests -t .
-      - run: pipx run uv run --no-project --with mypy mypy --strict harness scripts
+      - run: python3 -m unittest discover -s analysis/tests -t .
+      - run: pipx run uv run --no-project --with mypy --with matplotlib mypy --strict harness analysis scripts
       - run: shellcheck bench/build-wasm.sh harness/env/*.sh
