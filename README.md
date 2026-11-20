@@ -22,10 +22,12 @@ its measured data, `data/raw/*-v2` and `data/tables/*-v2` (see [`data/README.md`
 The pilot data, the data of earlier builds and the one-off probes stay in the working repository.
 
 The code comments were revised for this repository, and the extra workloads moved into
-`extras/` modules; nothing else in the measured path changed. `scripts/codegen_diff.sh
-measured/v2` (with the tag fetched from the working repository) finds every hot function
-identical in the WASM builds, and in the native builds once the `extras::` module path is
-ignored in call targets.
+`extras/` modules, so this code is not byte-identical to `measured/v2` but has the same machine
+code in every hot function. `scripts/codegen_diff.sh measured/v2` (with the tag fetched from the
+working repository) finds every hot function identical in the WASM builds; the only function
+that differs is `__wasm_init_memory`, which writes the data segment and is not timed. In the native builds the hot functions are identical once the `extras::` module path
+in call targets is ignored. The script normalizes x86-64 listings; on another host (such as an
+arm64 Mac) the native listings have to be compared by hand with addresses normalized.
 
 ## Setup
 
