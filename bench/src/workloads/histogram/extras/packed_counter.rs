@@ -1,6 +1,8 @@
+// Extra, not part of RQ1 or RQ2: the counter layout of the packed histogram.
+
 use std::sync::atomic::AtomicU64;
 
-use super::counter::Counter;
+use crate::workloads::histogram::Counter;
 
 // The unpadded control: eight counters to a cache line, so threads counting different values
 // can still collide (false sharing).

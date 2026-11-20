@@ -6,7 +6,8 @@ use super::counter::Counter;
 // pairs, so two counters 64 bytes apart can still interfere; crossbeam's
 // CachePadded uses 128 on x86-64 for the same reason:
 // https://docs.rs/crossbeam-utils/latest/crossbeam_utils/struct.CachePadded.html
-// repr(align) needs a literal, so CACHE_LINE_BYTES repeats it.
+// The pad64 feature is extra: a build with 64-byte padding, to compare with 128. repr(align)
+// needs a literal, so CACHE_LINE_BYTES repeats it.
 #[cfg(not(feature = "pad64"))]
 pub const CACHE_LINE_BYTES: usize = 128;
 #[cfg(feature = "pad64")]

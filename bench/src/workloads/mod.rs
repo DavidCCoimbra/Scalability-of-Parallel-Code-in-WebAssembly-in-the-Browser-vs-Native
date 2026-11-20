@@ -1,5 +1,6 @@
 mod buffer_addresses;
 mod checksum;
+pub mod extras;
 mod fnv1a;
 pub mod gaussian;
 mod grain;

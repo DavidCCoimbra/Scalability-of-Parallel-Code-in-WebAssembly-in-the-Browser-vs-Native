@@ -61,7 +61,7 @@ impl<C: Counter> CounterTable<C> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::workloads::histogram::packed_counter::PackedCounter;
+    use crate::workloads::histogram::PackedCounter;
     use crate::workloads::histogram::padded_counter::{CACHE_LINE_BYTES, PaddedCounter};
 
     #[test]

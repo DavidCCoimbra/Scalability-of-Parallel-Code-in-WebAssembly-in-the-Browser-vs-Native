@@ -10,6 +10,7 @@ use super::MAX_COLORS;
 pub enum Palette {
     #[default]
     Spread,
+    /// Extra: only the packed histogram's runs use it.
     Consecutive,
 }
 
