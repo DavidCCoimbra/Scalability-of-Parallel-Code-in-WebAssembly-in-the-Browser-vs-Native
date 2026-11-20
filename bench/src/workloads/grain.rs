@@ -36,8 +36,7 @@ impl Grain {
         }
     }
 
-    /// Fixed: with_max_len(1) makes every chunk its own task. Adaptive: usize::MAX is Rayon's
-    /// own default maximum, so the split stays Rayon's.
+    /// Adaptive passes usize::MAX, Rayon's default, so it splits exactly as without with_max_len.
     pub fn tasks<I: IndexedParallelIterator>(self, chunks: I) -> MaxLen<I> {
         chunks.with_max_len(self.max_chunks_per_task())
     }
