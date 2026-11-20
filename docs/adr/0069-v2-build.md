@@ -103,7 +103,9 @@ median:
 | private k = 1 | 0.974 (merge now timed) |
 | packed k = 256 | 1.004 |
 
-Nothing got slower. The atomic variants got faster because they lost the bounds check.
+No cell got slower by more than the noise of these 5-run checks (no interval is computed;
+ADR 0062 measured about 7 % of noise on a similar cell). The atomic variants, 3 to 5 % faster,
+are consistent with the lost bounds check but within that noise.
 
 ## Consequences
 

@@ -62,6 +62,12 @@ itself to 160.0 with a partial update (`updates/last-update.log`, `updates.xml`)
   native and Chrome, both interleaved in both campaigns, gives the usual variation between two
   campaigns. The hybrid campaign is not a control, because its CPU mask differs. The 160.0 runs
   in `excluded/` also give the size of the version change itself.
+- **Result of the control.** On `data/tables/*-v2`, the Firefox medians of the four repeated
+  cells in the extras block are within -4.9 % to +3.3 % of the main campaign's (24 cells, median
+  ratio 1.000); for native and Chrome, interleaved in both campaigns, the same ratios span
+  -2.4 % to +4.5 %. The block's spread is the usual variation between two campaigns, so no
+  Firefox result of the extras is corrected. Absolute Firefox-versus-native comparisons inside
+  the extras campaign are still not interleaved and are read with that caveat.
 - **Earlier detection.** A browser that changes version between campaigns now stops the campaign
   before its first run, instead of being found in the analysis.
 - **Chrome.** Chrome for Testing has no updater, so it needs no policy.

@@ -105,9 +105,9 @@ natively, 1.09 in Chrome and 1.15 in Firefox. Natively every grain from 128 KB t
 within 0.5 % of the best. With one task per thread, the region lasts as long as its slowest
 thread, and nothing can be stolen. The browsers' workers start and run less evenly (their late
 wake-up is the fork-join cost of ADR 0030), so they need more, smaller tasks for work stealing
-to even out the load. The best grain is therefore not coarser in the browsers, as ADR 0066 asked:
-it is the same or finer (128 KB against 256 KB), and the browsers' penalty is on the coarse
-side.
+to even out the load. The best grain is therefore not coarser in the browsers, as ADR 0066 asked
+(the point estimates are 128 KB against 256 KB natively, but the flat regions overlap, so "finer"
+is not shown), and the browsers' penalty is on the coarse side.
 
 ### 5. The adaptive split is near the best at 8192^2, not at 1024^2
 

@@ -118,7 +118,10 @@ to 1024 crossing and do not depend on it.
   natively and 320 to 470 us in the browsers (2 to 4 times more), with the filter's native
   value a lower bound (the control, section 5).
 - **Advice for web developers.** Fork only regions worth at least about 0.5 ms of sequential
-  work in the browser at 8 threads; below that, use fewer threads or run sequentially.
+  work in the browser at 8 threads; below that, use fewer threads or run sequentially. This is a
+  lower bound: it comes from K back-to-back warm passes, a single call is not measured in the
+  browsers (section 5), and natively a single pass of the filter is up to 1.71 times slower at
+  N = 8.
 - **Phase 2.** Applying a threshold inside the workloads, with a grain-size sweep, is ADR 0066,
   approved on 2026-11-09.
 - **Reproduction.** `make cutoff-results` regenerates every number in this ADR from
