@@ -1,0 +1,42 @@
+{
+  "name": "cutoff-control-512-v2",
+  "orderSeed": 2026111008,
+  "environments": [
+    "native"
+  ],
+  "workloads": [
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15
+    }
+  ],
+  "threads": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "repetitions": 30,
+  "width": 512,
+  "height": 512,
+  "warmup": 5,
+  "iterations": 10,
+  "calibration": 20,
+  "passes": 1,
+  "comment": "Control for ADR 0064: native only, passes = 1 at 512^2, to compare with cutoff-512 (passes = 256) and bound how much back-to-back warm passes change the time per pass. Re-run on measured/v2 (ADR 0069).",
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 3000,
+  "timeoutSeconds": 900,
+  "discardFirstLaunch": false,
+  "strict": true
+}
