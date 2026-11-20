@@ -9,6 +9,10 @@ Records about the measuring environment, the harness and the analysis plan come 
 pilot decisions, the extras and their results, the cutoff and grain campaigns and the final
 build (`measured/v2`, ADR 0069) follow.
 
+The records of the extra experiments (0052 to 0059 and 0061: exploratory campaigns outside RQ1
+and RQ2) are in [`extras/`](extras/README.md). They keep their numbers, so every reference
+between records reads the same.
+
 | ADR | Decision | Status |
 |---|---|---|
 | [0001](0001-p-cores-only.md) | Measure on P-cores only, with a process-level affinity mask | Accepted; amended by ADR 0045 |
@@ -62,16 +66,16 @@ build (`measured/v2`, ADR 0069) follow.
 | [0049](0049-padding-and-atomic-code.md) | 128-byte padding kept, and why Chrome's atomics behave differently | Accepted; amends ADR 0008 |
 | [0050](0050-chrome-for-testing-matches-stable.md) | Chrome for Testing gives the same numbers as Chrome stable | Accepted |
 | [0051](0051-foreign-cpu-threshold-and-data-check.md) | Foreign CPU threshold of 0.25 s and the data check before analysis | Accepted; sets the value left open by ADR 0037 |
-| [0052](0052-extras-design.md) | Design of the extra experiments | Accepted |
-| [0053](0053-extras-campaign-parameters.md) | Parameters of the extras campaign | Accepted |
-| [0054](0054-extras-results.md) | Results of the extras campaign | Accepted |
-| [0055](0055-weak-scaling-campaign.md) | Weak scaling campaign | Accepted |
-| [0056](0056-weak-scaling-results.md) | Weak scaling results | Accepted |
-| [0057](0057-simd-campaigns.md) | SIMD campaigns | Accepted |
-| [0058](0058-simd-results.md) | SIMD results | Accepted |
-| [0059](0059-hybrid-campaign.md) | Hybrid P+E campaign | Accepted |
+| [0052](extras/0052-extras-design.md) | Design of the extra experiments | Accepted |
+| [0053](extras/0053-extras-campaign-parameters.md) | Parameters of the extras campaign | Accepted |
+| [0054](extras/0054-extras-results.md) | Results of the extras campaign | Accepted |
+| [0055](extras/0055-weak-scaling-campaign.md) | Weak scaling campaign | Accepted |
+| [0056](extras/0056-weak-scaling-results.md) | Weak scaling results | Accepted |
+| [0057](extras/0057-simd-campaigns.md) | SIMD campaigns | Accepted |
+| [0058](extras/0058-simd-results.md) | SIMD results | Accepted |
+| [0059](extras/0059-hybrid-campaign.md) | Hybrid P+E campaign | Accepted |
 | [0060](0060-local-histogram-k1-instruction-choice.md) | Why Chrome beats native on the local histogram at k = 1 | Accepted |
-| [0061](0061-hybrid-results.md) | Results of the hybrid P+E campaign | Accepted |
+| [0061](extras/0061-hybrid-results.md) | Results of the hybrid P+E campaign | Accepted |
 | [0062](0062-bench-refactor-codegen-neutral.md) | A readability refactor of the bench, limited to codegen-neutral changes | Accepted |
 | [0063](0063-notion-replaced-by-markdown.md) | Notion replaced by Markdown files in the repository | Accepted; supersedes the Notion part of ADR 0010 |
 | [0064](0064-cutoff-campaign.md) | Cutoff campaign, with K passes per timed sample | Accepted |
