@@ -40,12 +40,12 @@ mod tests {
         image.pixels().iter().collect::<HashSet<_>>().len()
     }
 
-    // Independent reference: bench/tools/golden_inputs.py.
-    const CONSECUTIVE_4_FINGERPRINT: u64 = 0x97cd_2683_77e5_e7d1;
     fn fingerprint(image: &GrayImage) -> u64 {
         Checksum::of_bytes(image.pixels()).0
     }
 
+    // The expected values are printed by bench/tools/golden_inputs.py, a separate Python
+    // implementation, so this test does not check the Rust code against itself.
     #[test]
     fn images_match_golden_fingerprints() {
         assert_eq!(fingerprint(&noise(256, 256, SEED)), 0xff2f_1557_ec76_b9a8);
@@ -55,7 +55,7 @@ mod tests {
         );
         assert_eq!(
             fingerprint(&few_colors_with(256, 256, SEED, 4, Palette::Consecutive)),
-            CONSECUTIVE_4_FINGERPRINT
+            0x97cd_2683_77e5_e7d1
         );
         for (k, expected) in [
             (1, 0xeb05_052e_a5b6_2325),
