@@ -7,6 +7,7 @@ pub mod measurement;
 pub mod platform;
 pub mod pool;
 pub mod results;
+pub mod run;
 #[cfg(test)]
 mod test_support;
 pub mod workloads;
