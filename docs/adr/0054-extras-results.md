@@ -89,6 +89,15 @@ faster T8 (Firefox is 1.27 times native at N = 1 and 1.21 at N = 8). A slower T1
 RQ2 value, which is computed at N = 8 only, untouched. (Corrected after review: an earlier
 version said it lowered that value by about 4 %.)
 
+### Iteration drift
+
+Computed on `data/raw/extras-v2` for the final repository (`python3 -m analysis.iteration_drift`,
+the median of the first three measured iterations over the median of the last three): 171 of
+180 configurations are within 1 %. The new workloads with W = 5 (`hist-atomic-private`, both
+sorts) are all within 1 %, so the thin warm-up pilot of ADR 0053 left no visible trend. The nine
+beyond 1 % are mostly shared-counter configurations under contention, between 0.988 and 1.034
+(largest: Firefox `hist-atomic` k = 1 at N = 6, a control with the main campaign's W).
+
 ## Consequences
 
 - RQ1's finding, that WASM threads cost a constant factor and not scalability, holds for two
