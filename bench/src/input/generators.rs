@@ -57,6 +57,17 @@ mod tests {
             fingerprint(&few_colors_with(256, 256, SEED, 4, Palette::Consecutive)),
             CONSECUTIVE_4_FINGERPRINT
         );
+        for (k, expected) in [
+            (1, 0xeb05_052e_a5b6_2325),
+            (16, 0x694d_0011_47ac_2785),
+            (256, 0x844e_038b_d7e8_fa71),
+        ] {
+            assert_eq!(
+                fingerprint(&few_colors(256, 256, SEED, k)),
+                expected,
+                "k = {k}"
+            );
+        }
     }
 
     #[test]

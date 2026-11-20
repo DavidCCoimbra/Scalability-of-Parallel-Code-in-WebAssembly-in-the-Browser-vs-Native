@@ -43,3 +43,5 @@ if __name__ == "__main__":
     print(f"noise(256, 256, SEED):         {fnv1a(noise(256, 256, SEED)):#018x}")
     print(f"few_colors(256, 256, SEED, 4): {fnv1a(few_colors(256, 256, SEED, 4)):#018x}")
     print(f"few_colors_with(256, 256, SEED, 4, Consecutive): {fnv1a(few_colors(256, 256, SEED, 4, True)):#018x}")
+    for k in (1, 16, 256):
+        print(f"few_colors(256, 256, SEED, {k}): {fnv1a(few_colors(256, 256, SEED, k)):#018x}")
