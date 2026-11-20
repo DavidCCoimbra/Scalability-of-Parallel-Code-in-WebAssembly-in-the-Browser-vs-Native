@@ -12,9 +12,6 @@ impl ForkJoin for EmptyParIter {
     }
 
     fn fork_join(&self) {
-        // One item per pool thread, split adaptively as a workload's par_iter is; black_box keeps
-        // the empty body from being optimized away, so what is left is the cost of entering,
-        // splitting and joining an ordinary parallel region.
         (0..rayon::current_num_threads())
             .into_par_iter()
             .for_each(|item| {

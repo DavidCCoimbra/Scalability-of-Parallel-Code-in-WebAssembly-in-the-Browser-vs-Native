@@ -21,10 +21,8 @@ use crate::workloads::Workload;
 
 pub const MIN_PAUSE_NS: u64 = 1_000_000;
 
-/// The time of one `checksum` call, the single-threaded gap after each measured iteration in
-/// which the pool workers go idle. Measured before any `run`, which is fine: the checksum's
-/// cost depends on the output's size, not its values. black_box keeps the discarded checksum
-/// from being optimized away.
+/// The time of one `checksum` call: the single-threaded gap after each measured iteration in
+/// which the pool workers go idle.
 pub fn pause_for<W, C>(workload: &mut W, clock: &C) -> u64
 where
     W: Workload + ?Sized,

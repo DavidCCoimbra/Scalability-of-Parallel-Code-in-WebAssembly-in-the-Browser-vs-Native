@@ -8,7 +8,6 @@ impl ForkJoin for EmptyBroadcast {
     }
 
     fn fork_join(&self) {
-        // An empty closure leaves only the cost of waking every pool thread and joining them.
         rayon::broadcast(|_| ());
     }
 }
