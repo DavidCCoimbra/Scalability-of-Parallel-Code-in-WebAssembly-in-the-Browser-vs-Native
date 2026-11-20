@@ -9,12 +9,10 @@ cost of synchronization.
 | `mod.rs` | `Histogram` (counts, merge, checksum), `BINS` and `CHUNK_BYTES` (read by `harness/tests/test_browser_check.py`) |
 | `atomic.rs` | `AtomicHistogram`: one shared table of padded atomic counters |
 | `local.rs` | `LocalHistogram`: per-task counters with fold and reduce, the control |
-| `private.rs` | `PrivateAtomicHistogram`: one padded atomic table per pool thread (extra) |
-| `packed.rs` | `PackedAtomicHistogram`: shared atomics without padding (extra) |
+| `extras/` | Variants outside RQ1 and RQ2: `private.rs`, `packed.rs` and the `packed_counter.rs` layout |
 | `counter.rs` | `Counter`: the layout of one shared counter (an `AtomicU64` inside) |
 | `counter_table.rs` | `CounterTable<C>`: exactly `BINS` counters (no bounds check on a `u8` index), `reset`, `increment`, `read` |
 | `padded_counter.rs` | `PaddedCounter` (one counter per cache line) and `CACHE_LINE_BYTES` (128, or 64 with `pad64`) |
-| `packed_counter.rs` | `PackedCounter`: eight counters per cache line |
 
 ```mermaid
 flowchart LR

@@ -1,15 +1,13 @@
 pub mod atomic;
 mod counter;
 mod counter_table;
+pub mod extras;
 pub mod local;
-pub mod packed;
-mod packed_counter;
 pub mod padded_counter;
-pub mod private;
 
 pub use counter::Counter;
 pub use counter_table::CounterTable;
-pub use packed_counter::PackedCounter;
+pub use extras::packed_counter::PackedCounter;
 pub use padded_counter::PaddedCounter;
 
 use super::Checksum;

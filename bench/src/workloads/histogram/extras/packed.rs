@@ -3,8 +3,8 @@
 
 use rayon::prelude::*;
 
-use super::{CHUNK_BYTES, CounterTable, Histogram, PackedCounter};
 use crate::input::GrayImage;
+use crate::workloads::histogram::{CHUNK_BYTES, CounterTable, Histogram, PackedCounter};
 use crate::workloads::{BufferAddresses, Checksum, Workload};
 
 pub struct PackedAtomicHistogram {

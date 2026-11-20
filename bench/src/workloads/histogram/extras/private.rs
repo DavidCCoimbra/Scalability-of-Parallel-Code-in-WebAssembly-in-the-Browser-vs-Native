@@ -4,8 +4,8 @@
 
 use rayon::prelude::*;
 
-use super::{CHUNK_BYTES, CounterTable, Histogram, PaddedCounter};
 use crate::input::GrayImage;
+use crate::workloads::histogram::{CHUNK_BYTES, CounterTable, Histogram, PaddedCounter};
 use crate::workloads::{BufferAddresses, Checksum, Workload};
 
 const OUTSIDE_POOL_TABLES: usize = 1;

@@ -5,7 +5,8 @@ use super::MAX_COLORS;
 /// Which k grey levels a few-colors image uses. `Spread` (i * 256 / k) puts the k values far
 /// apart, so their counters sit on different cache lines even unpadded; `Consecutive`
 /// (0..k) puts them next to each other, so up to eight unpadded 8-byte counters share one
-/// 64-byte line and the packed histogram shows false sharing (k = 4 and 16).
+/// 64-byte line and the packed histogram shows false sharing (k = 4 and 16). `Consecutive` is
+/// extra: only the packed histogram's runs use it.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Palette {
     #[default]

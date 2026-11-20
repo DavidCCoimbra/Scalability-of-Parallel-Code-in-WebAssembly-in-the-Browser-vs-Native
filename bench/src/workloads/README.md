@@ -18,7 +18,7 @@ counters of the atomic and packed variants; all of it is timed.
 | `grain.rs` | `Grain`: Rayon's adaptive split or a fixed task size; `chunk_len` and `tasks`, the one split helper the filter and the local histogram share |
 | `gaussian.rs`, `gaussian/` | 3x3 Gaussian blur, the embarrassingly parallel baseline |
 | `histogram/` | Image histogram: shared atomics, per-task local counters and variants |
-| `sort.rs` | Rayon stable and unstable parallel sort of the pixels read as `u32` keys (extra) |
+| `extras/` | Workloads outside RQ1 and RQ2: `sort.rs`, Rayon's stable and unstable parallel sort |
 
 ```mermaid
 flowchart LR
