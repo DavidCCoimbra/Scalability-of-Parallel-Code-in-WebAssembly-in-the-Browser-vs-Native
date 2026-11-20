@@ -1,4 +1,4 @@
-"""Data quality report of a campaign before any analysis (DAV-146).
+"""Data quality report of a campaign before any analysis.
 
 Usage: python3 -m analysis.datacheck data/raw/<campaign> [--output report.md]
 Counts planned, done, missing and failed runs, checksum conflicts, runs
