@@ -8,10 +8,8 @@ impl Checksum {
         Fnv1a::default().write(bytes).finish()
     }
 
-    /// Callers pass `to_le_bytes`, never `to_ne_bytes`: a fixed byte order makes the checksum
-    /// depend only on the values, not on the host CPU. WASM is little-endian by spec and
-    /// x86-64 is too, so both give the same bytes today; the fixed order keeps it so on any
-    /// host.
+    /// Callers pass `to_le_bytes`, never `to_ne_bytes`, so the checksum does not depend on the
+    /// host's byte order.
     pub fn of_words<const N: usize>(words: impl IntoIterator<Item = [u8; N]>) -> Self {
         words
             .into_iter()
