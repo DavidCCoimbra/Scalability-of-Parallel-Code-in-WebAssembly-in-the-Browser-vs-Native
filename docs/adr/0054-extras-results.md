@@ -77,9 +77,7 @@ cache line.
 - The stable sort does not slow WASM down, but it allocates its buffer once per sort, so the
   allocator's global lock is barely exercised: this campaign could not show lock contention, and
   the hypothesis of ADR 0052, that the sort would expose the WASM allocator and its global lock,
-  is untested rather than refuted. A likely reason the sort sees no cost, not measured here: the
-  buffer is allocated once per sort, so the allocator's lock is barely
-  contended.
+  is untested rather than refuted.
 
 ### Superlinear Firefox local histogram at k = 256
 

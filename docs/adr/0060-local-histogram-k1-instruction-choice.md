@@ -90,9 +90,9 @@ simple addressing; it is not documented by Intel for this core and was not measu
 
 ## Consequences
 
-- The paper can state that Chrome's 2 % advantage at k = 1 is mainly an instruction selection
-  effect, not a scaling effect: it is present at N = 1 and unchanged at N = 8. About 30 % of it
-  is unexplained.
+- The paper can state that Chrome's 2 % advantage at k = 1 is not a scaling effect (it is
+  present at N = 1 and unchanged at N = 8) and that instruction selection explains part of it,
+  between about 45 % and 75 %; the rest, about 25 % to 55 %, is unexplained.
 - It is a reminder for RQ1 that "same source, same flags" does not mean the same instructions:
   the WASM engine's code generator is part of the environment being measured.
 

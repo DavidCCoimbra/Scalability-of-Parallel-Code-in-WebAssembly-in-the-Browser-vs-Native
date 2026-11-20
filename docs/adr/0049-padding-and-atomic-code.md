@@ -69,9 +69,8 @@ speedup of 2.00 at N = 8 comes from a slower T1, as the absolute time ratios of 
 
 `perf c2c` (a tool that reports which cache lines are contended between cores, and at which
 offsets) during a Chrome `hist-atomic` k = 16 run at N = 8 shows 16 contended cache lines, each
-with about 6 % of the HITMs, 0x800 bytes apart (the 16 values of the spread palette are 16 bins apart and every bin is
-  128 bytes, so 16 x 128 = 0x800; in the palette's
-order). Each line is accessed at a single offset (0x0): every counter is alone in its line
+with about 6 % of the HITMs, 0x800 bytes apart: the 16 values of the spread palette are 16 bins
+apart and every bin is 128 bytes, so 16 x 128 = 0x800. Each line is accessed at a single offset (0x0): every counter is alone in its line
 inside WASM memory.
 
 ## Decision
