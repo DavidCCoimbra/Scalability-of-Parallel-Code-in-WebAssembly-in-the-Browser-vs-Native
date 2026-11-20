@@ -5,7 +5,10 @@ Date: 2026-11-08
 ## Context
 
 In the main campaign the local histogram at k = 1 is the only configuration where a browser is
-faster than native: Chrome takes 151.5 ms at N = 1 against 154.9 ms natively (0.978), and 0.979
+faster than native among the workloads with no shared counters (the filter and the local
+histogram; with shared atomics the browsers are faster in several configurations, as the absolute ratios
+of ADR 0039 show):
+Chrome takes 151.5 ms at N = 1 against 154.9 ms natively (0.978), and 0.979
 at N = 8; Firefox takes 155.6 ms (1.004). The same source, compiler and flags produce both
 binaries, so the difference has to come from the machine code that each side ends up running:
 LLVM's code natively, and the code V8's compiler generates from the WASM in Chrome.
@@ -58,7 +61,8 @@ P-cores:
 - The interrupt check costs about 1.3 %.
 - The memory-destination `inc` makes the chain 1.5 to 2 % slower than the other forms.
 - The probe's native / V8 gap is 2.4 ms (1.6 %), against 3.4 ms (2.2 %) in the campaign. So
-  instruction selection explains most of Chrome's advantage, about 70 %, but not all of it.
+  instruction selection explains between about 45 % and 75 % of Chrome's advantage (the probe's
+  gap of 1.5 to 2.5 ms against 3.4 ms in the campaign), but not all of it.
 
 Limits of the probe:
 

@@ -81,7 +81,8 @@ Decided on 2026-11-07; the option recommended from the data above was applied:
   `hist-local` k = 1 and 16 at N = 7 and 8, 8 runs each, one after the other) gives ratios
   between the two delays of 0.997 [0.993, 1.002] and 0.995 [0.992, 0.998] for k = 1, and 1.006 [0.997,
   1.015] and 1.013 [0.992, 1.034] for k = 16. A longer delay changes the medians by at most
-  about 1 %, so 3 s is kept.
+  1.3 % (point estimates); the widest interval, k = 16 at N = 8, reaches 3.4 %, so this pilot
+  cannot rule out an effect of that size there. 3 s is kept.
 - **Asymmetry with native.** Native runs have no delay: the browsers wait 3 s idle before
   measuring and native does not. This is a known asymmetry between environments. It affects
   N = 1 and N = N alike within an environment, so relative speedup is not expected to change;

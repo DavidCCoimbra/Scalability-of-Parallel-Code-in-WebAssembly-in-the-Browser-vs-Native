@@ -52,8 +52,8 @@ geometric means (`analysis/compare.py`, 95 % bootstrap interval):
 Decided on 2026-11-07; the option recommended from the data above was applied:
 
 - Chrome for Testing 155 stays the campaign's Chrome. Stable and Chrome for Testing of the same
-  version differ by at most 1.3 % in the configurations tried, and 155 and 157 differ by at
-  most 0.6 %.
+  version differ by at most 1.3 % in the configurations tried (point estimates; 2.0 % at the upper
+  end of the widest interval), and 155 and 157 differ by at most 0.6 %.
 - The filter at N = 8 is the one interval that excludes 1 ([1.005, 1.020]). Because the builds
   ran one after the other, a real 1.3 % build effect there cannot be ruled out, but it is small
   against the environment differences the study measures.

@@ -55,8 +55,8 @@ Cliff's delta (a rank-based effect size from -1 to +1) is computed over runs.
 The rule fixed before the pilot was applied on 2026-11-07:
 
 - The campaign runs both browsers headless (`--headless=new` for Chrome, `-headless` for
-  Firefox). Every interval includes 1 and every ratio is within 0.3 %, well inside the 2 %
-  bound of the rule.
+  Firefox). Every interval includes 1, every ratio is within 0.3 % and every interval
+  within 1.2 % (the Firefox filter's upper end), inside the 2 % bound of the rule.
 
 ## Consequences
 

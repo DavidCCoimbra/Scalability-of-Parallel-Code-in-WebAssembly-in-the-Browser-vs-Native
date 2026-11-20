@@ -96,11 +96,13 @@ code's speed if a shared resource is the limit, and stays constant if a fixed ov
   L3, the ring or uncore clock (not logged with turbo off), or per-core power (a possible
   confounder for AVX2 only). AVX2 moves more data than the baseline, so the baseline is not at
   a bandwidth ceiling; at most it sees gradual contention, not saturation.
-- **Browsers: a fixed overhead.** In Chrome and Firefox the excess stays about constant while
-  the traffic grows about four times (Chrome 8 to 35 GB/s). That is the signature of a fixed
-  overhead per iteration, such as the browsers' fork-join and scheduling cost (ADR 0030:
-  163 us warm in Chrome at N = 8), not of bandwidth. The browser losses of ADR 0056 are
-  therefore mostly fixed overhead, and the native loss mostly a shared resource.
+- **Browsers: mostly a fixed overhead.** In Chrome and Firefox the excess stays about constant
+  while the traffic grows about four times (Chrome 8 to 35 GB/s). That is the signature of a
+  fixed overhead per iteration rather than of bandwidth. The one overhead measured, the warm
+  fork-join (ADR 0030: 163 us in Chrome at N = 8), is only about a third of the 495 to 515 us
+  excess, so most of that fixed cost is not explained. The browser losses of ADR 0056 are
+  therefore mostly a fixed overhead of unknown origin, and the native loss mostly a shared
+  resource.
 - **Exceptions.** The ranking has exceptions (native and Chrome baseline tie at 0.871; Firefox
   baseline improves from N = 7 to N = 8), so none of this is a measured cause: uncore counters
   and a frequency log would be needed.

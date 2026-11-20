@@ -35,8 +35,9 @@ Decided on 2026-11-08:
   measured iterations, 3 s start delay, quiet mode, discarded first launches, seed 20261112:
   900 runs.
 - **Analysis.**
-  - speedup T1 / TN within the campaign (T1 may run on either core type, as the kernel
-    decides);
+  - speedup T1 / TN within the campaign. T1 may run on either core type, as the kernel
+    decides, so T1 / TN can mix a P-core and an E-core baseline across runs; the run-to-run
+    spread of T1 shows whether it did;
   - the time at N > 8 over the P-only time at N = 8 of the main campaign;
   - the browser / native ratio per N.
 

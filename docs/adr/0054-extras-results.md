@@ -74,9 +74,11 @@ cache line.
 - The in-place `par_sort_unstable` scales less (6.2 to 6.3, because its first partition is
   sequential) but again equally in every environment (ratio 0.98 and 0.99), at 1.34 to 1.36
   times native.
-- The allocation in the stable sort does not hurt WASM, so the hypothesis of ADR 0052, that the
-  sort would expose the WASM allocator and its global lock, is not supported. A likely reason,
-  not measured here: the buffer is allocated once per sort, so the allocator's lock is barely
+- The stable sort does not slow WASM down, but it allocates its buffer once per sort, so the
+  allocator's global lock is barely exercised: this campaign could not show lock contention, and
+  the hypothesis of ADR 0052, that the sort would expose the WASM allocator and its global lock,
+  is untested rather than refuted. A likely reason the sort sees no cost, not measured here: the
+  buffer is allocated once per sort, so the allocator's lock is barely
   contended.
 
 ### Superlinear Firefox local histogram at k = 256
@@ -92,7 +94,7 @@ version said it lowered that value by about 4 %.)
 ## Consequences
 
 - RQ1's finding, that WASM threads cost a constant factor and not scalability, holds for two
-  more synchronization-free workloads, one of them with allocation.
+  more synchronization-free workloads, one of them allocating once per sort.
 - RQ2's Chrome gap splits into a per-operation part (the atomic add without contention) and a
   contention part; both remain to be confirmed by inspecting V8's generated code (ADR 0052).
 - Weak scaling and SIMD remain to be run (ADR 0055 and ADR 0057).

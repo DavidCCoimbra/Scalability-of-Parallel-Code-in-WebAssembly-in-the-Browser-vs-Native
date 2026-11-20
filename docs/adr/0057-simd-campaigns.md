@@ -50,8 +50,9 @@ Decided within the extras design agreed on 2026-11-07 (ADR 0052):
   They ran one after the other from one tagged commit.
 - **Comparison with the baseline.** The baseline is the main campaign's filter. It cannot share
   an interleaved campaign with another WASM build, because the page loads one WASM package. The
-  drift between campaigns is bounded by the weak scaling campaign, whose N = 8 filter times
-  repeated the main campaign's within 0.3 % (ADR 0056), and is stated with the results.
+  drift between campaigns is assumed small, not measured for these builds: the weak scaling
+  campaign repeated the main campaign's baseline filter at N = 8 within 0.3 % (ADR 0056). The
+  assumption is stated with the results.
 
 ## Consequences
 
