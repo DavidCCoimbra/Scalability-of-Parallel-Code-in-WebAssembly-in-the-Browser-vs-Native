@@ -19,6 +19,7 @@ jobs:
     outputs:
       rust: ${{ steps.filter.outputs.rust }}
       browser: ${{ steps.filter.outputs.browser }}
+      paper: ${{ steps.filter.outputs.paper }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -30,6 +31,8 @@ jobs:
             browser:
               - 'bench/**'
               - 'harness/**'
+            paper:
+              - 'paper/**'
 
   rust:
     needs: changes
@@ -111,3 +114,29 @@ jobs:
       - run: python3 -m unittest discover -s analysis/tests -t .
       - run: pipx run uv run --no-project --with mypy --with matplotlib mypy --strict harness analysis scripts
       - run: shellcheck bench/build-wasm.sh harness/env/*.sh scripts/*.sh
+
+  paper:
+    needs: changes
+    if: needs.changes.outputs.paper == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: xu-cheng/latex-action@v3
+        with:
+          # One folder per document (final, pilot, proposal); each builds from its own folder,
+          # with ../figures and ../bib shared.
+          root_file: "paper/*/*.tex"
+          work_in_root_file_dir: true
+      # The paper's limit is 5 pages of content plus 2 of references; CI checks the total.
+      - name: Page limit
+        run: |
+          pages=$(grep -o 'Output written on paper.pdf ([0-9]* pages' paper/final/paper.log | grep -o '[0-9]*' | tail -1)
+          echo "paper.pdf: $pages pages"
+          [ -n "$pages" ] && [ "$pages" -le 7 ]
+      - uses: actions/upload-artifact@v4
+        with:
+          name: paper-pdfs
+          path: |
+            paper/final/*.pdf
+            paper/pilot/*.pdf
+            paper/proposal/*.pdf

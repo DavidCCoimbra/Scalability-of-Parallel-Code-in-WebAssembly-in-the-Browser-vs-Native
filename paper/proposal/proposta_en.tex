@@ -1,0 +1,121 @@
+%%
+%% Proposta de projeto -- PPC 2026/27
+%% Baseado no template sample-sigchi.tex modificado pelo DI/FCUL
+%%
+\documentclass[sigplan]{acmart}
+\settopmatter{printacmref=false} % Removes citation information below abstract
+\renewcommand\footnotetextcopyrightpermission[1]{} % removes footnote with conference information in first column
+\usepackage[english]{babel}
+\usepackage{subcaption}
+\usepackage{caption}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{booktabs}
+\usepackage{enumitem}
+
+\begin{document}
+\raggedbottom
+
+\title{Scalability of Parallel Code in WebAssembly in the Browser vs.\ Native}
+
+\author{David Coimbra - fc68024}
+\affiliation{%
+ \institution{
+  Programação Paralela e Concorrente \\
+  Mestrado em Engenharia Informática \\
+  Faculdade de Ciências, Universidade de Lisboa}
+ \country{Portugal}
+ }
+\email{fc68024@alunos.fc.ul.pt}
+
+\begin{abstract}
+I propose to measure whether the \emph{same} parallel code (Rust/Rayon) scales
+the same way natively and in WebAssembly (WASM) with threads in the browser. An
+image filter provides the baseline; a histogram varies synchronization and
+contention to isolate their effect, extending the study by Kyriakou and
+Tselikas~\cite{kyriakou2022}.
+\end{abstract}
+
+\keywords{WebAssembly, multithreading, scalability, synchronization, performance}
+
+\pagestyle{plain} % removes running headers
+
+\maketitle
+
+\section{Introduction}
+
+\noindent\textbf{Context and problem.} More and more heavy work runs on the web
+client (images, documents, data visualization, ML). WASM with threads makes it
+possible to parallelize it in the browser, but it is unknown whether it scales
+like the same code natively, or whether synchronization widens the gap.
+
+\noindent\textbf{Motivation.} As a full stack developer, I have done image
+processing on the client, without threads or WASM. Is it worth parallelizing,
+and for what kind of work?
+
+\noindent\textbf{Goals.}
+\begin{description}[nosep]
+  \item[RQ1] How does scalability (relative speedup and efficiency) of the same
+  parallel code, executed in WebAssembly in the browser and natively, evolve as
+  the number of threads increases, in workloads representative of heavy
+  processing on the web client?
+  \item[RQ2] To what extent does synchro\-nization between threads affect the
+  scalability gap between Web\-Assembly and native observed in RQ1?
+\end{description}
+
+\section{Background} \label{sec:background}
+
+By default, Web Workers do not share memory and communicate by copying
+(\texttt{postMessage}). WASM~\cite{haas2017} with threads uses a
+\texttt{Shared\-Array\-Buffer} as shared memory, which requires
+\emph{cross-origin isolation} (COOP/COEP); each worker instantiates the module,
+and atomics only offer sequential consistency~\cite{sanchez2025}. Relative
+speedup compares each environment with itself; efficiency is speedup per thread.
+
+\section{Related Work} \label{sec:relatedwork}
+
+In single-threaded execution, Jangda et al.~\cite{jangda2019} measure WASM to be 45--55\%
+slower than native on average, and Yan et al.~\cite{yan2021} show that compiler,
+flags, input and browser change the results. Outside the browser, the allocator
+and atomics cause multithreading overhead~\cite{sanchez2025}. In Chromium,
+Kyriakou and Tselikas~\cite{kyriakou2022} measure 93.5\% of the speed of a
+Rust addon in Node.js single-threaded and 67.9\% multithreaded, but with a
+single workload without synchronization, 1 vs.\ 24 threads, and means only.
+
+\section{Experimental Design} \label{sec:work1}
+
+\noindent The same Rust code (Rayon), with the same compiler and flags, runs
+natively and in WASM on Chrome (V8) and Firefox (SpiderMonkey), with 1, 2,
+4\ldots\ $N$ threads in each environment.
+
+\noindent\textbf{RQ1 - does WASM scale like native?} I compare the speedup and
+efficiency curves of all workloads. The reference is the \emph{image filter}
+(embarrassingly parallel, no explicit synchronization): WASM's baseline cost in the browser.
+
+\noindent\textbf{RQ2 - does synchronization push WASM away from native?}
+Workload: \emph{image histogram}, 2$\times$2 grid:
+\begin{itemize}[nosep,leftmargin=*]
+  \item \emph{Main axis - with vs.\ without synchronization} (shared atomics
+  vs.\ per-thread local counters, the control): same problem and same result,
+  only synchronization changes. It tells \textbf{whether} it causes the gap.
+  \item \emph{Second axis - low vs.\ high contention} (noise image vs.\ few
+  colors): it tells \textbf{how much} contention matters.
+\end{itemize}
+
+\noindent\textbf{Controls and analysis.} Inputs with a fixed seed, checksum,
+pool created before measuring, warm-up, i9-14900KF on Linux. Commercial browsers at fixed versions; P/E cores (and maximum $N$) chosen through preliminary experiments in the pilot. Independent runs in random order, statistical
+tests and effect size~\cite{georges2007,hoefler2015}.
+
+\section{Forthcoming Work and Conclusions} \label{sec:conclusions}
+
+\noindent\textbf{Plan.} Pilot (Oct 15--25), harness and both workloads with
+preliminary data (check-in, Nov 11), campaign and analysis (Nov 20), paper
+(Dec 2).
+
+\noindent\textbf{Use of AI.} I used Claude to help with the design and to review and
+polish the text; the decisions are mine.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{../bib/referencias}
+
+\end{document}
