@@ -7,7 +7,7 @@ only; `mypy --strict` covers them (`make lint`).
 
 | File | What it does | Who calls it |
 |---|---|---|
-| `check_adrs.py` | Every `docs/adr/NNNN-*.md` has a matching title, a `Date:` line, the four required sections and a unique number | `make lint`, CI (`python` job) |
+| `check_adrs.py` | Every `docs/adr/NNNN-*.md` and `docs/adr/extras/NNNN-*.md` has a matching title, a `Date:` line, the four required sections and a unique number | `make lint`, CI (`python` job) |
 | `check_simd.py` | `blur_interior` in an `objdump`/`wasm-objdump` listing contains packed 16-bit arithmetic | CI (`rust` job), on the final native binary and `bench.wasm` |
 | `codegen_diff.sh` | Builds a base ref and the working tree of `bench/` at the same path, every native and WASM variant, then runs `codegen_diff.py` on each pair | By hand, before merging a change in `bench/src`: `bash scripts/codegen_diff.sh [BASE_REF]` |
 | `codegen_diff.py` | Pairs the functions of two builds by name, normalizes addresses and data offsets, and reports which differ; exit 1 if a hot function differs | `codegen_diff.sh`, or by hand on two artifacts |

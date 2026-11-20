@@ -31,7 +31,9 @@ Accepted
 def run(files: dict[str, str]) -> tuple[int, str]:
     with tempfile.TemporaryDirectory() as tmp:
         for name, text in files.items():
-            Path(tmp, name).write_text(text)
+            path = Path(tmp, name)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(text)
         out = io.StringIO()
         with redirect_stdout(out):
             code = check_adrs.main([tmp])
@@ -61,6 +63,19 @@ class CheckAdrsTest(unittest.TestCase):
         })
         self.assertEqual(code, 1)
         self.assertIn("duplicate number 0011", out)
+
+    def test_extras_folder_is_checked(self) -> None:
+        code, out = run({"extras/0052-example.md": VALID.format(num="0053")})
+        self.assertEqual(code, 1)
+        self.assertIn("0052-example.md", out)
+
+    def test_duplicate_number_across_extras_fails(self) -> None:
+        code, out = run({
+            "0052-main.md": VALID.format(num="0052"),
+            "extras/0052-extra.md": VALID.format(num="0052"),
+        })
+        self.assertEqual(code, 1)
+        self.assertIn("duplicate number 0052", out)
 
 
 if __name__ == "__main__":
