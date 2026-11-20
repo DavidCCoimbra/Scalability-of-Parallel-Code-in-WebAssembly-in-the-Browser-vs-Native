@@ -1,4 +1,4 @@
-"""Scaling, absolute ratio and RQ2 figures of a campaign (DAV-141, DAV-148).
+"""Scaling, absolute ratio and RQ2 figures of a campaign.
 
 Usage: uv run --no-project --with matplotlib python -m analysis.figures
        data/raw/<campaign>... --output paper/figures [--prefix campaign]
