@@ -19,7 +19,6 @@ impl GaussianBlur {
         Self::with_grain(source, Grain::Adaptive)
     }
 
-    /// A fixed grain is the number of rows per task.
     pub fn with_grain(source: GrayImage, grain: Grain) -> Self {
         let output = vec![0; source.pixels().len()];
         Self {
