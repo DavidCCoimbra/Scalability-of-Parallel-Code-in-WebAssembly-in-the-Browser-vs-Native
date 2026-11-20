@@ -1,0 +1,9 @@
+{
+  "chrome": {
+    "version": "155.0.8059.84",
+    "sha256": "cf0f049892dea22e6a6db26d47ed0d7776b7158edcbec4634086633df8bafcbc"
+  },
+  "firefox": {
+    "version": "158.0"
+  }
+}
