@@ -1,0 +1,478 @@
+%%
+%% Reference paper - PPC 2026/27 (AI-written first pass, for the author's study)
+%% Based on the DI/FCUL ACM template used by the proposal.
+%%
+\documentclass[sigplan]{acmart}
+\settopmatter{printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\usepackage[english]{babel}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{graphicx}
+
+\begin{document}
+\raggedbottom
+\setlength{\emergencystretch}{2em}
+
+\title{Scalability of Parallel Code in WebAssembly in the Browser vs.\ Native}
+
+\author{David Coimbra - fc68024}
+\affiliation{%
+ \institution{
+  Programação Paralela e Concorrente \\
+  Mestrado em Engenharia Informática \\
+  Faculdade de Ciências, Universidade de Lisboa}
+ \country{Portugal}
+ }
+\email{fc68024@alunos.fc.ul.pt}
+
+\begin{abstract}
+We measure whether the same parallel Rust/Rayon code scales the same way
+natively and as WebAssembly (WASM) with threads in Chrome and Firefox. On an
+i9-14900KF with 8 dedicated P-cores we ran 4860 independent runs: an image
+filter (no synchronization) and an image histogram with shared atomic or
+per-task local counters under four contention levels. With enough work per
+parallel region, the filter and the local histogram scale in the browsers
+within a few percent of native (Chrome's speedup ratio to native 0.99,
+99.5\% CI [0.95, 1.03]; Firefox's 1.05 [1.02, 1.07], from a slower baseline); the browsers' fork-join is several times slower
+than native, which matters only for small parallel regions. Synchronization
+changes the picture by engine: relative to the lock-free control, shared
+atomics cost Chrome 1.4 to 2.2 times what they cost natively under
+concentrated contention, but 0.42 times when contention is spread over 256
+counters; Firefox is never worse than native. In the machine code, V8 compiles the atomic add as a load and a
+compare-and-swap retry loop, where SpiderMonkey and LLVM emit one locked
+add; counters show it retrying once every four adds under concentrated
+contention, and uncontended it already costs Chrome 1.85 times native at
+$k=1$. We also report three pitfalls of browser
+benchmarking: Chrome escapes a process-level CPU mask, Firefox's start-up
+slows short iterations, and a pinned Firefox updates itself.
+\end{abstract}
+
+\keywords{WebAssembly, multithreading, scalability, synchronization, atomics, performance evaluation}
+
+\maketitle
+\pagestyle{plain}
+
+\section{Introduction}
+
+Heavy work increasingly runs on the web client (image and video processing,
+documents, visualization, machine learning). WebAssembly with threads makes it
+possible to parallelize that work in the browser~\cite{haas2017}, but it is
+not known whether it scales like the same code natively, or whether thread
+synchronization widens the gap. We ask:
+
+\begin{description}[nosep,leftmargin=2.5em]
+  \item[RQ1] How do relative speedup and efficiency of the same parallel
+  code evolve with the number of threads, natively and in WASM in the
+  browser?
+  \item[RQ2] To what extent does synchronization between threads affect the
+  scalability gap between WASM and native?
+\end{description}
+
+\noindent Contributions: (i) a controlled comparison, with the analysis plan fixed
+before the campaign, of one
+Rust/Rayon source compiled with the same compiler and flags for native and
+WASM, in two engines (V8 and SpiderMonkey), with the run as the unit of
+analysis; (ii) a synchronization design that separates the cost of shared
+atomics from the input, swept over four contention levels, and traced to
+the machine code each engine generates; (iii) the methodological problems
+we met in browser benchmarking and how we controlled them.
+
+\section{Background and Related Work}
+
+WASM threads share a \texttt{SharedArrayBuffer} as linear memory, which
+requires cross-origin isolation (COOP/COEP); each Web Worker instantiates the
+module; WASM atomics are sequentially consistent and data-race-free
+programs get sequential consistency~\cite{watt2019,sanchez2025}.
+Rayon (work stealing) reaches the browser through
+\texttt{wasm-bindgen-rayon}, whose idle workers park in
+\texttt{Atomics.wait} (a futex). Relative speedup $S_N = T_1/T_N$ compares
+each environment with itself; efficiency is $S_N/N$.
+
+Single-threaded WASM was measured 45 to 55\% slower than native on average
+by Jangda et al.~\cite{jangda2019}, and Yan et al.~\cite{yan2021} showed
+that compiler, flags, input and browser change WASM results; both are
+single-threaded, so we pin all four and add threads. Szewczyk et
+al.~\cite{szewczyk2022} found bounds checking of linear memory costs
+under 20\% in fast runtimes and up to 650\% in others, outside browsers. S{\'a}nchez-Artigas and Bohoyo-Bengoetxea~\cite{sanchez2025} found
+allocator and atomics overheads in portable WASM multithreading outside
+the browser. Schweizer et al.~\cite{schweizer2015} showed that atomic
+operations on x86 cost about the same whatever their semantics and are
+bound by cache-line transfers, the mechanism behind our RQ2 design. Closest to
+us, Kyriakou and Tselikas~\cite{kyriakou2022} measured Rust as WASM in
+Chromium at 93.5\% of a native Node.js addon single-threaded and 67.9\%
+multithreaded: one workload without synchronization, 1 against 24
+threads, means only. We add native as a baseline in both engines, a thread sweep, synchronization as a
+controlled factor and inferential statistics~\cite{georges2007,hoefler2015}.
+
+\section{Methodology}
+
+\paragraph{Platform.} An Intel i9-14900KF (8 P-cores, 16 E-cores), 64~GB
+of RAM, Ubuntu 26.04.1 LTS (kernel 7.0.0-42-generic, microcode 0x133), turbo and SMT off, governor \texttt{performance}, requesting the P-cores' 3.2~GHz base
+clock (the frequency is not logged). Runs use the 8 P-cores only, through
+a process-level mask inside a systemd scope; the rest of the system and the
+harness are confined to the E-cores, and desktop and background services are
+stopped (quiet mode). In a pilot, adding the E-cores made runs at $N=8$ up to
+19\% slower and several times more variable.
+
+\paragraph{Builds.} One Rust source (nightly 2026-10-03, Rayon 1.12.0, \texttt{lto=fat},
+one codegen unit, \texttt{panic=abort}), compiled for x86-64 with the baseline SSE2 and for
+\texttt{wasm32} with \texttt{+atomics}, \texttt{+bulk-memory}, \texttt{+mutable-globals}, \texttt{+simd128}
+and \texttt{-Z build-std}: both sides use 128-bit SIMD; wasm-bindgen 0.2.129
+and wasm-bindgen-rayon 1.3.0. Every campaign reported here ran one build, tagged
+\texttt{measured/v2}. Browsers: Chrome for Testing 155.0.8059.84 and Firefox 158.0, headless (headful
+within 0.3\% in a pilot), each run with a fresh profile and no automation
+framework.
+
+\paragraph{Workloads.} A $3\times3$ Gaussian filter (integer kernel,
+row-parallel, no synchronization) is the RQ1 reference. The histogram has two
+variants with identical results: \emph{atomic}, 256 shared \texttt{AtomicU64}
+counters each padded to its own 128-byte line (no false sharing; 128
+because the adjacent-line prefetcher pairs 64-byte lines), and \emph{local}, per-task
+counters merged with \texttt{fold/reduce} (the lock-free control). Both index
+fixed-size tables, so neither pays a per-pixel bounds check, and both time
+their final step (the reduce, or the read-back of the shared counters). Allocation and reset stay outside
+the timed region (WASM's default allocator has a global lock); a counting
+allocator found no allocation per iteration. Inputs are
+8192$\times$8192 images with a fixed seed; the histogram input has $k \in
+\{1,4,16,256\}$ distinct values, so contention is spread over $k$ counters.
+Every run checks a checksum of its output, equal across environments and
+thread counts.
+
+\paragraph{Runs.} One run is one fresh process (or browser launch).
+Repetition has two levels~\cite{kalibera2013}: runs re-draw
+start-up effects (JIT, memory layout); iterations are summarized within
+their run, the unit of analysis~\cite{georges2007}. Inside a run, the thread pool is created first, then come a warm-up of $W$ iterations
+and 10 measured iterations; the run's value is their median. $W$ was chosen
+per workload from long pilot runs as 1.5 times the largest warm-up seen in
+any environment, the same in every environment (5 for
+the atomic histogram, 15 to 71 elsewhere). The campaign ran 3 environments $\times$ 9 workload
+configurations $\times$ $N \in \{1,2,4,6,7,8\}$ $\times$ 30 runs = 4860 runs
+in one random order (seed 20261109). No run failed, no checksum differed, no run
+failed strict validation or exceeded the foreign-CPU threshold, and no
+configuration was under 100 times the browser clock resolution (5~µs in
+Chrome, 20~µs in Firefox). Three of the 162 configurations trend with the
+execution order (Spearman $|\rho| > 0.5$, about 1.1 expected by chance);
+they are kept. One is primary (Chrome, atomic, $k=1$, $N=8$): its RQ2 effect
+is 2.26 over the first 15 runs and 1.94 over the last 15, both far from 1.
+
+\paragraph{Problems found and fixed.} (1)~Chrome's browser process moved
+itself, through the session bus, out of the CPU mask; the harness withholds
+the bus and checks every run for escaped processes. (2)~Firefox was still starting up during short iterations, making
+them up to 32\% slower; every browser run waits 3~s first. (3)~A code
+review found asymmetries of our own: the shared counters paid a per-pixel
+bounds check that the local control did not, and the final merge or
+read-back was timed only in some variants. We fixed both (checksums
+unchanged) and re-ran every campaign on the corrected build, never mixing
+builds, since code layout alone changes timing~\cite{mytkowicz2009}.
+(4)~The pinned Firefox updated itself to 160.0 during the exploratory
+campaigns despite the profile setting; only the policy
+\texttt{DisableAppUpdate} stops it. Strict validation caught all 2640
+runs; we added the policy and a version check before each campaign, and
+repeated them on 158.0 in one block. Four cells shared with the main
+campaign control the block: time ratios to it average 1.000 to 1.001 in every
+environment, with the same spread as the interleaved ones.
+
+\paragraph{Analysis.} Fixed before the campaign. Geometric means of run values,
+percentile bootstrap intervals over runs (10\,000 resamples). The primary family has 10 contrasts at $N=8$: for RQ1, the
+filter's speedup ratio browser/native; for RQ2, the interaction
+$\Delta r = r_{\text{browser}} - r_{\text{native}}$ with
+$r = \log T_{\text{atomic}} - \log T_{\text{local}}$ at the same $k$, which
+removes the input's effect. They are tested with bootstrap $p$-values and
+Holm at $\alpha=0.05$, shown with Bonferroni 99.5\% intervals; everything
+else is exploratory, with 95\% intervals. Intervals suit right-skewed times and ratio effects, and show
+effect sizes. As a robustness check, Mann-Whitney $U$~\cite{mann1947} and
+Cliff's $\delta$ compare the per-run browser / native ratios
+(Holm-corrected), pairing the two runs of a ratio by repetition index,
+and in 1000 random re-pairings.
+
+\section{Results}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=0.78\textwidth]{../figures/campaign-speedup.pdf}
+\Description{Speedup against thread count, one panel per workload, for native, Chrome and Firefox.}
+\caption{Relative speedup against $N$ per workload (30 runs per point,
+bands: 95\% CI; dashed: ideal).}
+\label{fig:speedup}
+\end{figure*}
+
+
+Runs are tight (interquartile range within 1.4\%
+of the median for the filter, 0.4\% for the atomic histogram at $k=256$),
+with rare slow runs (two or three of 30 about 21\% slower at filter
+$N=1$, native and Chrome). At $k=1$ the atomic runs fall on discrete
+levels (interquartile range 12.5 to 17\%). Per-run medians and bootstrap
+intervals are robust to these tails.
+
+\subsection{RQ1: scaling without synchronization}
+
+Figure~\ref{fig:speedup} shows the speedups. The filter reaches 7.04 at
+$N=8$ natively, 6.97 in Chrome and 7.39 in Firefox; the local histogram
+reaches 7.8 to 8.5 everywhere. Firefox's superlinear 8.47 at $k=256$ is
+unexplained but comes from a slower $T_1$ (1.28 times native; 1.20 at
+$N=8$, which the RQ2 value uses). For the filter, the primary
+contrast confirms the picture: Chrome's
+filter speedup is within $-5$ to $+3$\% of native's (ratio 0.99, 99.5\% CI
+[0.95, 1.03]);
+Firefox's is 5\% higher (1.049 [1.015, 1.074], Holm-significant), but from a
+slower baseline. In absolute time WASM is slower on one thread for the filter (Chrome
+1.16$\times$ native, Firefox 1.33$\times$) and the local histogram at
+$k \ge 16$ (1.2 to 1.3$\times$), within 3\% at $k \le 4$ (Chrome $k=4$:
+1.07); the ratio does not grow with $N$ (filter at $N=8$: 1.18 and 1.27). So WASM threads cost a constant factor, not scalability. At $k=1$
+Chrome is even 2.7\% faster than native: every pixel increments the same
+counter, a chain bound by store-to-load forwarding, which V8 compiles as a
+load, an add and a store and LLVM as a memory-operand \texttt{inc},
+a likely part of the difference. The
+engine's code generator is part of what is measured.
+
+This holds for large work per parallel region (see the cutoff
+campaign below). The fork-join calibration measured in every run shows why: an empty \texttt{rayon::broadcast} at $N=8$ takes 110~µs in Chrome
+and 60~µs in Firefox against 8.8~µs natively (medians; means 171, 92 and
+46~µs), and an empty
+\texttt{par\_iter} region 25, 20 (one clock tick) and 5.3~µs. All three
+step up at $N=8$ (natively 1.8 to 3.0~µs at $N \le 7$, per-run calibration
+medians), likely because the coordinating thread then shares the 8
+cores with $N$ workers; below $N=8$ the browser values are one or two clock
+ticks. With millisecond iterations
+this is amortized; with sub-millisecond regions it is a large share of the time.
+
+\subsection{RQ2: the effect of synchronization}
+
+\begin{table}[t]
+\caption{Primary RQ2 contrasts at $N=8$: $\exp(\Delta r)$, the atomic/local
+time ratio in the browser over the same ratio natively.}
+\label{tab:rq2}
+\small
+\begin{tabular}{lcc}
+\toprule
+$k$ & Chrome [99.5\% CI] & Firefox [99.5\% CI] \\
+\midrule
+1 & \textbf{2.18} [2.04, 2.32] & 0.99 [0.94, 1.06] \\
+4 & \textbf{1.78} [1.75, 1.80] & \textbf{0.97} [0.95, 0.98] \\
+16 & \textbf{1.45} [1.42, 1.47] & \textbf{0.82} [0.80, 0.83] \\
+256 & \textbf{0.42} [0.41, 0.42] & \textbf{0.79} [0.78, 0.81] \\
+\bottomrule
+\end{tabular}
+
+\smallskip
+\footnotesize Bold: rejected by Holm ($\alpha = 0.05$, 10 contrasts).
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../figures/campaign-rq2-ends.pdf}
+\Description{Atomic over local time ratio against thread count at k = 1 and k = 256, per environment.}
+\caption{RQ2: $T_{\text{atomic}}/T_{\text{local}}$ against $N$ at the two
+ends of the sweep (log scale, 95\% CI); $k=4$ and 16 in Table~\ref{tab:rq2}.}
+\label{fig:rq2}
+\end{figure}
+
+Shared atomics do not scale anywhere: at $k \le 16$ the atomic histogram is
+slower with 8 threads than with one (speedups 0.36 to 0.70). How much worse
+than the lock-free control depends on the engine (Table~\ref{tab:rq2},
+Figure~\ref{fig:rq2}). In Chrome, synchronization costs 1.4 to 2.2 times
+what it costs natively when contention is concentrated on a few counters; with
+$k=256$ it costs 0.42 times, and Chrome's atomic histogram even scales
+(speedup 1.96, against native's 0.92 and Firefox's 0.97). Firefox is never
+worse than native: no detectable difference at $k=1$, cheaper from $k=4$ on.
+Part of Chrome's penalty already exists at $N=1$ (at $k=1$ the
+atomic/local ratio is 4.6 in Chrome against 2.5 natively and 2.4 in Firefox), so it is a
+per-operation cost as well as a scaling one. Mann-Whitney agrees with Holm
+on all 10 primary contrasts (rejected: $|\delta| \ge 0.68$, six with
+$|\delta|=1$; the others $p \ge 0.12$), in 89\% or more of the re-pairings.
+
+The machine code points to Chrome's cause. We sampled the hottest JIT addresses with
+\texttt{perf} and disassembled the code from each browser's memory.
+For the same \texttt{i64.atomic.rmw.add}, whose result is unused,
+SpiderMonkey emits one \texttt{lock add} per pixel (unrolled by 8, with an
+alignment test), like LLVM's native \texttt{lock inc}; V8 emits a load, an
+add and a \texttt{lock cmpxchg} that retries until no other core changed the
+line. Without contention, this sequence costs Chrome 1.085 times native
+at $k=256$, $N=1$, and 1.84 at $k=1$ (main campaign), where each add depends on the
+previous one. Counters confirm it (Table~\ref{tab:counters}; \texttt{perf stat}
+on the P-cores, a separate campaign of 30 runs per cell). Each
+compare-and-swap attempt is a locked load, so locked loads per add above
+the $N=1$ count (1.016 in Chrome) are retries: one add in four at $k=1$ in
+Chrome, almost none in Firefox, which runs the same module and Rayon pool,
+or natively. Chrome also reads the contended line from another core
+before writing it (read HITMs), doubling its line transfers at $k=1$
+(0.50 against 0.24 natively). \texttt{perf c2c} showed each contended
+counter alone on its line, in WASM memory too.
+
+\begin{table}[t]
+\caption{Counters per atomic add at $N=8$, system-wide on the P-cores
+(means of 30 runs): locked loads above the $N=1$ count (retries, 95\% CI),
+and the line read or taken for writing from another core (HITMs).}
+\label{tab:counters}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{lccc}
+\toprule
+& Retries [CI] & Read & Write \\
+\midrule
+$k=1$, native & 0.001 [0.001, 0.002] & 0.000 & 0.24 \\
+$k=1$, Chrome & \textbf{0.252} [0.236, 0.268] & \textbf{0.30} & 0.20 \\
+$k=1$, Firefox & 0.002 [0.002, 0.003] & 0.006 & 0.25 \\
+$k=256$, native & 0.001 [0.000, 0.002] & 0.000 & 1.04 \\
+$k=256$, Chrome & 0.014 [0.014, 0.015] & \textbf{0.71} & 0.52 \\
+$k=256$, Firefox & 0.001 [0.001, 0.001] & 0.006 & 0.89 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Exploratory extensions}
+
+\begin{table}[t]
+\caption{Extras campaign, $N=8$: speedup (S) and time relative to native
+(T/nat.), geometric means of 30 runs (95\% CIs within $\pm$2.3\%, except
+shared and packed atomics at $k=1$, up to $\pm$5\%).}
+\label{tab:extras}
+\small
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{2}{c}{Native} & \multicolumn{2}{c}{Chrome} & \multicolumn{2}{c}{Firefox} \\
+Workload & S & & S & T/nat. & S & T/nat. \\
+\midrule
+local $k$=1 & 7.95 & & 7.93 & 0.98 & 7.87 & 1.02 \\
+private $k$=1 & 7.96 & & 7.93 & 1.85 & 7.94 & 1.00 \\
+shared $k$=1 & 0.45 & & 0.38 & 2.16 & 0.43 & 1.03 \\
+packed $k$=1 & 0.44 & & 0.38 & 2.09 & 0.44 & 0.99 \\
+local $k$=256 & 7.89 & & 8.09 & 1.22 & 8.35 & 1.21 \\
+private $k$=256 & 7.97 & & 7.91 & 1.09 & 7.94 & 1.00 \\
+shared $k$=256 & 0.92 & & 1.96 & 0.51 & 0.97 & 0.95 \\
+packed $k$=256 & 0.78 & & 0.56 & 1.48 & 0.77 & 1.01 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A second, exploratory campaign (5400 runs, same protocol, $k \in \{1,
+256\}$, $N$ as before) added three variants (Table~\ref{tab:extras}).
+First, its cells shared with the primary campaign reproduce it (time
+ratios 0.95 to 1.05, geometric mean 1.00). Second, \emph{private} atomics
+(one padded table per thread, no sharing) scale like the local control
+everywhere, but cost Chrome 1.83 to 1.85 times native at $k=1$ and 1.08 to
+1.09 times at $k=256$ at every $N$, including $N=1$; Firefox matches native.
+So part of Chrome's RQ2 gap is the uncontended atomic sequence itself,
+and contention adds the rest (2.16 against 1.85 at $k=1$). Third,
+\emph{packed} counters (eight per line) slow the atomic histogram at
+$k=256$ by 1.18 times natively, 1.25 in Firefox and 3.45 in Chrome: Chrome's
+advantage under spread contention depends on padding.
+
+In weak scaling~\cite{gustafson1988} (1080 runs, $8192 \times 1024N$
+pixels), the filter's efficiency $T_1/T_N$ at $N=8$ is 0.86, 0.85 and 0.91
+(native, Chrome, Firefox), the local histogram's 0.99 to 1.00, within 3
+points of strong scaling; browser / native time stays flat in Chrome
+(1.16 to 1.21) and falls from 1.36 to 1.27 in Firefox.
+
+Two filter builds changed only vectorization (720 runs):
+\emph{scalar} (no SIMD on either side) and native \emph{AVX2}. Without SIMD the filter at $N=1$ is 3.8 to 4.9
+times slower and the browser gap is \emph{larger} (Chrome 1.47 to 1.50,
+Firefox 1.58 to 1.60, flat across $N$), so the gap is not caused by WASM's
+SIMD path; efficiency at $N=8$ rises to 0.97 to 0.98, and AVX2's drops to
+0.73. The excess time $T_8 - T_1/8$ grows natively with the code's speed (211,
+391 and 728~\textmu s for scalar, baseline and AVX2), as when cores share
+memory bandwidth (the native filter at $N=8$ moves about 61~GB/s, near a
+triad's 75); in the browsers it stays about constant (Chrome 546 and 494,
+Firefox 330 and 316~\textmu s), consistent with a fixed per-iteration
+overhead, of which fork-join (110~µs median, 171 mean) is a fifth to a third.
+
+Adding 12 E-cores ($N$ up to 20, 900 runs) gains the filter 10 to 16\% in
+every environment over the main campaign's P-only $N=8$, with browser / native 1.16 to 1.35.
+A cutoff campaign (4080 runs, 512$^2$ to 8192$^2$, repeated passes per
+sample) keeps the speedup above 1 everywhere, but at $N=8$ the efficiency
+falls below 0.5 under 123~\textmu s of sequential filter work natively, 399
+in Chrome and 469 in Firefox (near $N$ fork-joins in Firefox, 1.4 times that natively); by the 100:1 rule, with
+this campaign's fork-join, only native keeps it under 1\% of $T_N$ at
+8192$^2$ (0.33\%; Firefox 1.45\%, Chrome 2.7\%).
+Inside a region, a granularity sweep (4050 runs, $N=8$, a fixed
+sequential cutoff per task) gives the U-curve of Figure~\ref{fig:grain}:
+too fine costs 2.1 to 3.0 times (1~KB histogram tasks), too coarse leaves
+nothing to steal (one task per thread: 1.01 times natively, 1.13 to 1.16
+in the browsers), and the best grain, 4 rows or 64 to 128~KB, is the same
+in all three. The 100:1 rule lands in the flat region when applied to the
+cost per task (0.46 to 1.0~\textmu s for the histogram), not to the
+region's fork-join; Rayon's adaptive split is within 2.5\% of the best.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{../figures/grain-ucurve-8192.pdf}
+\Description{Time per pass against the task grain for the filter and the local histogram at 8192 squared, one line per environment, with the adaptive split as a dashed level.}
+\caption{Granularity sweep at 8192$^2$, $N=8$: time per pass against the
+task grain (log-log, 95\% CI); dashed: Rayon's adaptive split.}
+\label{fig:grain}
+\end{figure}
+
+\section{Discussion}
+
+\emph{RQ1.} With enough work per parallel region, WASM threads scale like
+native code: the filter's efficiency falls slowly with $N$ to 0.88, 0.87
+and 0.92 at $N=8$ (native, Chrome, Firefox), speedups agree within a few percent and the browser / native
+time ratio does not grow with $N$, in strong and weak scaling. WASM costs a
+constant factor per thread (1.16 to 1.33 for the filter), which divides with
+the work; the literature blames code generation and bounds-checked
+memory accesses~\cite{jangda2019,szewczyk2022}, not measured here. What does not divide is the fork-join of each region,
+several times slower in the browsers; it is negligible
+with millisecond regions and a large share of small ones. Amdahl's
+law~\cite{amdahl1967} would read the filter's sub-linear speedup as a serial
+part (Karp-Flatt~\cite{karp1990} $e = (1/S - 1/N)/(1 - 1/N)$ at $N=8$:
+0.019, 0.021 and 0.012), but the timed region has no serial part and weak
+scaling does not keep $T_N$ flat (+9 to 17\%): $e$ is a cost of running in parallel, consistent natively with
+shared memory bandwidth and in the browsers with a fixed per-iteration
+overhead, neither measured directly.
+
+\emph{RQ2.} Synchronization is where the engines differ. Memory order is
+not the reason: WASM atomics are sequentially consistent~\cite{watt2019},
+but x86 atomics cost about the same whatever their semantics, being bound
+by cache-line transfers~\cite{schweizer2015}. The reason is the code each
+engine generates around the operation. V8's compare-and-swap sequence
+costs 1.85 times native for an uncontended add at $k=1$, and under
+concentrated contention it retries and doubles the line transfers. Why it
+pays off at $k=256$ (0.42) is open: Chrome moves more lines than native
+there (1.23 against 1.04 per add) in about half the time.
+SpiderMonkey's locked add shows native's counter pattern. One source and
+one set of flags do not give one instruction stream.
+
+\section{Threats to Validity}
+
+\emph{Internal.} The problems above are controlled. At $N=8$ the
+browsers' own threads and the coordinating worker share the 8 cores; a
+pilot check pointed to oversubscription in Firefox but was confounded, so
+its $N=8$ primary contrasts may include it. Every configuration is at
+least 100 times the browser clock resolution; warm fork-join samples are
+close to it. The repeated Firefox runs ran in one block, with a control
+on histogram cells only, so the Firefox filter numbers of the weak, SIMD
+and E-core campaigns rest on it. One core is degraded, equally for every
+environment. The native filter's buffers share an offset modulo 4096,
+which understates its browser / native ratios by 1 to 2\%. The frequency
+is not recorded per run.
+\emph{Construct.} Absolute ratios accompany every speedup; the RQ2 metric
+removes the input's effect, but the atomic code differs between engines,
+which is part of what is measured.
+\emph{External.} One machine, P-cores only, two pinned headless browsers,
+two workloads at 8192$^2$: the results hold for large work per parallel
+region. \emph{Conclusion.} With 30 runs, the primary 99.5\% intervals are
+within $\pm$4\% (RQ1) and $\pm$6.5\% (RQ2); non-rejection is bounded by
+them, not proof of equality. Exploratory results use uncorrected 95\%
+CIs; the SIMD baseline comes from another campaign.
+
+\section{Conclusion}
+
+The same Rust/Rayon code scales in the browser as natively when each parallel
+region has enough work: WASM threads cost a roughly constant factor and a slower
+fork-join. Shared atomics
+widen the gap in Chrome under concentrated contention and narrow it under
+spread contention; Firefox is never worse than native. A likely cause is
+V8's compare-and-swap loop for an atomic add. For developers,
+WASM threads pay off when regions are coarse (at 8 threads, about 0.34 to
+0.47~ms of work per repeated call) and synchronization is avoided
+or spread; for benchmarkers, a CPU mask, a fresh profile and a pinned
+version do not by themselves confine, quiet and freeze a browser.
+
+\paragraph{Use of AI} Written with Claude (Anthropic) from the
+project's data and decision records.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{../bib/referencias}
+
+\end{document}
