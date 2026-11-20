@@ -37,19 +37,20 @@ impl Workload for PrivateAtomicHistogram {
     }
 
     fn run(&mut self) {
+        debug_assert_eq!(
+            self.tables.len(),
+            rayon::current_num_threads() + OUTSIDE_POOL_TABLES,
+            "run must use the pool that prepare sized the tables for"
+        );
         let tables = &self.tables;
         self.image
             .pixels()
             .par_chunks(CHUNK_BYTES)
             .for_each(|chunk| {
-                // The spare last table is for a caller outside the pool, where
-                // current_thread_index() is None.
                 let own = &tables
                     [rayon::current_thread_index().unwrap_or(tables.len() - OUTSIDE_POOL_TABLES)];
                 chunk.iter().for_each(|&value| own.increment(value));
             });
-        // Merging the per-thread tables is part of the timed work, as the reduce is for the
-        // local histogram.
         self.histogram = self
             .tables
             .iter()

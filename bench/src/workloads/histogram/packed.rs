@@ -39,8 +39,6 @@ impl Workload for PackedAtomicHistogram {
             .pixels()
             .par_chunks(CHUNK_BYTES)
             .for_each(|chunk| chunk.iter().for_each(|&value| counters.increment(value)));
-        // Reading the counters back is part of the timed work, as the reduce is for the
-        // local histogram.
         self.histogram = self.counters.read();
     }
 
