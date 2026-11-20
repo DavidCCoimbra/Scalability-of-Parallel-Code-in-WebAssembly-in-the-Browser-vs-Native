@@ -20,8 +20,9 @@ Decided on 2026-11-07, following the rule that the campaign is shortened by cutt
 configurations, never runs (30 runs per configuration, ADR 0047):
 
 - **Warm-up** by the criterion of ADR 0043, computed by `analysis.warmup`: W = 5 for every new
-  workload, except `hist-atomic-private` at k = 256, which gets W = 8. The controls keep the
-  main campaign's W.
+  workload, except `hist-atomic-private` at k = 256, which gets W = 8. The basis is thin: two
+  runs per environment, at N = 1 and 8 only, and the same W is used at every N of the campaign.
+  The controls keep the main campaign's W.
 - **Input:** 8192 x 8192 for every workload, the sorts included. The fastest configuration
   takes 47 ms per iteration at N = 8, far above 100 times the browser clock resolution (the
   clock factor of ADR 0041), so no other sort input size is needed.

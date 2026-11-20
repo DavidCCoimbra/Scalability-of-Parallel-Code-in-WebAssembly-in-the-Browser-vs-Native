@@ -34,7 +34,9 @@ Ratio pad64 / pad128 of geometric means (`analysis/compare.py`, 95 % bootstrap i
   1.022], k = 256: 1.011 [1.009, 1.014].
 
 The two builds ran as separate campaigns one after the other, so a difference of about 1 % is
-within drift: there is no measurable difference.
+within drift: no difference was detected. With 10 runs the resolution is limited, most at
+k = 1, N = 8, where the interval spans about 7 % either way; a difference below that cannot be
+ruled out there.
 
 ### Hardware counters (exploratory)
 
@@ -76,10 +78,12 @@ inside WASM memory.
 
 Decided on 2026-11-07; the option recommended from the data above was applied:
 
-- **The padding stays at 128 bytes (ADR 0008).** 64 bytes shows no measurable difference, and
-  128 is the safer choice against the adjacent-line prefetcher.
-- **The padding holds in WASM.** The alignment of `PaddedCounter` is kept in linear memory (the
-  c2c offsets above), so there is no false sharing in the browsers either.
+- **The padding stays at 128 bytes (ADR 0008).** No difference was detected at 64 bytes (to
+  within about 7 % at k = 1, N = 8), and 128 is the safer choice against the adjacent-line
+  prefetcher.
+- **The padding holds in WASM, as far as checked.** In the one Chrome `perf c2c` run (k = 16,
+  N = 8) the alignment of `PaddedCounter` is kept in linear memory (the c2c offsets above), so
+  that run shows no false sharing. Firefox was not checked this way.
 - **Chrome's `hist-atomic` k = 256 advantage at N = 8 is consistent with different machine code
   for the same atomic add.** Native (LLVM) and Firefox show the pattern of a locked add, where
   almost every operation takes the line from another core for writing. Chrome instead shows
