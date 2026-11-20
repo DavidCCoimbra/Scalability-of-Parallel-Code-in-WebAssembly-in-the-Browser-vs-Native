@@ -7,7 +7,6 @@ pub enum InputKind {
 }
 
 impl InputKind {
-    /// k colors spread over the grey levels, the study's input.
     pub const fn few(k: usize) -> Self {
         Self::FewColors {
             k,
