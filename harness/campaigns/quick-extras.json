@@ -1,0 +1,51 @@
+{
+  "name": "quick-extras",
+  "orderSeed": 20261205,
+  "environments": [
+    "native",
+    "chrome",
+    "firefox"
+  ],
+  "workloads": [
+    {
+      "workload": "hist-atomic-private",
+      "input": "few",
+      "k": 1,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-atomic-packed",
+      "input": "few",
+      "k": 1,
+      "warmup": 5
+    },
+    {
+      "workload": "sort",
+      "input": "noise",
+      "warmup": 5
+    },
+    {
+      "workload": "sort-unstable",
+      "input": "noise",
+      "warmup": 5
+    }
+  ],
+  "threads": [
+    1,
+    8
+  ],
+  "repetitions": 3,
+  "width": 4096,
+  "height": 4096,
+  "warmup": 5,
+  "iterations": 5,
+  "calibration": 20,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": null,
+  "headless": true,
+  "startDelayMs": 3000,
+  "timeoutSeconds": 300,
+  "discardFirstLaunch": true,
+  "strict": false
+}
