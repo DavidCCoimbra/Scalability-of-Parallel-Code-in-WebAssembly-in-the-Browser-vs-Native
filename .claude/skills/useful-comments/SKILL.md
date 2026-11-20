@@ -14,7 +14,8 @@ comment.
   `// Integer weights: the same result natively and in WASM, no float rounding.`
 - **A pitfall:** what breaks if someone "simplifies" it.
   `// Must stay outside the timed region: the WASM allocator takes a global lock.`
-- **A reference:** where a value or method comes from (paper, algorithm, spec, ADR).
+- **A reference:** where a value or method comes from (paper, algorithm, spec). Never an ADR
+  number: the ADRs explain decisions, the code comment says what the reader needs here.
   `// SplitMix64 (Steele, Lea and Flood, 2014); constants from the reference C code.`
 - **A non-obvious unit or invariant:** `// nanoseconds per pass`, `// rows are pitch bytes apart`.
 
