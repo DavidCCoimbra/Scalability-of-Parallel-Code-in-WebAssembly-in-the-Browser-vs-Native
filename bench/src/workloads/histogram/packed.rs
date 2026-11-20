@@ -1,3 +1,6 @@
+// Extra, not part of RQ1 or RQ2: the shared atomic table without padding, eight counters to a
+// cache line, to measure what false sharing adds to the padded atomic histogram.
+
 use rayon::prelude::*;
 
 use super::{CHUNK_BYTES, CounterTable, Histogram, PackedCounter};

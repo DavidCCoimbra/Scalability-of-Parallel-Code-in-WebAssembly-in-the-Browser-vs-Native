@@ -1,3 +1,7 @@
+// Extra, not part of RQ1 or RQ2: Rayon's parallel sort. The stable sort allocates its buffer
+// inside the timed region on purpose, to exercise WASM's allocator and its global lock; the
+// unstable sort sorts in place, so the gap between the two separates the allocator's cost.
+
 use rayon::prelude::*;
 
 use crate::input::GrayImage;

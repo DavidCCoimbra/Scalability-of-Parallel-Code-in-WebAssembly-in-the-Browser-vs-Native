@@ -1,3 +1,7 @@
+// Extra, not part of RQ1 or RQ2: the same padded atomics with one table per thread, so nothing
+// contends. Local, private and shared atomics at the same k separate the cost of the atomic
+// instruction from the cost of contention.
+
 use rayon::prelude::*;
 
 use super::{CHUNK_BYTES, CounterTable, Histogram, PaddedCounter};
