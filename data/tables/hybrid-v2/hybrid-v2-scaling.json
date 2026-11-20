@@ -1,0 +1,14 @@
+{
+  "campaign": "data/raw/hybrid-v2",
+  "summary": "median",
+  "center": "geometric",
+  "scaling": "strong",
+  "confidence": 0.95,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "commit": "75892990540df5d0430577f8ffdddaa519489347",
+  "createdAt": "2026-11-13T04:23:18.619+00:00",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0
+}

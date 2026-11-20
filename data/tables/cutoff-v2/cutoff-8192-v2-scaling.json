@@ -1,0 +1,14 @@
+{
+  "campaign": "data/raw/cutoff-8192-v2",
+  "summary": "median",
+  "center": "geometric",
+  "scaling": "strong",
+  "confidence": 0.95,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "commit": "a245726412ac2817729b17273f41ea66d21b0dfa",
+  "createdAt": "2026-11-10T18:27:39.117+00:00",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0
+}
