@@ -12,8 +12,6 @@ pub const CACHE_LINE_BYTES: usize = 128;
 #[cfg(feature = "pad64")]
 pub const CACHE_LINE_BYTES: usize = 64;
 
-// One counter per line, so threads writing different counters never share a line (false
-// sharing).
 #[derive(Default)]
 #[cfg_attr(not(feature = "pad64"), repr(align(128)))]
 #[cfg_attr(feature = "pad64", repr(align(64)))]

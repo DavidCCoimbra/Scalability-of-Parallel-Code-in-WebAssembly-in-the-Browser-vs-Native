@@ -57,8 +57,7 @@ impl GrayImage {
         self.pitch
     }
 
-    /// The whole buffer, padding included; equal to the rows back to back when the pitch is
-    /// the width.
+    /// Includes the padding bytes.
     pub fn pixels(&self) -> &[u8] {
         &self.pixels
     }
@@ -72,8 +71,7 @@ impl GrayImage {
         (0..self.height).map(|y| self.row(y))
     }
 
-    /// The checksum of the rows without their padding, so a padded image has the fingerprint
-    /// of the same image unpadded.
+    /// Padding excluded, so the fingerprint does not depend on the pitch.
     pub fn fingerprint(&self) -> Checksum {
         Checksum::of_slices(self.rows())
     }

@@ -9,8 +9,7 @@ pub fn few_colors(width: usize, height: usize, seed: u64, k: usize) -> GrayImage
     few_colors_with(width, height, seed, k, Palette::Spread)
 }
 
-/// The same random draws for every palette: pixel n is palette value number
-/// (n-th SplitMix64 output mod k), so only the values differ between palettes.
+/// Every palette uses the same random draws, so only the values differ between palettes.
 pub fn few_colors_with(
     width: usize,
     height: usize,
