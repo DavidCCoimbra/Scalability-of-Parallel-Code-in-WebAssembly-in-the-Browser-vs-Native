@@ -25,7 +25,7 @@ ran on other days. ADR 0058 states the same caveat for its SIMD comparison.
 Two probes were added after the campaign to interpret the result (both in the working
 repository):
 
-- `data/probes/ecore-workloads.txt`: the native runner at N = 1 pinned to one P-core (CPU 2)
+- `data/probes/ecore-workloads.txt` (in the working repository, like the next file): the native runner at N = 1 pinned to one P-core (CPU 2)
   or one E-core (CPUs 16, 20, 24), 10 measured iterations each.
 - `data/probes/rmw-chain-ecore.txt`: the read-modify-write microbenchmark of ADR 0060 on
   E-cores (CPUs 16, 22, 26), with a P-core control.

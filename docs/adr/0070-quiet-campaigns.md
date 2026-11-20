@@ -10,7 +10,7 @@ even when they run on other CPUs. Until now it had to be turned on and off by ha
 
 On 2026-11-10 a `git worktree add` during the cutoff campaigns put one run over the foreign CPU
 threshold (ADR 0051: CPU time used by other processes during a run), and that run had to be
-repeated (PR #103). The requirement that followed: nothing but the campaign runs on the PC
+repeated (PR #103 of the working repository). The requirement that followed: nothing but the campaign runs on the PC
 while it measures. That includes the AI coding assistant used during development (Claude Code),
 which can start commands on the PC at any time.
 

@@ -4,7 +4,7 @@ Date: 2026-11-08
 
 ## Context
 
-A readability refactor of the whole repository was requested (PR #77): one type per file,
+A readability refactor of the whole repository was requested (PR #77 of the working repository): one type per file,
 named constants with references to where their values come from, and a README with a Mermaid
 flowchart per module.
 

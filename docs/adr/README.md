@@ -13,6 +13,11 @@ The records of the extra experiments (0052 to 0059 and 0061: exploratory campaig
 and RQ2) are in [`extras/`](extras/README.md). They keep their numbers, so every reference
 between records reads the same.
 
+Some records cite evidence that stays in the working repository and is not part of this one:
+the one-off probes under `data/probes/`, pilot and v1 data, and pull request numbers (`PR #77`).
+Each record says so where it cites them; the measured data behind the paper is
+`data/raw/*-v2`.
+
 | ADR | Decision | Status |
 |---|---|---|
 | [0001](0001-p-cores-only.md) | Measure on P-cores only, with a process-level affinity mask | Accepted; amended by ADR 0045 |
