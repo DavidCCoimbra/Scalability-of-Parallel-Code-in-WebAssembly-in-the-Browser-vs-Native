@@ -11,7 +11,6 @@ results: ## Every table and figure of the campaign from data/raw/campaign-v2
 	python3 -m analysis.karp_flatt data/tables/campaign-v2/campaign-v2-scaling.csv --output data/tables/campaign-v2/campaign-v2-karp-flatt.csv
 	uv run --no-project --with matplotlib python -m analysis.figures data/raw/campaign-v2 --output paper/figures --prefix campaign
 	uv run --no-project --with matplotlib python -m analysis.distributions data/raw/campaign-v2 --figure paper/figures/campaign-distributions.pdf --table data/tables/campaign-v2/campaign-v2-distributions.csv
-	$(MAKE) figures
 
 extras-results: ## Tables and figures of the exploratory campaigns: extras, weak scaling, SIMD, hybrid P+E
 	python3 -m analysis.datacheck data/raw/extras-v2 --output data/tables/extras-v2/extras-v2-quality.md
