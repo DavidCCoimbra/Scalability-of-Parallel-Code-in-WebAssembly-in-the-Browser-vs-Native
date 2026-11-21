@@ -12,6 +12,10 @@ def integer(value: object) -> int | None:
     return value if isinstance(value, int) and not isinstance(value, bool) else None
 
 
+def text(value: object) -> str | None:
+    return value if isinstance(value, str) else None
+
+
 # The context JSON of one run, read in one place: each field has one name, one type and one
 # default here, whatever command asks for it.
 @dataclass(frozen=True)
@@ -32,6 +36,14 @@ class RunContext:
     @property
     def order_position(self) -> int | None:
         return integer(self.raw.get("orderPosition"))
+
+    @property
+    def started_at(self) -> str | None:
+        return text(self.raw.get("startedAt"))
+
+    @property
+    def finished_at(self) -> str | None:
+        return text(self.raw.get("finishedAt"))
 
     @property
     def foreign_cpu_seconds(self) -> float | None:

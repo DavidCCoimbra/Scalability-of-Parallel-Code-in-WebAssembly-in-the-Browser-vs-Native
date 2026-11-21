@@ -1,13 +1,18 @@
 import csv
 import json
+import re
 import tempfile
 from datetime import datetime, timezone
 import unittest
 from pathlib import Path
 
-from analysis.extras.perf_counters import counters_of, main, read_intervals, read_runs
+from analysis.extras.perf.intervals import read_intervals
+from analysis.extras.perf.run_counters import counters_of, runs_of
+from analysis.extras.perf_counters import main
+from analysis.loading import load_campaign
+from harness.native import CSV_HEADER
 
-HEADER = "env,workload,input,k,width,height,seed,threads,phase,iter,ns,input_fingerprint,checksum,probe,passes"
+RUN_NAME = re.compile(r"-(?P<env>native|chrome|firefox)-hist-atomic-k(?P<k>\d+)-n(?P<threads>\d+)-r\d+$")
 START = 1_000_000.0
 
 
@@ -16,9 +21,14 @@ def iso(seconds: float) -> str:
 
 
 def write_run(raw: Path, run_id: str, started: float, finished: float, timed_iterations: int) -> None:
-    rows = ["native,hist-atomic,few,256,10,10,1,8,calibration-warm,0,5,0x1,0x2,broadcast,1"]
-    rows += [f"native,hist-atomic,few,256,10,10,1,8,warmup,{i},5,0x1,0x2,,1" for i in range(timed_iterations)]
-    (raw / f"{run_id}.csv").write_text(HEADER + "\n" + "\n".join(rows) + "\n")
+    match = RUN_NAME.search(run_id)
+    assert match is not None
+    cells = {"env": match["env"], "workload": "hist-atomic", "input": "few", "k": match["k"], "threads": match["threads"]}
+    cells |= {"width": "10", "height": "10", "seed": "1", "ns": "5", "checksum": "0x2", "passes": "1"}
+    phases = [("calibration-warm", 0)] + [("warmup", i) for i in range(timed_iterations)]
+    columns = CSV_HEADER.split(",")
+    rows = [",".join((cells | {"phase": phase, "iter": str(i)}).get(column, "") for column in columns) for phase, i in phases]
+    (raw / f"{run_id}.csv").write_text(CSV_HEADER + "\n" + "\n".join(rows) + "\n")
     (raw / f"{run_id}.json").write_text(json.dumps({"startedAt": iso(started), "finishedAt": iso(finished)}))
 
 
@@ -38,7 +48,7 @@ class PerfCountersTest(unittest.TestCase):
             raw = Path(tmp)
             write_run(raw, "perf-v2-0000-native-hist-atomic-k256-n8-r0", START + 0.05, START + 0.25, 2)
             write_segment(raw / "counters", [(0.1, 100), (0.2, 300), (0.3, 999)])
-            [run] = list(read_runs(raw))
+            [run] = runs_of(load_campaign(raw))
             result = counters_of(run, read_intervals(raw / "counters"))
         self.assertEqual(run.operations, 200)
         self.assertEqual(result.intervals, 2)
