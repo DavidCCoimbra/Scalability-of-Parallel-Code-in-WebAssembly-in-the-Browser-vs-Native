@@ -333,6 +333,10 @@ class PlanTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             spec(engineArms=[{"name": "a", "flags": []}])
         with self.assertRaises(ValueError):
+            spec(engineArms=[{"name": "a", "chromeJsFlags": ["liftoff-only"]}])
+        with self.assertRaises(ValueError):
+            spec(engineArms=[{"name": "a", "chromeJsFlags": ["--liftoff-only --no-wasm-tier-up"]}])
+        with self.assertRaises(ValueError):
             spec(environments=["native"], engineArms=[{"name": "a"}])
 
     def test_run_ids_are_unique_unit_names_that_carry_the_position(self) -> None:

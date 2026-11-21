@@ -128,8 +128,8 @@ class CampaignSpec:
             )
 
     def every_run_shape(self) -> list[PlannedRun]:
-        arms = max(len(self.engine_arms), 1)
-        last = len(self.environments) * arms * len(self.workloads) * len(self.threads) * self.repetitions - 1
+        launches = sum(len(self.arms_of(environment)) for environment in self.environments)
+        last = launches * len(self.workloads) * len(self.threads) * self.repetitions - 1
         return [
             PlannedRun(last, environment, workload, threads, self.repetitions - 1, self.name, discarded, MAX_SESSIONS, arm)
             for environment in self.environments
