@@ -36,7 +36,6 @@ its planned position; the kept runs report 158.0 in their context, and the
 | Spec | What it does |
 |---|---|
 | `smoke.json` | Every campaign workload at 1024^2, 2 runs, strict |
-| `mini.json` | The same, not strict, no run scope |
 
 ## Quick checks (not results)
 

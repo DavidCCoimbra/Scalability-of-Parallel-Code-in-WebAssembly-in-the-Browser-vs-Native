@@ -13,7 +13,6 @@ python3 -m harness.native --run ID --query "workload=filter&input=noise&threads=
 | File | Responsibility |
 |---|---|
 | `interface.py` | The runner's interface: `CSV_HEADER`, `SCHEMA_VERSION`, `--build-info`, query to flags (`passes=K` becomes `--passes K`) |
-| `row_schema.py` | `upgraded`: a CSV row of any schema version as a row of the current one (schema 1 rows get the probe, palette, pitch, passes and grain their builds implied); `harness.collect` applies it |
 | `run.py` | `NativeRun`: confine, execute, measure CPU time, store result or error |
 | `cli.py`, `__main__.py` | Command line |
 

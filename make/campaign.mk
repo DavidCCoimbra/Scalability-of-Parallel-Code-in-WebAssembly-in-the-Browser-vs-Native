@@ -1,14 +1,11 @@
 INHIBIT = $(if $(shell command -v systemd-inhibit),systemd-inhibit --what=sleep:idle --who=ppc-bench --why="campaign $(NAME)",)
 
-.PHONY: smoke mini campaign status collect analysis cutoff-campaigns grain-campaigns
+.PHONY: smoke campaign status collect analysis cutoff-campaigns grain-campaigns
 
 ##@ Measure (SPEC=harness/campaigns/<name>.json; resumes if stopped)
 
 smoke: ## The smoke campaign
 	$(MAKE) campaign SPEC=harness/campaigns/smoke.json
-
-mini: #: The mini campaign
-	$(MAKE) campaign SPEC=harness/campaigns/mini.json
 
 # A campaign runs in quiet mode, and quiet mode ends when it ends, also on failure or
 # Ctrl-C: the EXIT trap is set before quiet mode starts, and INT/TERM exit through it. QUIET=0 runs it without; the sequence targets below turn it on once.

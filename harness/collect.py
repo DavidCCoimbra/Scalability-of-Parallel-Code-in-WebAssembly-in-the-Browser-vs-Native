@@ -16,7 +16,6 @@ from typing import TextIO
 from harness.context import JsonObject
 from harness.context.results import CSV_SUFFIX, ERROR_SUFFIX, METADATA_SUFFIX
 from harness.native import CSV_HEADER
-from harness.native.row_schema import upgraded
 
 CONTEXT_COLUMNS = ("orderPosition", "startedAt", "foreignCpuSeconds", "startDelayMs")
 CAMPAIGN_METADATA = "campaign"
@@ -27,6 +26,10 @@ Row = dict[str, object]
 
 class IncompleteRun(ValueError):
     pass
+
+
+class ForeignSchema(ValueError):
+    """A CSV whose header is not the current CSV_HEADER: a run of another build."""
 
 
 @dataclass
@@ -102,8 +105,13 @@ def joined_rows(directory: Path, csvs: set[str]) -> list[Row]:
     for run_id in sorted(csvs, key=order):
         context = contexts[run_id]
         with (directory / f"{run_id}{CSV_SUFFIX}").open() as file:
-            for row in csv.DictReader(file):
-                rows.append({"run": run_id, **{key: context.get(key) for key in CONTEXT_COLUMNS}, **upgraded(row, context)})
+            reader = csv.DictReader(file)
+            if reader.fieldnames is None:
+                raise ForeignSchema(f"{run_id}: empty CSV")
+            if reader.fieldnames != CSV_HEADER.split(","):
+                raise ForeignSchema(f"{run_id}: CSV header is not the current schema")
+            for row in reader:
+                rows.append({"run": run_id, **{key: context.get(key) for key in CONTEXT_COLUMNS}, **row})
     return rows
 
 
