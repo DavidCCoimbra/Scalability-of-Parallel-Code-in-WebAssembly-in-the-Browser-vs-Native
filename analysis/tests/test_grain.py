@@ -110,6 +110,15 @@ class SameBuildTest(unittest.TestCase):
             with self.assertRaises(InvalidCutoffCampaign):
                 same_build([first, self.campaign(root, "c", "4dace4db")])
 
+    def test_campaigns_without_a_recorded_build_are_refused(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            first, second = Path(tmp) / "a", Path(tmp) / "b"
+            for directory in (first, second):
+                directory.mkdir()
+                (directory / "campaign.json").write_text("{}")
+            with self.assertRaisesRegex(InvalidCutoffCampaign, "no build recorded"):
+                same_build([first, second])
+
 
 if __name__ == "__main__":
     unittest.main()

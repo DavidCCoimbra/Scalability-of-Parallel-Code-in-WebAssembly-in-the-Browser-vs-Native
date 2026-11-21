@@ -27,9 +27,9 @@ def run_git(repository: Path, *args: str) -> str:
     return completed.stdout.strip()
 
 
-def command_output(command: list[str]) -> str:
+def command_output(command: list[str], cwd: Path | None = None) -> str:
     try:
-        result = subprocess.run(command, capture_output=True, text=True, timeout=COMMAND_TIMEOUT_SECONDS)
+        result = subprocess.run(command, capture_output=True, text=True, timeout=COMMAND_TIMEOUT_SECONDS, cwd=cwd)
     except (OSError, subprocess.TimeoutExpired):
         return UNAVAILABLE
     output = result.stdout.strip()

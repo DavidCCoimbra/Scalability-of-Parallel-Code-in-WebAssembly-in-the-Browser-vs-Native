@@ -109,7 +109,8 @@ def sysinfo(root: Path, mask: str, versions: dict[str, str], quiet_state: Path |
 
 
 def tool_versions(browsers: Path) -> dict[str, str]:
-    versions = {"rustc": command_output(["rustc", "-V"])}
+    # rustup picks the toolchain from the directory: bench/rust-toolchain.toml pins the nightly.
+    versions = {"rustc": command_output(["rustc", "-V"], cwd=REPOSITORY / "bench")}
     for name, spec in load_specs(BROWSER_VERSIONS).items():
         executable = browsers / spec.directory_name / spec.executable
         versions[name] = command_output([str(executable), "--version"])
