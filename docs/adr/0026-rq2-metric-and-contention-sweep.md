@@ -66,4 +66,4 @@ Decided by the author before any data.
 
 ## Status
 
-Accepted
+Accepted; amended by ADR 0078 (the ratio is shown with its two factors)

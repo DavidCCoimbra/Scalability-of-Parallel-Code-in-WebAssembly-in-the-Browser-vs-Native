@@ -59,7 +59,7 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0023](0023-result-context.md) | Context recorded with every result | Accepted; amended by ADR 0025 (SMT and mask topology keys), ADR 0027 (provenance and drift keys, failed-run records), ADR 0028 (shield and foreign CPU time), ADR 0029 (start delay) and ADR 0031 (exact version, leftover processes) |
 | [0024](0024-browser-correctness-ci.md) | Browser correctness checked in CI against native | Accepted; amended by ADR 0032 (input fingerprints compared too) |
 | [0025](0025-smt-off.md) | SMT off, one CPU per physical P-core, checked on every result | Accepted |
-| [0026](0026-rq2-metric-and-contention-sweep.md) | RQ2 metric and contention sweep, fixed before the pilot | Accepted |
+| [0026](0026-rq2-metric-and-contention-sweep.md) | RQ2 metric and contention sweep, fixed before the pilot | Accepted; amended by ADR 0078 (the ratio is shown with its two factors) |
 | [0027](0027-provenance-and-failed-runs.md) | Provenance, drift context and failed-run records | Accepted; amends ADR 0016 (CSV header), ADR 0019 (`POST /errors`) and ADR 0023 (context keys) |
 | [0028](0028-shield-the-measured-cpus.md) | Shield the measured CPUs and record foreign CPU time | Accepted; amends ADR 0023 (context keys) |
 | [0029](0029-quiet-browsers-and-start-delay.md) | Symmetric quiet browser settings and a recorded start delay | Accepted; amends ADR 0022 (launcher settings) and ADR 0023 (context keys) |
@@ -111,3 +111,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0075](0075-pad64-feature-removed.md) | The pad64 feature is removed from the bench, codegen-neutral | Accepted; amends ADR 0008 and ADR 0049 |
 | [0076](0076-below-the-shared-source.md) | What differs below the shared source, and what the v2 calibration measured | Accepted; amends ADR 0009 and ADR 0030 |
 | [0077](0077-sensitivity-checks-on-campaign-v2.md) | The plan's sensitivity checks, run on the main campaign of measured/v2 | Accepted; amends ADR 0037 and ADR 0038 |
+| [0078](0078-reading-the-rq2-ratio.md) | How the RQ2 ratio is read: its two factors, and what moves it | Accepted; amends ADR 0026 |
