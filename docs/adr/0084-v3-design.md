@@ -135,7 +135,10 @@ next call continues from it. The steps:
 
 There is no pilot: the parameters it would size are already decided. If the gate fails, the
 session stops, and a parameter changes only through an ADR written before the main campaign
-starts.
+starts. With three runs per cell one noisy run can fail the drift criterion, so how a failure
+is read is fixed here too: the gate is run once more, whole, as a second campaign with
+another seed. If the same cell fails again the session stops for that ADR. If it passes, both
+gates are kept and reported, and the session goes on.
 
 ### 5. The open questions and what answers each
 

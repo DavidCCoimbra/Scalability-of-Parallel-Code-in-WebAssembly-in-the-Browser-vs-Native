@@ -3,13 +3,14 @@
 # stopped. The stages run in this order, each started by hand once the one before passed:
 #
 #   scripts/session.sh preflight   # environment, tests, checksums in both browsers
-#   scripts/session.sh build       # two builds from scratch, digests compared
+#   scripts/session.sh build       # the Rust tests, then two builds from scratch, digests compared
 #   scripts/session.sh gate        # the gate campaign and its check
 #   scripts/session.sh main        # the main campaign, then its tables
 #   scripts/session.sh extras      # the exploratory campaigns, most wanted first
 #
 #   RUN_DRY=1 scripts/session.sh main   # only prints the steps
-#   FRESH=1 scripts/session.sh gate     # forgets the done marks of the stage
+#   FRESH=1 scripts/session.sh gate     # forgets the done marks of the stage; progress.log is kept,
+#                                       # and a campaign still resumes from the runs it has
 #
 # MEASURED (default v3) names the build: specs harness/campaigns/*-<it>.json, runs
 # data/raw/*-<it>. Progress and logs go to data/sessions/<it>/<stage>/.
@@ -33,9 +34,11 @@ preflight() {
   step 03-browser-check python3 -m harness.browser_check
 }
 
+# The tests come first, so that nothing builds after the digests are taken: the binaries left in
+# place are the ones that were compared.
 build() {
-  step 01-build-twice scripts/build_twice.sh "$SESSION/digests.txt"
-  step 02-test make test-rust
+  step 01-test make test-rust
+  step 02-build-twice scripts/build_twice.sh "$SESSION/digests.txt"
 }
 
 gate() {
@@ -71,8 +74,8 @@ case "$STAGE" in
     ;;
 esac
 if ! is_dry_run; then
-  [[ "${FRESH:-0}" != 1 ]] || rm -rf "$SESSION"
   mkdir -p "$SESSION"
+  [[ "${FRESH:-0}" != 1 ]] || find "$SESSION" -maxdepth 1 -name '*.done' -delete
 fi
 "$STAGE"
 is_dry_run || log "stage $STAGE finished"
