@@ -30,7 +30,8 @@ The records were written over several weeks, so a few symbols changed meaning:
   different builds, campaigns and statistics; each names its source, and ADR 0076 gives the
   values of the main campaign of `measured/v2`.
 - The result records 0054, 0056, 0058, 0061, 0065 and 0067 hold the numbers of the build they
-  were first measured on and say so; the tables of `measured/v2` are in `data/tables/*-v2`.
+  were first measured on and say so; the numbers of `measured/v2` are listed in ADR 0079, with
+  their tables in `data/tables/*-v2`.
 
 | ADR | Decision | Status |
 |---|---|---|
@@ -112,3 +113,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0076](0076-below-the-shared-source.md) | What differs below the shared source, and what the v2 calibration measured | Accepted; amends ADR 0009 and ADR 0030 |
 | [0077](0077-sensitivity-checks-on-campaign-v2.md) | The plan's sensitivity checks, run on the main campaign of measured/v2 | Accepted; amends ADR 0037 and ADR 0038 |
 | [0078](0078-reading-the-rq2-ratio.md) | How the RQ2 ratio is read: its two factors, and what moves it | Accepted; amends ADR 0026 |
+| [0079](0079-results-on-measured-v2.md) | The results on measured/v2, in one place | Accepted |
