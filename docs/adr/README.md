@@ -29,6 +29,8 @@ The records were written over several weeks, so a few symbols changed meaning:
 - **F**, the fork-join cost, is quoted with different values because the records took it from
   different builds, campaigns and statistics; each names its source, and ADR 0076 gives the
   values of the main campaign of `measured/v2`.
+- ADR 0063, 0073 and 0074 record tooling of the working repository (Notion, the explainer),
+  which is not part of this one.
 - The result records 0054, 0056, 0058, 0061, 0065 and 0067 hold the numbers of the build they
   were first measured on and say so; the numbers of `measured/v2` are listed in ADR 0079, with
   their tables in `data/tables/*-v2`.
@@ -114,3 +116,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0077](0077-sensitivity-checks-on-campaign-v2.md) | The plan's sensitivity checks, run on the main campaign of measured/v2 | Accepted; amends ADR 0037 and ADR 0038 |
 | [0078](0078-reading-the-rq2-ratio.md) | How the RQ2 ratio is read: its two factors, and what moves it | Accepted; amends ADR 0026 |
 | [0079](0079-results-on-measured-v2.md) | The results on measured/v2, in one place | Accepted |
+| [0080](0080-threats-to-validity.md) | The threats to validity that are declared with the results | Accepted |
