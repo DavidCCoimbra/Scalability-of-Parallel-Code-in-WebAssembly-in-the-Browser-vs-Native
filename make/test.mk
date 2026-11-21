@@ -18,5 +18,5 @@ lint: ## fmt, clippy, ADRs, shellcheck, mypy strict
 	$(CARGO) fmt --check
 	$(CARGO) clippy --locked --release --all-targets -- -D warnings
 	python3 scripts/check_adrs.py docs/adr
-	shellcheck bench/build-wasm.sh harness/env/*.sh scripts/*.sh
+	shellcheck bench/build-wasm.sh harness/env/*.sh scripts/*.sh scripts/lib/*.sh
 	$(MYPY) harness analysis scripts

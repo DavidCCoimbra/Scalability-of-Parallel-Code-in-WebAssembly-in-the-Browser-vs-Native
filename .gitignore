@@ -29,6 +29,11 @@ paper/proposal/*.pdf
 # Joined run tables written by the result targets (make results)
 data/*.csv
 
+# Step logs of a measuring session; its progress.log and digests are kept
+data/sessions/**/*.log
+!data/sessions/**/progress.log
+data/sessions/**/*.done
+
 # OS / editor
 .DS_Store
 .vscode/

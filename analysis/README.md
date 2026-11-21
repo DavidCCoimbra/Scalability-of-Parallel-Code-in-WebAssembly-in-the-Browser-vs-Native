@@ -15,6 +15,7 @@ commands through `uv run --no-project --with matplotlib`, see `Makefile`).
 | Command | What it writes |
 |---|---|
 | `datacheck` | Data quality report of a campaign |
+| `gate` | The gate before a build's campaigns: exits 1 unless a gate campaign is fit to start from |
 | `v0` | Speedup and efficiency per configuration, `<campaign>-scaling.csv` |
 | `results` | The plan's RQ1, RQ2 and absolute contrasts, `<campaign>-contrasts.csv`, and the shape table |
 | `sensitivity` | The plan's sensitivity checks side by side on the 10 primary contrasts (per-run mean, median centre, no foreign-CPU exclusion) and whether each decision is robust, `<campaign>-sensitivity.csv` |
