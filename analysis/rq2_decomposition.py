@@ -14,30 +14,36 @@ import argparse
 import csv
 import math
 import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
-from analysis.configuration import BROWSERS, Configuration, Environment, Workload
+from analysis.configuration import BROWSERS, Configuration, Workload
+from analysis.inference.cells import rq2_wanted
+from analysis.inference.groups import Quad
 from analysis.loading import InvalidCampaign, add_exclusion_arguments, exclusion_rule, load_campaign
 from analysis.runs import values_by_configuration
 from analysis.stats.bootstrap import Interval, bootstrap_interval
 from analysis.stats.summary import CONFIGURATION_CENTER
 
 COLUMNS = ("environment", "k", "threads", "quantity", "ratio", "low", "high")
-Groups = list[list[float]]
+Groups = Sequence[list[float]]
 
 
 def center(values: list[float]) -> float:
     return CONFIGURATION_CENTER.of(values)
 
 
-# Each takes the four groups in the order of Cells.groups: A_b, L_b, A_n, L_n.
+# Each takes the four groups of an RQ2 contrast (Quad: numerator = atomic, denominator = local),
+# as a Quad or as the plain list the bootstrap resamples it into.
 def atomic_ratio(groups: Groups) -> float:
-    return center(groups[0]) / center(groups[2])
+    quad = Quad(*groups)
+    return center(quad.browser_numerator) / center(quad.native_numerator)
 
 
 def local_ratio(groups: Groups) -> float:
-    return center(groups[1]) / center(groups[3])
+    quad = Quad(*groups)
+    return center(quad.browser_denominator) / center(quad.native_denominator)
 
 
 def rq2_ratio(groups: Groups) -> float:
@@ -47,8 +53,10 @@ def rq2_ratio(groups: Groups) -> float:
 # Undefined (nan) when the atomic histogram is not slower than the local one natively: there is
 # then no native excess to compare with.
 def excess_ratio(groups: Groups) -> float:
-    native_excess = center(groups[2]) - center(groups[3])
-    return (center(groups[0]) - center(groups[1])) / native_excess if native_excess > 0 else math.nan
+    quad = Quad(*groups)
+    native_excess = center(quad.native_numerator) - center(quad.native_denominator)
+    browser_excess = center(quad.browser_numerator) - center(quad.browser_denominator)
+    return browser_excess / native_excess if native_excess > 0 else math.nan
 
 
 # rq2 = atomic / local; excess is the ratio of (A - L) between the browser and native.
@@ -63,7 +71,7 @@ QUANTITIES = (
 @dataclass(frozen=True)
 class Cells:
     browser_atomic: Configuration
-    groups: Groups
+    groups: Quad[list[float]]
 
 
 def cells(values: dict[Configuration, list[float]], threads: int) -> list[Cells]:
@@ -71,10 +79,9 @@ def cells(values: dict[Configuration, list[float]], threads: int) -> list[Cells]
     for atomic in sorted(values):
         if atomic.environment not in BROWSERS or atomic.workload != Workload.HIST_ATOMIC or atomic.threads != threads:
             continue
-        local = atomic.as_workload(Workload.HIST_LOCAL)
-        wanted = [atomic, local, atomic.in_environment(Environment.NATIVE), local.in_environment(Environment.NATIVE)]
+        wanted = rq2_wanted(atomic)
         if all(configuration in values for configuration in wanted):
-            found.append(Cells(atomic, [values[configuration] for configuration in wanted]))
+            found.append(Cells(atomic, Quad(*(values[configuration] for configuration in wanted))))
     return found
 
 

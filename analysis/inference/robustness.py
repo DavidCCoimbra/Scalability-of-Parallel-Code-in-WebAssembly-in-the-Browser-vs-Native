@@ -10,6 +10,7 @@ from analysis.inference.cells import rq1_wanted, rq2_wanted
 from analysis.inference.contrast import Contrast
 from analysis.inference.estimation import DEFAULT_MAX_THREADS, contrasts
 from analysis.inference.family import FAMILY_ALPHA
+from analysis.inference.groups import Quad
 from analysis.inference.question import Question
 from analysis.runs import RunSummary
 from analysis.stats.bootstrap import BOOTSTRAP_RESAMPLES, BOOTSTRAP_SEED
@@ -75,7 +76,7 @@ class RobustnessCheck:
         return (self.contrast.estimate > 0) == (self.cliffs_delta > 0)
 
 
-def wanted(contrast: Contrast) -> list[Configuration]:
+def wanted(contrast: Contrast) -> Quad[Configuration]:
     if contrast.question is Question.RQ2:
         return rq2_wanted(contrast.configuration)
     if contrast.question is Question.RQ1:
@@ -83,12 +84,11 @@ def wanted(contrast: Contrast) -> list[Configuration]:
     raise ValueError(f"no per-run ratio for {contrast.question} contrasts")
 
 
-# RQ2: log(atomic / local) per run; RQ1: log(T1 / TN), the log speedup, per run. Both come in the order
-# browser numerator, browser denominator, native numerator, native denominator of cells.py.
+# RQ2: log(atomic / local) per run; RQ1: log(T1 / TN), the log speedup, per run.
 def check(contrast: Contrast, values: LogByRepetition) -> RobustnessCheck:
-    browser_top, browser_bottom, native_top, native_bottom = wanted(contrast)
-    browser = paired_log_ratios(values, browser_top, browser_bottom)
-    native = paired_log_ratios(values, native_top, native_bottom)
+    cells = wanted(contrast)
+    browser = paired_log_ratios(values, cells.browser_numerator, cells.browser_denominator)
+    native = paired_log_ratios(values, cells.native_numerator, cells.native_denominator)
     return RobustnessCheck(contrast, browser, native, mann_whitney_u(native, browser), cliffs_delta(native, browser))
 
 
@@ -122,9 +122,9 @@ def repairing_shares(
     for _ in range(repairings):
         p_values = []
         for item in checks:
-            browser_top, browser_bottom, native_top, native_bottom = wanted(item.contrast)
-            browser = shuffled_log_ratios(values, browser_top, browser_bottom, rng)
-            native = shuffled_log_ratios(values, native_top, native_bottom, rng)
+            cells = wanted(item.contrast)
+            browser = shuffled_log_ratios(values, cells.browser_numerator, cells.browser_denominator, rng)
+            native = shuffled_log_ratios(values, cells.native_numerator, cells.native_denominator, rng)
             p_values.append(mann_whitney_u(native, browser).p)
         for index, decision in enumerate(holm_decisions(p_values)):
             same[index] += decision == checks[index].rejected

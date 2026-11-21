@@ -18,6 +18,7 @@ alpha = 0.05 and a Bonferroni interval at 99.5 %. Effects are reported as
 | Module | Piece |
 |---|---|
 | `question.py` | `Question`: RQ1, RQ2, ABS |
+| `groups.py` | `Pair` and `Quad`: the two or four groups of a contrast, by name |
 | `cells.py` | Log run values per configuration and the groups each contrast needs |
 | `interaction.py` | The log centre and the two- or four-group contrast |
 | `family.py` | Primary family, its size, alpha and the Bonferroni level |
