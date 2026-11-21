@@ -1,0 +1,4 @@
+2026-11-21 19:49:41  start  01-campaign
+2026-11-21 20:10:50  done   01-campaign
+2026-11-21 20:10:50  start  02-check
+2026-11-21 20:10:50  failed 02-check: see data/sessions/v3/gate/02-check.log

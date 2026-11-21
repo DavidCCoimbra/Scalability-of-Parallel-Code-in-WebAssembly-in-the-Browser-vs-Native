@@ -113,6 +113,14 @@ field. Every kernel is as after section 2.
 The reader accepts the files of `measured/v2`, which lack the column, and gives them an empty
 value; `make tables-check` regenerates every v2 table unchanged with it.
 
+### 4. The tag
+
+`measured/v3` is commit `ac65af6a`. On the prepared PC the build stage ran the Rust tests and
+then built twice from scratch (ADR 0085): both builds gave the same digests, in
+`data/sessions/v3/build/digests.txt`. The native runner is `525707dedef95487...` and the WASM
+module `387871291106220d...` (SHA-256), and the gate campaigns recorded those two digests for
+the binaries they ran.
+
 ## Consequences
 
 - The runs of `measured/v3` are not compared number by number with those of `measured/v2`
@@ -123,4 +131,4 @@ value; `make tables-check` regenerates every v2 table unchanged with it.
 
 ## Status
 
-Proposed; completed and accepted when `measured/v3` is tagged
+Accepted
