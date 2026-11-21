@@ -69,7 +69,13 @@ class CollectTest(unittest.TestCase):
         legacy_header = "env,workload,input,k,width,height,seed,threads,phase,iter,ns,input_fingerprint,checksum"
         (self.root / "c-0000-a.csv").write_text(legacy_header + "\n" + ROW + "\n")
         (self.root / "c-0000-a.json").write_text(json.dumps({"orderPosition": 0, "passes": 2}))
-        with self.assertRaises(ForeignSchema):
+        with self.assertRaisesRegex(ForeignSchema, "c-0000-a"):
+            collect(self.root)
+
+    def test_an_empty_csv_is_rejected_by_name(self) -> None:
+        (self.root / "c-0000-a.csv").write_text("")
+        (self.root / "c-0000-a.json").write_text(json.dumps({"orderPosition": 0}))
+        with self.assertRaisesRegex(ForeignSchema, "c-0000-a: empty CSV"):
             collect(self.root)
 
     def test_the_two_palettes_of_one_k_are_not_a_checksum_conflict(self) -> None:

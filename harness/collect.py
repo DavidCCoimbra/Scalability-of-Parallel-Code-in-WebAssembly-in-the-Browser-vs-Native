@@ -106,6 +106,8 @@ def joined_rows(directory: Path, csvs: set[str]) -> list[Row]:
         context = contexts[run_id]
         with (directory / f"{run_id}{CSV_SUFFIX}").open() as file:
             reader = csv.DictReader(file)
+            if reader.fieldnames is None:
+                raise ForeignSchema(f"{run_id}: empty CSV")
             if reader.fieldnames != CSV_HEADER.split(","):
                 raise ForeignSchema(f"{run_id}: CSV header is not the current schema")
             for row in reader:
