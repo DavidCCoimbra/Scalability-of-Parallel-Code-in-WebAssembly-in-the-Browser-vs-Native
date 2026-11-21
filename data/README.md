@@ -17,7 +17,9 @@ repository.
 
 Every table can be regenerated from `raw/` with `make all-results`; the
 sidecar JSON files keep a fixed key order, so a regeneration changes only
-their `commit` and `createdAt`.
+their `commit` and `createdAt`. `make tables-check` does it and fails if any
+other line of any table differs; CI runs it when the analysis, the harness,
+the make targets or the data change.
 
 ```mermaid
 flowchart LR

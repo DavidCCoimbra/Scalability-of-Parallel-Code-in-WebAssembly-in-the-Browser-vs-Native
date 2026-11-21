@@ -26,6 +26,9 @@ paper/proposal/*.pdf
 # Local Claude Code settings (the shared rules, agents and skills are kept)
 .claude/settings.local.json
 
+# Joined run tables written by the result targets (make results)
+data/*.csv
+
 # OS / editor
 .DS_Store
 .vscode/
