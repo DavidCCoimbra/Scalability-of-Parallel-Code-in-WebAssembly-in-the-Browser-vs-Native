@@ -118,3 +118,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0079](0079-results-on-measured-v2.md) | The results on measured/v2, in one place | Accepted |
 | [0080](0080-threats-to-validity.md) | The threats to validity that are declared with the results | Accepted |
 | [0081](0081-one-loader-for-every-analysis-command.md) | Every analysis command reads a campaign through one loader, with the plan's exclusions | Accepted |
+| [0082](0082-throughput-and-absolute-speedup.md) | Throughput and the absolute speedup are tabulated next to the relative speedup | Accepted |

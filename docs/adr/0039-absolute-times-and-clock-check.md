@@ -41,6 +41,11 @@ analysis plan:
 - Nothing is excluded for it. The image size pilot sizes the image so that no configuration is
   flagged and sets the final factor (ADR 0041 later set it to 100, because 1000 is out of reach
   at any usable image size in Firefox).
+- Note of 2026-11-21: `clockResolutionNs` is, on both sides, the most common step between two
+  consecutive clock reads. In the browsers that is the resolution of `performance.now()` (5 or
+  20 us). Natively the clock counts nanoseconds and the step (59 to 77 ns in the main campaign) is
+  the time one read takes, so it is an upper bound of the resolution, not the resolution. The
+  check is conservative with it and the name stays, because it is in every recorded run.
 
 ### Number of runs
 

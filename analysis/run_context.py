@@ -51,6 +51,8 @@ class RunContext:
         return value if isinstance(value, (int, float)) else None
 
     # Browser runs record the resolution in the page metadata; native runs record it in the build block.
+    # It is the most common step between two clock reads: the resolution of performance.now() in a
+    # browser, the cost of one read natively (an upper bound of the resolution, ADR 0039).
     @property
     def clock_resolution_ns(self) -> int | None:
         resolution = self.raw.get(CLOCK_RESOLUTION_KEY)
