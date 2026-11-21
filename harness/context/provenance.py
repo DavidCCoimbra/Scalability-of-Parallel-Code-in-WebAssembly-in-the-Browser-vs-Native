@@ -3,6 +3,7 @@
 import hashlib
 import os
 import subprocess
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -13,10 +14,13 @@ COMMAND_TIMEOUT_SECONDS = 30
 LOADAVG_DIGITS = 2
 
 
-def git_commit(repository: Path) -> str:
+# `generated` names folders of generated files: a change there is not a change of the code, so
+# regenerating the tables does not mark the tables that follow as coming from a dirty commit.
+def git_commit(repository: Path, generated: Sequence[str] = ()) -> str:
+    excluded = [f":(exclude){path}" for path in generated]
     try:
         commit = run_git(repository, "rev-parse", "HEAD")
-        changes = run_git(repository, "status", "--porcelain", "--untracked-files=no")
+        changes = run_git(repository, "status", "--porcelain", "--untracked-files=no", "--", ".", *excluded)
     except (OSError, subprocess.CalledProcessError):
         return UNAVAILABLE
     return f"{commit}{DIRTY_SUFFIX}" if changes else commit
