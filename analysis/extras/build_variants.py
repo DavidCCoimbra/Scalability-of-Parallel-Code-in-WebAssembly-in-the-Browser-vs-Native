@@ -16,10 +16,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from analysis.runs import run_summaries
+from analysis.loading import ExclusionRule, InvalidCampaign, add_exclusion_arguments, exclusion_rule, load_campaign
 from analysis.scaling.build_variants import COLUMNS, VariantPoint, table_rows, variant_points
-from analysis.stats.summary import RUN_SUMMARY
-from harness.collect import collect
 
 
 @dataclass(frozen=True)
@@ -40,6 +38,7 @@ def parser() -> argparse.ArgumentParser:
     parser.add_argument("series", type=parse_series, nargs="+")
     parser.add_argument("--table", type=Path, required=True)
     parser.add_argument("--figure", type=Path)
+    add_exclusion_arguments(parser)
     return parser
 
 
@@ -50,8 +49,8 @@ def write_table(rows: list[dict[str, Any]], path: Path) -> None:
         writer.writerows(rows)
 
 
-def series_points(series: Series) -> list[VariantPoint]:
-    return variant_points(series.build, run_summaries(collect(series.directory).rows, RUN_SUMMARY))
+def series_points(series: Series, rule: ExclusionRule = ExclusionRule()) -> list[VariantPoint]:
+    return variant_points(series.build, load_campaign(series.directory, rule).summaries())
 
 
 def main(argv: list[str]) -> int:
@@ -60,7 +59,11 @@ def main(argv: list[str]) -> int:
     builds = [series.build for series in args.series]
     if len(set(builds)) != len(builds):
         arguments.error(f"duplicate build names: {builds}")
-    points = [point for series in args.series for point in series_points(series)]
+    try:
+        points = [point for series in args.series for point in series_points(series, exclusion_rule(args))]
+    except InvalidCampaign as invalid:
+        print(f"error: {invalid}", file=sys.stderr)
+        return 1
     write_table(table_rows(points), args.table)
     if args.figure is not None:
         # Imported here so that the table, and the tests, run without matplotlib installed.

@@ -5,17 +5,18 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from analysis.loading import ExclusionRule, InvalidCampaign
 from analysis.scaling.output import STRONG_COLUMNS, WEAK_COLUMNS, Scaling, write_scaling
-from analysis.scaling.report import InvalidCampaign, analyse
+from analysis.scaling.report import analyse
 from analysis.v0 import main
 from harness.native import CSV_HEADER
 
 
-def write_run(root: Path, run_id: str, position: int, threads: int, times: list[int]) -> None:
+def write_run(root: Path, run_id: str, position: int, threads: int, times: list[int], foreign_cpu: float = 0.0) -> None:
     rows = [f"native,filter,noise,,64,64,24301,{threads},warmup,0,999,0x01,0xab"]
     rows += [f"native,filter,noise,,64,64,24301,{threads},measured,{i},{ns},0x01,0xab" for i, ns in enumerate(times)]
     (root / f"{run_id}.csv").write_text(CSV_HEADER + "\n" + "\n".join(rows) + "\n")
-    (root / f"{run_id}.json").write_text(json.dumps({"orderPosition": position}))
+    (root / f"{run_id}.json").write_text(json.dumps({"orderPosition": position, "foreignCpuSeconds": foreign_cpu}))
 
 
 class AnalyseTest(unittest.TestCase):
@@ -35,7 +36,7 @@ class AnalyseTest(unittest.TestCase):
         self.assertEqual((two["environment"], two["runs"], two["speedup"]), ("native", "2", "2.000"))
         self.assertEqual(two["efficiency"], "1.000")
         self.assertEqual(two["baseline_runs"], "2")
-        self.assertEqual(report.failed, {})
+        self.assertEqual(report.campaign.collection.failed, {})
 
     def test_weak_scaling_writes_t1_over_tn_as_weak_efficiency_without_speedup_over_n(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -62,6 +63,22 @@ class AnalyseTest(unittest.TestCase):
             output = root / "scaling.csv"
             self.assertEqual(main([str(root), "--output", str(output)]), 1)
             self.assertFalse(output.exists())
+
+    def test_a_run_above_the_foreign_cpu_threshold_is_left_out_and_counted(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write_run(root, "c-0000", 0, 1, [100])
+            write_run(root, "c-0001", 1, 2, [50])
+            write_run(root, "c-0002", 2, 2, [500], foreign_cpu=9.0)
+            kept = analyse(root)
+            every = analyse(root, rule=ExclusionRule(foreign_cpu_threshold=None))
+            output = root / "scaling.csv"
+            self.assertEqual(main([str(root), "--output", str(output)]), 0)
+            meta = json.loads(output.with_suffix(".json").read_text())
+        self.assertEqual([row.runs for row in kept.rows], [1, 1])
+        self.assertEqual([row.runs for row in every.rows], [1, 2])
+        self.assertEqual(meta["excluded"], {"foreignCpuSeconds": 1, "strictValidation": 0})
+        self.assertEqual((meta["failed"], meta["missing"], meta["strict"]), ({}, [], False))
 
     def test_per_run_summary_is_only_median_or_mean(self) -> None:
         with self.assertRaises(SystemExit):

@@ -36,6 +36,7 @@ commands through `uv run --no-project --with matplotlib`, see `Makefile`).
 | `configuration.py` | A configuration (environment, workload, input, k, N) and the names the plan refers to |
 | `runs.py` | One value per run from the measured iterations |
 | `campaign.py` | What a campaign directory holds: run contexts, `campaign.json`, pinned browsers |
+| `loading.py` | The one way a command reads a campaign: collect, stop on a checksum conflict, apply the plan's exclusions (ADR 0081) |
 | `provenance.py` | Commit and time stamp of a generated sidecar |
 | `stats/` | Generic statistics: summaries, bootstrap, Holm, Spearman, skewness, Cliff's delta, Mann-Whitney U |
 | `scaling/` | Speedup and efficiency tables |
@@ -60,18 +61,20 @@ flowchart LR
     contrastcsv["data/&lt;campaign&gt;-contrasts.csv + .json<br/>data/&lt;campaign&gt;-shape.csv"]
     figures["figures/<br/>paper/figures/&lt;prefix&gt;-*.pdf"]
 
-    raw --> collect --> runs
+    raw --> collect --> exclusion --> runs
     raw --> quality
-    runs --> quality --> report
+    collect --> quality --> report
     runs --> scaling --> scalingcsv
-    raw --> exclusion --> runs
     runs --> contrasts --> contrastcsv
     scaling --> figures
     runs --> figures
 ```
 
-`results` removes the excluded runs before taking the run summaries; `v0`,
-`datacheck` and `figures` use every run that did not fail.
+Every command that writes a table or a figure reads its campaign through
+`loading.load_campaign`, which removes the excluded runs before the run
+summaries are taken (ADR 0081); each takes `--strict` and
+`--foreign-cpu-threshold`. `datacheck` and `iteration_drift` are diagnostics
+of the data as recorded and read every run that did not fail.
 
 ## Conventions
 

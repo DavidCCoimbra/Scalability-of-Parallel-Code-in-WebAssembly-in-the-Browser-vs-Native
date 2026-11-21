@@ -2,6 +2,7 @@
 
 Usage: uv run --no-project --with matplotlib python -m analysis.figures
        data/raw/<campaign>... --output paper/figures [--prefix campaign]
+       [--foreign-cpu-threshold SECONDS | --no-foreign-cpu-threshold] [--strict]
 Writes <prefix>-speedup.pdf, <prefix>-efficiency.pdf, <prefix>-absolute.pdf,
 <prefix>-rq2.pdf (every k) and <prefix>-rq2-ends.pdf (k = 1 and 256, the paper's figure). Run values are per-run medians; centres are geometric
 means; intervals are 95 % percentile bootstraps over runs.
@@ -13,9 +14,7 @@ from pathlib import Path
 
 from analysis.figures.campaign import absolute_figure, efficiency_figure, rq2_figure, speedup_figure
 from analysis.figures.points import absolute_ratios, rq2_ratios, scaling_curves
-from analysis.runs import run_summaries
-from analysis.stats.summary import RUN_SUMMARY
-from harness.collect import collect
+from analysis.loading import InvalidCampaign, add_exclusion_arguments, exclusion_rule, load_campaign
 
 # The paper's RQ2 figure shows the two ends of the contention sweep; the middle k are in its table.
 PAPER_RQ2_KS = (1, 256)
@@ -27,12 +26,17 @@ def parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--prefix", default="campaign")
     parser.add_argument("--diagonal", default="ideal")
+    add_exclusion_arguments(parser)
     return parser
 
 
 def main(argv: list[str]) -> int:
     args = parser().parse_args(argv)
-    runs = [run for directory in args.directories for run in run_summaries(collect(directory).rows, RUN_SUMMARY)]
+    try:
+        runs = [run for directory in args.directories for run in load_campaign(directory, exclusion_rule(args)).summaries()]
+    except InvalidCampaign as invalid:
+        print(f"error: {invalid}", file=sys.stderr)
+        return 1
     args.output.mkdir(parents=True, exist_ok=True)
     curves = scaling_curves(runs)
     speedup_figure(curves, args.diagonal, args.output / f"{args.prefix}-speedup.pdf")

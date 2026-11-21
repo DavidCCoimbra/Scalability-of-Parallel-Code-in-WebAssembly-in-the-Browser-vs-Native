@@ -21,14 +21,12 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from analysis.campaign import campaign_metadata, run_context
-from analysis.cutoff import InvalidCutoffCampaign, square_side, write_csv
+from analysis.cutoff import InvalidCutoffCampaign, load_runs, square_side, write_csv
+from analysis.loading import ExclusionRule, InvalidCampaign, add_exclusion_arguments, exclusion_rule
 from analysis.quality.clock import report_clock_warnings
-from analysis.runs import Row, run_summaries
+from analysis.runs import Row
 from analysis.scaling.fork_join import fork_join_costs
 from analysis.scaling.grain import BEST_COLUMNS, POINT_COLUMNS, GrainPoint, best_grains, best_rows, grain_points, point_rows
-from analysis.scaling.report import conflict_details
-from analysis.stats.summary import RUN_SUMMARY
-from harness.collect import collect
 
 GRAIN_KEY = "grain"
 
@@ -54,19 +52,13 @@ def run_grain(directory: Path, run_id: str) -> int | None:
     return grain if isinstance(grain, int) and not isinstance(grain, bool) else None
 
 
-def grain_campaign(directory: Path) -> tuple[list[GrainPoint], list[Row]]:
-    collection = collect(directory)
+def grain_campaign(directory: Path, rule: ExclusionRule = ExclusionRule()) -> tuple[list[GrainPoint], list[Row]]:
     # Checksums are compared per configuration across grains too: every grain computes the same output.
-    if collection.checksum_conflicts:
-        raise InvalidCutoffCampaign(f"{directory}: checksums differ: {conflict_details(collection.checksum_conflicts)}")
-    if not collection.rows:
-        raise InvalidCutoffCampaign(f"{directory}: no completed runs")
-    for environment, count in sorted(collection.failed.items()):
-        print(f"{directory}: failed runs in {environment}: {count} (excluded)", file=sys.stderr)
-    summaries = run_summaries(collection.rows, RUN_SUMMARY)
+    campaign = load_runs(directory, rule)
+    summaries = campaign.summaries()
     report_clock_warnings(directory, summaries, sys.stderr)
     grains = {run.run: run_grain(directory, run.run) for run in summaries}
-    return grain_points(summaries, square_side(collection.rows, directory), grains), collection.rows
+    return grain_points(summaries, square_side(campaign.rows, directory), grains), campaign.rows
 
 
 def parser() -> argparse.ArgumentParser:
@@ -76,6 +68,7 @@ def parser() -> argparse.ArgumentParser:
     parser.add_argument("--best", type=Path, required=True)
     parser.add_argument("--figure", type=Path)
     parser.add_argument("--paper-figure", type=Path, help="the U-curve at the main campaign's size alone")
+    add_exclusion_arguments(parser)
     return parser
 
 
@@ -86,10 +79,10 @@ def main(argv: Sequence[str]) -> int:
     try:
         same_build(args.directories)
         for directory in args.directories:
-            campaign_points, campaign_rows = grain_campaign(directory)
+            campaign_points, campaign_rows = grain_campaign(directory, exclusion_rule(args))
             points += campaign_points
             rows += campaign_rows
-    except InvalidCutoffCampaign as error:
+    except InvalidCampaign as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
     write_csv(point_rows(points), POINT_COLUMNS, args.points)
