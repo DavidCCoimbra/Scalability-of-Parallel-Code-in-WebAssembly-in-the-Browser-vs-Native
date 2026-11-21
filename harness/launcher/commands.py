@@ -6,13 +6,16 @@ from pathlib import Path
 from typing import Protocol
 
 from harness.context.run_environment import RunEnvironment
+from harness.launcher.engine_arm import EngineArm, PrefValue
 
 USER_PREFS_FILE = "user.js"
 CHROME_HEADLESS_FLAG = "--headless=new"
 FIREFOX_HEADLESS_FLAG = "-headless"
 VERSION_FLAG = "--version"
+# Chrome hands the value of this one flag to V8, which reads it as its own flags separated by spaces.
+CHROME_JS_FLAGS = "--js-flags="
 
-FIREFOX_PREFS: dict[str, str | bool | int] = {
+FIREFOX_PREFS: dict[str, PrefValue] = {
     "app.normandy.api_url": "",
     "app.normandy.enabled": False,
     "app.shield.optoutstudies.enabled": False,
@@ -81,8 +84,9 @@ class BrowserCommand(Protocol):
 class ChromeCommand:
     name = RunEnvironment.CHROME
 
-    def __init__(self, extra_flags: tuple[str, ...] = ()):
+    def __init__(self, extra_flags: tuple[str, ...] = (), js_flags: tuple[str, ...] = ()):
         self.extra_flags = extra_flags
+        self.js_flags = js_flags
 
     def version_command(self, executable: Path) -> list[str]:
         return [str(executable), VERSION_FLAG]
@@ -97,6 +101,7 @@ class ChromeCommand:
             f"--user-data-dir={profile}",
             *CHROME_FLAGS,
             *self.extra_flags,
+            *([CHROME_JS_FLAGS + " ".join(self.js_flags)] if self.js_flags else []),
             *headless_flags,
             url,
         ]
@@ -105,11 +110,14 @@ class ChromeCommand:
 class FirefoxCommand:
     name = RunEnvironment.FIREFOX
 
+    def __init__(self, extra_prefs: tuple[tuple[str, PrefValue], ...] = ()):
+        self.extra_prefs = extra_prefs
+
     def version_command(self, executable: Path) -> list[str]:
         return [str(executable), VERSION_FLAG]
 
     def prepare_profile(self, profile: Path) -> None:
-        lines = [f"user_pref({json.dumps(key)}, {json.dumps(value)});" for key, value in FIREFOX_PREFS.items()]
+        lines = [f"user_pref({json.dumps(key)}, {json.dumps(value)});" for key, value in {**FIREFOX_PREFS, **dict(self.extra_prefs)}.items()]
         (profile / USER_PREFS_FILE).write_text("\n".join(lines) + "\n")
 
     def argv(self, executable: Path, profile: Path, url: str, headless: bool) -> list[str]:
@@ -121,3 +129,11 @@ COMMANDS: dict[str, Callable[[], BrowserCommand]] = {
     RunEnvironment.CHROME: ChromeCommand,
     RunEnvironment.FIREFOX: FirefoxCommand,
 }
+
+
+def command_for(browser: str, arm: EngineArm | None) -> BrowserCommand:
+    if arm is None:
+        return COMMANDS[browser]()
+    if browser == RunEnvironment.CHROME:
+        return ChromeCommand(js_flags=arm.chrome_js_flags)
+    return FirefoxCommand(extra_prefs=arm.firefox_prefs)

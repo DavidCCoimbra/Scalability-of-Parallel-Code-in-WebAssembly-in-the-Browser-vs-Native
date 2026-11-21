@@ -15,6 +15,7 @@ python3 -m harness.launcher --browser chrome --executable PATH --run ID --query 
 | File | Responsibility |
 |---|---|
 | `commands.py` | `ChromeCommand`, `FirefoxCommand`: flags, preferences and version command |
+| `engine_arm.py` | `EngineArm`: a named set of V8 flags and Firefox preferences that a campaign crosses with its browser runs |
 | `url.py` | `run_url`: the page URL with run id, environment and start delay |
 | `launcher.py` | `Launcher`: profile, launch, wait, teardown and context |
 | `outcome.py` | `RunStatus`, `RunOutcome` and what a launch recorded (the passes of the query included) |

@@ -40,7 +40,7 @@ REQUIRED_KEYS = (
 )
 # Written since the cutoff campaign, the grain sweep and the v3 build; runs stored before
 # them lack them and mean the default.
-LATER_KEYS = ("passes", "grain", "cores")
+LATER_KEYS = ("passes", "grain", "cores", "engineArm")
 BUILD_FIELDS = ("rustc", "wasmBindgen")
 STRICT_KEYS = (
     "commit",

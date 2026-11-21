@@ -7,7 +7,16 @@ Usage: python3 -m harness.launcher --browser chrome|firefox --executable PATH
 The results server (harness/server.py) must be running.
 """
 
-from harness.launcher.commands import CHROME_FLAGS, COMMANDS, FIREFOX_PREFS, BrowserCommand, ChromeCommand, FirefoxCommand
+from harness.launcher.commands import (
+    CHROME_FLAGS,
+    COMMANDS,
+    FIREFOX_PREFS,
+    BrowserCommand,
+    ChromeCommand,
+    FirefoxCommand,
+    command_for,
+)
+from harness.launcher.engine_arm import EngineArm
 from harness.launcher.launcher import MAX_START_DELAY_MS, Launcher
 from harness.launcher.outcome import LaunchRecord, RunOutcome, RunStatus, Teardown
 from harness.launcher.processes import KILL_GRACE_SECONDS, kill_processes_using, stop_process_group
@@ -22,12 +31,14 @@ __all__ = [
     "RESERVED_KEYS",
     "BrowserCommand",
     "ChromeCommand",
+    "EngineArm",
     "FirefoxCommand",
     "LaunchRecord",
     "Launcher",
     "RunOutcome",
     "RunStatus",
     "Teardown",
+    "command_for",
     "kill_processes_using",
     "run_url",
     "stop_process_group",

@@ -307,6 +307,38 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(len(keys), len(runs))
         self.assertEqual([run.position for run in runs], list(range(len(runs))))
 
+    def test_engine_arms_cross_the_browser_runs_and_leave_native_alone(self) -> None:
+        arms = [{"name": "default"}, {"name": "baseline", "chromeJsFlags": ["--liftoff-only"], "firefoxPrefs": {"javascript.options.wasm_optimizingjit": False}}]
+        campaign = spec(engineArms=arms)
+        runs = plan(campaign)
+        per_environment = len(campaign.workloads) * len(campaign.threads) * campaign.repetitions
+        self.assertEqual(sum(run.environment == RunEnvironment.NATIVE for run in runs), per_environment)
+        self.assertEqual(sum(run.environment == RunEnvironment.CHROME for run in runs), 2 * per_environment)
+        self.assertTrue(all(run.arm is None for run in runs if run.environment == RunEnvironment.NATIVE))
+        self.assertEqual(len({run.run_id for run in runs}), len(runs))
+        chrome = next(run for run in runs if run.environment == RunEnvironment.CHROME and run.arm is not None and run.arm.name == "baseline")
+        self.assertIn("-chrome-baseline-", chrome.run_id)
+        self.assertEqual(CampaignSpec.from_json(campaign.to_json()), campaign)
+        self.assertEqual(campaign.to_json()["engineArms"], arms)
+
+    def test_a_spec_without_engine_arms_keeps_its_plan_and_its_stored_form(self) -> None:
+        self.assertNotIn("engineArms", spec().to_json())
+        self.assertTrue(all(run.arm is None for run in plan(spec())))
+
+    def test_engine_arms_need_distinct_plain_names_and_a_browser(self) -> None:
+        with self.assertRaises(ValueError):
+            spec(engineArms=[{"name": "a"}, {"name": "a"}])
+        with self.assertRaises(ValueError):
+            spec(engineArms=[{"name": "No Spaces"}])
+        with self.assertRaises(ValueError):
+            spec(engineArms=[{"name": "a", "flags": []}])
+        with self.assertRaises(ValueError):
+            spec(engineArms=[{"name": "a", "chromeJsFlags": ["liftoff-only"]}])
+        with self.assertRaises(ValueError):
+            spec(engineArms=[{"name": "a", "chromeJsFlags": ["--liftoff-only --no-wasm-tier-up"]}])
+        with self.assertRaises(ValueError):
+            spec(environments=["native"], engineArms=[{"name": "a"}])
+
     def test_run_ids_are_unique_unit_names_that_carry_the_position(self) -> None:
         runs = plan(spec())
         self.assertEqual(len({run.run_id for run in runs}), len(runs))

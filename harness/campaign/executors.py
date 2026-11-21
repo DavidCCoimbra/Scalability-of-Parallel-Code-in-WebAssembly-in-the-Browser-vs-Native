@@ -8,7 +8,7 @@ from typing import Protocol
 from harness.campaign.planned_run import PlannedRun
 from harness.campaign.spec import CampaignSpec
 from harness.context import round_seconds
-from harness.launcher import COMMANDS, Launcher, RunStatus
+from harness.launcher import Launcher, RunStatus, command_for
 from harness.native import NativeRun, NativeRunFailed
 
 
@@ -66,7 +66,7 @@ class BrowserExecutor:
         if self.server.port is None:
             raise RuntimeError("the results server must be started before a browser run")
         launcher = Launcher(
-            COMMANDS[self.browser](),
+            command_for(self.browser, run.arm),
             self.executable,
             results,
             port=self.server.port,
@@ -77,6 +77,7 @@ class BrowserExecutor:
             order_position=run.order_position,
             scope_user=self.spec.resolved_scope_user,
             start_delay_ms=self.spec.start_delay_ms,
+            engine_arm=run.arm,
         )
         outcome = launcher.run(run.run_id, self.spec.query(run))
         return ExecutionResult(outcome.status, round_seconds(outcome.seconds), outcome.message)

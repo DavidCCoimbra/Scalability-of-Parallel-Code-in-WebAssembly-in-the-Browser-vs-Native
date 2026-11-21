@@ -26,6 +26,7 @@ from harness.context import (
     utc_now,
 )
 from harness.launcher.commands import BrowserCommand
+from harness.launcher.engine_arm import EngineArm
 from harness.launcher.outcome import LaunchRecord, RunOutcome, RunStatus, Teardown
 from harness.launcher.processes import kill_processes_using, stop_process_group
 from harness.launcher.url import run_url
@@ -68,6 +69,7 @@ class Launcher:
         artifact: Path = WASM_ARTIFACT,
         scope_user: str | None = None,
         start_delay_ms: int = 0,
+        engine_arm: EngineArm | None = None,
     ):
         check_confinement(cpus, scope_user)
         if not 0 <= start_delay_ms <= MAX_START_DELAY_MS:
@@ -85,6 +87,7 @@ class Launcher:
         self.artifact = artifact
         self.scope_user = scope_user
         self.start_delay_ms = start_delay_ms
+        self.engine_arm = engine_arm
 
     def command(self, profile: Path, run_id: str, query: str) -> list[str]:
         url = run_url(self.port, run_id, self.browser.name, query, self.start_delay_ms)
@@ -183,6 +186,7 @@ class Launcher:
             passes=record.passes,
             grain=record.grain,
             cores=record.teardown.cores,
+            engine_arm=self.engine_arm.to_json() if self.engine_arm else None,
             leftover_processes=record.teardown.leftover_processes,
             escaped_processes=record.teardown.escaped_processes,
             foreign_cpu_seconds=record.teardown.cpu_seconds.foreign_seconds,

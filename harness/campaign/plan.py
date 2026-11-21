@@ -8,16 +8,17 @@ from harness.campaign.spec import CampaignSpec
 
 def plan(spec: CampaignSpec) -> list[PlannedRun]:
     combinations = [
-        (environment, workload, threads, repetition)
+        (environment, arm, workload, threads, repetition)
         for repetition in range(spec.repetitions)
         for environment in spec.environments
+        for arm in spec.arms_of(environment)
         for workload in spec.workloads
         for threads in spec.threads
     ]
     random.Random(spec.order_seed).shuffle(combinations)
     return [
-        PlannedRun(position, environment, workload, threads, repetition, spec.name)
-        for position, (environment, workload, threads, repetition) in enumerate(combinations)
+        PlannedRun(position, environment, workload, threads, repetition, spec.name, arm=arm)
+        for position, (environment, arm, workload, threads, repetition) in enumerate(combinations)
     ]
 
 
