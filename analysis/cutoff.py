@@ -23,17 +23,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from analysis.loading import ExclusionRule, InvalidCampaign, LoadedCampaign, add_exclusion_arguments, exclusion_rule, load_campaign
 from analysis.quality.clock import report_clock_warnings
-from analysis.runs import Row, run_summaries
+from analysis.runs import Row
 from analysis.scaling.crossing import ESTIMATE_COLUMNS, estimate_rows, estimates
 from analysis.scaling.cutoff import TABLE_COLUMNS, CutoffPoint, cutoff_points, table_rows
 from analysis.scaling.fork_join import MODEL_COLUMNS, fork_join_costs, model_rows, predictions
-from analysis.scaling.report import conflict_details
-from analysis.stats.summary import RUN_SUMMARY
-from harness.collect import collect
 
 
-class InvalidCutoffCampaign(ValueError):
+class InvalidCutoffCampaign(InvalidCampaign):
     pass
 
 
@@ -54,24 +52,24 @@ def square_side(rows: Sequence[Row], directory: Path) -> int:
     return width
 
 
-def size_campaign(directory: Path) -> SizeCampaign:
-    collection = collect(directory)
-    if collection.checksum_conflicts:
-        raise InvalidCutoffCampaign(f"{directory}: checksums differ: {conflict_details(collection.checksum_conflicts)}")
-    if not collection.rows:
+def load_runs(directory: Path, rule: ExclusionRule) -> LoadedCampaign:
+    campaign = load_campaign(directory, rule)
+    if not campaign.rows:
         raise InvalidCutoffCampaign(f"{directory}: no completed runs")
-    for environment, count in sorted(collection.failed.items()):
-        print(f"{directory}: failed runs in {environment}: {count} (excluded)", file=sys.stderr)
-    for run in collection.missing:
-        print(f"{directory}: planned run without any file: {run}", file=sys.stderr)
-    summaries = run_summaries(collection.rows, RUN_SUMMARY)
+    campaign.report_gaps()
+    return campaign
+
+
+def size_campaign(directory: Path, rule: ExclusionRule = ExclusionRule()) -> SizeCampaign:
+    campaign = load_runs(directory, rule)
+    summaries = campaign.summaries()
     report_clock_warnings(directory, summaries, sys.stderr)
-    side = square_side(collection.rows, directory)
-    return SizeCampaign(side, cutoff_points(side, summaries), collection.rows)
+    side = square_side(campaign.rows, directory)
+    return SizeCampaign(side, cutoff_points(side, summaries), campaign.rows)
 
 
-def size_campaigns(directories: Sequence[Path]) -> list[SizeCampaign]:
-    campaigns = [size_campaign(directory) for directory in directories]
+def size_campaigns(directories: Sequence[Path], rule: ExclusionRule = ExclusionRule()) -> list[SizeCampaign]:
+    campaigns = [size_campaign(directory, rule) for directory in directories]
     sides = [campaign.side for campaign in campaigns]
     if len(set(sides)) != len(sides):
         raise InvalidCutoffCampaign(f"two campaigns have the same image side: {sorted(sides)}")
@@ -92,14 +90,15 @@ def parser() -> argparse.ArgumentParser:
     parser.add_argument("--estimates", type=Path, required=True)
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--figure", type=Path)
+    add_exclusion_arguments(parser)
     return parser
 
 
 def main(argv: list[str]) -> int:
     args = parser().parse_args(argv)
     try:
-        campaigns = size_campaigns(args.directories)
-    except InvalidCutoffCampaign as error:
+        campaigns = size_campaigns(args.directories, exclusion_rule(args))
+    except InvalidCampaign as error:
         print(f"error: {error}", file=sys.stderr)
         return 1
     points = [point for campaign in campaigns for point in campaign.points]

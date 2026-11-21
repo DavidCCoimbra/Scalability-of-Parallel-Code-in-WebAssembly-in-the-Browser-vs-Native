@@ -117,3 +117,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0078](0078-reading-the-rq2-ratio.md) | How the RQ2 ratio is read: its two factors, and what moves it | Accepted; amends ADR 0026 |
 | [0079](0079-results-on-measured-v2.md) | The results on measured/v2, in one place | Accepted |
 | [0080](0080-threats-to-validity.md) | The threats to validity that are declared with the results | Accepted |
+| [0081](0081-one-loader-for-every-analysis-command.md) | Every analysis command reads a campaign through one loader, with the plan's exclusions | Accepted |

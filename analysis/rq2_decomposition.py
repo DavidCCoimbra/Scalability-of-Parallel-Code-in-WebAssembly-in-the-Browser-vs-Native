@@ -18,12 +18,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from analysis.configuration import BROWSERS, Configuration, Environment, Workload
-from analysis.inference.exclusion import excluded_runs
-from analysis.quality.foreign_cpu import FOREIGN_CPU_THRESHOLD
-from analysis.runs import run_summaries, values_by_configuration
+from analysis.loading import InvalidCampaign, add_exclusion_arguments, exclusion_rule, load_campaign
+from analysis.runs import values_by_configuration
 from analysis.stats.bootstrap import Interval, bootstrap_interval
-from analysis.stats.summary import CONFIGURATION_CENTER, RUN_SUMMARY
-from harness.collect import collect
+from analysis.stats.summary import CONFIGURATION_CENTER
 
 COLUMNS = ("environment", "k", "threads", "quantity", "ratio", "low", "high")
 Groups = list[list[float]]
@@ -101,20 +99,17 @@ def parser() -> argparse.ArgumentParser:
     parser.add_argument("directory", type=Path)
     parser.add_argument("--max-threads", type=int, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--foreign-cpu-threshold", type=float, default=FOREIGN_CPU_THRESHOLD)
-    parser.add_argument("--strict", action="store_true")
+    add_exclusion_arguments(parser)
     return parser
 
 
 def main(argv: list[str]) -> int:
     args = parser().parse_args(argv)
-    collection = collect(args.directory)
-    if collection.checksum_conflicts:
-        print(f"error: checksums differ, no table written: {collection.checksum_conflicts}", file=sys.stderr)
+    try:
+        summaries = load_campaign(args.directory, exclusion_rule(args)).summaries()
+    except InvalidCampaign as invalid:
+        print(f"error: {invalid}", file=sys.stderr)
         return 1
-    run_ids = {str(row["run"]) for row in collection.rows}
-    dropped = excluded_runs(args.directory, run_ids, args.foreign_cpu_threshold, args.strict).dropped
-    summaries = run_summaries([row for row in collection.rows if row["run"] not in dropped], RUN_SUMMARY)
     with args.output.open("w", newline="") as file:
         writer = csv.writer(file, lineterminator="\n")
         writer.writerow(COLUMNS)

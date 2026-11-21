@@ -14,18 +14,15 @@ import sys
 from pathlib import Path
 
 from analysis.inference.estimation import contrasts
-from analysis.inference.exclusion import excluded_runs
 from analysis.inference.family import IncompleteFamily
 from analysis.inference.cells import missing_absolute
 from analysis.inference.output import write_contrasts, write_shape
 from analysis.inference.shape import shape_table
 from analysis.inference.sidecar import ResultsOptions, ResultsOutcome, results_sidecar
+from analysis.loading import ExclusionRule, InvalidCampaign, add_exclusion_arguments, load_campaign
 from analysis.quality.clock import report_clock_warnings
-from analysis.quality.foreign_cpu import FOREIGN_CPU_THRESHOLD
-from analysis.runs import run_summaries
 from analysis.stats.bootstrap import BOOTSTRAP_RESAMPLES
 from analysis.stats.summary import CONFIGURATION_CENTER, RUN_SUMMARY, Summary
-from harness.collect import collect
 
 
 def parser() -> argparse.ArgumentParser:
@@ -33,11 +30,7 @@ def parser() -> argparse.ArgumentParser:
     parser.add_argument("directory", type=Path)
     parser.add_argument("--contrasts", type=Path, required=True)
     parser.add_argument("--shape", type=Path)
-    threshold = parser.add_mutually_exclusive_group()
-    threshold.add_argument("--foreign-cpu-threshold", type=float, default=FOREIGN_CPU_THRESHOLD)
-    # The plan's sensitivity check "without exclusion 3".
-    threshold.add_argument("--no-foreign-cpu-threshold", action="store_true")
-    parser.add_argument("--strict", action="store_true")
+    add_exclusion_arguments(parser)
     parser.add_argument("--summary", choices=[Summary.MEDIAN.value, Summary.MEAN.value], default=RUN_SUMMARY.value)
     parser.add_argument("--center", choices=[Summary.GEOMETRIC.value, Summary.MEDIAN.value], default=CONFIGURATION_CENTER.value)
     parser.add_argument("--resamples", type=int, default=BOOTSTRAP_RESAMPLES)
@@ -69,13 +62,11 @@ def error(message: str) -> int:
 
 def main(argv: list[str]) -> int:
     options = parse_options(argv)
-    collection = collect(options.directory)
-    if collection.checksum_conflicts:
-        return error(f"checksums differ, no results written: {collection.checksum_conflicts}")
-    run_ids = {str(row["run"]) for row in collection.rows}
-    exclusions = excluded_runs(options.directory, run_ids, options.foreign_cpu_threshold, options.strict)
-    dropped = exclusions.dropped
-    summaries = run_summaries([row for row in collection.rows if row["run"] not in dropped], Summary(options.summary))
+    try:
+        campaign = load_campaign(options.directory, ExclusionRule(options.foreign_cpu_threshold, options.strict))
+    except InvalidCampaign as invalid:
+        return error(str(invalid))
+    summaries = campaign.summaries(Summary(options.summary))
     try:
         results = contrasts(
             summaries, Summary(options.center), max_threads=options.max_threads, partial=options.partial, resamples=options.resamples
@@ -92,7 +83,7 @@ def main(argv: list[str]) -> int:
     missing = missing_absolute(summaries, options.max_threads)
     for configuration in missing:
         print(f"warning: no native counterpart for the absolute ratio of {configuration}", file=sys.stderr)
-    sidecar = results_sidecar(options, ResultsOutcome(collection, exclusions, results, clock, missing))
+    sidecar = results_sidecar(options, ResultsOutcome(campaign.collection, campaign.exclusions, results, clock, missing))
     options.contrasts.with_suffix(".json").write_text(json.dumps(sidecar, indent=2) + "\n")
     return 0
 
