@@ -2,7 +2,7 @@ use std::num::NonZeroUsize;
 
 use rayon::iter::{IndexedParallelIterator, MaxLen};
 
-/// `Fixed(n)` makes every task exactly n units (the filter's rows, the local histogram's KB)
+/// `Fixed(n)` makes every task exactly n units (the filter's rows, the histograms' KB)
 /// and stops Rayon from merging them, a sequential cutoff.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Grain {
