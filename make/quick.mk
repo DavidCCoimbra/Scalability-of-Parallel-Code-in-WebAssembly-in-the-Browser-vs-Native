@@ -38,7 +38,7 @@ endef
 
 .PHONY: quick quick-summary $(QUICK_TARGETS) quick-hybrid
 
-##@ Quick checks (not results; not strict, so any machine state; into data/raw/quick-*)
+##@ Quick checks (not results; not strict; before env-setup, whose shield refuses their plain taskset; into data/raw/quick-*)
 
 quick: ## All quick checks below but hybrid, then a summary (about 20 min plus builds)
 	@failed=; for target in $(QUICK_TARGETS); do $(MAKE) $$target || failed="$$failed $$target"; done; \

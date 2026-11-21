@@ -1,6 +1,6 @@
 INHIBIT = $(if $(shell command -v systemd-inhibit),systemd-inhibit --what=sleep:idle --who=ppc-bench --why="campaign $(NAME)",)
 
-.PHONY: smoke campaign status collect analysis cutoff-campaigns grain-campaigns
+.PHONY: smoke campaign status collect analysis cutoff-campaigns grain-campaigns session
 
 ##@ Measure (SPEC=harness/campaigns/<name>.json; resumes if stopped)
 
@@ -28,6 +28,9 @@ grain-campaigns: ## The two grain sweep campaigns in sequence, make status after
 	  $(MAKE) campaign QUIET=0 SPEC=harness/campaigns/grain-$$side-$(MEASURED).json || failed=1; \
 	  $(MAKE) status SPEC=harness/campaigns/grain-$$side-$(MEASURED).json; \
 	done; exit $$failed
+
+session: ## One stage of the measuring session, resumable: STAGE=preflight|build|gate|main|extras MEASURED=v3
+	MEASURED=$(MEASURED) scripts/session.sh $(STAGE)
 
 status: ## Progress of SPEC, running or finished: counts, problems, elapsed, ETA (read-only)
 	python3 -m harness.campaign.status $(SPEC)

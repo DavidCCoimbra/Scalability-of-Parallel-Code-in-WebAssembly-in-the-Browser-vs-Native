@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# One stage of the measuring session of a build, as numbered steps that resume where they
+# stopped. The stages run in this order, each started by hand once the one before passed:
+#
+#   scripts/session.sh preflight   # environment, tests, checksums in both browsers
+#   scripts/session.sh build       # two builds from scratch, digests compared
+#   scripts/session.sh gate        # the gate campaign and its check
+#   scripts/session.sh main        # the main campaign, then its tables
+#   scripts/session.sh extras      # the exploratory campaigns, most wanted first
+#
+#   RUN_DRY=1 scripts/session.sh main   # only prints the steps
+#   FRESH=1 scripts/session.sh gate     # forgets the done marks of the stage
+#
+# MEASURED (default v3) names the build: specs harness/campaigns/*-<it>.json, runs
+# data/raw/*-<it>. Progress and logs go to data/sessions/<it>/<stage>/.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+STAGE="${1:?usage: scripts/session.sh preflight|build|gate|main|extras}"
+export MEASURED="${MEASURED:-v3}"
+SESSION="data/sessions/$MEASURED/$STAGE"
+source scripts/lib/steps.sh
+
+spec() { echo "harness/campaigns/$1-$MEASURED.json"; }
+
+campaign() { step "$1" make campaign SPEC="$(spec "$2")"; }
+
+preflight() {
+  step 01-env-check make env-check
+  step 02-test make test
+  # Not `make quick`: its specs pin with a plain taskset, which the shield of a prepared machine
+  # refuses. The gate is the end-to-end run of the real protocol.
+  step 03-browser-check python3 -m harness.browser_check
+}
+
+build() {
+  step 01-build-twice scripts/build_twice.sh "$SESSION/digests.txt"
+  step 02-test make test-rust
+}
+
+gate() {
+  campaign 01-campaign gate
+  step 02-check python3 -m analysis.gate "data/raw/gate-$MEASURED"
+}
+
+main() {
+  campaign 01-campaign campaign
+  step 02-status make status SPEC="$(spec campaign)"
+  step 03-results make results
+}
+
+# In the order of what the study wants most, so that a short week drops from the end.
+extras() {
+  campaign 01-tier tier
+  campaign 02-grain-threads grain-threads
+  step 03-perf scripts/perf-counters.sh
+  step 04-grain make grain-campaigns
+  step 05-cutoff make cutoff-campaigns
+  campaign 06-extras extras
+  campaign 07-weak weak
+  campaign 08-simd-scalar simd-scalar
+  campaign 09-simd-avx2 simd-avx2
+  step 10-rebuild make build
+}
+
+case "$STAGE" in
+  preflight | build | gate | main | extras) ;;
+  *)
+    echo "no stage $STAGE: choose preflight, build, gate, main or extras"
+    exit 1
+    ;;
+esac
+if ! is_dry_run; then
+  [[ "${FRESH:-0}" != 1 ]] || rm -rf "$SESSION"
+  mkdir -p "$SESSION"
+fi
+"$STAGE"
+is_dry_run || log "stage $STAGE finished"
