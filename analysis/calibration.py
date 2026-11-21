@@ -1,6 +1,8 @@
 """Fork-join cost of a campaign from the calibration samples of its runs.
 
 Usage: python3 -m analysis.calibration data/raw/<campaign> --output fork-join.csv
+       [--strict] [--foreign-cpu-threshold SECONDS]
+The runs are those of the primary analysis: the same exclusions apply.
 Per environment, thread count, probe (empty broadcast or empty par_iter) and
 phase (warm: calls back to back; cold: one call after a pause), over the runs
 of every workload ("all") and of each workload: the number of runs, the median
@@ -18,6 +20,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from analysis.configuration import ENVIRONMENTS
+from analysis.inference.exclusion import excluded_runs
+from analysis.quality.foreign_cpu import FOREIGN_CPU_THRESHOLD
 from analysis.runs import Row
 from harness.collect import collect
 
@@ -82,12 +86,19 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("directory", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--foreign-cpu-threshold", type=float, default=FOREIGN_CPU_THRESHOLD)
+    parser.add_argument("--strict", action="store_true")
     args = parser.parse_args(argv)
     collection = collect(args.directory)
+    if collection.checksum_conflicts:
+        print(f"error: checksums differ, no table written: {collection.checksum_conflicts}", file=sys.stderr)
+        return 1
+    run_ids = {str(row["run"]) for row in collection.rows}
+    dropped = excluded_runs(args.directory, run_ids, args.foreign_cpu_threshold, args.strict).dropped
     with args.output.open("w", newline="") as file:
         writer = csv.writer(file, lineterminator="\n")
         writer.writerow(COLUMNS)
-        writer.writerows(calibration_rows(collection.rows))
+        writer.writerows(calibration_rows(row for row in collection.rows if row["run"] not in dropped))
     return 0
 
 

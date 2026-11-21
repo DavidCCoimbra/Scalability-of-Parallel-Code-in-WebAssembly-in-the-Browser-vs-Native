@@ -12,6 +12,7 @@ plan, so every interval is an uncorrected 95 % percentile bootstrap interval.
 
 import argparse
 import csv
+import math
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -45,8 +46,11 @@ def rq2_ratio(groups: Groups) -> float:
     return atomic_ratio(groups) / local_ratio(groups)
 
 
+# Undefined (nan) when the atomic histogram is not slower than the local one natively: there is
+# then no native excess to compare with.
 def excess_ratio(groups: Groups) -> float:
-    return (center(groups[0]) - center(groups[1])) / (center(groups[2]) - center(groups[3]))
+    native_excess = center(groups[2]) - center(groups[3])
+    return (center(groups[0]) - center(groups[1])) / native_excess if native_excess > 0 else math.nan
 
 
 # rq2 = atomic / local; excess is the ratio of (A - L) between the browser and native.

@@ -53,8 +53,10 @@ this one, which matters at large k.
     times slower. At k = 256 the atomics cost 5 % less than natively in absolute terms, and
     the ratio of 0.794 mostly reflects the local kernel again (1.195). So "synchronization is
     relatively cheaper in Firefox" at k = 16 and 256 is true of the ratio and misleading as a
-    statement about synchronization: in absolute time Firefox's shared atomics cost within
-    about 1 % (k = 1, 4, 16) to 5 % (k = 256) of native's.
+    statement about synchronization: in absolute time Firefox's atomic histogram takes
+    1.010, 0.987, 1.010 and 0.949 times native's at k = 1, 4, 16 and 256 (the k = 1 interval
+    contains 1; the others do not, by 1 % to 5 %). The k = 256 value is also the one that moved
+    most between builds (below), so its size is not firm either.
   - *Chrome.* The atomic ratio stays near 1.8 to 2.1 for k = 1, 4 and 16, while exp(delta r)
     falls from 2.18 to 1.45 only because Chrome's local kernel gets slower relative to native
     as k grows. The excess ratio says the same: shared atomics add about twice the time in
@@ -68,7 +70,8 @@ this one, which matters at large k.
   - *The k = 1 cells are mixtures.* With one counter fought over by eight threads, a run lands
     on one of several time levels. The Chrome k = 1 ratio is 2.275 over the first 15 runs in
     campaign order and 2.082 over the last 15 with the geometric centre; both are inside the
-    99.5 % interval [2.044, 2.317], but the interval is wide for that reason.
+    99.5 % interval [2.044, 2.317]. That split was chosen after the data, and it cannot tell a
+    mixture of levels from a drift over the campaign; either way this cell is the widest.
   - *The two histograms do not share one iteration pipeline.* Only the local histogram passes
     its chunks through the grain control of ADR 0066 (`Grain::tasks`, which calls Rayon's
     `with_max_len`); the atomic one iterates its chunks directly. The comparison is between two
@@ -78,8 +81,8 @@ this one, which matters at large k.
 
 - RQ2 can be answered in two ways and the answer must say which: relative to each
   environment's own local control (the primary metric, ADR 0026), or in absolute time added
-  by the shared counters (the excess ratio). They agree for Chrome and disagree in sign of
-  emphasis for Firefox.
+  by the shared counters (the excess ratio). They tell the same story for Chrome. For Firefox they differ
+  most at k = 16: 0.816 by the ratio, 1.009 by the excess.
 - No number of ADR 0037's family changes, and nothing is re-measured.
 - The decomposition is regenerated and checked by `make tables-check` like every other table.
 
