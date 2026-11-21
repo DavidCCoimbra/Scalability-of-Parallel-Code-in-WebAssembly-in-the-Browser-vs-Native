@@ -24,7 +24,7 @@ and the campaigns of earlier builds stay in the working repository.
 | `simd-scalar-v2.json` | Filter, native and WASM without SIMD (`build` `scalar`) |
 | `simd-avx2-v2.json` | Filter, native with AVX2 (`build` `avx2`) |
 | `hybrid-v2.json` | P+E mask, `"hybrid": true`, N up to 20 |
-| `perf-v2.json` | Hardware counters of the atomic histogram (k 1 and 256, N 1 and 8), run by `scripts/perf-counters-v2.sh` |
+| `perf-v2.json` | Hardware counters of the atomic histogram (k 1 and 256, N 1 and 8), run by `scripts/perf-counters.sh` |
 
 Firefox updated itself from 158.0 to 160.0 in the middle of the extras
 campaigns. Their Firefox runs were run again on a reinstalled 158.0, each in

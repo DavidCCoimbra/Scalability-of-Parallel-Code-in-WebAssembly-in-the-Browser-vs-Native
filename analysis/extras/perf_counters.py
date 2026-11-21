@@ -1,6 +1,6 @@
 """Hardware counters per atomic operation, per run, from the perf-v2 campaign.
 
-scripts/perf-counters-v2.sh counts the eight P-cores system-wide in 100 ms intervals while an
+scripts/perf-counters.sh counts the eight P-cores system-wide in 100 ms intervals while an
 ordinary campaign runs. Runs are sequential, so the intervals that end inside one run's
 startedAt..finishedAt window belong to that run. Each run's counts are divided by its atomic
 operations: one per pixel per warm-up or measured iteration (8192^2 x 15 per run). The window
