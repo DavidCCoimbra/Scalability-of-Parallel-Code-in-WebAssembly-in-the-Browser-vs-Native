@@ -51,7 +51,7 @@ class Curve:
     def unit(self) -> str:
         return "rows" if self.workload == FILTER else "KB"
 
-    # How many grain units the image holds: rows for the filter, KB for the local histogram.
+    # How many grain units the image holds: rows for the filter, KB for the histograms.
     @property
     def units(self) -> float:
         return self.side if self.workload == FILTER else self.side * self.side / BYTES_PER_KB

@@ -1,10 +1,8 @@
 use rayon::prelude::*;
 
-use super::{CHUNK_BYTES, Histogram};
+use super::{BYTES_PER_KB, CHUNK_BYTES, Histogram};
 use crate::input::GrayImage;
 use crate::workloads::{BufferAddresses, Checksum, Grain, Workload};
-
-const BYTES_PER_KB: usize = 1024;
 
 pub struct LocalHistogram {
     image: GrayImage,

@@ -82,6 +82,28 @@ mod tests {
         assert!(tasks_of(Grain::Adaptive) < 64);
     }
 
+    // One thread, so that no steal changes how often Rayon splits and the count is exact.
+    #[test]
+    fn the_adaptive_grain_splits_as_an_iterator_without_it() {
+        use rayon::prelude::*;
+        let pool = crate::test_support::pool(1);
+        let plain = pool.install(|| {
+            (0..4096)
+                .into_par_iter()
+                .fold(|| (), |(), _| ())
+                .map(|()| 1)
+                .sum::<usize>()
+        });
+        let adaptive = pool.install(|| {
+            Grain::Adaptive
+                .tasks((0..4096).into_par_iter())
+                .fold(|| (), |(), _| ())
+                .map(|()| 1)
+                .sum::<usize>()
+        });
+        assert_eq!(adaptive, plain);
+    }
+
     #[test]
     fn units_make_a_fixed_grain() {
         assert_eq!(

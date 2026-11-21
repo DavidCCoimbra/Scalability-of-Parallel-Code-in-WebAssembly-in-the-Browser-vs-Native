@@ -267,9 +267,10 @@ class PassesTest(unittest.TestCase):
         self.assertEqual(campaign.to_json()["workloads"], [workloads[0], {"workload": "filter", "input": "noise"}])
         self.assertEqual(CampaignSpec.from_json(campaign.to_json()), campaign)
 
-    def test_only_the_filter_and_the_local_histogram_take_a_positive_grain(self) -> None:
+    def test_only_the_filter_and_the_two_main_histograms_take_a_positive_grain(self) -> None:
         spec(workloads=[{"workload": "hist-local", "input": "few", "k": 256, "grain": 64}])
-        for workload in ({"workload": "hist-atomic", "input": "few", "k": 4, "grain": 4}, {"workload": "filter", "input": "noise", "grain": 0}):
+        spec(workloads=[{"workload": "hist-atomic", "input": "few", "k": 4, "grain": 64}])
+        for workload in ({"workload": "hist-atomic-private", "input": "few", "k": 4, "grain": 4}, {"workload": "filter", "input": "noise", "grain": 0}):
             with self.assertRaises(ValueError, msg=workload):
                 spec(workloads=[workload])
 

@@ -6,7 +6,7 @@ Usage: uv run --no-project --with matplotlib python -m analysis.grain
        --best data/tables/grain-v2/grain-best.csv
        [--figure paper/figures/grain-ucurve.pdf] [--paper-figure paper/figures/grain-ucurve-8192.pdf]
 Each directory is one image size, its own randomized campaign. A run's grain
-(rows per task for the filter, KB for the local histogram, none for Rayon's
+(rows per task for the filter, KB for the histograms, none for Rayon's
 adaptive split) is read from its context JSON. The points are, per
 environment, workload, size and grain, the geometric mean of the run medians
 of the time per pass with a 95 % bootstrap interval. The best table gives the

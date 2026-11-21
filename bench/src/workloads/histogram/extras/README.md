@@ -12,7 +12,7 @@ the local and atomic ones in the tests.
 
 ```mermaid
 flowchart LR
-    chunks["par_chunks(CHUNK_BYTES)"] --> private["own padded table per thread"]
+    chunks["Grain::Adaptive tasks of CHUNK_BYTES"] --> private["own padded table per thread"]
     chunks --> packed["one shared packed table"]
     private --> merge["merge the tables (timed)"]
     packed --> readback["read back (timed)"]

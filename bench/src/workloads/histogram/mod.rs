@@ -14,6 +14,8 @@ use super::Checksum;
 
 pub const BINS: usize = 256;
 pub const CHUNK_BYTES: usize = 64 * 1024;
+// The unit of a fixed grain for the histograms: one kilobyte of pixels.
+pub const BYTES_PER_KB: usize = 1024;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Histogram {

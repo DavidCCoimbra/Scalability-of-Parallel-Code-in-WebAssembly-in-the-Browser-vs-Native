@@ -233,21 +233,22 @@ mod tests {
     }
 
     #[test]
-    fn grain_is_set_for_the_filter_and_the_local_histogram_only() {
+    fn grain_is_set_for_the_filter_and_the_two_main_histograms_only() {
         let filter =
             "env=native&workload=filter&input=noise&threads=8&width=64&height=32&warmup=1&iters=1";
         let local = "env=native&workload=hist-local&input=few&k=4&threads=8&width=64&height=32&warmup=1&iters=1";
-        for line in [filter, local] {
+        for line in [filter, local, FULL] {
             assert_eq!(
                 query(&format!("{line}&grain=16")).unwrap().grain,
                 Grain::new(Some(16))
             );
         }
+        let private = FULL.replace("hist-atomic", "hist-atomic-private");
         assert_eq!(
-            query(&format!("{FULL}&grain=16")).unwrap_err(),
+            query(&format!("{private}&grain=16")).unwrap_err(),
             ConfigError::Unsupported {
                 option: "grain",
-                workload: "hist-atomic",
+                workload: "hist-atomic-private",
             }
         );
     }

@@ -86,12 +86,19 @@ mod tests {
     }
 
     #[test]
-    fn grain_is_taken_by_the_filter_and_the_local_histogram_only() {
+    fn grain_is_taken_by_the_filter_and_the_two_main_histograms_only() {
         let taking: Vec<_> = WorkloadKind::ALL
             .into_iter()
             .filter(|kind| kind.capabilities().takes_grain)
             .collect();
-        assert_eq!(taking, [WorkloadKind::Filter, WorkloadKind::HistogramLocal]);
+        assert_eq!(
+            taking,
+            [
+                WorkloadKind::Filter,
+                WorkloadKind::HistogramAtomic,
+                WorkloadKind::HistogramLocal
+            ]
+        );
     }
 
     #[test]
