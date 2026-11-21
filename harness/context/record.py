@@ -50,6 +50,8 @@ class RunContext:
     grain: int | None = None
     # Per measured CPU: busy seconds in the run and the frequency before and after (ADR 0084).
     cores: JsonValue = UNAVAILABLE
+    # The engine settings of a browser run in a campaign with engine arms; None is the engine as shipped.
+    engine_arm: JsonValue = None
 
     def to_json(self) -> JsonObject:
         return {to_camel(key): value for key, value in asdict(self).items()}

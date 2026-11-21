@@ -11,6 +11,7 @@ from harness.campaign.fields import SpecFields
 from harness.campaign.planned_run import PlannedRun
 from harness.campaign.workload import WorkloadSpec, check_passes
 from harness.context import BROWSERS, DEFAULT_PASSES, JsonObject, RunEnvironment, to_camel
+from harness.launcher import EngineArm
 from harness.paths import NATIVE_TARGET
 from harness.server import MAX_RUN_ID_LENGTH
 from harness.shield import UNIT_NAME
@@ -44,10 +45,11 @@ SPEC_KEYS = {
     "build",
     "passes",
     "comment",
+    "engineArms",
 }
 # Keys added after the main campaign: left out of the stored spec while unset, so that campaigns
 # started before them still resume against an identical spec.
-UNSET_LATER_KEYS = {"passes": DEFAULT_PASSES, "comment": None}
+UNSET_LATER_KEYS: dict[str, object] = {"passes": DEFAULT_PASSES, "comment": None, "engine_arms": []}
 
 
 class BuildVariant(StrEnum):
@@ -86,6 +88,8 @@ class CampaignSpec:
     hybrid: bool = False
     passes: int = DEFAULT_PASSES
     comment: str | None = None
+    # Browser runs are crossed with these arms; none means one run per configuration, as shipped.
+    engine_arms: tuple[EngineArm, ...] = ()
 
     def __post_init__(self) -> None:
         if not UNIT_NAME.fullmatch(self.name):
@@ -100,9 +104,20 @@ class CampaignSpec:
             raise ValueError("heightPerThread must be at least 1")
         for workload in self.workloads:
             check_passes(workload.workload, self.passes_of(workload))
+        self.check_engine_arms()
         if self.strict and not self.cpus:
             raise ValueError("a strict campaign needs a CPU mask (cpus)")
         self.check_run_id_length()
+
+    def check_engine_arms(self) -> None:
+        names = [arm.name for arm in self.engine_arms]
+        if len(set(names)) != len(names):
+            raise ValueError(f"engine arm names must differ, found {names}")
+        if self.engine_arms and not self.uses_browsers:
+            raise ValueError("engineArms need a browser in environments")
+
+    def arms_of(self, environment: RunEnvironment) -> tuple[EngineArm | None, ...]:
+        return self.engine_arms if self.engine_arms and environment in BROWSERS else (None,)
 
     def check_run_id_length(self) -> None:
         # Run ids name files, systemd units and the server's run parameter, which caps their length.
@@ -113,10 +128,12 @@ class CampaignSpec:
             )
 
     def every_run_shape(self) -> list[PlannedRun]:
-        last = len(self.environments) * len(self.workloads) * len(self.threads) * self.repetitions - 1
+        arms = max(len(self.engine_arms), 1)
+        last = len(self.environments) * arms * len(self.workloads) * len(self.threads) * self.repetitions - 1
         return [
-            PlannedRun(last, environment, workload, threads, self.repetitions - 1, self.name, discarded, MAX_SESSIONS)
+            PlannedRun(last, environment, workload, threads, self.repetitions - 1, self.name, discarded, MAX_SESSIONS, arm)
             for environment in self.environments
+            for arm in self.arms_of(environment)
             for workload in self.workloads
             for threads in self.threads
             for discarded in (False, True)
@@ -153,11 +170,13 @@ class CampaignSpec:
             hybrid=fields.flag("hybrid", False),
             passes=fields.integer_or("passes", DEFAULT_PASSES),
             comment=fields.optional_text("comment"),
+            engine_arms=tuple(EngineArm.from_json(arm) for arm in fields.objects("engineArms")) if "engineArms" in data else (),
         )
 
     def to_json(self) -> JsonObject:
         data = asdict(self)
         data["workloads"] = [{key: value for key, value in asdict(w).items() if value is not None} for w in self.workloads]
+        data["engine_arms"] = [arm.to_json() for arm in self.engine_arms]
         for key, unset in UNSET_LATER_KEYS.items():
             if data[key] == unset:
                 del data[key]

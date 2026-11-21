@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from harness.campaign.workload import WorkloadSpec
 from harness.context import RunEnvironment
+from harness.launcher import EngineArm
 
 DISCARDED_POSITION = -1
 POSITION_DIGITS = 4
@@ -19,10 +20,12 @@ class PlannedRun:
     campaign: str
     discarded: bool = False
     session: int = 0
+    arm: EngineArm | None = None
 
     @property
     def run_id(self) -> str:
-        return f"{self.prefix}-{self.environment}-{self.workload.workload}-{self.workload.label}-n{self.threads}-r{self.repetition}"
+        arm = "" if self.arm is None else f"-{self.arm.name}"
+        return f"{self.prefix}-{self.environment}{arm}-{self.workload.workload}-{self.workload.label}-n{self.threads}-r{self.repetition}"
 
     @property
     def prefix(self) -> str:

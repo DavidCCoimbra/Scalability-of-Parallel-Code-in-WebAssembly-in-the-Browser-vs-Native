@@ -24,6 +24,24 @@ identical spec. More than one pass is refused for every workload except
 `filter` and `hist-local` (`repeats_identically` in `capabilities.py`), the same rule as the
 bench. The `cutoff-<side>.json` specs use it.
 
+## Engine arms
+
+`engineArms` (default none) is a list of named sets of engine settings, each
+with optional `chromeJsFlags` (V8 flags, passed in one `--js-flags`) and
+`firefoxPrefs` (written to the profile after the usual preferences):
+
+```json
+"engineArms": [
+  {"name": "default"},
+  {"name": "baseline", "chromeJsFlags": ["--liftoff-only"], "firefoxPrefs": {"javascript.options.wasm_optimizingjit": false}}
+]
+```
+
+Every browser configuration then runs once per arm and repetition, in the
+same shuffled order as the rest, with the arm's name in the run id and its
+settings in the run's `engineArm`. Native runs ignore the arms. An arm that
+sets nothing is the engine as every other campaign runs it (ADR 0084).
+
 ## Grain
 
 `grain` is a workload key only: the fixed task size of the filter (rows)

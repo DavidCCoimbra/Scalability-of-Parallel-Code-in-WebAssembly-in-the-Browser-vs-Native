@@ -11,7 +11,7 @@ from harness.context import sha256_file, validate
 from unittest import mock
 
 from harness.shield import scope_prefix, scope_stop_command
-from harness.launcher import BrowserCommand, ChromeCommand, FirefoxCommand, Launcher, RunStatus, run_url
+from harness.launcher import BrowserCommand, ChromeCommand, EngineArm, FirefoxCommand, Launcher, RunStatus, command_for, run_url
 
 
 class FakeBrowser:
@@ -109,6 +109,21 @@ class CommandTest(unittest.TestCase):
         self.assertIn("--headless=new", ChromeCommand().argv(Path("c"), Path("p"), "u", headless=True))
         self.assertIn("-headless", FirefoxCommand().argv(Path("f"), Path("p"), "u", headless=True))
 
+    def test_an_engine_arm_adds_v8_flags_to_chrome_and_preferences_to_firefox(self) -> None:
+        arm = EngineArm("baseline", ("--liftoff-only", "--no-wasm-tier-up"), (("javascript.options.wasm_optimizingjit", False),))
+        argv = command_for("chrome", arm).argv(Path("c"), Path("p"), "u", headless=False)
+        self.assertIn("--js-flags=--liftoff-only --no-wasm-tier-up", argv)
+        with tempfile.TemporaryDirectory() as tmp:
+            command_for("firefox", arm).prepare_profile(Path(tmp))
+            prefs = (Path(tmp) / "user.js").read_text()
+        self.assertIn('"javascript.options.wasm_optimizingjit", false', prefs)
+        self.assertIn('"app.update.auto", false', prefs)
+
+    def test_without_an_arm_or_with_an_empty_one_the_commands_are_the_usual_ones(self) -> None:
+        usual = ChromeCommand().argv(Path("c"), Path("p"), "u", headless=False)
+        self.assertEqual(command_for("chrome", None).argv(Path("c"), Path("p"), "u", headless=False), usual)
+        self.assertEqual(command_for("chrome", EngineArm("default")).argv(Path("c"), Path("p"), "u", headless=False), usual)
+
     def test_firefox_profile_gets_user_js_without_first_run_updates_or_telemetry(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             profile = Path(tmp)
@@ -156,7 +171,12 @@ class LauncherTest(unittest.TestCase):
         self.tmp.cleanup()
 
     def launcher(
-        self, browser: BrowserCommand, cpus: str | None = None, timeout: float = 5.0, scope_user: str | None = None
+        self,
+        browser: BrowserCommand,
+        cpus: str | None = None,
+        timeout: float = 5.0,
+        scope_user: str | None = None,
+        engine_arm: EngineArm | None = None,
     ) -> Launcher:
         self.wasm = Path(self.tmp.name) / "bench_bg.wasm"
         self.wasm.write_bytes(b"\0asm-test")
@@ -171,6 +191,7 @@ class LauncherTest(unittest.TestCase):
             artifact=self.wasm,
             order_position=5,
             scope_user=scope_user,
+            engine_arm=engine_arm,
         )
 
     def test_cpu_mask_prefixes_taskset(self) -> None:
@@ -222,6 +243,13 @@ class LauncherTest(unittest.TestCase):
     def test_scope_without_a_mask_is_rejected(self) -> None:
         with self.assertRaises(ValueError):
             self.launcher(ChromeCommand(), scope_user="david")
+
+    def test_context_records_the_engine_arm_of_the_run(self) -> None:
+        arm = EngineArm("baseline", ("--liftoff-only",))
+        self.launcher(FakeBrowser(writes_result_then_hangs(self.results, "r12")), engine_arm=arm).run("r12", "workload=filter")
+        self.assertEqual(json.loads((self.results / "r12.json").read_text())["engineArm"], {"name": "baseline", "chromeJsFlags": ["--liftoff-only"]})
+        self.launcher(FakeBrowser(writes_result_then_hangs(self.results, "r13"))).run("r13", "workload=filter")
+        self.assertIsNone(json.loads((self.results / "r13.json").read_text())["engineArm"])
 
     def test_context_records_run_cpu_time_and_shield(self) -> None:
         browser = FakeBrowser(writes_result_then_hangs(self.results, "r9"))
