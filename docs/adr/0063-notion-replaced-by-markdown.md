@@ -5,9 +5,9 @@ Date: 2026-11-08
 ## Context
 
 ADR 0010 made the ADRs canonical in `docs/adr/` and mirrored them to a Notion database
-("PPC · ADRs") after each merge. The workflow also kept the raw material for the paper
+(one row per ADR) after each merge. The workflow also kept the raw material for the paper
 (decisions, pilot numbers, problems and references per ticket) in a second Notion database
-("PPC · Material do relatório", 54 rows in Portuguese). This had three costs:
+(54 rows, in Portuguese). This had three costs:
 
 - two copies of the ADRs had to be kept in sync by hand;
 - the paper material lived outside the repository, so it was not versioned or reviewed with the

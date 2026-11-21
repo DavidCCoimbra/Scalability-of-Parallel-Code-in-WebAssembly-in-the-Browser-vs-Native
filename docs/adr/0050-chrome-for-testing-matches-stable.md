@@ -4,7 +4,7 @@ Date: 2026-11-07
 
 ## Context
 
-The campaign uses Chrome for Testing 155.0.8059.84 (ADR 0021). Chrome for Testing is Google's
+The campaign uses Chrome for Testing (CfT) 155.0.8059.84 (ADR 0021). Chrome for Testing is Google's
 build of Chrome for testing: a fixed version can still be downloaded later, with the same
 V8/Blink as Chrome stable of that version (ADR 0007), which makes the browser environment
 reproducible. It was chosen to stay close to the browser users run while keeping a pinned build

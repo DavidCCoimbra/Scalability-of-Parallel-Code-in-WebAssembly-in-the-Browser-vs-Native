@@ -11,7 +11,7 @@ and the campaigns of earlier builds stay in the working repository.
 
 | Spec | What it measures |
 |---|---|
-| `campaign-v2.json` | The main campaign: filter and both histograms at k 1, 4, 16, 256, N 1 to 8, 30 runs, order seed 20261109 |
+| `campaign-v2.json` | The main campaign: filter on noise and both histograms at k = 1, 4, 16, 256, N in {1, 2, 4, 6, 7, 8}, 30 runs, order seed 20261109 |
 | `cutoff-{512,1024,2048,4096,8192}-v2.json`, `cutoff-control-{512,2048}-v2.json` | Speedup against image size (the cutoff), with passes so every timed sample covers 8192^2 pixels |
 | `grain-{1024,8192}-v2.json` | The grain sweep: fixed task sizes against Rayon's adaptive split |
 

@@ -116,9 +116,9 @@ widens the Chrome filter intervals, not their centres.
 ## Consequences
 
 - **What is claimed.** The paper gets one paragraph in the exploratory results, and the pilot
-  report a section with both figures. The claim is limited to two points: the browsers use
+  report gets a section with both figures. The claim is limited to two points: the browsers use
   E-cores about as well as native Rayon for the filter, and the k = 1 histogram speedups above
-  N come from the E-cores running the indexed-address read-modify-write chain faster than the
+  N are consistent with the E-cores running the indexed-address read-modify-write chain faster than the
   P-cores.
 - **What is not investigated.** Why the E-core is faster on this chain and slower on the
   register form (differences between the Gracemont and Raptor Cove cores in memory

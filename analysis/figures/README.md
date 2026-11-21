@@ -5,7 +5,7 @@ matplotlib; `points.py` is plain data, so the tests run without it.
 
 | Module | Piece |
 |---|---|
-| `__main__.py` | The `figures` command: the four figures of a campaign |
+| `__main__.py` | The `figures` command: the five figures of a campaign |
 | `points.py` | Points of the speedup, absolute ratio and RQ2 ratio curves |
 | `style.py` | Colours, thread counts and sizes shared by the figures |
 | `pyplot.py` | matplotlib with the Agg backend, chosen before pyplot is imported |

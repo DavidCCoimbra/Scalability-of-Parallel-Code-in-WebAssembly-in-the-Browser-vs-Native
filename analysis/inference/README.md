@@ -34,7 +34,7 @@ alpha = 0.05 and a Bonferroni interval at 99.5 %. Effects are reported as
 The bootstrap ratio intervals stay the primary analysis: run times are
 skewed, the questions are about ratios, and an interval on the ratio says
 how large the effect is, which a p-value does not. As a check with the
-rank test the course recommends for timing data, `robustness.py` (command
+rank test commonly used for timing data, `robustness.py` (command
 `analysis.robustness`) tests each of the 10 primary contrasts with
 Mann-Whitney U and gives Cliff's delta:
 

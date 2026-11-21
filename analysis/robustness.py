@@ -1,6 +1,6 @@
 """Mann-Whitney U and Cliff's delta on the 10 primary contrasts of the
-analysis plan, as a robustness check of the bootstrap (lecture default for
-timing data). Per run: log(T1 / TN) for RQ1, log(T atomic / T local) for
+analysis plan, as a robustness check of the bootstrap (the rank test commonly
+used for timing data). Per run: log(T1 / TN) for RQ1, log(T atomic / T local) for
 RQ2, the two cells paired by repetition index; the browser's per-run values
 are compared with native's, unpaired, and the 10 p-values are Holm-adjusted.
 

@@ -22,7 +22,7 @@ Decided on 2026-11-08:
 
 - **Mask.** Every P-core plus 12 E-cores: `0,2,4,6,8,10,12,14,16-27` (20 CPUs, one per
   physical core). The harness, the server and the rest of the system stay on the last E-core
-  cluster, `28-31`, so the shield of ADR 0045 still keeps them off the measured CPUs. Placement
+  cluster, `28-31`, so the shield of ADR 0028 still keeps them off the measured CPUs. Placement
   of the threads inside the mask is left to the kernel, as in the main campaign.
 - **Spec field `hybrid`.** Strict validation normally refuses CPUs that are not P-cores. A
   campaign with `"hybrid": true` skips that check (in the run context and in the environment

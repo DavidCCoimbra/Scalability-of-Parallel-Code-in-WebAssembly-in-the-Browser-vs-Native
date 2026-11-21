@@ -43,7 +43,7 @@ analysis, with what to do in each case decided beforehand.
 Decided on 2026-11-07; the option recommended from the data above was applied:
 
 - **The foreign CPU threshold is 0.25 s** (`analysis/quality.py`, `FOREIGN_CPU_THRESHOLD`, the
-  default of `analysis.results`), twice the largest value of the pilots. Above it, something
+  default of `analysis.results`), twice the largest value of the pilots: a safety margin, which excluded no pilot run. Above it, something
   else ran on the measured cores during the run. Exclusion 3 of the plan uses it, together with
   strict validation (exclusion 2, `--strict`, which `make results` passes).
 - **A data check runs before the analysis.** `python3 -m analysis.datacheck data/raw/campaign`
@@ -56,8 +56,8 @@ Decided on 2026-11-07; the option recommended from the data above was applied:
   - the configurations whose run values trend with the execution order: Spearman's rho between
     `orderPosition` and the run value, over the runs that pass strict validation and the
     threshold, flagged when |rho| > 0.5 with at least 10 runs. With 30 runs and no drift,
-    |rho| > 0.5 has a probability of about 0.7 %, so about one of the 162 configurations can be
-    flagged by chance.
+    |rho| > 0.5 has a probability of about 0.5 % (0.54 % by permutation), so about one of the
+    162 configurations can be flagged by chance.
 
   A checksum conflict, a missing run or a failed run makes the check exit with an error.
 - **What is done with each finding, fixed now:**

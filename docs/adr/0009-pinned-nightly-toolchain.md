@@ -32,4 +32,4 @@ difference between them is not a compiler-version difference.
 
 ## Status
 
-Accepted
+Accepted; amended by ADR 0076 (what differs below the shared source)

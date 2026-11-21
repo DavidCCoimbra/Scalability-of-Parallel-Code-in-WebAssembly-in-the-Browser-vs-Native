@@ -17,7 +17,8 @@ cost.
 Today the grain is fixed in the code. The filter hands Rayon one row per item, and Rayon's
 adaptive splitting decides the task size; hist-local uses 64 KB chunks (`CHUNK_BYTES`). Neither
 was chosen per environment. ADR 0065 suggests the best grain may differ, because the browsers'
-fork-join costs 6 to 10 times native's (ADR 0030).
+fork-join costs 6 to 10 times native's (the calibration of the cutoff campaigns, ADR 0065
+section 3).
 
 ## Decision
 

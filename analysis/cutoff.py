@@ -11,7 +11,7 @@ with its 95 % bootstrap interval and the work per region (T1 per pass).
 The estimates are, per environment, workload and N, the break-even size
 (speedup 1) and the worth-it size (efficiency 0.5), interpolated on log
 size. The model predicts, from the fork-join cost measured at N = 8, the
-work at which the fork-join is 1 % of TN (the lecture's 100:1 rule), with 5 % as a
+work at which the fork-join is 1 % of TN (the common 100:1 rule), with 5 % as a
 secondary reading.
 """
 

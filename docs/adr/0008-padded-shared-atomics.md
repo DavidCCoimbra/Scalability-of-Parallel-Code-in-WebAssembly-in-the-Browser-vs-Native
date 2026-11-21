@@ -27,8 +27,8 @@ region would add a synchronisation cost in WASM that native does not have.
 - Contention results reflect true sharing. False sharing is an optional extra variant (later run
   as `hist-atomic-packed`, ADR 0052).
 - With 256 counters, the 128-byte table is 32 KiB, the size of an E-core L1 data cache. Whether
-  64 or 128 bytes makes a difference is checked in the pilot (ADR 0049: no measurable difference,
-  128 kept).
+  64 or 128 bytes makes a difference is checked in the pilot (ADR 0049: differences of about 1 %, within
+  the drift between the two campaigns; 128 kept).
 - The paper's methodology states the padding.
 
 ## Status

@@ -58,8 +58,9 @@ none of them measured:
 
 - a resource shared by the cores (memory bandwidth or the L3 cache);
 - Rayon's fork-join and scheduling cost with more threads. (Fork-join: the parallel region
-  splits the work across the threads and waits for all of them to finish.) The calibration of
-  ADR 0030 puts one warm fork-join at N = 8 at 47 us natively and 163 us in Chrome, under 5 %
+  splits the work across the threads and waits for all of them to finish.) This campaign's own
+  calibration (designed in ADR 0030) puts one warm fork-join at N = 8 at 47 us natively and
+  163 us in Chrome (another campaign and statistic than the 7.5 and 110 us of ADR 0064), under 5 %
   of iterations of 3 to 4 ms, too little to explain the 14 % loss alone;
 - per-core power or frequency limits with several cores busy (turbo is off, but the frequency
   is not logged).

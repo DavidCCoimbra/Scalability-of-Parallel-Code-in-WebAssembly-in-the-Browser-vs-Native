@@ -14,7 +14,8 @@ code would fall back to one thread). RQ1 is answered at one size, where the work
 region dominates the fork-join cost. The size pilot and the paper show that the gap between the
 environments grows at smaller sizes: on a 2048^2 image Chrome's filter speedup at N = 8 was 3.45
 against native's 4.91, and an empty `rayon::broadcast` (a region that does no work) at N = 8
-costs 110 us in Chrome and 60 us in Firefox against 7.5 us natively (ADR 0030).
+costs 110 us in Chrome and 60 us in Firefox against 7.5 us natively (warm medians of the main
+campaign of the earlier build; ADR 0030 designs the calibration that measures them).
 
 The question of this exploratory study (2026-11-09): per environment (native, Chrome, Firefox)
 and per N in {1, 2, 4, 8}, below which image size does parallelizing stop paying? That is the

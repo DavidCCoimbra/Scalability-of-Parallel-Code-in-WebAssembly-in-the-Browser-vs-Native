@@ -40,7 +40,7 @@ a rough guide, not a joint confidence interval.
 The model takes TN = W / N + F, with F the fork-join cost at N = 8 (median
 over runs of each run's median warm calibration call, as for the paper's
 110, 60 and 7.5 us) and predicts the work W at which F is a share of TN:
-first `RULE_OF_THUMB_SHARE` (1 %, the lecture's 100:1 rule), W = 99 N F,
+first `RULE_OF_THUMB_SHARE` (1 %, the common 100:1 rule of thumb), W = 99 N F,
 then `LOOSE_SHARE` (5 %), W = 19 N F; each side is read off the largest
 side's T1, scaled with the pixel count.
 

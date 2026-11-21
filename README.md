@@ -10,9 +10,9 @@ Firefox, and how much thread synchronization contributes to that difference.
 
 The workloads are a 3x3 Gaussian filter (embarrassingly parallel, the baseline) and an image
 histogram, with shared padded atomic counters against per-task local counters, over inputs with
-k in {1, 4, 16, 256} distinct values. The same source, compiler and flags build the native
-runner and the WASM package. Every design decision, with its reasons, is a record in
-[`docs/adr/`](docs/adr/README.md).
+k in {1, 4, 16, 256} distinct values. The same source, compiler and release profile build the
+native runner and the WASM package; what differs below the crate is listed in ADR 0076. Every
+design decision, with its reasons, is a record in [`docs/adr/`](docs/adr/README.md).
 
 ## Provenance
 
