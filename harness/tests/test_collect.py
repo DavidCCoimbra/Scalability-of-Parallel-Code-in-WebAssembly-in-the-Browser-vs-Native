@@ -5,10 +5,10 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from harness.collect import IncompleteRun, collect, write_table
+from harness.collect import ForeignSchema, IncompleteRun, collect, write_table
 from harness.native import CSV_HEADER
 
-ROW = "chrome,filter,noise,,8,8,24301,2,measured,0,123,0x01,0xab"
+ROW = "chrome,filter,noise,,8,8,24301,2,measured,0,123,0x01,0xab,,1000,1000,0,0,0,0,8,,2,1,"
 
 
 class CollectTest(unittest.TestCase):
@@ -65,15 +65,12 @@ class CollectTest(unittest.TestCase):
         (self.root / "c-0001-b.json").write_text(json.dumps({"orderPosition": 1}))
         self.assertEqual(collect(self.root).checksum_conflicts, {"filter noise k= 8x8 seed 24301": ["0xab", "0xcd"]})
 
-    def test_runs_of_the_schema_1_builds_load_with_the_current_columns(self) -> None:
+    def test_a_run_of_another_schema_is_rejected(self) -> None:
         legacy_header = "env,workload,input,k,width,height,seed,threads,phase,iter,ns,input_fingerprint,checksum"
         (self.root / "c-0000-a.csv").write_text(legacy_header + "\n" + ROW + "\n")
         (self.root / "c-0000-a.json").write_text(json.dumps({"orderPosition": 0, "passes": 2}))
-        row = collect(self.root).rows[0]
-        self.assertEqual((row["ns"], row["schema"], row["passes"], row["pitch"], row["probe"]), ("123", "1", "2", "8", ""))
-        output = io.StringIO()
-        write_table(collect(self.root), output)
-        self.assertEqual(next(csv.reader(io.StringIO(output.getvalue())))[5:], CSV_HEADER.split(","))
+        with self.assertRaises(ForeignSchema):
+            collect(self.root)
 
     def test_the_two_palettes_of_one_k_are_not_a_checksum_conflict(self) -> None:
         few = "chrome,hist-local,few,4,8,8,24301,2,measured,0,123,0x01,{checksum},,,,,,,,8,{palette},2,1,"
