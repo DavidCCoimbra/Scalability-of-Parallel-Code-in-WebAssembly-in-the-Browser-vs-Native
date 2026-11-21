@@ -20,23 +20,21 @@ import sys
 from collections.abc import Sequence
 from pathlib import Path
 
-from analysis.campaign import campaign_metadata, run_context
+from analysis.campaign import campaign_metadata
 from analysis.cutoff import InvalidCutoffCampaign, load_runs, square_side, write_csv
 from analysis.loading import ExclusionRule, InvalidCampaign, add_exclusion_arguments, exclusion_rule
 from analysis.quality.clock import report_clock_warnings
+from analysis.run_context import run_context
 from analysis.runs import Row
 from analysis.scaling.fork_join import fork_join_costs
 from analysis.scaling.grain import BEST_COLUMNS, POINT_COLUMNS, GrainPoint, best_grains, best_rows, grain_points, point_rows
 
-GRAIN_KEY = "grain"
-
-
-# The sweep's campaigns are never pooled with campaigns of another build, the main campaign's
-# included.
 # The paper's U-curve figure shows the main campaign's image size only.
 PAPER_SIDES = (8192,)
 
 
+# The sweep's campaigns are never pooled with campaigns of another build, the main campaign's
+# included.
 def same_build(directories: Sequence[Path]) -> None:
     recorded = [(campaign_metadata(directory) or {}).get("build") for directory in directories]
     unknown = [str(directory) for directory, build in zip(directories, recorded) if build is None]
@@ -47,17 +45,12 @@ def same_build(directories: Sequence[Path]) -> None:
         raise InvalidCutoffCampaign(f"the grain campaigns come from different builds: {sorted(builds)}")
 
 
-def run_grain(directory: Path, run_id: str) -> int | None:
-    grain = run_context(directory, run_id).get(GRAIN_KEY)
-    return grain if isinstance(grain, int) and not isinstance(grain, bool) else None
-
-
 def grain_campaign(directory: Path, rule: ExclusionRule = ExclusionRule()) -> tuple[list[GrainPoint], list[Row]]:
     # Checksums are compared per configuration across grains too: every grain computes the same output.
     campaign = load_runs(directory, rule)
     summaries = campaign.summaries()
     report_clock_warnings(directory, summaries, sys.stderr)
-    grains = {run.run: run_grain(directory, run.run) for run in summaries}
+    grains = {run.run: run_context(directory, run.run).grain for run in summaries}
     return grain_points(summaries, square_side(campaign.rows, directory), grains), campaign.rows
 
 

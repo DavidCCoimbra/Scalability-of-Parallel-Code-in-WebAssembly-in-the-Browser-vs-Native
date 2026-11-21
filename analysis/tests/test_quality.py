@@ -4,15 +4,14 @@ import unittest
 from pathlib import Path
 
 from analysis.configuration import Configuration
-from analysis.campaign import passes_of
 from analysis.quality.clock import (
     CLOCK_FACTOR,
-    clock_resolution,
     clock_warnings,
     run_passes,
     run_resolutions,
     unchecked_configurations,
 )
+from analysis.run_context import RunContext
 from analysis.runs import RunSummary
 
 FAST = Configuration("firefox", "filter", "noise", None, 8)
@@ -21,9 +20,9 @@ SLOW = Configuration("firefox", "filter", "noise", None, 1)
 
 class ClockResolutionTest(unittest.TestCase):
     def test_browser_runs_record_it_in_the_page_metadata_and_native_in_the_build(self) -> None:
-        self.assertEqual(clock_resolution({"clockResolutionNs": 20_000}), 20_000)
-        self.assertEqual(clock_resolution({"build": {"clockResolutionNs": 41}}), 41)
-        self.assertIsNone(clock_resolution({"build": "unavailable"}))
+        self.assertEqual(RunContext({"clockResolutionNs": 20_000}).clock_resolution_ns, 20_000)
+        self.assertEqual(RunContext({"build": {"clockResolutionNs": 41}}).clock_resolution_ns, 41)
+        self.assertIsNone(RunContext({"build": "unavailable"}).clock_resolution_ns)
 
     def test_resolutions_are_read_from_each_run_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -33,9 +32,15 @@ class ClockResolutionTest(unittest.TestCase):
 
 class PassesTest(unittest.TestCase):
     def test_runs_stored_before_passes_ran_one(self) -> None:
-        self.assertEqual(passes_of({}), 1)
-        self.assertEqual(passes_of({"passes": 16}), 16)
-        self.assertEqual(passes_of({"passes": True}), 1)
+        self.assertEqual(RunContext({}).passes, 1)
+        self.assertEqual(RunContext({"passes": 16}).passes, 16)
+        self.assertEqual(RunContext({"passes": True}).passes, 1)
+
+    def test_a_field_of_the_wrong_type_reads_as_absent(self) -> None:
+        context = RunContext({"grain": "64", "orderPosition": True, "foreignCpuSeconds": "unavailable"})
+        self.assertEqual((context.grain, context.order_position, context.foreign_cpu_seconds), (None, None, None))
+        self.assertFalse(context.above_foreign_cpu(0.25))
+        self.assertTrue(RunContext({"foreignCpuSeconds": 0.3}).above_foreign_cpu(0.25))
 
     def test_passes_are_read_from_each_run_json(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

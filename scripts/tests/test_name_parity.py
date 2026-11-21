@@ -13,7 +13,7 @@ from harness.campaign.workload import InputKind, Palette, Workload
 from harness.context.run_environment import RunEnvironment
 
 BENCH = Path(__file__).resolve().parents[2] / "bench/src"
-NAME_ARM = re.compile(r'Self::\w+(?:\s*\{[^}]*\})?\s*=>\s*"([a-z0-9-]+)"')
+NAME_ARM = re.compile(r'Self::\w+(?:\s*\{[^}]*\})?\s*=>\s*"([^"]+)"')
 
 
 def rust_names(relative: str) -> set[str]:

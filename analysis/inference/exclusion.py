@@ -4,9 +4,9 @@ from enum import StrEnum
 from pathlib import Path
 from typing import Any
 
-from analysis.campaign import is_hybrid, pinned_browser_versions, run_context, strict_problems
+from analysis.campaign import is_hybrid, pinned_browser_versions
 from analysis.configuration import Configuration, configuration_of
-from analysis.quality.foreign_cpu import above_threshold
+from analysis.run_context import run_context
 from analysis.runs import Row
 
 
@@ -51,8 +51,8 @@ def excluded_runs(directory: Path, run_ids: set[str], threshold: float | None, s
     runs: dict[Reason, set[str]] = {Reason.FOREIGN_CPU: set(), Reason.STRICT_VALIDATION: set()}
     for run_id in run_ids:
         context = run_context(directory, run_id)
-        if threshold is not None and above_threshold(context, threshold):
+        if threshold is not None and context.above_foreign_cpu(threshold):
             runs[Reason.FOREIGN_CPU].add(run_id)
-        elif strict and strict_problems(context, pinned, hybrid):
+        elif strict and context.strict_problems(pinned, hybrid):
             runs[Reason.STRICT_VALIDATION].add(run_id)
     return Exclusions(runs)
