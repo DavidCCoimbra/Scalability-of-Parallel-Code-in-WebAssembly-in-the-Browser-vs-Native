@@ -99,7 +99,7 @@ code's speed if a shared resource is the limit, and stays constant if a fixed ov
 - **Browsers: mostly a fixed overhead.** In Chrome and Firefox the excess stays about constant
   while the traffic grows about four times (Chrome 8 to 35 GB/s). That is the signature of a
   fixed overhead per iteration rather than of bandwidth. The one overhead measured, the warm
-  fork-join (ADR 0030: 163 us in Chrome at N = 8), is only about a third of the 495 to 515 us
+  fork-join (163 us in Chrome at N = 8, the figure of ADR 0056), is only about a third of the 495 to 515 us
   excess, so most of that fixed cost is not explained. The browser losses of ADR 0056 are
   therefore mostly a fixed overhead of unknown origin, and the native loss mostly a shared
   resource.

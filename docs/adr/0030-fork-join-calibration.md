@@ -57,4 +57,5 @@ waiting for new work) between them, which is not the state the measured iteratio
 
 ## Status
 
-Accepted; amends ADR 0015 (run layout) and ADR 0016 (phases in the CSV)
+Accepted; amends ADR 0015 (run layout) and ADR 0016 (phases in the CSV); amended by ADR 0076
+(20 samples in the v2 campaigns)

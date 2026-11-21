@@ -11,7 +11,7 @@ adaptive split) is read from its context JSON. The points are, per
 environment, workload, size and grain, the geometric mean of the run medians
 of the time per pass with a 95 % bootstrap interval. The best table gives the
 fastest fixed grain, the flat region around it, the adaptive split against
-it, and the grain the lecture's 100:1 rule asks for given the fork-join cost
+it, and the grain the common 100:1 rule asks for given the fork-join cost
 measured by the runs' calibration.
 """
 

@@ -43,7 +43,7 @@ shows as slower and bursty iterations. With 3 s, the bursts go away and the with
 
 ADR 0044 had found a "knee" in Firefox: on `hist-local`, its speedup fell away from native's at
 N = 7 and 8. A thread pilot with the delay (`pilot-threads-delay.json`: `hist-local` k = 1 and
-16, Chrome and Firefox, N = 1 to 8, 3 runs, 72 runs) no longer shows that knee. Speedup at
+16, Chrome and Firefox, N in {1, 2, 4, 6, 7, 8}, 3 runs, 72 runs) no longer shows that knee. Speedup at
 N = 8 with the final W, against native:
 
 - k = 1: Firefox 7.86 [7.80, 7.90], Chrome 7.89, native 7.96;

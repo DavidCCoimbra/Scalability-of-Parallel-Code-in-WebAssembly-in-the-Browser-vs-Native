@@ -34,7 +34,8 @@ Ratio pad64 / pad128 of geometric means (`analysis/compare.py`, 95 % bootstrap i
   1.022], k = 256: 1.011 [1.009, 1.014].
 
 The two builds ran as separate campaigns one after the other, so a difference of about 1 % is
-within drift: no difference was detected. With 10 runs the resolution is limited, most at
+within drift. Two intervals exclude 1 (k = 16 and k = 256, by about 1 %), but with the builds
+not interleaved that cannot be attributed to the padding. With 10 runs the resolution is limited, most at
 k = 1, N = 8, where the interval spans about 7 % either way; a difference below that cannot be
 ruled out there.
 

@@ -4,7 +4,7 @@ Date: 2026-11-13
 
 ## Context
 
-The paper's explanation for RQ2 (why shared atomic counters cost Chrome more) rests on two kinds
+The paper's explanation for RQ2 (why shared atomic counters cost Chrome more at k = 1, and less at k = 256) rests on two kinds
 of evidence:
 
 - **The machine code of the atomic add** (item A7 of the v2 bottleneck audit, on

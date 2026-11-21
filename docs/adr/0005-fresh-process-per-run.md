@@ -5,7 +5,7 @@ Date: 2026-10-17
 ## Context
 
 A benchmark usually repeats the measured work many times (iterations). Iterations inside one
-process are not independent: they share the JIT compiler's state (which code has been compiled
+process are not independent: they share the just-in-time (JIT) compiler's state (which code has been compiled
 and optimised), the caches and the allocator. If each iteration were treated as an independent
 sample, the statistics would count the same process state many times and claim more certainty
 than the data holds. This is pseudo-replication (Georges et al. 2007).

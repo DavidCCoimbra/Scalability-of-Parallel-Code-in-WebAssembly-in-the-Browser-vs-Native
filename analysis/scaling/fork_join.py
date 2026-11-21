@@ -34,7 +34,8 @@ class ForkJoinShare:
         return f"side_{self.percent}pct"
 
 
-# The 100:1 rule of thumb for a fork/join threshold: lecture "Concurrency in Java and Irregular Parallelism", PPC 2026/27.
+# The common 100:1 rule of thumb for a fork/join threshold: a task's sequential work should
+# exceed the fork overhead by more than 100 times.
 RULE_OF_THUMB_SHARE = ForkJoinShare(1)
 # The cutoff campaign's first prediction, kept as a looser second reading.
 LOOSE_SHARE = ForkJoinShare(5)
@@ -83,7 +84,7 @@ def fork_join_costs(rows: Iterable[Row], threads: int = MODEL_THREADS, probe: st
 
 # The model: TN = W / N + F, with W the work of one region (T1 per pass) and F the fork-join cost.
 # F is a share s of TN when W = N F (1 / s - 1): 99 N F at 1 % (each thread's W / N is 99 F, the
-# lecture's 100:1) and 19 N F at 5 %; speedup W / TN is 1 when W = F N / (N - 1) and efficiency is
+# 100:1 rule) and 19 N F at 5 %; speedup W / TN is 1 when W = F N / (N - 1) and efficiency is
 # 0.5 when W = N F.
 @dataclass(frozen=True)
 class ModelPrediction:

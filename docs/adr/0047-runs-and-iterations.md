@@ -81,9 +81,11 @@ their median (a "burst"); native has 2 and Chrome 0. These runs have no extra fo
 Decided on 2026-11-07. The author had asked for 30 runs, and the option recommended from the
 data above was applied:
 
-- **30 runs per configuration.** The 99.5 % half-width is then about 1 % for RQ1 and about
-  7.5 % for RQ2 (widths from the 30 pilot runs, which slightly understate those of a new
-  sample), small against the RQ2 effects seen in the pilots.
+- **30 runs per configuration.** The 99.5 % half-width is then under 1 % for RQ1 and 1.1 % to
+  7.5 % for RQ2, the widest being Chrome at k = 1 (widths from the 30 pilot runs, which slightly
+  understate those of a new sample). That is small against the RQ2 effects the pilots showed for
+  Chrome; for Firefox at k = 1, where the effect is near 1, the about 6 % half-width is the whole
+  resolution.
 - **10 measured iterations per run.** The agreement of the per-run median does not improve
   steadily with more iterations: it plateaus at 93 to 96 % within 2 %, because the runs that
   miss are Firefox bursts, not short samples. M = 15 would add about 2.7 hours, mostly in

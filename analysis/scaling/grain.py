@@ -12,7 +12,7 @@ from analysis.stats.bootstrap import Interval, bootstrap_interval
 
 NS_PER_US = 1_000
 BYTES_PER_KB = 1024
-# The lecture's rule of thumb (PPC 2026/27): a task's sequential work should be at least 100 times
+# The common rule of thumb: a task's sequential work should be at least 100 times
 # the fork overhead.
 RULE_OF_THUMB_RATIO = 100
 FILTER = "filter"
@@ -114,7 +114,7 @@ class BestGrain:
             return None
         return self.adaptive.time_ns * self.curve.threads / self.curve.units
 
-    # The smallest grain whose task work is at least 100 F (the lecture's rule).
+    # The smallest grain whose task work is at least 100 F (the 100:1 rule).
     @property
     def grain_100f(self) -> float | None:
         unit = self.unit_work_ns

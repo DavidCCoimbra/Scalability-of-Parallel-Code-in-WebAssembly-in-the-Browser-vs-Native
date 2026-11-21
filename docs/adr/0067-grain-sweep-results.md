@@ -68,7 +68,7 @@ push and a pop on a work-stealing deque, sometimes a steal. For hist-local it ad
 partial histogram per task and its merge. Per task the browsers pay 1.3 to 1.6 (Chrome) and 2.0
 to 2.3 (Firefox) times native, except the filter at 8192^2, where native's 17 ns is close to
 zero (its finest grain is within 1 % of the best). The region's fork-join F, by contrast, costs
-6 to 10 times native's (ADR 0030). F is 20 to more than 1000 times the cost of a task.
+6 to 10 times native's (the calibration of these campaigns, values in section 3). F is 20 to more than 1000 times the cost of a task.
 
 ### 3. The 100:1 rule: right with the cost per task, not with F
 
@@ -104,7 +104,7 @@ At 8192^2, hist-local with 8192 KB tasks (8 tasks, one per thread) is 1.02 times
 natively, 1.09 in Chrome and 1.15 in Firefox. Natively every grain from 128 KB to 4096 KB is
 within 0.5 % of the best. With one task per thread, the region lasts as long as its slowest
 thread, and nothing can be stolen. The browsers' workers start and run less evenly (their late
-wake-up is the fork-join cost of ADR 0030), so they need more, smaller tasks for work stealing
+wake-up is the fork-join cost that the calibration of ADR 0030 measures), so they need more, smaller tasks for work stealing
 to even out the load. The best grain is therefore not coarser in the browsers, as ADR 0066 asked
 (the point estimates are 128 KB against 256 KB natively, but the flat regions overlap, so "finer"
 is not shown), and the browsers' penalty is on the coarse side.
@@ -134,8 +134,8 @@ hypothesis, not verified.
   region's fork-join. What the browsers need is fewer parallel regions (ADR 0065), not fewer
   tasks per region.
 - **Advice for web developers: two thresholds.** Per region, fork only above about 0.5 ms of
-  sequential work at 8 threads (ADR 0065). Per task, keep tasks at least a few us (a hundred
-  times the sub-microsecond cost per task) and give each thread several tasks, more so in the
+  sequential work at 8 threads (ADR 0065). Per task, keep tasks at least about a hundred times the measured
+  cost per task (1.7 to 118 us here, 46 to 118 us for the local histogram) and give each thread several tasks, more so in the
   browser. Rayon's adaptive split already does this for large regions.
 - **The earlier campaigns are not a grain artefact.** Their adaptive code is close to the best
   grain at 8192^2 (within 1 %), so their RQ1 and RQ2 numbers do not come from a badly chosen

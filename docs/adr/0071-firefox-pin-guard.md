@@ -56,7 +56,7 @@ itself to 160.0 with a partial update (`updates/last-update.log`, `updates.xml`)
   background, outside the timed region.
 - **A control for both effects.** Both effects are checked with a control that the specs
   already contain. The extras campaign repeats four cells of the main campaign with the same
-  settings (hist-local and hist-atomic at k = 1 and k = 256, 8192 x 8192, N = 1 to 8). Their
+  settings (hist-local and hist-atomic at k = 1 and k = 256, 8192 x 8192, N in {1, 2, 4, 6, 7, 8}). Their
   Firefox medians in the repeated block are compared with the main campaign's Firefox 158.0
   medians, which were measured interleaved and without the policy. The same comparison for
   native and Chrome, both interleaved in both campaigns, gives the usual variation between two

@@ -30,8 +30,8 @@ Two limits of the pilot:
 
 - The two modes ran one after the other (headless from 02:38, headful from 02:41), not
   interleaved under one random seed. A difference between them would therefore be confounded
-  with drift of the machine over time. With bounds of 0.3 % (below), this does not change the
-  conclusion.
+  with drift of the machine over time. With point estimates within 0.3 % and intervals within 1.2 % (below), this does
+  not change the conclusion.
 - One headful run recorded the commit of another branch, because the branch was switched during
   the campaign. That run was set aside and the campaign resumed, which ran it again. The resume
   is the second sysinfo file and the 41st line of `campaign.jsonl`; the directory holds exactly
@@ -61,7 +61,7 @@ The rule fixed before the pilot was applied on 2026-11-07:
 ## Consequences
 
 - The methodology states the measured difference: headful changes the median by at most 0.3 %
-  at N = 8 in these workloads.
+  (point estimates; 95 % intervals within 1.2 %) at N = 8 in these workloads.
 - Only N = 8 was compared, because that is where the browser's own threads compete most with
   the workers for the cores. That other N do not differ is assumed, not tested.
 - The bound holds for headful windows on an idle, unlocked desktop session. Because the campaign
