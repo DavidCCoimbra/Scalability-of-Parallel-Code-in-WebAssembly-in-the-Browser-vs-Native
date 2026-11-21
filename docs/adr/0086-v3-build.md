@@ -82,10 +82,13 @@ but two pixels of each row. A test keeps the copy's output equal to the parallel
   section 1, only `native::run` differs (it now dispatches two more workloads), and the empty
   `prepare` of the local histogram is no longer a function of its own: it is merged with the
   new, equally empty ones.
-- **A first look, not a result.** Three native runs of each at 8192x8192, in one session: the
-  sequential filter took 22.4 ms against 22.5 to 22.6 ms for the pool of one thread, and the
-  sequential histogram matched the local one within 0.2 % at k = 1 and k = 256, with the same
-  checksums.
+- **The new hot functions.** `SequentialBlur::run` (136 to 149 bytes in WASM; natively its row
+  handling is inlined into it) and `SequentialHistogram::run`. Both call or inline code that
+  existed: `blur_interior`, and the plain `counts[value] += 1` of `Histogram::record`.
+- **A first look, not a result, and native only.** Three native runs of each at 8192x8192, in
+  one session: the sequential filter took 22.4 ms against 22.5 to 22.6 ms for the pool of one
+  thread, and the sequential histogram matched the local one within 0.2 % at k = 1 and
+  k = 256, with the same checksums. In the browsers the comparison is open until the campaign.
 
 In a campaign a sequential workload enters the plan once per repetition, at one thread,
 whatever the campaign's thread counts. The analysis keeps its runs apart from the scaling

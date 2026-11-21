@@ -6,6 +6,7 @@ from dataclasses import asdict, dataclass
 from enum import StrEnum
 from pathlib import Path
 
+from harness.campaign.capabilities import SEQUENTIAL_THREADS
 from harness.campaign.choices import parse_choice
 from harness.campaign.fields import SpecFields
 from harness.campaign.planned_run import PlannedRun
@@ -17,7 +18,6 @@ from harness.server import MAX_RUN_ID_LENGTH
 from harness.shield import UNIT_NAME
 
 CURRENT_USER = "$USER"
-SEQUENTIAL_THREADS = 1
 MAX_SESSIONS = 99
 DEFAULT_TIMEOUT_SECONDS = 300.0
 ENVIRONMENT_NAMES = tuple(environment.value for environment in RunEnvironment)

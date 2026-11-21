@@ -2,6 +2,8 @@
 
 from dataclasses import dataclass
 
+from harness.campaign.capabilities import SEQUENTIAL_THREADS
+
 WIDTH = 1024
 HEIGHT = 1024
 WARMUP = 1
@@ -11,8 +13,6 @@ THREAD_COUNTS = (1, 2, 4)
 HISTOGRAM_KS = (1, 4, 16, 256)
 NOISE_WORKLOADS = ("filter", "sort", "sort-unstable")
 HISTOGRAM_WORKLOADS = ("hist-atomic", "hist-local", "hist-atomic-private", "hist-atomic-packed")
-# The references without Rayon take one thread only.
-SEQUENTIAL_THREADS = 1
 SEQUENTIAL_FILTER = "filter-seq"
 SEQUENTIAL_HISTOGRAM = "hist-seq"
 

@@ -68,7 +68,13 @@ impl WorkloadKind {
                 takes_pitch: false,
                 sequential: false,
             },
-            Self::FilterSequential | Self::HistogramSequential => Capabilities {
+            Self::FilterSequential => Capabilities {
+                repeats_identically: true,
+                takes_grain: false,
+                takes_pitch: true,
+                sequential: true,
+            },
+            Self::HistogramSequential => Capabilities {
                 repeats_identically: true,
                 takes_grain: false,
                 takes_pitch: false,

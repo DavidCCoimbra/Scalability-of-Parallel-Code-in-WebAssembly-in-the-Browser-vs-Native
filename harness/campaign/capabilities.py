@@ -25,4 +25,7 @@ NONE = Capabilities()
 FILTER = Capabilities(repeats_identically=True, takes_grain=True, takes_pitch=True)
 LOCAL_HISTOGRAM = Capabilities(repeats_identically=True, takes_grain=True)
 ATOMIC_HISTOGRAM = Capabilities(takes_grain=True)
-SEQUENTIAL = Capabilities(repeats_identically=True, sequential=True)
+SEQUENTIAL_FILTER = Capabilities(repeats_identically=True, takes_pitch=True, sequential=True)
+SEQUENTIAL_HISTOGRAM = Capabilities(repeats_identically=True, sequential=True)
+# The one thread count of a sequential workload.
+SEQUENTIAL_THREADS = 1

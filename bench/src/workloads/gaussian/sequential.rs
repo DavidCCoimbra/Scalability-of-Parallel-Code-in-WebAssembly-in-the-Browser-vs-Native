@@ -109,6 +109,18 @@ mod tests {
     }
 
     #[test]
+    fn a_padded_image_gives_the_checksum_of_the_parallel_filter() {
+        let image = noise(67, 31, SEED);
+        let mut plain = GaussianBlur::new(image.clone());
+        plain.run();
+        for pitch in [67, 68, 128, 4096] {
+            let mut padded = SequentialBlur::new(image.clone().with_pitch(pitch));
+            padded.run();
+            assert_eq!(padded.checksum(), plain.checksum(), "pitch = {pitch}");
+        }
+    }
+
+    #[test]
     fn running_twice_gives_the_same_result() {
         let mut blur = SequentialBlur::new(noise(64, 48, SEED));
         blur.run();
