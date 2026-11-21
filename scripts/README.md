@@ -11,6 +11,7 @@ only; `mypy --strict` covers them (`make lint`).
 | `check_simd.py` | `blur_interior` in an `objdump`/`wasm-objdump` listing contains packed 16-bit arithmetic | CI (`rust` job), on the final native binary and `bench.wasm` |
 | `codegen_diff.sh` | Builds a base ref and the working tree of `bench/` at the same path, every native and WASM variant, then runs `codegen_diff.py` on each pair | By hand, before merging a change in `bench/src`: `bash scripts/codegen_diff.sh [BASE_REF]` |
 | `codegen_diff.py` | Pairs the functions of two builds by name, normalizes addresses and data offsets, and reports which differ; exit 1 if a hot function differs | `codegen_diff.sh`, or by hand on two artifacts |
+| `tables_diff.py` | Compares every file under `data/tables` with the committed one after a regeneration, ignoring a sidecar's `commit` and `createdAt`; exit 1 if a table differs, is new or was not regenerated | `make tables-check`, CI (`tables` job) |
 | `perf-counters-v2.sh` | Extra: runs the perf-v2 campaign while `perf stat` counts the P-cores in 100 ms intervals | By hand, on the PC, nothing else running: `bash scripts/perf-counters-v2.sh` |
 | `tests/` | unittest suite of the checks (`python3 -m unittest discover -s scripts/tests -t .`) | `make test-python`, CI (`python` job) |
 

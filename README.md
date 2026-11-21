@@ -58,6 +58,7 @@ to the dedicated PC and remove it (`sudo rm /etc/sudoers.d/ppc-bench`) after the
 | `make status SPEC=...` | Progress of a campaign, read-only |
 | `make results` | Every table and figure of the main campaign, from `data/raw/campaign-v2` |
 | `make all-results` | The same for every campaign, the exploratory ones and the hardware counters included |
+| `make tables-check` | Regenerate every table and fail if one differs from the committed one |
 | `make quick` | Tiny copies of every campaign, to check the pipeline end to end (never results) |
 
 `make help` lists the rest. The campaigns are described in

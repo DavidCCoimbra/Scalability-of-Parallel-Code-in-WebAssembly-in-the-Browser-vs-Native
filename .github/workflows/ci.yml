@@ -19,6 +19,7 @@ jobs:
     outputs:
       rust: ${{ steps.filter.outputs.rust }}
       browser: ${{ steps.filter.outputs.browser }}
+      tables: ${{ steps.filter.outputs.tables }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -30,6 +31,14 @@ jobs:
             browser:
               - 'bench/**'
               - 'harness/**'
+            tables:
+              - 'analysis/**'
+              - 'harness/**'
+              - 'data/**'
+              - 'make/**'
+              - 'Makefile'
+              - 'scripts/tables_diff.py'
+              - '.github/workflows/ci.yml'
 
   rust:
     needs: changes
@@ -98,6 +107,16 @@ jobs:
           key: browsers-${{ hashFiles('harness/browsers.json') }}
       - name: Checksums in Chrome and Firefox equal native
         run: python3 -m harness.browser_check --chrome-flag=--no-sandbox
+
+  tables:
+    needs: changes
+    if: needs.changes.outputs.tables == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Regenerated tables equal the committed ones
+        run: make tables-check
 
   python:
     runs-on: ubuntu-latest

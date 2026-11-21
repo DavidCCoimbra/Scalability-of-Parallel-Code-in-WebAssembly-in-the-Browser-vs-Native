@@ -1,8 +1,9 @@
-.PHONY: results extras-results cutoff-results grain-results perf-results all-results
+.PHONY: results extras-results cutoff-results grain-results perf-results all-results tables-check
 
 ##@ Tables and figures of the paper
 
 results: ## Every table and figure of the campaign from data/raw/campaign-v2
+	mkdir -p paper/figures
 	python3 -m analysis.datacheck data/raw/campaign-v2 --output data/tables/campaign-v2/campaign-v2-quality.md
 	python3 -m harness.collect data/raw/campaign-v2 --output data/campaign-v2.csv
 	python3 -m analysis.v0 data/raw/campaign-v2 --output data/tables/campaign-v2/campaign-v2-scaling.csv
@@ -58,4 +59,7 @@ perf-results: ## Hardware counters per atomic add and V8's retries from data/raw
 	python3 -m analysis.extras.perf_counters data/raw/perf-v2 --runs data/tables/perf-v2/perf-v2-runs.csv \
 		--summary data/tables/perf-v2/perf-v2-counters.csv --retries data/tables/perf-v2/perf-v2-retries.csv
 
-all-results: results extras-results perf-results ## Every table and figure of every campaign
+all-results: results extras-results cutoff-results grain-results perf-results ## Every table and figure of every campaign
+
+tables-check: all-results ## Regenerate every table and fail if one differs from the committed one
+	python3 scripts/tables_diff.py data/tables
