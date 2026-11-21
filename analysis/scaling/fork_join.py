@@ -8,8 +8,9 @@ from analysis.configuration import ENVIRONMENTS
 from analysis.runs import Row
 from analysis.scaling.cutoff import NS_PER_US, CutoffPoint
 
-# The paper's fork-join costs (110, 60 and 7.5 us at N = 8): per run, the median of its
-# warm calibration calls (empty broadcasts back to back); per environment, the median over runs.
+# The fork-join cost F at N = 8: per run, the median of its warm calibration calls (empty
+# broadcasts back to back); per environment, the median over runs. analysis.calibration writes
+# the same statistic for every N, probe and phase of a campaign.
 CALIBRATION_PHASE = "calibration-warm"
 # Builds before schema 2 had one probe, the broadcast, and no probe column; schema 2 adds the
 # empty par_iter probe ("par-iter") and names each calibration row's probe.
