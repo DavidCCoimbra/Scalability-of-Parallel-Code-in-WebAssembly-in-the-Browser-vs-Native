@@ -4,7 +4,7 @@ primary family, plus the shape of the run distributions.
 
 Usage: python3 -m analysis.results data/raw/<campaign> --contrasts c.csv
        --max-threads N [--partial] [--shape shape.csv]
-       [--foreign-cpu-threshold SECONDS] [--strict]
+       [--foreign-cpu-threshold SECONDS | --no-foreign-cpu-threshold] [--strict]
        [--summary median|mean] [--center geometric|median]
 """
 
@@ -34,6 +34,8 @@ def parser() -> argparse.ArgumentParser:
     parser.add_argument("--contrasts", type=Path, required=True)
     parser.add_argument("--shape", type=Path)
     parser.add_argument("--foreign-cpu-threshold", type=float, default=FOREIGN_CPU_THRESHOLD)
+    # The plan's sensitivity check "without exclusion 3".
+    parser.add_argument("--no-foreign-cpu-threshold", action="store_true")
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("--summary", choices=[Summary.MEDIAN.value, Summary.MEAN.value], default=RUN_SUMMARY.value)
     parser.add_argument("--center", choices=[Summary.GEOMETRIC.value, Summary.MEDIAN.value], default=CONFIGURATION_CENTER.value)
@@ -49,7 +51,7 @@ def parse_options(argv: list[str]) -> ResultsOptions:
         directory=args.directory,
         contrasts=args.contrasts,
         shape=args.shape,
-        foreign_cpu_threshold=args.foreign_cpu_threshold,
+        foreign_cpu_threshold=None if args.no_foreign_cpu_threshold else args.foreign_cpu_threshold,
         strict=args.strict,
         summary=args.summary,
         center=args.center,
