@@ -38,6 +38,7 @@ jobs:
               - 'make/**'
               - 'Makefile'
               - 'scripts/tables_diff.py'
+              - '.github/workflows/ci.yml'
 
   rust:
     needs: changes

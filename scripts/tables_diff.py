@@ -30,8 +30,10 @@ def committed(path: Path) -> str:
 
 
 def changed_files(directory: Path) -> Iterator[tuple[str, Path]]:
-    for line in git("status", "--porcelain", "--untracked-files=all", "--", directory.as_posix()).splitlines():
-        yield line[:2].strip(), Path(line[3:])
+    # -z: NUL-separated and unquoted, so any file name is read as it is.
+    for entry in git("status", "--porcelain", "-z", "--untracked-files=all", "--", directory.as_posix()).split("\0"):
+        if entry:
+            yield entry[:2].strip(), Path(entry[3:])
 
 
 def problems(directory: Path) -> Iterator[str]:
