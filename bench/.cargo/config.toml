@@ -22,4 +22,5 @@ rustflags = [
 # The prebuilt std for wasm32 was compiled without +atomics, so it has to be
 # rebuilt with the flags above (`-Z build-std`, nightly only).
 [alias]
-build-wasm = "build --release --target wasm32-unknown-unknown --lib -Z build-std=panic_abort,std"
+# --locked: the build fails instead of resolving dependency versions other than Cargo.lock's.
+build-wasm = "build --locked --release --target wasm32-unknown-unknown --lib -Z build-std=panic_abort,std"

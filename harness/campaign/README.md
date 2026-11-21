@@ -64,7 +64,7 @@ Absent, the query and the label are as before; set, it adds
 | `plan.py` | The shuffled plan and the discarded first launches |
 | `executors.py` | `NativeExecutor` and `BrowserExecutor` run one planned run |
 | `gate.py` | `HostEnvironment`: the environment check of a strict campaign |
-| `identity.py` | Build identity: commit, binary digests, browser versions |
+| `identity.py` | Build identity: commit, binary and JS glue digests, browser versions, runtime crate versions, Firefox profile settings |
 | `journal.py` | `campaign.json` (session start and resume checks) and `campaign.jsonl` |
 | `runner.py` | `Campaign`: the session from check to log; `Summary` |
 | `cli.py`, `__main__.py` | Command line |

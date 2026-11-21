@@ -4,6 +4,7 @@ from pathlib import Path
 
 from harness.context import UNAVAILABLE
 from harness.environment import EnvironmentCheck, p_core_mask, quiet_mode, sysinfo
+from harness.environment.host_state import host_state
 
 MASK = "0,2,4,6,8,10,12,14"
 
@@ -138,6 +139,41 @@ class SysinfoTest(unittest.TestCase):
         self.assertEqual(info["distro"], UNAVAILABLE)
         self.assertEqual(info["microcode"], UNAVAILABLE)
 
+
+class HostStateTest(unittest.TestCase):
+    def test_the_settings_no_check_enforces_are_recorded_as_found(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write(root, "sys/kernel/mm/transparent_hugepage/enabled", "always [madvise] never\n")
+            write(root, "sys/kernel/mm/transparent_hugepage/defrag", "always defer defer+madvise [madvise] never\n")
+            write(root, "proc/cmdline", "BOOT_IMAGE=/vmlinuz root=/dev/nvme0n1p2 ro quiet splash\n")
+            write(root, "sys/devices/system/cpu/vulnerabilities/spectre_v2", "Mitigation: Enhanced / Automatic IBRS\n")
+            write(root, "sys/devices/system/cpu/vulnerabilities/meltdown", "Not affected\n")
+            write(root, "sys/devices/system/cpu/cpuidle/current_driver", "intel_idle\n")
+            for index, (name, disabled) in enumerate([("POLL", "0"), ("C1E", "0"), ("C10", "1")]):
+                write(root, f"sys/devices/system/cpu/cpu2/cpuidle/state{index}/name", name)
+                write(root, f"sys/devices/system/cpu/cpu2/cpuidle/state{index}/disable", disabled)
+            write(root, "proc/meminfo", "MemTotal:       65536000 kB\nMemFree:        1 kB\n")
+            write(root, "sys/class/dmi/id/bios_version", "1801\n")
+            write(root, "proc/irq/default_smp_affinity", "ffff0000\n")
+            state = host_state(root, [2, 4])
+        self.assertEqual(state["transparentHugepage"]["enabled"], "always [madvise] never")
+        self.assertEqual(state["kernelCmdline"], "BOOT_IMAGE=/vmlinuz root=/dev/nvme0n1p2 ro quiet splash")
+        self.assertEqual(state["mitigations"], {"meltdown": "Not affected", "spectre_v2": "Mitigation: Enhanced / Automatic IBRS"})
+        self.assertEqual(state["cpuIdle"]["driver"], "intel_idle")
+        self.assertEqual([(idle["name"], idle["disabled"]) for idle in state["cpuIdle"]["states"]], [("POLL", False), ("C1E", False), ("C10", True)])
+        self.assertEqual(state["memTotalKb"], 65_536_000)
+        self.assertEqual(state["firmware"]["bios_version"], "1801")
+        self.assertIsNone(state["firmware"]["bios_date"])
+        self.assertEqual(state["defaultIrqAffinity"], "ffff0000")
+
+    def test_a_host_without_these_files_records_nothing_found(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            state = host_state(Path(tmp), [])
+            info = sysinfo(Path(tmp), MASK, versions={}, quiet_state=Path(tmp) / "missing")
+        self.assertEqual((state["kernelCmdline"], state["mitigations"], state["memTotalKb"]), (None, {}, None))
+        self.assertEqual(state["cpuIdle"], {"driver": None, "states": []})
+        self.assertEqual(info["hostState"], state)
 
 
 class QuietModeTest(unittest.TestCase):
