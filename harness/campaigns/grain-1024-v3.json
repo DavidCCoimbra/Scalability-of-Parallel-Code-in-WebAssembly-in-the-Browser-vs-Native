@@ -1,0 +1,145 @@
+{
+  "name": "grain-1024-v3",
+  "orderSeed": 2026112204,
+  "environments": [
+    "native",
+    "chrome",
+    "firefox"
+  ],
+  "workloads": [
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 1
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 2
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 4
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 8
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 16
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 32
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 64
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 128
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 1
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 2
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 4
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 8
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 16
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 32
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 64
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 128
+    }
+  ],
+  "threads": [
+    8
+  ],
+  "repetitions": 30,
+  "width": 1024,
+  "height": 1024,
+  "warmup": 5,
+  "iterations": 10,
+  "calibration": 20,
+  "passes": 64,
+  "comment": "ADR 0066 grain sweep at N = 8: filter rows per task 1 to 128, local histogram KB per task 1 to 128, powers of two, plus Rayon's adaptive split (no grain). passes = (8192 / 1024)^2 = 64 as in the cutoff campaign (ADR 0064). The atomic histogram is left out here: this size needs 64 passes per sample and its counters accumulate across passes. Run again on measured/v3 (ADR 0084).",
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 3000,
+  "timeoutSeconds": 900,
+  "discardFirstLaunch": true,
+  "strict": true
+}
