@@ -73,7 +73,7 @@ grain-results: ## Grain sweep campaigns: data check per size, then the U-curve p
 
 perf-results: ## Hardware counters per atomic add and V8's retries from data/raw/perf-v2
 	python3 -m analysis.datacheck data/raw/perf-v2 --output data/tables/perf-v2/perf-v2-quality.md
-	python3 -m analysis.extras.perf_counters data/raw/perf-v2 --runs data/tables/perf-v2/perf-v2-runs.csv \
+	python3 -m analysis.extras.perf_counters data/raw/perf-v2 --strict --runs data/tables/perf-v2/perf-v2-runs.csv \
 		--summary data/tables/perf-v2/perf-v2-counters.csv --retries data/tables/perf-v2/perf-v2-retries.csv
 
 all-results: results extras-results cutoff-results grain-results perf-results ## Every table and figure of every campaign
