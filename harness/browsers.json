@@ -4,6 +4,7 @@
     "sha256": "cf0f049892dea22e6a6db26d47ed0d7776b7158edcbec4634086633df8bafcbc"
   },
   "firefox": {
-    "version": "158.0"
+    "version": "158.0",
+    "sha256": "9549b054ec4cf85f50f6a19d8c6fb79580312e71ebc4ec2cb217ec9af09dc12a"
   }
 }

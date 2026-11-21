@@ -71,6 +71,10 @@ itself to 160.0 with a partial update (`updates/last-update.log`, `updates.xml`)
 - **Earlier detection.** A browser that changes version between campaigns now stops the campaign
   before its first run, instead of being found in the analysis.
 - **Chrome.** Chrome for Testing has no updater, so it needs no policy.
+- **Checksum pinned later (2026-11-21).** The sha256 of the 158.0 archive, as listed in
+  Mozilla's `SHA256SUMS`, is now pinned in `harness/browsers.json` like Chrome's, so an install
+  no longer trusts whatever that file says at download time. The campaigns of `measured/v2`
+  installed 158.0 before the pin, verified against the same file.
 
 ## Status
 

@@ -23,6 +23,7 @@ RUN_RECORD = "*.json"
 class RunChecks:
     strict_reasons: Counter[str] = field(default_factory=Counter)
     strict_runs: Counter[str] = field(default_factory=Counter)
+    strict_configurations: Counter[str] = field(default_factory=Counter)
     foreign: Counter[str] = field(default_factory=Counter)
     observations: defaultdict[Configuration, list[OrderedValue]] = field(default_factory=lambda: defaultdict(list))
 
@@ -30,6 +31,7 @@ class RunChecks:
         problems = context.strict_problems(pinned, hybrid)
         if problems:
             self.strict_runs[run.configuration.environment] += 1
+            self.strict_configurations[run.configuration.label] += 1
             self.strict_reasons.update(problem.split(":")[0] for problem in problems)
         above = context.above_foreign_cpu(FOREIGN_CPU_THRESHOLD)
         if above:
@@ -62,7 +64,8 @@ class QualityReport:
             f"- Runs done: {self.runs}; missing: {len(collection.missing)}; failed: {sum(collection.failed.values())} {dict(collection.failed)}",
             f"- Runs replaced by a re-run (kept in `{EXCLUDED_DIRECTORY}/`): {self.replaced}",
             f"- Checksum conflicts: {len(collection.checksum_conflicts)}",
-            f"- Runs failing strict validation: {sum(checks.strict_runs.values())} {dict(checks.strict_runs)}; reasons: {dict(checks.strict_reasons)}",
+            f"- Runs failing strict validation: {sum(checks.strict_runs.values())} {dict(checks.strict_runs)}; reasons: {dict(checks.strict_reasons)}"
+            + "".join(f"\n  - {label}: {count}" for label, count in sorted(checks.strict_configurations.items())),
             f"- Runs above the foreign CPU threshold ({FOREIGN_CPU_THRESHOLD} s): {sum(checks.foreign.values())} {dict(checks.foreign)}",
             f"- Configurations under {CLOCK_FACTOR} times the clock resolution: {len(self.clock)}"
             + "".join(f"\n  - {warning.configuration.label}" for warning in self.clock),
