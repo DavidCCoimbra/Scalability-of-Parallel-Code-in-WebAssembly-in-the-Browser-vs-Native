@@ -13,14 +13,16 @@ load/store offsets that fall between the initial stack pointer (where the
 passive data segments start) and the largest constant global (__heap_base)
 plus some slack; an `i32.const` that differs only because the function table
 was reordered (a function pointer) counts as the same when both indices name
-the same function. Exit status 1 means a hot function differs.
+the same function. Exit status 1 means a hot function differs. A hot pattern
+that names no function in a build is listed: the compiler inlined that item
+into a caller (which is then the function to read), or it was renamed.
 """
 
 import re
 import subprocess
 import sys
 from collections import Counter
-from collections.abc import Callable, Iterator
+from collections.abc import Callable, Iterable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Protocol, TypeVar
@@ -29,6 +31,9 @@ HOT = [
     re.compile(pattern)
     for pattern in (
         r"bench::blur_interior",
+        r"bench::blur_row",
+        r"bench::local_counts",
+        r"bench::CounterTable",
         r"Workload>::run",
         r"Workload>::prepare",
         r"Workload>::checksum",
@@ -137,6 +142,11 @@ def pairing_name(name: str) -> str:
 
 def is_hot(name: str) -> bool:
     return any(pattern.search(name) for pattern in HOT)
+
+
+def unmatched_patterns(names: Iterable[str]) -> list[str]:
+    names = list(names)
+    return [pattern.pattern for pattern in HOT if not any(pattern.search(name) for name in names)]
 
 
 def run(command: list[str]) -> str:
@@ -330,6 +340,9 @@ def report(base: Functions[Function], head: Functions[Function], extra: Extra[Fu
             print(f"HOT {state:<12} {extra(name, base.get(name), head.get(name))} {name}")
         elif state != "identical":
             print(f"    {state:<12} {name}")
+    for side, functions in (("base", base), ("head", head)):
+        for pattern in unmatched_patterns(functions):
+            print(f"hot pattern without a function in {side} (inlined or renamed): {pattern}")
     print("summary: " + ", ".join(f"{state} {count}" for state, count in sorted(status.items())))
     return 1 if hot_differs else 0
 
