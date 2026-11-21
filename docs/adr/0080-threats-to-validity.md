@@ -49,7 +49,8 @@ The following are stated wherever the results are reported.
   bandwidth they take during a timed iteration.
 - **The machine's memory configuration was not recorded.** Transparent huge pages, the RAM
   layout, the kernel command line, mitigations, C-states and firmware settings are in no run
-  context. They matter for workloads that stream from memory.
+  context. They matter for workloads that stream from memory. New campaigns record them
+  (`sysinfo.hostState`, ADR 0083); for the stored ones they can only be read after the fact.
 - **Native memory growth during the measured phase cannot be ruled out from the data.** The
   run reads the resident set before and after the measured phase but stores only the sizes
   before the warm-up and after the last iteration; growth fails a WASM run, not a native one.
@@ -62,7 +63,8 @@ The following are stated wherever the results are reported.
 - **The two histograms differ in more than their counters.** Recorded (ADR 0078): only the
   local one passes through the grain control.
 - **Speedup is relative to a one-thread Rayon pool**, not to the best sequential code; time
-  over native at the same N is reported next to it (ADR 0039).
+  over native at the same N is reported next to it (ADR 0039), and the absolute speedup
+  against native's one-thread time is tabulated (ADR 0082).
 - **The efficiency dip at N = 6 and 7 is not explained.** Measured: it appears in every
   environment (local histogram at k = 16, N = 6 / 7 / 8: 0.945 / 0.938 / 0.972 natively,
   0.949 / 0.945 / 1.001 in Chrome, 0.960 / 0.958 / 1.014 in Firefox). Not established: whether

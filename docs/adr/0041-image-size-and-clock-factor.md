@@ -18,7 +18,7 @@ The size sweep on the PC (`harness/campaigns/pilot-size-*.json`, in the working 
 filter, `hist-local` k = 16 and `hist-atomic` k = 1, at N = 1 and 8, 3 runs each, 2026-11-06)
 gave:
 
-- **Clock resolution**, measured in every browser run: 5 µs in Chrome, 20 µs in Firefox.
+- **Clock resolution**, measured in every browser run: 5 us in Chrome, 20 us in Firefox.
 - **The fastest browser configuration at N = 8**, in multiples of the resolution:
 
   | Browser | 2048 | 4096 | 8192 | 10240 |

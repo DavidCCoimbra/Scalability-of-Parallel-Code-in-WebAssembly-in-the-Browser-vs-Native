@@ -23,7 +23,7 @@ configurations, never runs (30 runs per configuration, ADR 0047):
   workload, except `hist-atomic-private` at k = 256, which gets W = 8. The basis is thin: two
   runs per environment, at N = 1 and 8 only, and the same W is used at every N of the campaign.
   The controls keep the main campaign's W.
-- **Input:** 8192 x 8192 for every workload, the sorts included. The fastest configuration
+- **Input:** 8192x8192 for every workload, the sorts included. The fastest configuration
   takes 47 ms per iteration at N = 8, far above 100 times the browser clock resolution (the
   clock factor of ADR 0041), so no other sort input size is needed.
 - **k in {1, 256}**, the two ends of contention (every pixel on one counter, and contention

@@ -19,7 +19,7 @@ from the per-run medians already measured; nothing is re-measured.
 - `analysis.throughput` writes `<campaign>-throughput.csv` for the main campaign, per
   configuration:
   - `ns_per_pixel` and `megapixels_per_second`, from the geometric centre of the per-run
-    medians of the time of one pass and the image's pixels (8192 x 8192, one byte each, so a
+    medians of the time of one pass and the image's pixels (8192x8192, one byte each, so a
     megapixel per second is also a megabyte of input per second);
   - `absolute_speedup` = T(native, 1) / T(environment, N) for the same workload, input and k,
     with a 95 % percentile bootstrap interval over runs (10 000 resamples, the plan's seed).
