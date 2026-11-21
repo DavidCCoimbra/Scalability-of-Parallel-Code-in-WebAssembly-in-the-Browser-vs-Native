@@ -3,7 +3,7 @@
 from pathlib import Path
 
 from harness.browser_check.cases import CASES
-from harness.browser_check.identity import Found, RunIdentity, failed_label, read_identity
+from harness.browser_check.identity import Found, RunIdentity, failed_label, found_identity, read_identity
 from harness.context import RunEnvironment, RunFiles
 from harness.launcher import Launcher, RunStatus
 from harness.native import NativeRun
@@ -21,7 +21,7 @@ def browser_identities(launcher: Launcher, results: Path) -> dict[str, Found]:
         outcome = launcher.run(run_id, case.query)
         print(f"{run_id}: {outcome.status.value} {outcome.seconds:.1f}s")
         if outcome.status is RunStatus.DONE:
-            found[case.name] = read_identity(RunFiles(results, run_id).csv)
+            found[case.name] = found_identity(RunFiles(results, run_id).csv)
         else:
             found[case.name] = failed_label(outcome.status)
     return found

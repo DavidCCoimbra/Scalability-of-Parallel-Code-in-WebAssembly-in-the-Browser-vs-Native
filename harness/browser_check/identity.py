@@ -38,6 +38,14 @@ def read_identity(path: Path) -> RunIdentity:
     return RunIdentity(single_value(path, rows, "input_fingerprint"), single_value(path, rows, "checksum"))
 
 
+def found_identity(path: Path) -> Found:
+    """The identity of a finished browser run, or a label when its CSV cannot be read as one."""
+    try:
+        return read_identity(path)
+    except (OSError, ValueError, KeyError) as error:
+        return f"<unreadable: {error}>"
+
+
 def single_value(path: Path, rows: list[dict[str, str]], column: str) -> str:
     values = {row[column] for row in rows}
     if len(values) != 1:

@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from harness.browser_check import CASES, HEIGHT, THREAD_COUNTS, WIDTH, Mismatch, RunIdentity, compare, failed_label, read_identity
+from harness.browser_check.identity import found_identity
 from harness.launcher import ChromeCommand, RunStatus
 
 HEADER = "env,workload,input,k,width,height,seed,threads,phase,iter,ns,input_fingerprint,checksum"
@@ -36,6 +37,16 @@ class ReadChecksumTest(unittest.TestCase):
         csv = f"{HEADER}\nchrome,filter,noise,,8,8,1,2,measured,0,5,0x01,0xab\nchrome,filter,noise,,8,8,1,2,measured,1,5,0x02,0xab\n"
         with self.assertRaises(ValueError):
             read_identity(self.write(csv))
+
+
+class FoundIdentityTest(unittest.TestCase):
+    def test_an_unreadable_browser_csv_is_a_label_not_an_error(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            missing = found_identity(Path(tmp) / "absent.csv")
+            inconsistent = Path(tmp) / "run.csv"
+            inconsistent.write_text("input_fingerprint,checksum\n0x01,0xab\n0x01,0xcd\n")
+            self.assertTrue(isinstance(missing, str) and missing.startswith("<unreadable"))
+            self.assertIn("expected one checksum", str(found_identity(inconsistent)))
 
 
 class CompareTest(unittest.TestCase):

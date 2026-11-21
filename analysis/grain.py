@@ -40,7 +40,11 @@ PAPER_SIDES = (8192,)
 
 
 def same_build(directories: Sequence[Path]) -> None:
-    builds = {str((campaign_metadata(directory) or {}).get("build")) for directory in directories}
+    recorded = [(campaign_metadata(directory) or {}).get("build") for directory in directories]
+    unknown = [str(directory) for directory, build in zip(directories, recorded) if build is None]
+    if unknown:
+        raise InvalidCutoffCampaign(f"no build recorded for: {', '.join(unknown)}")
+    builds = {str(build) for build in recorded}
     if len(builds) != 1:
         raise InvalidCutoffCampaign(f"the grain campaigns come from different builds: {sorted(builds)}")
 
