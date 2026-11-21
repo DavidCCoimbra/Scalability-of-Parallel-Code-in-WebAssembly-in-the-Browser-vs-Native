@@ -1,0 +1,7 @@
+# 2026-11-21, commit cb4e02dc, three builds from scratch (cargo clean, www/pkg removed) of the
+# native runner and the WASM package. First 16 hex digits of each SHA-256; "glue" is every
+# JavaScript file of www/pkg, concatenated in path order.
+# Build 0 ran with turbo on and no CPU restriction; builds 1 and 2 with turbo off, on the E-cores.
+build 0: native 4390e0c2989a6154  wasm 9a73c9f0861a7916  glue 260870061be7da39
+build 1: native 4390e0c2989a6154  wasm 9a73c9f0861a7916  glue 260870061be7da39
+build 2: native 4390e0c2989a6154  wasm 9a73c9f0861a7916  glue 260870061be7da39

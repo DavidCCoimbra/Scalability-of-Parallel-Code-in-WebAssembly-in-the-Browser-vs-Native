@@ -1,0 +1,7 @@
+# 2026-11-21, after make env-setup: turbo off, SMT off, governor performance, shield on.
+# python3 -m unittest discover -s analysis/tests -t . run inside a run scope pinned to one CPU.
+# "MHz after" is scaling_cur_freq of that CPU read right after each run.
+cpu 12: 0 failed of 30; codes [0]; MHz after min 1602 max 3200
+cpu 0: 0 failed of 6; codes [0]; MHz after min 2594 max 3200
+cpu 6: 0 failed of 6; codes [0]; MHz after min 2732 max 3200
+cpu 14: 0 failed of 6; codes [0]; MHz after min 2557 max 3200

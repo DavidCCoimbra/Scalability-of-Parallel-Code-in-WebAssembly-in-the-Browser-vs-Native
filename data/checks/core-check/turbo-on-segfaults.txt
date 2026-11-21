@@ -1,0 +1,15 @@
+# 2026-11-21, turbo on, SMT on, governor powersave (the PC as found, before make env-setup)
+# python3 -m unittest discover -s analysis/tests -t . pinned with taskset, exit codes (139 = segmentation fault):
+# cpus 6,7: 0 0 0 0 | 0,1: 0 0 0 0 | 2,3: 0 0 0 0 | 16-31: 0 0 0 0 | 10,11: 0 0 0 0 0 0 | 14,15: 0 0 0 0 0 0
+# cpus 12,13: 139 x6 | 12: 139 0 139 139 139 139 | 13: 139 x6
+# cpu12 and cpu13 are the two threads of core_id 24, the seventh P-core (index 6)
+Nov 21 16:09:30 dcoimbra-System-Product-Name kernel: python3[18475]: segfault at 8 ip 000000000054e7a4 sp 00007ffe6ddaf050 error 4 in python3.14[14e7a4,422000+386000] likely on CPU 12 (core 24, socket 0)
+Nov 21 16:11:06 dcoimbra-System-Product-Name kernel: python3[24218]: segfault at 9f ip 000000000055369e sp 00007fffb30206f0 error 4 in python3.14[15369e,422000+386000] likely on CPU 12 (core 24, socket 0)
+Nov 21 16:11:07 dcoimbra-System-Product-Name kernel: python3[24246]: segfault at 7ffc7251f7c0 ip 00007ffc7251f7c0 sp 00007ffc7251f758 error 15 likely on CPU 12 (core 24, socket 0)
+Nov 21 16:11:10 dcoimbra-System-Product-Name kernel: python3[24258]: segfault at 8 ip 000000000054e22c sp 00007ffc5c1268f0 error 4 in python3.14[14e22c,422000+386000] likely on CPU 13 (core 24, socket 0)
+Nov 21 16:11:13 dcoimbra-System-Product-Name kernel: python3[24264]: segfault at 5443488 ip 000000000054e8bc sp 00007ffebdc02c20 error 6 in python3.14[14e8bc,422000+386000] likely on CPU 12 (core 24, socket 0)
+Nov 21 16:11:14 dcoimbra-System-Product-Name kernel: python3[24270]: segfault at 0 ip 00000000006db233 sp 00007ffdd7ea0360 error 4 in python3.14[2db233,422000+386000] likely on CPU 12 (core 24, socket 0)
+Nov 21 16:11:23 dcoimbra-System-Product-Name kernel: python3[24473]: segfault at 10 ip 0000000000553691 sp 00007ffff92d0ae0 error 4 in python3.14[153691,422000+386000] likely on CPU 12 (core 24, socket 0)
+Nov 21 16:11:26 dcoimbra-System-Product-Name kernel: python3[24485]: segfault at 7fffde8369d0 ip 00007fffde8369d0 sp 00007fffde836968 error 15 likely on CPU 13 (core 24, socket 0)
+Nov 21 16:11:29 dcoimbra-System-Product-Name kernel: python3[24497]: segfault at 8 ip 000000000054e7a4 sp 00007ffda2527070 error 4 in python3.14[14e7a4,422000+386000] likely on CPU 13 (core 24, socket 0)
+Nov 21 16:11:31 dcoimbra-System-Product-Name kernel: python3[24509]: segfault at e ip 00007f6c334b56ad sp 00007fff39a2b210 error 4 in libc.so.6[b56ad,7f6c33428000+198000] likely on CPU 13 (core 24, socket 0)
