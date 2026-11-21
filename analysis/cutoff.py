@@ -25,10 +25,10 @@ from typing import Any
 
 from analysis.loading import ExclusionRule, InvalidCampaign, LoadedCampaign, add_exclusion_arguments, exclusion_rule, load_campaign
 from analysis.quality.clock import report_clock_warnings
-from analysis.runs import Row
 from analysis.scaling.crossing import ESTIMATE_COLUMNS, estimate_rows, estimates
 from analysis.scaling.cutoff import TABLE_COLUMNS, CutoffPoint, cutoff_points, table_rows
 from analysis.scaling.fork_join import MODEL_COLUMNS, fork_join_costs, model_rows, predictions
+from harness.collect import Row
 
 
 class InvalidCutoffCampaign(InvalidCampaign):

@@ -2,9 +2,11 @@ import unittest
 
 from analysis.configuration import Configuration
 from analysis.quality.variants import mixed_configurations
+from analysis.tests.rows import partial_row
+from harness.collect import Row
 
 
-def row(**settings: str) -> dict[str, str]:
+def row(**settings: str) -> Row:
     base = {
         "env": "native",
         "workload": "filter",
@@ -17,7 +19,7 @@ def row(**settings: str) -> dict[str, str]:
         "palette": "spread",
         "passes": "1",
     }
-    return base | settings
+    return partial_row(**(base | settings))
 
 
 class MixedConfigurationsTest(unittest.TestCase):

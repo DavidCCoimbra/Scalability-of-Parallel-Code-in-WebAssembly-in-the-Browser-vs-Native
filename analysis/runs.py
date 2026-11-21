@@ -1,12 +1,11 @@
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Any
 
 from analysis.configuration import Configuration, configuration_of
 from analysis.stats.summary import Summary
+from harness.collect import Row
 
 MEASURED = "measured"
-Row = dict[str, Any]
 
 
 @dataclass(frozen=True)

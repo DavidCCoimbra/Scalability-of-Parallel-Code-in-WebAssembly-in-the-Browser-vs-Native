@@ -7,7 +7,7 @@ from typing import Any
 from analysis.campaign import is_hybrid, pinned_browser_versions
 from analysis.configuration import Configuration, configuration_of
 from analysis.run_context import run_context
-from analysis.runs import Row
+from harness.collect import Row
 
 
 class Reason(StrEnum):

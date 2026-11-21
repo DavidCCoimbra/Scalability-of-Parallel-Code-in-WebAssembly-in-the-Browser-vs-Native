@@ -25,9 +25,9 @@ from analysis.cutoff import InvalidCutoffCampaign, load_runs, square_side, write
 from analysis.loading import ExclusionRule, InvalidCampaign, add_exclusion_arguments, exclusion_rule
 from analysis.quality.clock import report_clock_warnings
 from analysis.run_context import run_context
-from analysis.runs import Row
 from analysis.scaling.fork_join import fork_join_costs
 from analysis.scaling.grain import BEST_COLUMNS, POINT_COLUMNS, GrainPoint, best_grains, best_rows, grain_points, point_rows
+from harness.collect import Row
 
 # The paper's U-curve figure shows the main campaign's image size only.
 PAPER_SIDES = (8192,)

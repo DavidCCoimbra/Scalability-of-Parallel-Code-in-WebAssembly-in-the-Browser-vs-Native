@@ -8,19 +8,19 @@ groups by it.
 """
 
 from collections import defaultdict
-from collections.abc import Iterable, Mapping
-from typing import Any
+from collections.abc import Iterable
 
 from analysis.configuration import Configuration, configuration_of
+from harness.collect import Row
 
 UNNAMED_SETTINGS = ("width", "height", "pitch", "palette", "passes")
 
 
-def setting_values(row: Mapping[str, Any]) -> tuple[str, ...]:
-    return tuple(str(row.get(name, "")) for name in UNNAMED_SETTINGS)
+def setting_values(row: Row) -> tuple[str, ...]:
+    return (row["width"], row["height"], row["pitch"], row["palette"], row["passes"])
 
 
-def mixed_configurations(rows: Iterable[Mapping[str, Any]]) -> list[Configuration]:
+def mixed_configurations(rows: Iterable[Row]) -> list[Configuration]:
     seen: defaultdict[Configuration, set[tuple[str, ...]]] = defaultdict(set)
     for row in rows:
         seen[configuration_of(row)].add(setting_values(row))

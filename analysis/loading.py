@@ -6,9 +6,9 @@ from typing import Any, TextIO
 
 from analysis.inference.exclusion import Exclusions, excluded_runs
 from analysis.quality.foreign_cpu import FOREIGN_CPU_THRESHOLD
-from analysis.runs import Row, RunSummary, run_summaries
+from analysis.runs import RunSummary, run_summaries
 from analysis.stats.summary import RUN_SUMMARY, Summary
-from harness.collect import Collection, collect
+from harness.collect import Collection, Row, collect
 
 
 class InvalidCampaign(ValueError):

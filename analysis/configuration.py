@@ -1,7 +1,8 @@
-from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from enum import StrEnum
 from typing import Any
+
+from harness.collect import Row
 
 
 class Environment(StrEnum):
@@ -85,5 +86,5 @@ def parse_k(text: str) -> int | None:
     return int(text) if text else None
 
 
-def configuration_of(row: Mapping[str, Any]) -> Configuration:
+def configuration_of(row: Row) -> Configuration:
     return Configuration(row["env"], row["workload"], row["input"], parse_k(row["k"]), int(row["threads"]))
