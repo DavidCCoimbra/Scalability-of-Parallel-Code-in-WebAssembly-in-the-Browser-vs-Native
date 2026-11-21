@@ -23,6 +23,7 @@ impl<'a, M: MemoryProbe> MemoryTracker<'a, M> {
     pub(super) fn sizes(&self) -> MemorySizes {
         MemorySizes {
             before_warmup: self.before_warmup,
+            before_measured: self.before_measured,
             after_measured: self.after_measured,
         }
     }
@@ -85,12 +86,13 @@ mod tests {
     }
 
     #[test]
-    fn records_the_size_before_warmup_and_after_the_last_measured_iteration() {
+    fn records_the_size_before_warmup_between_the_phases_and_after_the_last_iteration() {
         let (sizes, _) = tracked::<false>();
         assert_eq!(
             sizes,
             MemorySizes {
                 before_warmup: Some(1_000),
+                before_measured: Some(1_100),
                 after_measured: Some(1_200),
             }
         );

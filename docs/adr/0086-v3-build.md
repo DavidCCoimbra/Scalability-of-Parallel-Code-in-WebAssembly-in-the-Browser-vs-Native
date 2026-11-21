@@ -94,6 +94,25 @@ In a campaign a sequential workload enters the plan once per repetition, at one 
 whatever the campaign's thread counts. The analysis keeps its runs apart from the scaling
 curves.
 
+### 3. The memory size before the measured phase is written
+
+A run recorded its memory size (the native resident set, the WASM linear memory) before the
+warm-up and after the last measured iteration. The size between the two phases was already
+sampled, for the check that fails a run whose memory grows while it is measured, but not
+written. It is now the column `mem_before_measured_bytes`, the last of the CSV, and the schema
+is 3. No sample is added, so nothing new happens between iterations.
+
+A native filter run at 8192x8192 shows what the column is for: 69.7 MB before the warm-up,
+136.8 MB before the first measured iteration and 136.8 MB after the last. The 64 MiB of the
+output buffer are first touched in the warm-up.
+
+The script reports `native::run` and, in WASM, `bench::run` as different: they are the
+functions the measurement loop and the CSV writing are inlined into, and a row has one more
+field. Every kernel is as after section 2.
+
+The reader accepts the files of `measured/v2`, which lack the column, and gives them an empty
+value; `make tables-check` regenerates every v2 table unchanged with it.
+
 ## Consequences
 
 - The runs of `measured/v3` are not compared number by number with those of `measured/v2`

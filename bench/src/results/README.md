@@ -8,11 +8,13 @@ is the time of the iteration.
 
 ## Schema
 
-`SCHEMA_VERSION` is 2 (the v2 build). Schema 1, every earlier build, had the
-first 13 columns only and no `schema` column; schema 2 appends the rest, so
-the position of every schema 1 column is unchanged. The harness reads a row
-without a `schema` value as schema 1 and fills in what those builds implied
-(`harness/native/row_schema.py`). An absent value is an empty field.
+`SCHEMA_VERSION` is 3 (the v3 build). Schema 1, every build before v2, had the
+first 13 columns only and no `schema` column; schema 2 (v2) appends the
+columns up to `grain`; schema 3 appends `mem_before_measured_bytes`. A new
+column always goes at the end, so the position of every earlier column is
+unchanged. The harness reads schema 2 and 3 files and gives a schema 2 row an
+empty value for the column it lacks (`harness/collect.py`). An absent value is
+an empty field.
 
 | Column | Schema | Meaning |
 |---|---|---|
@@ -25,9 +27,10 @@ without a `schema` value as schema 1 and fills in what those builds implied
 | `output_addr_mod4096`, `output_addr_mod64` | 2 | Start of the output buffer modulo 4096 and 64 (filter only) |
 | `pitch` | 2 | Row stride of the images in bytes (the width unless `pitch` was set) |
 | `palette` | 2 | `spread` or `consecutive` for `input=few`; empty for noise |
-| `schema` | 2 | The schema version, 2 |
+| `schema` | 2 | The schema version |
 | `passes` | 2 | `run` calls per timed sample |
 | `grain` | 2 | Fixed task size; empty for Rayon's adaptive split |
+| `mem_before_measured_bytes` | 3 | Memory after the warm-up, before the first measured iteration: equal to `mem_after_bytes` when the buffers were first touched in the warm-up |
 
 | File | Responsibility |
 |---|---|
