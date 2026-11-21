@@ -32,7 +32,7 @@ from harness.launcher.url import run_url
 from harness.paths import REPOSITORY, WASM_ARTIFACT
 from harness.shield import (
     CgroupShield,
-    CpuUsage,
+    RunUsage,
     check_confinement,
     confine,
     escaped_processes,
@@ -102,7 +102,7 @@ class Launcher:
 
     def run_on_profile(self, profile: Path, run_id: str, query: str) -> RunOutcome:
         files = RunFiles(self.results, run_id)
-        usage = CpuUsage(parse_cpu_mask(self.cpus))
+        usage = RunUsage.of_mask(parse_cpu_mask(self.cpus))
         started_at, load_before, started = utc_now(), loadavg(), time.monotonic()
         self.browser.prepare_profile(profile)
         usage.start()
@@ -132,16 +132,17 @@ class Launcher:
             time.sleep(self.poll)
         return RunStatus.TIMEOUT, None
 
-    def tear_down(self, process: "subprocess.Popen[bytes]", profile: Path, run_id: str, usage: CpuUsage) -> Teardown:
+    def tear_down(self, process: "subprocess.Popen[bytes]", profile: Path, run_id: str, usage: RunUsage) -> Teardown:
         # Read the CPU time and the escaped processes while the browser still runs:
         # stopping the scope or the group first would empty what they count.
-        cpu_seconds = usage.stop(self.run_cpu_seconds(process, run_id))
+        cpu_seconds = usage.cpu.stop(self.run_cpu_seconds(process, run_id))
+        cores = usage.cores.stop()
         escaped = escaped_processes(profile, run_id, process.pid) if self.scope_user else UNAVAILABLE
         if self.scope_user:
             stop_scope(run_id)
         stop_process_group(process)
         leftovers = kill_processes_using(profile)
-        return Teardown(cpu_seconds, leftovers, escaped)
+        return Teardown(cpu_seconds, leftovers, escaped, cores)
 
     def run_cpu_seconds(self, process: "subprocess.Popen[bytes]", run_id: str) -> float | str:
         return scope_cpu_seconds(run_id) if self.scope_user else process_session_seconds(process.pid)
@@ -181,6 +182,7 @@ class Launcher:
             start_delay_ms=self.start_delay_ms,
             passes=record.passes,
             grain=record.grain,
+            cores=record.teardown.cores,
             leftover_processes=record.teardown.leftover_processes,
             escaped_processes=record.teardown.escaped_processes,
             foreign_cpu_seconds=record.teardown.cpu_seconds.foreign_seconds,

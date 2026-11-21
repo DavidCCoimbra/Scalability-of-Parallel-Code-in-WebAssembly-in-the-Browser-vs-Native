@@ -4,8 +4,10 @@ Usage: python3 -m harness.shield check --cpus 0,2,4,6,8,10,12,14
 """
 
 from harness.shield.cgroup import SHIELDED_UNITS, CgroupShield
+from harness.shield.core_activity import CoreActivity, CoreSnapshot
 from harness.shield.confinement import check_confinement, confine, pin_current_process
 from harness.shield.cpu_time import BUSY_FIELDS, CpuSplit, CpuTimes, CpuUsage, process_session_seconds
+from harness.shield.run_usage import RunUsage
 from harness.shield.processes import descendants, escaped_processes, process_table
 from harness.shield.scope import (
     BENCH_SLICE,
@@ -26,9 +28,12 @@ __all__ = [
     "SHIELDED_UNITS",
     "UNIT_NAME",
     "CgroupShield",
+    "CoreActivity",
+    "CoreSnapshot",
     "CpuSplit",
     "CpuTimes",
     "CpuUsage",
+    "RunUsage",
     "check_confinement",
     "confine",
     "descendants",

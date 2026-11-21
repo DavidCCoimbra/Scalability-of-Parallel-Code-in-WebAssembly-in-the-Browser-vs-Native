@@ -7,6 +7,8 @@ from harness.context import UNAVAILABLE
 from harness.shield import (
     SHIELDED_UNITS,
     CgroupShield,
+    CoreActivity,
+    CoreSnapshot,
     CpuTimes,
     CpuUsage,
     escaped_processes,
@@ -64,6 +66,45 @@ class CpuUsageTest(unittest.TestCase):
         usage = CpuUsage([0], read=lambda: None, ticks_per_second=100)
         usage.start()
         self.assertEqual(usage.stop(run_seconds=2.0), (2.0, UNAVAILABLE))
+
+
+class CoreActivityTest(unittest.TestCase):
+    def test_each_measured_cpu_gets_its_busy_time_and_both_frequencies(self) -> None:
+        snapshots = iter(
+            [
+                CoreSnapshot(CpuTimes({0: 100, 2: 100}), {0: 3200000, 2: 800000}),
+                CoreSnapshot(CpuTimes({0: 400, 2: 100}), {0: 3200000, 2: 2600000}),
+            ]
+        )
+        activity = CoreActivity([0, 2], snapshot=lambda cpus: next(snapshots), ticks_per_second=100)
+        activity.start()
+        self.assertEqual(
+            activity.stop(),
+            {
+                "0": {"busySeconds": 3.0, "khzBefore": 3200000, "khzAfter": 3200000},
+                "2": {"busySeconds": 0.0, "khzBefore": 800000, "khzAfter": 2600000},
+            },
+        )
+
+    def test_a_snapshot_reads_proc_stat_and_the_frequency_of_the_asked_cpus(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            write(root, "proc/stat", PROC_STAT)
+            write(root, "sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq", "3200000\n")
+            snapshot = CoreSnapshot.take([0, 2], root)
+        assert snapshot.times is not None
+        self.assertEqual(snapshot.times.busy[2], 300)
+        self.assertEqual(snapshot.khz, {0: 3200000, 2: None})
+
+    def test_without_a_mask_nothing_is_recorded(self) -> None:
+        activity = CoreActivity(None)
+        activity.start()
+        self.assertEqual(activity.stop(), UNAVAILABLE)
+
+    def test_without_proc_stat_the_busy_time_is_missing_and_the_rest_is_kept(self) -> None:
+        activity = CoreActivity([0], snapshot=lambda cpus: CoreSnapshot(None, {0: 3200000}), ticks_per_second=100)
+        activity.start()
+        self.assertEqual(activity.stop(), {"0": {"busySeconds": None, "khzBefore": 3200000, "khzAfter": 3200000}})
 
 
 class ProcessSessionTest(unittest.TestCase):

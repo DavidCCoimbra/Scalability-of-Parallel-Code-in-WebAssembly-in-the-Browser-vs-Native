@@ -68,7 +68,10 @@ a sample-size one. It stays declared.
 1. **Per run, for every measured CPU: its frequency before and after, and its busy time.** From
    `scaling_cur_freq` and the per-CPU lines of `/proc/stat`. The busy time says on which cores
    a run worked. The frequency is two point samples, not the frequency during the timed
-   iterations: a core that slows down and recovers inside a run is not seen.
+   iterations: a core that slows down and recovers inside a run is not seen. The kernel's
+   figure is the average over a CPU's last scheduler tick, so the sample after the run is
+   recent for the cores that worked, and the sample before it, taken on idle cores, is old and
+   is recorded only for completeness.
 2. **Engine arms.** A spec may list named arms, each a set of Chrome `--js-flags` and Firefox
    preferences. Arms are a dimension of the plan, so they interleave like everything else, and
    every run records its arm. The default arm sets nothing; every campaign but the tier one
@@ -105,7 +108,11 @@ next call continues from it. The steps:
 2. **Environment** set up and checked; tests; `make quick`.
 3. **Per-core check.** The native filter at N = 1, pinned to one P-core at a time, 10 runs per
    core, with the checksum and the core's frequency read in every run. Its runs are never
-   results.
+   results. It also tests the frequency sample itself: each run is pinned, so the core that
+   worked is known, and its sample after the run must read near 3.2 GHz on the cores that give
+   normal times. If it reads as idle instead, the sample is not usable, the frequency filter
+   of section 6 is dropped, and the split of the one-thread times by core, which needs only
+   the busy time, is the check that remains.
 4. **Build**, with the digests stored, and the tag `measured/v3`.
 5. **Gate.** The cells whose code changed (both histograms at k = 1 and 256, the sequential
    workloads) and the filter as control, at N = 1 and 8, three environments, 3 runs, real
@@ -153,8 +160,8 @@ starts.
   its own ADR. A slower core is reported with its measured number. One exploratory check
   follows from what each run records: the one-thread times split by the core that did the
   work (the core with the most busy time in the run), and the filter's primary contrast with
-  T1 taken only from runs whose core was, in both samples, within 5 % of the 3.2 GHz that the
-  P-cores run at with turbo off. It says nothing at N = 8, where every run uses all eight
+  T1 taken only from runs whose core was, in the sample after the run, within 5 % of the
+  3.2 GHz that the P-cores run at with turbo off. It says nothing at N = 8, where every run uses all eight
   cores: if core 6 is slow, it is slow in every N = 8 run of every environment, and that is
   declared, not corrected.
 - **v3 or v2.** v3 is reported if, by 2026-11-27, the main campaign has every planned run, no

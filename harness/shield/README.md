@@ -17,6 +17,8 @@ python3 -m harness.shield check --cpus 0,2,4,6,8,10,12,14
 | `scope.py` | The systemd scope: command prefix, stop, cgroup path and CPU time |
 | `confinement.py` | `confine` (taskset, optionally in a scope), harness pinning |
 | `cpu_time.py` | `CpuTimes`, `CpuUsage` and session CPU time from `/proc` |
+| `run_usage.py` | `RunUsage`: the two readings a runner takes around a run |
+| `core_activity.py` | `CoreActivity`: per measured CPU, its busy time in the run and its frequency before and after |
 | `processes.py` | Browser processes that escaped the run scope |
 | `cli.py`, `__main__.py` | Command line |
 
@@ -30,6 +32,7 @@ flowchart TD
     scope --> run[run]
     run --> usage[CpuUsage: busy time on the mask]
     run --> own[scope cpu.stat / session / rusage]
+    run --> cores[CoreActivity: busy time and frequency per CPU]
     usage --> foreign[foreign CPU seconds = busy - own]
     own --> foreign
 ```

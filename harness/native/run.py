@@ -27,7 +27,7 @@ from harness.context import (
 )
 from harness.native.interface import BUILD_INFO_FLAG, query_to_flags, starts_with_header
 from harness.paths import REPOSITORY
-from harness.shield import CgroupShield, CpuSplit, CpuUsage, check_confinement, confine, stop_scope
+from harness.shield import CgroupShield, CpuSplit, RunUsage, check_confinement, confine, stop_scope
 
 DEFAULT_TIMEOUT_SECONDS = 3600.0
 BUILD_INFO_TIMEOUT_SECONDS = 60.0
@@ -109,14 +109,15 @@ class NativeRun:
         refuse_reused_run(self.results, run_id)
         argv = self.command(run_id, query)
         build = self.build_info()
-        usage = CpuUsage(parse_cpu_mask(self.cpus))
+        usage = RunUsage.of_mask(parse_cpu_mask(self.cpus))
         start = RunStart(argv, build, utc_now(), loadavg(), time.monotonic(), passes_of_query(query), grain_of_query(query))
         children_before = children_cpu_seconds()
         usage.start()
         output = self.execute(argv, run_id)
-        cpu = usage.stop(children_cpu_seconds() - children_before)
+        cpu = usage.cpu.stop(children_cpu_seconds() - children_before)
+        cores = usage.cores.stop()
         self.results.mkdir(parents=True, exist_ok=True)
-        context = self.context(start, cpu)
+        context = self.context(start, cpu, cores)
         return self.store(RunFiles(self.results, run_id), output, context)
 
     def execute(self, argv: list[str], run_id: str) -> RunnerOutput:
@@ -138,7 +139,7 @@ class NativeRun:
         annotate(files.metadata, context.to_json())
         return files.csv
 
-    def context(self, start: RunStart, cpu: CpuSplit) -> RunContext:
+    def context(self, start: RunStart, cpu: CpuSplit, cores: JsonValue) -> RunContext:
         return RunContext(
             **host_fields(REPOSITORY, self.cpus),
             environment=RunEnvironment.NATIVE,
@@ -161,6 +162,7 @@ class NativeRun:
             start_delay_ms=0,
             passes=start.passes,
             grain=start.grain,
+            cores=cores,
             leftover_processes=0,
             escaped_processes=0,
             foreign_cpu_seconds=cpu.foreign_seconds,

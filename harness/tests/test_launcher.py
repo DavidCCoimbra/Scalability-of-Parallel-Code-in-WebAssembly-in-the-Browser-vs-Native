@@ -229,6 +229,7 @@ class LauncherTest(unittest.TestCase):
         meta = json.loads((self.results / "r9.json").read_text())
         self.assertIn("runCpuSeconds", meta)
         self.assertIn("foreignCpuSeconds", meta)
+        self.assertIn("cores", meta)
         self.assertIn("shield", meta)
         self.assertEqual(meta["runCpuMethod"], "session")
         self.assertEqual(meta["startDelayMs"], 0)
