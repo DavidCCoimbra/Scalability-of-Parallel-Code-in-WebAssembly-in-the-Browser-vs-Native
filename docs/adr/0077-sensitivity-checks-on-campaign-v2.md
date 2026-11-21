@@ -49,7 +49,9 @@ how small a difference would count as "the same".
     of T1 by 1.9 % natively and 1.2 % in Chrome. Without those five runs the primary estimate
     is 0.996 (and Firefox's 1.070). A factor of 1.21 is what a core at about 2.6 GHz against
     3.2 GHz would give, which fits the degraded P-core of this machine, but no run records
-    the frequency of the core it ran on, so that cause is not established.
+    the frequency of the core it ran on, so that cause is not established. The per-core check
+    of 2026-11-21 does not support it: pinned to that core the filter is as fast as on the
+    others (ADR 0085).
   - *The median-centre interval is narrow partly by construction.* The bootstrap of a median
     over 30 runs can only take values that occur in the sample, so its distribution is
     discrete and its interval can be much narrower than the spread of the runs. The rejection

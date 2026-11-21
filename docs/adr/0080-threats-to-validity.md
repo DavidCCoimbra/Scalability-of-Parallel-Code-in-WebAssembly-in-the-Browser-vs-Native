@@ -24,7 +24,9 @@ The following are stated wherever the results are reported.
   high frequencies, which is why turbo could not be measured. Measured: five filter runs at
   N = 1, three native and two Chrome, are 1.21 times their configuration's median, and they
   widen the RQ1 interval (ADR 0077). Not established: that those runs ran on that core, since
-  no run records the frequency of the core it ran on.
+  no run records the frequency of the core it ran on. Measured later (ADR 0085): with turbo
+  off that core is as fast as the others and gives the right checksum, so a core slow by
+  itself does not explain those runs.
 - **Thread placement is left to the kernel.** Recorded (ADR 0001): a process-level mask, no
   per-thread pinning, because the browser cannot pin. The shared-atomic cells at k = 1 land on
   several time levels from run to run, which is why they are the widest cells.

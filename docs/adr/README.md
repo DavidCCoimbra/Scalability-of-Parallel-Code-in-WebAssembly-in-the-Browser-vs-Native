@@ -121,3 +121,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0082](0082-throughput-and-absolute-speedup.md) | Throughput and the absolute speedup are tabulated next to the relative speedup | Accepted |
 | [0083](0083-recorded-host-state-and-build-inputs.md) | The host state and the build inputs that were not recorded are recorded from now on | Accepted |
 | [0084](0084-v3-design.md) | The v3 build and its campaigns: what changes, what is asked and how the session runs | Accepted |
+| [0085](0085-per-core-check.md) | The per-core check: the degraded core is sound with turbo off, and what follows | Accepted; amends ADR 0084, ADR 0077 and ADR 0080 |
