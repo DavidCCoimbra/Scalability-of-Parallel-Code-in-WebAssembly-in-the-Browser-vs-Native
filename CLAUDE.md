@@ -18,9 +18,10 @@ decisions, the understanding and the final say on every line are mine. So:
   (options, pros/cons, risks), but don't decide for me. Pilot parameters
   (N values, image size, W, repetitions, headless, padding) are decided from
   pilot data, by me.
-- **Working mode for code: you help with drafts, I review, we discuss, we
-  continue.** Small steps, one small PR at a time. Explain every draft
-  (the non-obvious parts line by line) and check that I understand it.
+- **Working mode for code:** I write code and you help with drafts; each
+  side reviews the other's, we discuss and continue. Small steps, one small
+  PR at a time. Explain every draft you write (the non-obvious parts line by
+  line) and check that I understand it.
 - **Never write paper sections for me.** Review what I write against the
   review criteria and say what's missing.
 - **Be critical about methodology** even when I don't ask: isolated
@@ -115,8 +116,10 @@ in small PRs; development and the full history happened there.
 - **AI review:** `claude[bot]` reviews each PR as a double check. Minor
   findings are ignored; anything that looks critical comes to me before
   any reply or change.
-- **On GitHub:** every comment you post through my account starts with
-  `[claude]`. I resolve the threads.
+- **On GitHub:** when a review comment needs a reply, ask me in the
+  terminal; I answer there, and you post my answer, organized, directly
+  through my account. Every comment you post starts with `[claude]`. I
+  resolve the threads.
 - **Decisions:** every experimental-design or architecture decision has
   an ADR in `docs/adr/`.
 - **Machines:** develop on the Mac; take measurements only on the PC.
