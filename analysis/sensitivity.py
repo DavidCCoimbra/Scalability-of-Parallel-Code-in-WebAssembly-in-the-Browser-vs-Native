@@ -7,7 +7,8 @@ per check (per-run mean, median centre, no foreign-CPU exclusion). Per primary
 contrast, the output has the effect, the Bonferroni interval, the Holm p-value
 and the decision under the primary analysis and under every check, and
 `robust`: "yes" when every check takes the primary decision. The plan reports
-a conclusion that changes under a check as not robust.
+a conclusion that changes under a check as not robust. The decision is the
+Holm one, which can disagree with the Bonferroni interval next to it.
 """
 
 import argparse

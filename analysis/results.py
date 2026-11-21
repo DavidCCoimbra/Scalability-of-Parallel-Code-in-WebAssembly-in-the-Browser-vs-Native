@@ -33,9 +33,10 @@ def parser() -> argparse.ArgumentParser:
     parser.add_argument("directory", type=Path)
     parser.add_argument("--contrasts", type=Path, required=True)
     parser.add_argument("--shape", type=Path)
-    parser.add_argument("--foreign-cpu-threshold", type=float, default=FOREIGN_CPU_THRESHOLD)
+    threshold = parser.add_mutually_exclusive_group()
+    threshold.add_argument("--foreign-cpu-threshold", type=float, default=FOREIGN_CPU_THRESHOLD)
     # The plan's sensitivity check "without exclusion 3".
-    parser.add_argument("--no-foreign-cpu-threshold", action="store_true")
+    threshold.add_argument("--no-foreign-cpu-threshold", action="store_true")
     parser.add_argument("--strict", action="store_true")
     parser.add_argument("--summary", choices=[Summary.MEDIAN.value, Summary.MEAN.value], default=RUN_SUMMARY.value)
     parser.add_argument("--center", choices=[Summary.GEOMETRIC.value, Summary.MEDIAN.value], default=CONFIGURATION_CENTER.value)

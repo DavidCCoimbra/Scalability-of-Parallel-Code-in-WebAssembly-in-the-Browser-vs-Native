@@ -29,8 +29,7 @@ how small a difference would count as "the same".
   `--no-foreign-cpu-threshold` for the third check.
 - **Result: nine of the ten primary decisions are robust.** Every RQ2 decision (Chrome and
   Firefox at k = 1, 4, 16, 256) and the RQ1 decision for Firefox are the same under the three
-  checks. The third check changes nothing at all, because no run of the campaign was above the
-  threshold.
+  checks (the third cannot differ here; see below).
 - **RQ1 for Chrome is not robust.** Ratio of speedups at N = 8, Chrome over native, with the
   Bonferroni 99.5 % interval and the Holm-adjusted p-value:
 
