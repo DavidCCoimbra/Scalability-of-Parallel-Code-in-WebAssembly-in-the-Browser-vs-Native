@@ -1,21 +1,27 @@
 use rayon::prelude::*;
 
-use super::{CHUNK_BYTES, CounterTable, Histogram, PaddedCounter};
+use super::{BYTES_PER_KB, CHUNK_BYTES, CounterTable, Histogram, PaddedCounter};
 use crate::input::GrayImage;
-use crate::workloads::{BufferAddresses, Checksum, Workload};
+use crate::workloads::{BufferAddresses, Checksum, Grain, Workload};
 
 pub struct AtomicHistogram {
     image: GrayImage,
     counters: CounterTable<PaddedCounter>,
     histogram: Histogram,
+    grain: Grain,
 }
 
 impl AtomicHistogram {
     pub fn new(image: GrayImage) -> Self {
+        Self::with_grain(image, Grain::Adaptive)
+    }
+
+    pub fn with_grain(image: GrayImage, grain: Grain) -> Self {
         Self {
             image,
             counters: CounterTable::default(),
             histogram: Histogram::default(),
+            grain,
         }
     }
 
@@ -35,9 +41,11 @@ impl Workload for AtomicHistogram {
 
     fn run(&mut self) {
         let counters = &self.counters;
-        self.image
-            .pixels()
-            .par_chunks(CHUNK_BYTES)
+        // The same task construction as the local histogram, so the two differ only in their
+        // counters.
+        let chunk_len = self.grain.chunk_len(CHUNK_BYTES, BYTES_PER_KB);
+        self.grain
+            .tasks(self.image.pixels().par_chunks(chunk_len))
             .for_each(|chunk| chunk.iter().for_each(|&value| counters.increment(value)));
         // Reading the counters back is part of the timed work, as the reduce is for the
         // local histogram.
@@ -58,11 +66,11 @@ mod tests {
     use super::*;
     use crate::input::{SEED, few_colors, noise};
     use crate::test_support::{prepare_and_run, sequential_histogram};
-    use crate::workloads::Workload;
     use crate::workloads::histogram::Histogram;
     use crate::workloads::histogram::local::LocalHistogram;
     use crate::workloads::histogram::padded_counter::CACHE_LINE_BYTES;
     use crate::workloads::histogram::{MAX_TEST_THREADS, THREAD_TEST_SIDE};
+    use crate::workloads::{Grain, Workload};
 
     fn run_with_threads(workload: &mut AtomicHistogram, threads: usize) -> Histogram {
         prepare_and_run(workload, threads);
@@ -107,6 +115,22 @@ mod tests {
         atomic.prepare();
         atomic.run();
         assert_eq!(atomic.checksum(), local.checksum());
+    }
+
+    #[test]
+    fn every_fixed_grain_matches_the_sequential_histogram() {
+        let image = few_colors(300, 200, SEED, 4);
+        let expected = sequential_histogram(&image);
+        for kb in [1, 3, 16, 64, 1000] {
+            let mut workload = AtomicHistogram::with_grain(image.clone(), Grain::new(Some(kb)));
+            for threads in [1, 3, 8] {
+                assert_eq!(
+                    run_with_threads(&mut workload, threads),
+                    expected,
+                    "kb = {kb}, threads = {threads}"
+                );
+            }
+        }
     }
 
     #[test]

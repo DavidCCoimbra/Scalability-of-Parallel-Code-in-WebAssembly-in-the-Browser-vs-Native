@@ -2,7 +2,7 @@ use std::num::NonZeroUsize;
 
 use rayon::iter::{IndexedParallelIterator, MaxLen};
 
-/// `Fixed(n)` makes every task exactly n units (the filter's rows, the local histogram's KB)
+/// `Fixed(n)` makes every task exactly n units (the filter's rows, the histograms' KB)
 /// and stops Rayon from merging them, a sequential cutoff.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum Grain {
@@ -80,6 +80,28 @@ mod tests {
         };
         assert_eq!(tasks_of(Grain::new(Some(1))), 64);
         assert!(tasks_of(Grain::Adaptive) < 64);
+    }
+
+    // One thread, so that no steal changes how often Rayon splits and the count is exact.
+    #[test]
+    fn the_adaptive_grain_splits_as_an_iterator_without_it() {
+        use rayon::prelude::*;
+        let pool = crate::test_support::pool(1);
+        let plain = pool.install(|| {
+            (0..4096)
+                .into_par_iter()
+                .fold(|| (), |(), _| ())
+                .map(|()| 1)
+                .sum::<usize>()
+        });
+        let adaptive = pool.install(|| {
+            Grain::Adaptive
+                .tasks((0..4096).into_par_iter())
+                .fold(|| (), |(), _| ())
+                .map(|()| 1)
+                .sum::<usize>()
+        });
+        assert_eq!(adaptive, plain);
     }
 
     #[test]

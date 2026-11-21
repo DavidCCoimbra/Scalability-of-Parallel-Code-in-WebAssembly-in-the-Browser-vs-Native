@@ -57,8 +57,12 @@ impl WorkloadKind {
                 takes_grain: true,
                 takes_pitch: false,
             },
-            Self::HistogramAtomic
-            | Self::HistogramAtomicPrivate
+            Self::HistogramAtomic => Capabilities {
+                repeats_identically: false,
+                takes_grain: true,
+                takes_pitch: false,
+            },
+            Self::HistogramAtomicPrivate
             | Self::HistogramAtomicPacked
             | Self::Sort
             | Self::SortUnstable => Capabilities::default(),
@@ -73,7 +77,7 @@ impl WorkloadKind {
         debug_assert!(grain.is_adaptive() || self.capabilities().takes_grain);
         match self {
             Self::Filter => Box::new(GaussianBlur::with_grain(image, grain)),
-            Self::HistogramAtomic => Box::new(AtomicHistogram::new(image)),
+            Self::HistogramAtomic => Box::new(AtomicHistogram::with_grain(image, grain)),
             Self::HistogramLocal => Box::new(LocalHistogram::with_grain(image, grain)),
             Self::HistogramAtomicPrivate => Box::new(PrivateAtomicHistogram::new(image)),
             Self::HistogramAtomicPacked => Box::new(PackedAtomicHistogram::new(image)),

@@ -6,7 +6,7 @@ use rayon::prelude::*;
 
 use crate::input::GrayImage;
 use crate::workloads::histogram::{CHUNK_BYTES, CounterTable, Histogram, PaddedCounter};
-use crate::workloads::{BufferAddresses, Checksum, Workload};
+use crate::workloads::{BufferAddresses, Checksum, Grain, Workload};
 
 const OUTSIDE_POOL_TABLES: usize = 1;
 
@@ -47,9 +47,9 @@ impl Workload for PrivateAtomicHistogram {
             "run must use the pool that prepare sized the tables for"
         );
         let tables = &self.tables;
-        self.image
-            .pixels()
-            .par_chunks(CHUNK_BYTES)
+        // Split as the padded atomic histogram splits, so the two differ only in their counters.
+        Grain::Adaptive
+            .tasks(self.image.pixels().par_chunks(CHUNK_BYTES))
             .for_each(|chunk| {
                 let own = &tables
                     [rayon::current_thread_index().unwrap_or(tables.len() - OUTSIDE_POOL_TABLES)];

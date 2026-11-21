@@ -28,7 +28,7 @@ class RunContext:
         passes = integer(self.raw.get("passes"))
         return DEFAULT_PASSES if passes is None else passes
 
-    # Rows per task for the filter, KB for the local histogram; none is Rayon's adaptive split.
+    # Rows per task for the filter, KB for the histograms; none is Rayon's adaptive split.
     @property
     def grain(self) -> int | None:
         return integer(self.raw.get("grain"))

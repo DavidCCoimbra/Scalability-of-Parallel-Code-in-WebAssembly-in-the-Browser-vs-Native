@@ -4,7 +4,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 
-from harness.campaign.capabilities import FILTER, LOCAL_HISTOGRAM, NONE, Capabilities
+from harness.campaign.capabilities import ATOMIC_HISTOGRAM, FILTER, LOCAL_HISTOGRAM, NONE, Capabilities
 from harness.campaign.choices import parse_choice
 
 
@@ -36,7 +36,7 @@ class Palette(StrEnum):
 
 CAPABILITIES = {
     Workload.FILTER: FILTER,
-    Workload.HIST_ATOMIC: NONE,
+    Workload.HIST_ATOMIC: ATOMIC_HISTOGRAM,
     Workload.HIST_LOCAL: LOCAL_HISTOGRAM,
     Workload.HIST_ATOMIC_PRIVATE: NONE,
     Workload.HIST_ATOMIC_PACKED: NONE,

@@ -35,7 +35,7 @@ the numbers.
 ### 1. The build `measured/v3`
 
 Changes in `bench/`. None is an optimization. Each one goes in its own PR with the output of
-`scripts/codegen_diff.sh measured/v2`, and ADR 0085 (the v3 build) will list the hot functions
+`scripts/codegen_diff.sh measured/v2`, and ADR 0086 (the v3 build) will list the hot functions
 that changed.
 
 1. **Sequential workloads `filter-seq` and `hist-seq`.** The same kernels (`blur_row`,
@@ -47,7 +47,7 @@ that changed.
    get the same tasks. With the adaptive grain it must split as in v2, because
    `with_max_len(usize::MAX)` is Rayon's default: a test counts the tasks with and without the
    call, and the codegen diff says whether the atomic loop changed. This touches the numerator
-   of the RQ2 ratio, so ADR 0085 reports both checks; whatever they show, v3's ratios are never
+   of the RQ2 ratio, so ADR 0086 reports both checks; whatever they show, v3's ratios are never
    compared number by number with v2's (section 6).
 3. **The memory size before the measured phase is written.** `MemoryTracker` already samples it
    for its growth check; it becomes a third recorded value, next to the two that exist. No new

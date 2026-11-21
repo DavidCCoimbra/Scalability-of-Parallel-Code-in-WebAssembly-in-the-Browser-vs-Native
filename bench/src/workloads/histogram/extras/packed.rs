@@ -5,7 +5,7 @@ use rayon::prelude::*;
 
 use crate::input::GrayImage;
 use crate::workloads::histogram::{CHUNK_BYTES, CounterTable, Histogram, PackedCounter};
-use crate::workloads::{BufferAddresses, Checksum, Workload};
+use crate::workloads::{BufferAddresses, Checksum, Grain, Workload};
 
 pub struct PackedAtomicHistogram {
     image: GrayImage,
@@ -38,9 +38,9 @@ impl Workload for PackedAtomicHistogram {
 
     fn run(&mut self) {
         let counters = &self.counters;
-        self.image
-            .pixels()
-            .par_chunks(CHUNK_BYTES)
+        // Split as the padded atomic histogram splits, so the two differ only in their counters.
+        Grain::Adaptive
+            .tasks(self.image.pixels().par_chunks(CHUNK_BYTES))
             .for_each(|chunk| chunk.iter().for_each(|&value| counters.increment(value)));
         self.histogram = self.counters.read();
     }

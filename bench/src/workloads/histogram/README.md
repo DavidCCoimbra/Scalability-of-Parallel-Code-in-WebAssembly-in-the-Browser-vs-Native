@@ -16,7 +16,7 @@ cost of synchronization.
 
 ```mermaid
 flowchart LR
-    pixels["pixels"] --> chunks["par_chunks(CHUNK_BYTES)"]
+    pixels["pixels"] --> chunks["Grain: chunk length and tasks<br/>(a fixed grain for atomic and local only)"]
     chunks --> atomic["one shared CounterTable<br/>atomic (padded), packed"]
     chunks --> private["own CounterTable per thread<br/>private"]
     chunks --> local["fold into a local Histogram<br/>then reduce with merge"]
