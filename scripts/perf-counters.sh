@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Hardware counters of the atomic histogram on measured/v2.
+# Hardware counters of the atomic histogram on one measured build (MEASURED, default v2).
 #
-# Runs the perf-v2 campaign (an ordinary randomized campaign, quiet mode) while `perf stat`
+# Runs the perf-<build> campaign (an ordinary randomized campaign, quiet mode) while `perf stat`
 # counts the eight P-cores system-wide in 100 ms intervals. analysis/extras/perf_counters.py sums the
 # intervals inside each run's startedAt..finishedAt window, so every run gets its own counts.
 # perf needs CPU-wide events, which perf_event_paranoid = 1 denies to a user, so it runs as a
@@ -11,12 +11,13 @@
 # A resumed campaign appends a new segment: each segment keeps its own start time.
 set -euo pipefail
 
-SPEC=harness/campaigns/perf-v2.json
-OUT=data/raw/perf-v2/counters
+MEASURED=${MEASURED:-v2}
+SPEC=harness/campaigns/perf-$MEASURED.json
+OUT=data/raw/perf-$MEASURED/counters
 P_CORES=0,2,4,6,8,10,12,14
 INTERVAL_MS=100
 EVENTS=cpu_core/cycles/,cpu_core/instructions/,cpu_core/mem_inst_retired.lock_loads/,cpu_core/ocr.demand_rfo.l3_hit.snoop_hitm/,cpu_core/ocr.demand_data_rd.l3_hit.snoop_hitm/
-UNIT=ppc-perf-v2
+UNIT=ppc-perf-$MEASURED
 SEGMENT=$(date -u +%Y%m%dT%H%M%SZ)
 TMP=/tmp/$UNIT-$SEGMENT
 

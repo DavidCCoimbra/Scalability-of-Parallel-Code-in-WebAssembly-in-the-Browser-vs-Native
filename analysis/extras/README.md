@@ -5,7 +5,7 @@ Analysis commands of the extras, not part of RQ1 or RQ2.
 | Module | Command | What it writes |
 |---|---|---|
 | `build_variants.py` | `python3 -m analysis.extras.build_variants baseline=DIR scalar=DIR avx2=DIR --table T --figure F` | Filter scaling of the SIMD build variants against the baseline: efficiency, excess time and time over the baseline per build, environment and N (`simd-v2-variants.csv`) |
-| `perf_counters.py` | `python3 -m analysis.extras.perf_counters data/raw/perf-v2 --runs R --summary S --retries T` | Hardware counters per atomic operation per run, from the 100 ms `perf stat` intervals that `scripts/perf-counters-v2.sh` records next to the campaign |
+| `perf_counters.py` | `python3 -m analysis.extras.perf_counters data/raw/perf-v2 --runs R --summary S --retries T` | Hardware counters per atomic operation per run, from the 100 ms `perf stat` intervals that `scripts/perf-counters.sh` records next to the campaign |
 | `jitdump.py` | `python3 -m analysis.extras.jitdump JIT_DUMP... --name SUFFIX --output FILE.bin` | The bytes of one function compiled by V8, read from a jitdump, to disassemble with `objdump` (the tool behind ADR 0060) |
 
 `perf/` holds the pieces of `perf_counters`: `intervals.py` (the `perf stat` segments),

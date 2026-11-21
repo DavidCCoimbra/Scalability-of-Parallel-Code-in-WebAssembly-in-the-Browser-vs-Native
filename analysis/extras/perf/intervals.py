@@ -2,7 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 
-# The perf events of scripts/perf-counters-v2.sh, by the name used in the tables.
+# The perf events of scripts/perf-counters.sh, by the name used in the tables.
 EVENTS = {
     "cpu_core/cycles/": "cycles",
     "cpu_core/instructions/": "instructions",
