@@ -3,6 +3,7 @@
 from dataclasses import dataclass
 from enum import StrEnum
 
+from harness.context.json_value import JsonValue
 from harness.shield import CpuSplit
 
 
@@ -27,6 +28,7 @@ class Teardown:
     cpu_seconds: CpuSplit
     leftover_processes: int | str
     escaped_processes: int | str
+    cores: JsonValue
 
 
 @dataclass(frozen=True)

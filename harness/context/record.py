@@ -4,6 +4,7 @@ from dataclasses import asdict, dataclass
 from enum import StrEnum
 
 from harness.context.json_value import JsonObject, JsonValue
+from harness.context.unavailable import UNAVAILABLE
 
 
 class CpuTimeMethod(StrEnum):
@@ -47,6 +48,8 @@ class RunContext:
     escaped_processes: int | str
     # The fixed task size of a grain sweep run; None is Rayon's adaptive split.
     grain: int | None = None
+    # Per measured CPU: busy seconds in the run and the frequency before and after (ADR 0084).
+    cores: JsonValue = UNAVAILABLE
 
     def to_json(self) -> JsonObject:
         return {to_camel(key): value for key, value in asdict(self).items()}

@@ -38,9 +38,9 @@ REQUIRED_KEYS = (
     "leftoverProcesses",
     "escapedProcesses",
 )
-# Written since the cutoff campaign and the grain sweep; runs stored before
+# Written since the cutoff campaign, the grain sweep and the v3 build; runs stored before
 # them lack them and mean the default.
-LATER_KEYS = ("passes", "grain")
+LATER_KEYS = ("passes", "grain", "cores")
 BUILD_FIELDS = ("rustc", "wasmBindgen")
 STRICT_KEYS = (
     "commit",
