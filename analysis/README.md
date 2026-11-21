@@ -18,6 +18,8 @@ commands through `uv run --no-project --with matplotlib`, see `Makefile`).
 | `v0` | Speedup and efficiency per configuration, `<campaign>-scaling.csv` |
 | `results` | The plan's RQ1, RQ2 and absolute contrasts, `<campaign>-contrasts.csv`, and the shape table |
 | `sensitivity` | The plan's sensitivity checks side by side on the 10 primary contrasts (per-run mean, median centre, no foreign-CPU exclusion) and whether each decision is robust, `<campaign>-sensitivity.csv` |
+| `rq2_decomposition` | Post hoc: the two factors of each primary RQ2 ratio (atomic and local time, browser over native) and the ratio of the excesses (atomic - local), `<campaign>-rq2-decomposition.csv` |
+| `calibration` | Fork-join cost per environment, N, probe and phase from the calibration samples, over all runs and per workload, `<campaign>-fork-join.csv` |
 | `robustness` | Mann-Whitney U and Cliff's delta on the 10 primary contrasts, Holm-adjusted, against the bootstrap decisions, `<campaign>-robustness.csv` |
 | `karp_flatt` | Karp-Flatt serial fraction per configuration from a scaling table, `<campaign>-karp-flatt.csv` |
 | `distributions` | Violins of the per-run medians for the filter and the atomic histogram, `<campaign>-distributions.pdf`, and their quartiles, `<campaign>-distributions.csv` |

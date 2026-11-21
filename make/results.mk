@@ -13,6 +13,8 @@ results: ## Every table and figure of the campaign from data/raw/campaign-v2
 	python3 -m analysis.results data/raw/campaign-v2 --max-threads 8 --strict --foreign-cpu-threshold 0.25 --contrasts data/tables/campaign-v2/campaign-v2-contrasts.csv --shape data/tables/campaign-v2/campaign-v2-shape.csv
 	$(MAKE) sensitivity
 	python3 -m analysis.robustness data/raw/campaign-v2 --max-threads 8 --strict --foreign-cpu-threshold 0.25 --output data/tables/campaign-v2/campaign-v2-robustness.csv
+	python3 -m analysis.rq2_decomposition data/raw/campaign-v2 --max-threads 8 --strict --foreign-cpu-threshold 0.25 --output data/tables/campaign-v2/campaign-v2-rq2-decomposition.csv
+	python3 -m analysis.calibration data/raw/campaign-v2 --output data/tables/campaign-v2/campaign-v2-fork-join.csv
 	python3 -m analysis.karp_flatt data/tables/campaign-v2/campaign-v2-scaling.csv --output data/tables/campaign-v2/campaign-v2-karp-flatt.csv
 	uv run --no-project --with matplotlib python -m analysis.figures data/raw/campaign-v2 --output paper/figures --prefix campaign
 	uv run --no-project --with matplotlib python -m analysis.distributions data/raw/campaign-v2 --figure paper/figures/campaign-distributions.pdf --table data/tables/campaign-v2/campaign-v2-distributions.csv
