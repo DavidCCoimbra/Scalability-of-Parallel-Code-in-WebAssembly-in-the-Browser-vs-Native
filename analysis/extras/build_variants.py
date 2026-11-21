@@ -1,8 +1,8 @@
 """Filter scaling of the SIMD build variants against the baseline.
 
 Usage: uv run --no-project --with matplotlib python -m analysis.extras.build_variants
-       baseline=data/raw/campaign scalar=data/raw/simd-scalar avx2=data/raw/simd-avx2
-       --table data/tables/simd/simd-variants.csv --figure paper/figures/simd-efficiency.pdf
+       baseline=data/raw/campaign-v2 scalar=data/raw/simd-scalar-v2 avx2=data/raw/simd-avx2-v2
+       --table data/tables/simd-v2/simd-v2-variants.csv --figure paper/figures/simd-efficiency.pdf
 Per build, environment and N: the geometric mean of the run medians, the
 efficiency with its 95 % bootstrap interval, the excess time TN - T1 / N,
 the time over the same environment's baseline time and the time over the

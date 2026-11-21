@@ -52,6 +52,6 @@ flowchart LR
     runs --> table["table.scaling_table<br/>geometric centre, T1 / TN, bootstrap"]
     table --> csv["output.write_scaling<br/>data/&lt;campaign&gt;-scaling.csv"]
     clock --> json["report.scaling_sidecar<br/>data/&lt;campaign&gt;-scaling.json"]
-    table --> variants["build_variants.table_rows<br/>data/tables/simd/simd-variants.csv"]
+    table --> variants["build_variants.table_rows<br/>data/tables/simd-v2/simd-v2-variants.csv"]
     table --> figures["figures/<br/>speedup and efficiency PDFs"]
 ```
