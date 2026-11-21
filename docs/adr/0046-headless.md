@@ -22,7 +22,8 @@ their data are in the working repository) ran:
   histogram) at k = 1 (W = 71), at 8192x8192 and N = 8 threads;
 - 10 runs per browser in each mode, in quiet mode (ADR 0042), with every browser process inside
   the run's CPU scope (ADR 0045). All 80 runs have `escapedProcesses` = 0, that is, no browser
-  process left the scope.
+  process left the scope. All 80 ran with no start delay (`startDelayMs` = 0 in every run's
+  context, read from the pilot data on 2026-11-21); the 3 s delay of ADR 0048 came later.
 
 The headful windows opened on the PC's idle, unlocked GNOME desktop session.
 

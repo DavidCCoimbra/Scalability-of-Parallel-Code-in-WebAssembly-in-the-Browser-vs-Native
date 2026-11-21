@@ -25,8 +25,10 @@ session runs during a measured run.
   found. A second setup keeps the first saved value, so the original is not lost.
 - **Restore.** `make env-restore` puts the saved value back, or 4 if nothing was saved.
 - **Record.** The `sysinfo` record of every campaign (`data/raw/<campaign>/sysinfo`) stores
-  the value (`perfEventParanoid`), so every campaign states it. Campaigns from v2 on run with 1;
-  earlier campaigns ran with 4.
+  the value (`perfEventParanoid`), so every campaign states it. Read from those records on
+  2026-11-21: the `measured/v2` campaigns started on 9 and 10 November (main, grain, cutoff
+  and its controls) ran with 4, and those started from 11 November on (weak, SIMD, extras,
+  hybrid, perf) ran with 1. An earlier wording here said every v2 campaign ran with 1.
 
 ## Consequences
 
