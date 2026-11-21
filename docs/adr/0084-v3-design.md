@@ -191,4 +191,5 @@ starts.
 
 ## Status
 
-Accepted
+Accepted; amended by ADR 0085 (the frequency filter is dropped, the build is made twice, and
+"core 6" is CPU 12 of the mask)

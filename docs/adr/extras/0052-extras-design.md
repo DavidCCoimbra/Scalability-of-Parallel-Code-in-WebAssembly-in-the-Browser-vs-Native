@@ -17,7 +17,8 @@ From the planned list of extras, the author chose to run extras 1 to 6:
 
 Three were not run:
 
-- **Turbo on** is impossible: core 6 of the PC is degraded at high frequencies.
+- **Turbo on** is impossible: core 6 of the PC is degraded at high frequencies (the seventh
+  P-core, CPU 12 of the mask; ADR 0085 measured it).
 - **A P+E campaign** (P-cores plus E-cores, the slower efficiency cores) adds little after the
   P versus P+E pilot of ADR 0045. (ADR 0059 later ran it anyway.)
 - **A replication on the Mac** would break the rule that numbers measured on the Mac are never
