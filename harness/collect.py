@@ -148,7 +148,16 @@ def joined_rows(directory: Path, csvs: set[str]) -> list[Row]:
             missing = missing_columns(run_id, reader.fieldnames)
             for row in reader:
                 rows.append(cast(Row, {"run": run_id, **{key: context.get(key) for key in CONTEXT_COLUMNS}, **row, **missing}))
+    refuse_mixed_schemas(directory, rows)
     return rows
+
+
+# One campaign is one build, and a build writes one schema: two in one folder are runs of two
+# builds, which are never read together.
+def refuse_mixed_schemas(directory: Path, rows: list[Row]) -> None:
+    schemas = sorted({row["schema"] for row in rows})
+    if len(schemas) > 1:
+        raise ForeignSchema(f"{directory}: runs of schemas {', '.join(schemas)} in one campaign")
 
 
 # A file of the current schema lacks nothing; one of the schema before it lacks the columns added

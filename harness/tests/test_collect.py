@@ -96,6 +96,14 @@ class CollectTest(unittest.TestCase):
         (self.root / "discarded" / "c-discard-chrome.csv").write_text(CSV_HEADER + "\n")
         self.assertEqual(len(collect(self.root).rows), 2)
 
+    def test_runs_of_two_schemas_in_one_campaign_are_refused(self) -> None:
+        self.run_pair("c-0000-a", 0)
+        self.run_pair("c-0001-a", 1)
+        earlier = ",".join(CSV_HEADER.split(",")[:-1])
+        (self.root / "c-0001-a.csv").write_text(earlier + "\n" + SCHEMA_2_ROW + "\n")
+        with self.assertRaisesRegex(ForeignSchema, "schemas 2, 3"):
+            collect(self.root)
+
     def test_a_file_of_the_schema_before_reads_with_the_new_column_empty(self) -> None:
         self.run_pair("c-0000-a", 0)
         earlier = ",".join(CSV_HEADER.split(",")[:-1])
