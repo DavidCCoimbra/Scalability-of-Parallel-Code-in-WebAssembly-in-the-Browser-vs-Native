@@ -70,8 +70,8 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0034](0034-campaign-orchestrator.md) | Campaign orchestrator with a seeded interleaved order and resume | Accepted; amended by ADR 0040 (environment check enforced on every start) |
 | [0035](0035-environment-setup-and-check.md) | Environment setup and check before every session | Accepted; amended by ADR 0040 (environment check enforced on every start) |
 | [0036](0036-analysis-v0.md) | Analysis v0: one value per run, relative speedup with bootstrap intervals | Accepted; amended by ADR 0037 (defaults fixed by the analysis plan) |
-| [0037](0037-analysis-plan.md) | Analysis plan fixed before the campaign | Accepted; amends ADR 0036 (analysis defaults); amended by ADR 0039 (absolute time ratios, clock check) and ADR 0041 (clock factor, image size) |
-| [0038](0038-inference-from-the-analysis-plan.md) | Inference implemented from the analysis plan | Accepted; amended by ADR 0039 (absolute time ratios, clock check) |
+| [0037](0037-analysis-plan.md) | Analysis plan fixed before the campaign | Accepted; amends ADR 0036 (analysis defaults); amended by ADR 0039 (absolute time ratios, clock check) and ADR 0041 (clock factor, image size); amended by ADR 0077 (sensitivity checks run, RQ1 for Chrome not robust) |
+| [0038](0038-inference-from-the-analysis-plan.md) | Inference implemented from the analysis plan | Accepted; amended by ADR 0039 (absolute time ratios, clock check); amended by ADR 0077 (sensitivity checks run, RQ1 for Chrome not robust) |
 | [0039](0039-absolute-times-and-clock-check.md) | Absolute time ratios and a clock resolution warning | Accepted; amends ADR 0037 and ADR 0038; amended by ADR 0041 (image size, clock factor of 100) |
 | [0040](0040-campaign-enforces-the-environment.md) | The campaign enforces the environment check on every start | Accepted; amends ADR 0034 (orchestrator) and ADR 0035 (environment check) |
 | [0041](0041-image-size-and-clock-factor.md) | Image size 8192x8192 and a clock factor of 100 | Accepted; amends ADR 0037 and ADR 0039 |
@@ -110,3 +110,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0074](0074-explainer-for-juniors.md) | The explainer is written for juniors first, in two layers | Accepted. The explainer lives in the working repository. |
 | [0075](0075-pad64-feature-removed.md) | The pad64 feature is removed from the bench, codegen-neutral | Accepted; amends ADR 0008 and ADR 0049 |
 | [0076](0076-below-the-shared-source.md) | What differs below the shared source, and what the v2 calibration measured | Accepted; amends ADR 0009 and ADR 0030 |
+| [0077](0077-sensitivity-checks-on-campaign-v2.md) | The plan's sensitivity checks, run on the main campaign of measured/v2 | Accepted; amends ADR 0037 and ADR 0038 |
