@@ -45,6 +45,8 @@ def runs_of(campaign: LoadedCampaign) -> list[Run]:
     for run_id in sorted(configurations):
         context = run_context(campaign.directory, run_id)
         start, end = timestamp(run_id, context.started_at), timestamp(run_id, context.finished_at)
+        if not operations[run_id]:
+            raise InvalidCampaign(f"{run_id}: no warm-up or measured iteration to count operations from")
         runs.append(Run(run_id, configurations[run_id], start, end, operations[run_id]))
     return runs
 

@@ -1,6 +1,7 @@
 import csv
 import statistics
-from collections import defaultdict
+from collections import Counter, defaultdict
+from collections.abc import Iterable
 from pathlib import Path
 
 from analysis.configuration import Configuration
@@ -15,10 +16,10 @@ def cell_columns(configuration: Configuration) -> list[str | int]:
     return [configuration.environment, configuration.workload, "" if configuration.k is None else configuration.k, configuration.threads]
 
 
-def short_cells(rows: list[RunCounters], repetitions: int) -> list[str]:
-    runs: dict[Configuration, int] = defaultdict(int)
-    for row in rows:
-        runs[row.run.configuration] += 1
+# Counted over the completed runs, the excluded ones included: an exclusion is not a gap in the
+# campaign, and the summary's runs column gives the n each mean is over.
+def short_cells(completed: Iterable[Configuration], repetitions: int) -> list[str]:
+    runs = Counter(completed)
     return [f"{cell.label}: {count} runs" for cell, count in sorted(runs.items()) if count < repetitions]
 
 

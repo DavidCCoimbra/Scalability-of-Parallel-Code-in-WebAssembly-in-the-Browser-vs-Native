@@ -20,7 +20,7 @@ def iso(seconds: float) -> str:
     return datetime.fromtimestamp(seconds, timezone.utc).isoformat()
 
 
-def write_run(raw: Path, run_id: str, started: float, finished: float, timed_iterations: int) -> None:
+def write_run(raw: Path, run_id: str, started: float, finished: float, timed_iterations: int, foreign_cpu: float = 0.0) -> None:
     match = RUN_NAME.search(run_id)
     assert match is not None
     cells = {"env": match["env"], "workload": "hist-atomic", "input": "few", "k": match["k"], "threads": match["threads"]}
@@ -29,7 +29,7 @@ def write_run(raw: Path, run_id: str, started: float, finished: float, timed_ite
     columns = CSV_HEADER.split(",")
     rows = [",".join((cells | {"phase": phase, "iter": str(i)}).get(column, "") for column in columns) for phase, i in phases]
     (raw / f"{run_id}.csv").write_text(CSV_HEADER + "\n" + "\n".join(rows) + "\n")
-    (raw / f"{run_id}.json").write_text(json.dumps({"startedAt": iso(started), "finishedAt": iso(finished)}))
+    (raw / f"{run_id}.json").write_text(json.dumps({"startedAt": iso(started), "finishedAt": iso(finished), "foreignCpuSeconds": foreign_cpu}))
 
 
 def write_segment(counters: Path, rows: list[tuple[float, int]]) -> None:
@@ -96,6 +96,18 @@ class PerfCountersTest(unittest.TestCase):
             (counters / "seg.start").write_text(f"{START}\n")
             with self.assertRaises(ValueError):
                 read_intervals(counters)
+
+    def test_an_excluded_run_is_not_a_missing_repetition(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            raw = Path(tmp)
+            write_run(raw, "perf-v2-0000-native-hist-atomic-k256-n8-r0", START + 0.05, START + 0.15, 1)
+            write_run(raw, "perf-v2-0001-native-hist-atomic-k256-n8-r1", START + 0.15, START + 0.25, 1, foreign_cpu=9.0)
+            write_segment(raw / "counters", [(0.1, 100), (0.2, 300)])
+            (raw / "campaign.json").write_text(json.dumps({"spec": {"repetitions": 2}}))
+            self.assertEqual(main([str(raw), "--runs", str(raw / "runs.csv"), "--summary", str(raw / "summary.csv")]), 0)
+            with (raw / "summary.csv").open(newline="") as file:
+                runs = {row["runs"] for row in csv.DictReader(file)}
+        self.assertEqual(runs, {"1"})
 
     def test_a_configuration_short_of_its_planned_runs_fails_the_analysis(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

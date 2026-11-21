@@ -22,10 +22,11 @@ import sys
 from pathlib import Path
 
 from analysis.campaign import campaign_spec
+from analysis.configuration import Configuration, configuration_of
 from analysis.extras.perf.intervals import read_intervals
 from analysis.extras.perf.run_counters import counters_of, runs_of
 from analysis.extras.perf.tables import short_cells, write_retries, write_runs, write_summary
-from analysis.loading import InvalidCampaign, add_exclusion_arguments, exclusion_rule, load_campaign
+from analysis.loading import InvalidCampaign, LoadedCampaign, add_exclusion_arguments, exclusion_rule, load_campaign
 
 COUNTERS_DIRECTORY = "counters"
 
@@ -38,6 +39,10 @@ def parser() -> argparse.ArgumentParser:
     parser.add_argument("--retries", type=Path)
     add_exclusion_arguments(parser)
     return parser
+
+
+def completed_configurations(campaign: LoadedCampaign) -> list[Configuration]:
+    return list({row["run"]: configuration_of(row) for row in campaign.collection.rows}.values())
 
 
 def problem(message: str) -> int:
@@ -59,7 +64,7 @@ def main(argv: list[str]) -> int:
     if empty:
         return problem(f"runs with no counter interval: {empty}")
     repetitions = campaign_spec(args.raw).get("repetitions")
-    short = short_cells(rows, repetitions) if isinstance(repetitions, int) else []
+    short = short_cells(completed_configurations(campaign), repetitions) if isinstance(repetitions, int) else []
     if short:
         return problem(f"configurations with fewer than {repetitions} runs: {short}")
     args.runs.parent.mkdir(parents=True, exist_ok=True)
