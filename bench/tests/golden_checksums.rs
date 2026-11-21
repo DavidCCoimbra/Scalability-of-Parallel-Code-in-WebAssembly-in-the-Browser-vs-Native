@@ -38,7 +38,7 @@ const CONSECUTIVE_16: InputKind = InputKind::FewColors {
 const CONSECUTIVE_4_CHECKSUM: u64 = 0x1dc3_154e_d830_a34f;
 const CONSECUTIVE_16_CHECKSUM: u64 = 0x577a_a80c_5171_14e7;
 
-const GOLDEN: [Golden; 19] = [
+const GOLDEN: [Golden; 22] = [
     golden(
         WorkloadKind::Filter,
         InputKind::Noise,
@@ -73,6 +73,22 @@ const GOLDEN: [Golden; 19] = [
         0xbcdd_ff52_6a1c_f985,
     ),
     golden(WorkloadKind::Sort, InputKind::Noise, 0x42b2_0973_fc05_a3aa),
+    // The sequential references must give the output of the parallel workloads.
+    golden(
+        WorkloadKind::FilterSequential,
+        InputKind::Noise,
+        0xfb6a_b99c_a3f4_7d32,
+    ),
+    golden(
+        WorkloadKind::HistogramSequential,
+        FEW_1,
+        0x32fa_988f_a7a1_103d,
+    ),
+    golden(
+        WorkloadKind::HistogramSequential,
+        FEW_256,
+        0xbcdd_ff52_6a1c_f985,
+    ),
     golden(
         WorkloadKind::HistogramAtomic,
         CONSECUTIVE_4,

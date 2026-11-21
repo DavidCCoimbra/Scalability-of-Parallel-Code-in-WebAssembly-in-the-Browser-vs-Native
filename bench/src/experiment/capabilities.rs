@@ -5,4 +5,7 @@ pub struct Capabilities {
     pub repeats_identically: bool,
     pub takes_grain: bool,
     pub takes_pitch: bool,
+    /// No Rayon call in `run`: the work stays on the calling thread, so only one thread makes
+    /// sense.
+    pub sequential: bool,
 }

@@ -13,7 +13,7 @@ def plan(spec: CampaignSpec) -> list[PlannedRun]:
         for environment in spec.environments
         for arm in spec.arms_of(environment)
         for workload in spec.workloads
-        for threads in spec.threads
+        for threads in spec.threads_of(workload)
     ]
     random.Random(spec.order_seed).shuffle(combinations)
     return [
@@ -27,7 +27,7 @@ def discarded_runs(spec: CampaignSpec, session: int) -> list[PlannedRun]:
     if not spec.discard_first_launch:
         return []
     return [
-        PlannedRun(DISCARDED_POSITION, environment, spec.workloads[0], spec.threads[0], 0, spec.name, discarded=True, session=session)
+        PlannedRun(DISCARDED_POSITION, environment, spec.workloads[0], spec.threads_of(spec.workloads[0])[0], 0, spec.name, discarded=True, session=session)
         for environment in spec.environments
         if environment.is_browser
     ]

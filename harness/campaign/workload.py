@@ -4,7 +4,15 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from enum import StrEnum
 
-from harness.campaign.capabilities import ATOMIC_HISTOGRAM, FILTER, LOCAL_HISTOGRAM, NONE, Capabilities
+from harness.campaign.capabilities import (
+    ATOMIC_HISTOGRAM,
+    FILTER,
+    LOCAL_HISTOGRAM,
+    NONE,
+    SEQUENTIAL_FILTER,
+    SEQUENTIAL_HISTOGRAM,
+    Capabilities,
+)
 from harness.campaign.choices import parse_choice
 
 
@@ -12,6 +20,8 @@ class Workload(StrEnum):
     FILTER = "filter"
     HIST_ATOMIC = "hist-atomic"
     HIST_LOCAL = "hist-local"
+    FILTER_SEQ = "filter-seq"
+    HIST_SEQ = "hist-seq"
     HIST_ATOMIC_PRIVATE = "hist-atomic-private"
     HIST_ATOMIC_PACKED = "hist-atomic-packed"
     SORT = "sort"
@@ -38,6 +48,8 @@ CAPABILITIES = {
     Workload.FILTER: FILTER,
     Workload.HIST_ATOMIC: ATOMIC_HISTOGRAM,
     Workload.HIST_LOCAL: LOCAL_HISTOGRAM,
+    Workload.FILTER_SEQ: SEQUENTIAL_FILTER,
+    Workload.HIST_SEQ: SEQUENTIAL_HISTOGRAM,
     Workload.HIST_ATOMIC_PRIVATE: NONE,
     Workload.HIST_ATOMIC_PACKED: NONE,
     Workload.SORT: NONE,

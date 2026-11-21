@@ -85,7 +85,10 @@ class CompareTest(unittest.TestCase):
 class CasesTest(unittest.TestCase):
     def test_filter_and_sort_on_noise_and_histograms_on_every_k_for_each_thread_count(self) -> None:
         names = {case.name for case in CASES}
-        self.assertEqual(len(names), 57)
+        self.assertEqual(len(names), 62)
+        self.assertIn("filter-seq noise N=1", names)
+        self.assertNotIn("filter-seq noise N=2", names)
+        self.assertTrue(all(f"hist-seq k={k} N=1" in names for k in (1, 4, 16, 256)))
         for threads in (1, 2, 4):
             self.assertIn(f"filter noise N={threads}", names)
             self.assertIn(f"sort noise N={threads}", names)

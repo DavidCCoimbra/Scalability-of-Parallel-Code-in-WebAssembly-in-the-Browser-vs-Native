@@ -6,8 +6,8 @@ pub(super) const RADIUS: usize = TAPS / 2;
 pub(super) const LEFT: usize = 0;
 pub(super) const CENTRE: usize = RADIUS;
 pub(super) const RIGHT: usize = TAPS - 1;
-const KERNEL_SHIFT: u32 = 4;
-const ROUNDING: u16 = 1 << (KERNEL_SHIFT - 1);
+pub(super) const KERNEL_SHIFT: u32 = 4;
+pub(super) const ROUNDING: u16 = 1 << (KERNEL_SHIFT - 1);
 
 const fn kernel_sum() -> u16 {
     let mut sum = 0;

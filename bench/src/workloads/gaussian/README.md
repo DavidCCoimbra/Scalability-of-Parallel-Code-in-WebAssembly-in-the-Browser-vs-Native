@@ -10,6 +10,7 @@ the first `width` bytes of each output row are written and checksummed.
 |---|---|
 | `../gaussian.rs` | `GaussianBlur`, `blur_row` and `blur_interior` |
 | `kernel.rs` | The binomial kernel, tap offsets, normalization and the clamped border pixels |
+| `sequential.rs` | `SequentialBlur`: the filter in one plain loop on the calling thread, the reference without Rayon (one thread only). It shares `blur_interior` and keeps its own copy of the row and border handling, so that the parallel filter's functions keep a single caller |
 
 ```mermaid
 flowchart LR
