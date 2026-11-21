@@ -2,9 +2,12 @@
 
 from urllib.parse import parse_qsl
 
-CSV_HEADER = "env,workload,input,k,width,height,seed,threads,phase,iter,ns,input_fingerprint,checksum,probe,mem_before_bytes,mem_after_bytes,input_addr_mod4096,input_addr_mod64,output_addr_mod4096,output_addr_mod64,pitch,palette,schema,passes,grain"
+CSV_HEADER = "env,workload,input,k,width,height,seed,threads,phase,iter,ns,input_fingerprint,checksum,probe,mem_before_bytes,mem_after_bytes,input_addr_mod4096,input_addr_mod64,output_addr_mod4096,output_addr_mod64,pitch,palette,schema,passes,grain,mem_before_measured_bytes"
 # The version written in the schema column of every row (bench/src/results.rs SCHEMA_VERSION).
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
+# Columns that a build before this schema did not write, newest last: a file of the v2 build
+# (schema 2) has every column but these.
+COLUMNS_SINCE_SCHEMA_3 = ("mem_before_measured_bytes",)
 BUILD_INFO_FLAG = "--build-info"
 RESERVED_KEYS = ("run", "env")
 

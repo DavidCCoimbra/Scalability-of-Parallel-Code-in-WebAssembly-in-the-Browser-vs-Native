@@ -8,7 +8,9 @@ from pathlib import Path
 from harness.collect import CONTEXT_COLUMNS, ForeignSchema, IncompleteRun, Row, collect, write_table
 from harness.native import CSV_HEADER
 
-ROW = "chrome,filter,noise,,8,8,24301,2,measured,0,123,0x01,0xab,,1000,1000,0,0,0,0,8,,2,1,"
+ROW = "chrome,filter,noise,,8,8,24301,2,measured,0,123,0x01,0xab,,1000,1000,0,0,0,0,8,,3,1,,1000"
+# The same row as the v2 build wrote it: schema 2, without the last column.
+SCHEMA_2_ROW = "chrome,filter,noise,,8,8,24301,2,measured,0,123,0x01,0xab,,1000,1000,0,0,0,0,8,,2,1,16"
 
 
 class CollectTest(unittest.TestCase):
@@ -93,6 +95,14 @@ class CollectTest(unittest.TestCase):
         (self.root / "discarded").mkdir()
         (self.root / "discarded" / "c-discard-chrome.csv").write_text(CSV_HEADER + "\n")
         self.assertEqual(len(collect(self.root).rows), 2)
+
+    def test_a_file_of_the_schema_before_reads_with_the_new_column_empty(self) -> None:
+        self.run_pair("c-0000-a", 0)
+        earlier = ",".join(CSV_HEADER.split(",")[:-1])
+        (self.root / "c-0000-a.csv").write_text(earlier + "\n" + SCHEMA_2_ROW + "\n")
+        rows = collect(self.root).rows
+        self.assertEqual(rows[0]["mem_before_measured_bytes"], "")
+        self.assertEqual((rows[0]["schema"], rows[0]["grain"]), ("2", "16"))
 
     def test_the_typed_row_names_exactly_the_joined_columns(self) -> None:
         self.assertEqual(list(Row.__annotations__), ["run", *CONTEXT_COLUMNS, *CSV_HEADER.split(",")])

@@ -9,13 +9,14 @@ import csv
 import json
 import sys
 from collections import Counter
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import TextIO, TypedDict, cast
 
 from harness.context import JsonObject
 from harness.context.results import CSV_SUFFIX, ERROR_SUFFIX, METADATA_SUFFIX
-from harness.native import CSV_HEADER
+from harness.native import COLUMNS_SINCE_SCHEMA_3, CSV_HEADER
 
 CONTEXT_COLUMNS = ("orderPosition", "startedAt", "foreignCpuSeconds", "startDelayMs")
 CAMPAIGN_METADATA = "campaign"
@@ -57,6 +58,7 @@ class Row(TypedDict):
     schema: str
     passes: str
     grain: str
+    mem_before_measured_bytes: str
 
 
 class IncompleteRun(ValueError):
@@ -64,7 +66,7 @@ class IncompleteRun(ValueError):
 
 
 class ForeignSchema(ValueError):
-    """A CSV whose header is not the current CSV_HEADER: a run of another build."""
+    """A CSV whose header is neither the current CSV_HEADER nor the one before it: a run of another build."""
 
 
 @dataclass
@@ -143,11 +145,21 @@ def joined_rows(directory: Path, csvs: set[str]) -> list[Row]:
             reader = csv.DictReader(file)
             if reader.fieldnames is None:
                 raise ForeignSchema(f"{run_id}: empty CSV")
-            if reader.fieldnames != CSV_HEADER.split(","):
-                raise ForeignSchema(f"{run_id}: CSV header is not the current schema")
+            missing = missing_columns(run_id, reader.fieldnames)
             for row in reader:
-                rows.append(cast(Row, {"run": run_id, **{key: context.get(key) for key in CONTEXT_COLUMNS}, **row}))
+                rows.append(cast(Row, {"run": run_id, **{key: context.get(key) for key in CONTEXT_COLUMNS}, **row, **missing}))
     return rows
+
+
+# A file of the current schema lacks nothing; one of the schema before it lacks the columns added
+# since, which read as empty. Any other header is a run of another build.
+def missing_columns(run_id: str, header: Sequence[str]) -> dict[str, str]:
+    current = CSV_HEADER.split(",")
+    if list(header) == current:
+        return {}
+    if list(header) == current[: -len(COLUMNS_SINCE_SCHEMA_3)]:
+        return dict.fromkeys(COLUMNS_SINCE_SCHEMA_3, "")
+    raise ForeignSchema(f"{run_id}: CSV header is not a schema this reader knows")
 
 
 def checksum_conflicts(rows: list[Row]) -> dict[str, list[str]]:

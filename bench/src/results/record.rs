@@ -69,6 +69,7 @@ impl Record {
             SCHEMA_VERSION.to_string(),
             config.plan.passes().count().to_string(),
             optional(config.grain.units()),
+            optional(context.memory.before_measured),
         ]
         .join(",")
     }

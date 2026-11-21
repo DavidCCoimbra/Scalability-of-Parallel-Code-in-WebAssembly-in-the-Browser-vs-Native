@@ -6,11 +6,12 @@ Usage: python3 -m harness.native --run ID --query "workload=...&threads=..."
        [--scope-user USER] [--harness-cpus 16-31]
 """
 
-from harness.native.interface import BUILD_INFO_FLAG, CSV_HEADER, RESERVED_KEYS, query_to_flags
+from harness.native.interface import BUILD_INFO_FLAG, COLUMNS_SINCE_SCHEMA_3, CSV_HEADER, RESERVED_KEYS, query_to_flags
 from harness.native.run import DEFAULT_TIMEOUT_SECONDS, NativeRun, NativeRunFailed, children_cpu_seconds
 
 __all__ = [
     "BUILD_INFO_FLAG",
+    "COLUMNS_SINCE_SCHEMA_3",
     "CSV_HEADER",
     "DEFAULT_TIMEOUT_SECONDS",
     "RESERVED_KEYS",

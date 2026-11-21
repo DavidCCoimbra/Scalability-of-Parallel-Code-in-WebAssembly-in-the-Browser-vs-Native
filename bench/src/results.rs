@@ -8,11 +8,12 @@ pub use phase::Phase;
 pub use record::Record;
 pub use run_context::RunContext;
 
-// Schema 1: every build before v2, the first 13 columns. Schema 2 (v2) appends the rest; readers
-// that find no schema column treat the row as schema 1 (harness/native/row_schema.py).
-pub const SCHEMA_VERSION: u32 = 2;
+// Schema 1: every build before v2, the first 13 columns. Schema 2 (v2) appends the columns up to
+// grain. Schema 3 (v3) appends mem_before_measured_bytes. A new column goes at the end, so the
+// position of every earlier one is unchanged (the reader is harness/collect.py).
+pub const SCHEMA_VERSION: u32 = 3;
 
-pub const CSV_HEADER: &str = "env,workload,input,k,width,height,seed,threads,phase,iter,ns,input_fingerprint,checksum,probe,mem_before_bytes,mem_after_bytes,input_addr_mod4096,input_addr_mod64,output_addr_mod4096,output_addr_mod64,pitch,palette,schema,passes,grain";
+pub const CSV_HEADER: &str = "env,workload,input,k,width,height,seed,threads,phase,iter,ns,input_fingerprint,checksum,probe,mem_before_bytes,mem_after_bytes,input_addr_mod4096,input_addr_mod64,output_addr_mod4096,output_addr_mod64,pitch,palette,schema,passes,grain,mem_before_measured_bytes";
 
 #[cfg(test)]
 mod tests {
@@ -26,7 +27,7 @@ mod tests {
     fn header_lists_the_shared_schema() {
         assert_eq!(
             CSV_HEADER,
-            "env,workload,input,k,width,height,seed,threads,phase,iter,ns,input_fingerprint,checksum,probe,mem_before_bytes,mem_after_bytes,input_addr_mod4096,input_addr_mod64,output_addr_mod4096,output_addr_mod64,pitch,palette,schema,passes,grain"
+            "env,workload,input,k,width,height,seed,threads,phase,iter,ns,input_fingerprint,checksum,probe,mem_before_bytes,mem_after_bytes,input_addr_mod4096,input_addr_mod64,output_addr_mod4096,output_addr_mod64,pitch,palette,schema,passes,grain,mem_before_measured_bytes"
         );
     }
 
@@ -45,6 +46,7 @@ mod tests {
             .context(Checksum(0xdef))
             .with_memory(MemorySizes {
                 before_warmup: Some(4096),
+                before_measured: Some(6144),
                 after_measured: Some(8192),
             })
             .with_buffers(BufferAddresses {
@@ -59,7 +61,7 @@ mod tests {
             context(InputKind::few(4)).record(Phase::Measured, 3, 123_456, Checksum(0xabc));
         assert_eq!(
             record.to_csv_row(),
-            "native,hist-atomic,few,4,64,32,24301,8,measured,3,123456,0x0000000000000def,0x0000000000000abc,,4096,8192,72,8,,,64,spread,2,1,"
+            "native,hist-atomic,few,4,64,32,24301,8,measured,3,123456,0x0000000000000def,0x0000000000000abc,,4096,8192,72,8,,,64,spread,3,1,,6144"
         );
     }
 
@@ -140,6 +142,7 @@ mod tests {
             .record(Phase::Measured, 0, 1, Checksum(1));
         assert_eq!(column(&record, "mem_before_bytes"), "");
         assert_eq!(column(&record, "mem_after_bytes"), "");
+        assert_eq!(column(&record, "mem_before_measured_bytes"), "");
     }
 
     #[test]
