@@ -7,7 +7,7 @@ import unittest
 import zipfile
 from pathlib import Path
 
-from harness.browsers import BrowserSpec, ChecksumMismatch, Installer, UnpinnedChecksum, load_specs
+from harness.browsers import BrowserSpec, ChecksumMismatch, Installer, UnpinnedChecksum, firefox_spec, load_specs
 
 
 def zip_with(path: str, content: bytes) -> bytes:
@@ -93,6 +93,18 @@ class InstallerTest(unittest.TestCase):
         with self.assertRaises(ChecksumMismatch):
             installer.install(self.specs()["firefox"])
         self.assertFalse((self.root / "browsers" / "firefox-158.0").exists())
+
+    def test_a_pinned_firefox_checksum_wins_over_the_sums_file(self) -> None:
+        installer = Installer(self.root / "browsers", self.fetch)
+        with self.assertRaises(ChecksumMismatch):
+            installer.install(firefox_spec("158.0", "0" * 64))
+        good = hashlib.sha256(self.firefox_tar).hexdigest()
+        self.fetch.responses[f"{FIREFOX_BASE}/SHA256SUMS"] = b"0" * 64 + b"  linux-x86_64/en-US/firefox-158.0.tar.xz\n"
+        self.assertEqual(installer.install(firefox_spec("158.0", good)).read_bytes(), b"#!firefox")
+
+    def test_the_repository_pins_both_browsers(self) -> None:
+        specs = load_specs(Path(__file__).resolve().parents[1] / "browsers.json")
+        self.assertTrue(all(spec.sha256 for spec in specs.values()))
 
     def test_pinned_chrome_checksum_is_verified(self) -> None:
         installer = Installer(self.root / "browsers", self.fetch)

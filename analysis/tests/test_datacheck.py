@@ -52,6 +52,7 @@ class ReportTest(unittest.TestCase):
             report = quality_report(root)
         self.assertFalse(report.blocking)
         self.assertIn("Runs failing strict validation: 12", report.text())
+        self.assertIn("  - native filter N=1: 12", report.text())
         self.assertIn("at least 10 runs): 0", report.text())
 
     def test_runs_set_aside_for_a_re_run_are_counted(self) -> None:

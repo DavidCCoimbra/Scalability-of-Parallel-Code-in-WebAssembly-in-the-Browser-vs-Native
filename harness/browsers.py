@@ -76,13 +76,16 @@ def chrome_spec(version: str, sha256: str | None) -> BrowserSpec:
     )
 
 
-def firefox_spec(version: str) -> BrowserSpec:
+# The pinned sha256 is the one Mozilla lists in the release's SHA256SUMS; without a pin the
+# installer falls back to that file, which an attacker of the archive could change with the tarball.
+def firefox_spec(version: str, sha256: str | None = None) -> BrowserSpec:
     entry = f"linux-x86_64/en-US/firefox-{version}.tar.xz"
     return BrowserSpec(
         name="firefox",
         version=version,
         url=f"{FIREFOX_BASE}/{version}/{entry}",
         executable="firefox/firefox",
+        sha256=sha256,
         sums_url=f"{FIREFOX_BASE}/{version}/SHA256SUMS",
         sums_entry=entry,
         policies_file=FIREFOX_POLICIES_FILE,
@@ -94,7 +97,7 @@ def load_specs(path: Path) -> dict[str, BrowserSpec]:
     config = json.loads(path.read_text())
     return {
         "chrome": chrome_spec(config["chrome"]["version"], config["chrome"].get("sha256")),
-        "firefox": firefox_spec(config["firefox"]["version"]),
+        "firefox": firefox_spec(config["firefox"]["version"], config["firefox"].get("sha256")),
     }
 
 
