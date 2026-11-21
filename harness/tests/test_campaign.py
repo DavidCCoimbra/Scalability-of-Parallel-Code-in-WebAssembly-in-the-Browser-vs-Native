@@ -20,8 +20,8 @@ from harness.campaign import (
     build_identity,
     plan,
 )
-from harness.context import JsonObject, RunEnvironment
-from harness.campaign.identity import crate_versions
+from harness.context import UNAVAILABLE, JsonObject, RunEnvironment
+from harness.campaign.identity import crate_versions, glue_digest
 from harness.launcher import FIREFOX_PREFS, RunStatus
 from harness.native import CSV_HEADER
 from harness.shield import UNIT_NAME
@@ -528,6 +528,23 @@ class BuildIdentityTest(unittest.TestCase):
             )
             self.assertEqual(crate_versions(lock), {"rayon-core": "1.13.0", "wasm-bindgen-rayon": "1.3.0"})
             self.assertEqual(crate_versions(Path(tmp) / "absent.lock"), {})
+
+    def test_a_crate_locked_twice_keeps_both_versions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = Path(tmp) / "Cargo.lock"
+            lock.write_text('[[package]]\nname = "rayon"\nversion = "1.12.0"\n\n[[package]]\nname = "rayon"\nversion = "1.8.0"\n')
+            self.assertEqual(crate_versions(lock), {"rayon": "1.12.0, 1.8.0"})
+
+    def test_the_glue_digest_covers_the_bindings_and_the_snippets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            package = Path(tmp)
+            self.assertEqual(glue_digest(package), UNAVAILABLE)
+            (package / "snippets/rayon").mkdir(parents=True)
+            (package / "bench.js").write_text("bindings")
+            (package / "snippets/rayon/workerHelpers.js").write_text("worker")
+            first = glue_digest(package)
+            (package / "snippets/rayon/workerHelpers.js").write_text("changed")
+            self.assertNotEqual(glue_digest(package), first)
 
     def test_the_identity_names_the_crates_and_the_firefox_profile_settings(self) -> None:
         browsers = {"firefox": Path("/nonexistent/firefox")}

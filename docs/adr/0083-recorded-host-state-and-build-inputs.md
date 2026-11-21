@@ -29,7 +29,8 @@ None of this changes a measured number. It decides what a later reader can check
   `memTotalKb`, `firmware` (BIOS vendor, version, date and board) and `defaultIrqAffinity`.
   Every campaign writes `sysinfo` before its first run, and `make env-check` writes it on its
   own.
-- **`campaign.json` build identity** gains `wasmGlueSha256` (digest of `www/pkg/bench.js`),
+- **`campaign.json` build identity** gains `wasmGlueSha256` (one digest over every JavaScript
+  file of `www/pkg`: the bindings and the worker start-up snippets of wasm-bindgen-rayon),
   `crates` (the four versions, read from `bench/Cargo.lock`) and, when Firefox runs,
   `firefoxPrefs` (the preferences written to the profile).
 - **`--locked`** on every cargo build, test and clippy of the make targets, of the `build-wasm`
