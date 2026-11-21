@@ -61,6 +61,23 @@ to the dedicated PC and remove it (`sudo rm /etc/sudoers.d/ppc-bench`) after the
 | `make tables-check` | Regenerate every table and fail if one differs from the committed one |
 | `make quick` | Tiny copies of every campaign, to check the pipeline end to end (never results) |
 
+### Before a campaign on another machine
+
+A campaign of the study needs more than the commands above:
+
+- **Linux with systemd and a graphical session.** Each run is confined to a systemd scope, and
+  the browsers start headless but still need the session's display variables.
+- **sudo** for `make env-setup` and `make env-restore` (they write kernel settings and move
+  system slices), and the `sudoers` rule above for the run scopes.
+- **The CPU layout of this study is hard-coded in two places that must change together:**
+  `P_MASK` and `E_CPUS` in the `Makefile` (the measured cores and the cores left to the system)
+  and `cpus` and `harnessCpus` in every campaign spec. They describe an i9-14900KF: P-cores on
+  the even CPUs 0 to 14, E-cores on 16 to 31.
+- **Time.** The main campaign is 4860 runs and takes about 13 hours; it resumes if stopped.
+- **Firefox must not update itself.** The harness now writes a `policies.json` that disables
+  the updater and checks the pinned versions before a campaign (ADR 0071). The main campaign of
+  `measured/v2` ran before that guard existed, with the same pinned 158.0.
+
 `make help` lists the rest. The campaigns are described in
 [`harness/campaigns/README.md`](harness/campaigns/README.md).
 
