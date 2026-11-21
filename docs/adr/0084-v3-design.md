@@ -39,11 +39,16 @@ Changes in `bench/`. None is an optimization. Each one goes in its own PR with t
 that changed.
 
 1. **Sequential workloads `filter-seq` and `hist-seq`.** The same kernels (`blur_row`,
-   `Histogram::record`) called from a plain loop, with no Rayon call in `run`. They run at
-   N = 1 only.
+   `Histogram::record`) called from a plain loop, with no Rayon call in `run`. `hist-seq`
+   counts into one plain table, as one task of the local histogram does, with no atomic. They
+   run at N = 1 only.
 2. **The atomic histogram takes the grain.** `AtomicHistogram::with_grain` builds its tasks with
-   `Grain::tasks`, as the local histogram and the filter do. With the adaptive grain it splits
-   as before; with a fixed grain both histograms get the same tasks.
+   `Grain::tasks`, as the local histogram and the filter do. With a fixed grain both histograms
+   get the same tasks. With the adaptive grain it must split as in v2, because
+   `with_max_len(usize::MAX)` is Rayon's default: a test counts the tasks with and without the
+   call, and the codegen diff says whether the atomic loop changed. This touches the numerator
+   of the RQ2 ratio, so ADR 0085 reports both checks; whatever they show, v3's ratios are never
+   compared number by number with v2's (section 6).
 3. **The memory size before the measured phase is written.** `MemoryTracker` already samples it
    for its growth check; it becomes a third recorded value, next to the two that exist. No new
    sample is taken, so nothing is added between iterations.
@@ -61,8 +66,9 @@ a sample-size one. It stays declared.
 ### 2. What the harness records and controls (no effect on the build)
 
 1. **Per run, for every measured CPU: its frequency before and after, and its busy time.** From
-   `scaling_cur_freq` and the per-CPU lines of `/proc/stat`. This says on which cores a run
-   worked and how fast they were.
+   `scaling_cur_freq` and the per-CPU lines of `/proc/stat`. The busy time says on which cores
+   a run worked. The frequency is two point samples, not the frequency during the timed
+   iterations: a core that slows down and recovers inside a run is not seen.
 2. **Engine arms.** A spec may list named arms, each a set of Chrome `--js-flags` and Firefox
    preferences. Arms are a dimension of the plan, so they interleave like everything else, and
    every run records its arm. The default arm sets nothing; every campaign but the tier one
@@ -103,9 +109,16 @@ next call continues from it. The steps:
 4. **Build**, with the digests stored, and the tag `measured/v3`.
 5. **Gate.** The cells whose code changed (both histograms at k = 1 and 256, the sequential
    workloads) and the filter as control, at N = 1 and 8, three environments, 3 runs, real
-   sizes, strict validation. It passes when the checksums agree across environments, every
-   iteration is long against the clock's resolution (ADR 0039), and the measured iterations do
-   not drift after the warm-up. Its runs are never results.
+   sizes, strict validation. Its runs are never results. It passes when, in every cell:
+   - the checksums agree across the three environments and both N;
+   - every timed sample is at least 100 times the recorded clock resolution (the clock factor
+     of ADR 0041);
+   - the median of the first three measured iterations is within 5 % of the median of the last
+     three (the measure of `analysis.iteration_drift`).
+
+   Three runs per cell only catch a gross failure, such as a warm-up that no longer covers the
+   compiler's tier change. The finer check is the data check of the main campaign (ADR 0051),
+   whose findings are reported and never used to change a parameter after the campaign started.
 6. **Main campaign**, then the exploratory ones, one per step.
 7. **Engine code.** The machine code that each engine runs for `blur_interior` and for the
    atomic loop, captured once per browser on the v3 build (V8's jitdump, read by
@@ -125,11 +138,11 @@ starts.
 | Do the histograms differ in more than their counters? | ADR 0078 | the same grain control in both | removed by construction |
 | Are the slow N = 1 runs those of core 6? | ADR 0077 | frequency and busy time per core and run, the per-core check | answered |
 | Which compiler tier is measured, and why is Chrome's first atomic iteration the fastest? | ADR 0072 | the tier campaign | answered |
-| Is the dip at N = 6 and 7 placement or splitting? | ADR 0080 | fixed grains at N = 6, 7 and 8 | answered: a fixed grain removes the dip or it does not |
+| Is the dip at N = 6 and 7 placement or splitting? | ADR 0080 | fixed grains at N = 6, 7 and 8 | supported or not: a fixed grain also changes the number of tasks and their balance, so a dip that goes away supports splitting without isolating it |
 | Does the first touch of the buffers end in the warm-up? | ADR 0080 | the memory size before the measured phase | answered |
 | Why is the Firefox filter 1.33 times the native one at N = 1, and the scalar WASM further still? | ADR 0079, ADR 0058 | instructions and cycles per pixel, the engine code | where the time goes (more instructions or slower ones); the cause inside the compiler may stay open |
 | Why is the local histogram superlinear in Firefox at k = 256 (8.47 at N = 8)? | ADR 0079 | cache misses per pixel at N = 1 and 8 | supported or not; not proven |
-| Why does Chrome's atomic histogram at k = 1, N = 8 drift along a campaign (17 % from the first runs to the last)? | the v2 data check, noted in the working repository | whether it repeats, with the frequencies per run | observed again or not; a cause only if the frequencies show one |
+| Why does Chrome's atomic histogram at k = 1, N = 8 drift along a campaign (17 % from the first runs to the last)? | the v2 data check, noted in the working repository | whether it repeats, with the frequencies per run | observed again or not; the two frequency samples per run can suggest a cause, not establish one |
 | Why does the filter step up between grains of 8 and 16 rows? | ADR 0067 | nothing new | stays declared |
 
 ### 6. Rules fixed before the data
@@ -137,13 +150,20 @@ starts.
 - **Core 6.** The main campaign keeps the eight P-cores whatever times the per-core check shows,
   so that the design and the primary contrasts at N = 8 are those of ADR 0037. A core leaves the
   mask only if it gives a wrong checksum or crashes; that would change the largest N and needs
-  its own ADR. A slower core is reported with its measured number, and the per-run frequencies
-  give a sensitivity check: the primary contrasts without the runs where a measured core was
-  below its nominal frequency.
-- **v3 or v2.** v3 is reported if, by 2026-11-27, the main campaign is complete, passes the data
-  check (ADR 0051) and loses no configuration to the exclusions. Otherwise the paper reports v2
-  and v3 is not used. The choice never depends on what the results show. If v3 is reported and
-  a conclusion differs from v2's, the paper says so.
+  its own ADR. A slower core is reported with its measured number. One exploratory check
+  follows from what each run records: the one-thread times split by the core that did the
+  work (the core with the most busy time in the run), and the filter's primary contrast with
+  T1 taken only from runs whose core was, in both samples, within 5 % of the 3.2 GHz that the
+  P-cores run at with turbo off. It says nothing at N = 8, where every run uses all eight
+  cores: if core 6 is slow, it is slow in every N = 8 run of every environment, and that is
+  declared, not corrected.
+- **v3 or v2.** v3 is reported if, by 2026-11-27, the main campaign has every planned run, no
+  checksum conflict, and every configuration of the primary contrasts keeps at least the 10
+  runs the bootstrap needs (ADR 0037) after the exclusions, whose rules and thresholds are
+  those of ADR 0037 and ADR 0051, unchanged. Otherwise the paper reports v2 and v3 is not used.
+  These criteria read counts of runs, never a time, a speedup or a contrast, so the choice
+  cannot follow the results. If v3 is reported and a conclusion differs from v2's, the paper
+  says so.
 - **No mixing.** No table, figure or comparison combines v2 and v3 runs (ADR 0062).
 
 ## Consequences
