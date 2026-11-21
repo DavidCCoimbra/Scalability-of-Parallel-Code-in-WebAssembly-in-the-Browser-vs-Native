@@ -120,3 +120,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0081](0081-one-loader-for-every-analysis-command.md) | Every analysis command reads a campaign through one loader, with the plan's exclusions | Accepted |
 | [0082](0082-throughput-and-absolute-speedup.md) | Throughput and the absolute speedup are tabulated next to the relative speedup | Accepted |
 | [0083](0083-recorded-host-state-and-build-inputs.md) | The host state and the build inputs that were not recorded are recorded from now on | Accepted |
+| [0084](0084-v3-design.md) | The v3 build and its campaigns: what changes, what is asked and how the session runs | Accepted |
