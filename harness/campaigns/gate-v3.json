@@ -25,6 +25,13 @@
       "warmup": 5
     },
     {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 256
+    },
+    {
       "workload": "hist-local",
       "input": "few",
       "k": 1,
@@ -72,5 +79,5 @@
   "timeoutSeconds": 900,
   "discardFirstLaunch": true,
   "strict": true,
-  "comment": "The gate before the v3 campaigns (ADR 0084): the cells whose code changed in measured/v3 and the filter as control, at the real size, 3 runs each. It passes on equal checksums, samples at least 100 times the clock resolution and no drift over the measured iterations. Its runs are never results."
+  "comment": "The gate before the v3 campaigns (ADR 0084): the cells whose code changed in measured/v3 and the filter as control, at the real size, 3 runs each; one cell gives the atomic histogram a fixed grain, a path that is new. It passes on equal checksums, samples at least 100 times the clock resolution and no drift over the measured iterations. Its runs are never results."
 }
