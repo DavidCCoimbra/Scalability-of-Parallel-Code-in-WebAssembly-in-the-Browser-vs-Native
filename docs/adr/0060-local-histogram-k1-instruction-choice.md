@@ -9,7 +9,7 @@ faster than native among the workloads with no shared counters (the filter and t
 histogram; with shared atomics the browsers are faster in several configurations, as the absolute ratios
 of ADR 0039 show):
 Chrome takes 151.5 ms at N = 1 against 154.9 ms natively (0.978), and 0.979
-at N = 8; Firefox takes 155.6 ms (1.004). The same source, compiler and flags produce both
+at N = 8; Firefox takes 155.6 ms (1.004). The same source, compiler and release profile (ADR 0076) produce both
 binaries, so the difference has to come from the machine code that each side ends up running:
 LLVM's code natively, and the code V8's compiler generates from the WASM in Chrome.
 
@@ -94,7 +94,7 @@ simple addressing; it is not documented by Intel for this core and was not measu
 - The paper can state that Chrome's 2 % advantage at k = 1 is not a scaling effect (it is
   present at N = 1 and unchanged at N = 8) and that instruction selection explains part of it,
   between about 45 % and 75 %; the rest, about 25 % to 55 %, is unexplained.
-- It is a reminder for RQ1 that "same source, same flags" does not mean the same instructions:
+- It is a reminder for RQ1 that "same source, same compiler" does not mean the same instructions:
   the WASM engine's code generator is part of the environment being measured.
 
 ## Status
