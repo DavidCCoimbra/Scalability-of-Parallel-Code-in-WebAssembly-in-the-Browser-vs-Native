@@ -164,5 +164,4 @@ the reference.
 
 ## Status
 
-Accepted; amends ADR 0036 (analysis defaults); amended by ADR 0039 (absolute time ratios, clock
-check) and ADR 0041 (clock factor, image size)
+Accepted; amends ADR 0036 (analysis defaults); amended by ADR 0039 (absolute time ratios, clock check) and ADR 0041 (clock factor, image size); amended by ADR 0077 (sensitivity checks run, RQ1 for Chrome not robust)

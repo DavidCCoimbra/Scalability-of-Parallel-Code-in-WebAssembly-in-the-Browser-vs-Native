@@ -1,0 +1,74 @@
+# ADR 0077: The plan's sensitivity checks, run on the main campaign of measured/v2
+
+Date: 2026-11-21
+
+## Context
+
+The analysis plan (ADR 0037), fixed before any campaign data, lists three sensitivity checks on
+the primary contrasts and one rule:
+
+- the per-run mean instead of the per-run median;
+- the median of the run values as the centre of a configuration, instead of the geometric mean;
+- no exclusion of runs by foreign CPU time;
+- "a conclusion that changes under a sensitivity check is reported as not robust".
+
+ADR 0038 implemented them as options of `analysis.results`, but no make target ran them and no
+table held their results. The audit of the final repository found the gap. This record runs
+them on `data/raw/campaign-v2` and applies the rule. Nothing here was chosen after seeing the
+data: the checks and the rule are those of the plan.
+
+The plan also defines no smallest effect of interest: it says when a contrast is rejected, not
+how small a difference would count as "the same".
+
+## Decision
+
+- **The checks are part of `make results`.** `make sensitivity` writes the three contrast
+  tables under `data/tables/campaign-v2/sensitivity/` and
+  `data/tables/campaign-v2/campaign-v2-sensitivity.csv`, which puts the ten primary contrasts
+  side by side with a `robust` column (`analysis.sensitivity`). `analysis.results` gains
+  `--no-foreign-cpu-threshold` for the third check.
+- **Result: nine of the ten primary decisions are robust.** Every RQ2 decision (Chrome and
+  Firefox at k = 1, 4, 16, 256) and the RQ1 decision for Firefox are the same under the three
+  checks. The third check changes nothing at all, because no run of the campaign was above the
+  threshold.
+- **RQ1 for Chrome is not robust.** Ratio of speedups at N = 8, Chrome over native, with the
+  Bonferroni 99.5 % interval and the Holm-adjusted p-value:
+
+  | Analysis | Effect | 99.5 % interval | Holm p | Rejected |
+  |---|---|---|---|---|
+  | Primary (per-run median, geometric centre) | 0.990 | [0.952, 1.028] | 0.904 | no |
+  | Per-run mean | 0.991 | [0.952, 1.029] | 0.756 | no |
+  | Median centre | 0.992 | [0.989, 1.001] | 0.018 | yes |
+  | No foreign-CPU exclusion | 0.990 | [0.952, 1.028] | 0.904 | no |
+
+  The primary decision stays the reported one, as the plan says, and is reported as not robust.
+  The point estimate hardly moves (0.990 to 0.992); what changes is the width. A few slow
+  N = 1 runs widen the geometric-mean interval, and the median ignores them. Under the median
+  centre the Holm decision rejects while the 99.5 % interval still contains 1: the two can
+  disagree, because Holm tests the later-ranked contrasts at a level looser than 0.005.
+- **Non-rejections are stated as bounds, never as equality.** For the two primary contrasts
+  that are not rejected, the data support only:
+  - RQ1, Chrome: the speedup at N = 8 is within 3.7 % of native's (95 % interval
+    [0.963, 1.016]) or 4.8 % (99.5 % interval [0.952, 1.028]);
+  - RQ2, Firefox at k = 1: the relative cost of the shared atomics is within 4.7 % of native's
+    (95 % interval [0.953, 1.037]) or 6.3 % (99.5 % interval [0.937, 1.055]).
+
+  Any threshold of practical importance applied to these would be chosen after the data and
+  must be labelled so.
+- **RQ1 for Firefox.** Rejected under every check (1.049, 1.037, 1.065). Under the per-run
+  mean the lower end of its 99.5 % interval is 1.000, so the size of the effect, not its
+  existence, depends on the summary.
+
+## Consequences
+
+- A reader can no longer take "Chrome scales like native" as an established equality: it is a
+  difference of about 1 % whose sign and significance depend on the centre, bounded at about
+  5 %.
+- `make tables-check` covers the new tables like every other.
+- The two readings of ADR 0037 that looked contradictory are settled in the plan's sense: RQ1
+  is reported as an estimate with its interval (its D4), and it is also one of the ten tested
+  contrasts (its D8).
+
+## Status
+
+Accepted; amends ADR 0037 and ADR 0038
