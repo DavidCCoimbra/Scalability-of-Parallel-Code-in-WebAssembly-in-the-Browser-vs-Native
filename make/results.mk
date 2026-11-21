@@ -21,8 +21,8 @@ results: ## Every table and figure of the campaign from data/raw/campaign-v2
 # no exclusion by foreign CPU time. A conclusion that changes under one is not robust.
 sensitivity: #: The plan's three sensitivity checks on the primary contrasts
 	mkdir -p $(dir $(SENSITIVITY))
-	$(RESULTS) --foreign-cpu-threshold 0.25 --summary mean --contrasts $(SENSITIVITY)-summary-mean.csv
-	$(RESULTS) --foreign-cpu-threshold 0.25 --center median --contrasts $(SENSITIVITY)-center-median.csv
+	$(RESULTS) --summary mean --contrasts $(SENSITIVITY)-summary-mean.csv
+	$(RESULTS) --center median --contrasts $(SENSITIVITY)-center-median.csv
 	$(RESULTS) --no-foreign-cpu-threshold --contrasts $(SENSITIVITY)-no-threshold.csv
 	python3 -m analysis.sensitivity --primary data/tables/campaign-v2/campaign-v2-contrasts.csv \
 		--check summary_mean=$(SENSITIVITY)-summary-mean.csv --check center_median=$(SENSITIVITY)-center-median.csv \

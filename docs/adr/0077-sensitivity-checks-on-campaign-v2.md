@@ -42,10 +42,29 @@ how small a difference would count as "the same".
   | No foreign-CPU exclusion | 0.990 | [0.952, 1.028] | 0.904 | no |
 
   The primary decision stays the reported one, as the plan says, and is reported as not robust.
-  The point estimate hardly moves (0.990 to 0.992); what changes is the width. A few slow
-  N = 1 runs widen the geometric-mean interval, and the median ignores them. Under the median
-  centre the Holm decision rejects while the 99.5 % interval still contains 1: the two can
-  disagree, because Holm tests the later-ranked contrasts at a level looser than 0.005.
+  The point estimate hardly moves (0.990 to 0.992); what changes is the width, for two reasons
+  that both hold:
+  - *Slow T1 runs widen the geometric-mean interval.* Each configuration has 30 runs. At
+    N = 1, three native runs and two Chrome runs of the filter are 1.21 times their
+    configuration's median; no Firefox run and no N = 8 run is. They raise the geometric mean
+    of T1 by 1.9 % natively and 1.2 % in Chrome. Without those five runs the primary estimate
+    is 0.996 (and Firefox's 1.070). A factor of 1.21 is what a core at about 2.6 GHz against
+    3.2 GHz would give, which fits the degraded P-core of this machine, but no run records
+    the frequency of the core it ran on, so that cause is not established.
+  - *The median-centre interval is narrow partly by construction.* The bootstrap of a median
+    over 30 runs can only take values that occur in the sample, so its distribution is
+    discrete and its interval can be much narrower than the spread of the runs. The rejection
+    under this check is therefore partly a property of the estimator, not only of the data.
+
+  Either way the conclusion is the same: the data do not settle whether Chrome's speedup at
+  N = 8 differs from native's by about 1 %.
+- **`robust` compares decisions, and decisions come from Holm.** The plan decides with
+  Holm-adjusted p-values and reports Bonferroni 99.5 % intervals. The two can disagree, because
+  Holm tests the later-ranked contrasts at a level looser than 0.005: under the median centre
+  RQ1 for Chrome is rejected while its interval still contains 1, and under the per-run mean
+  RQ1 for Firefox is rejected while the lower end of its interval is 1.000.
+- **The third check is vacuous on this campaign.** No run is above the foreign-CPU threshold,
+  so the table without the exclusion equals the primary one line by line.
 - **Non-rejections are stated as bounds, never as equality.** For the two primary contrasts
   that are not rejected, the data support only:
   - RQ1, Chrome: the speedup at N = 8 is within 3.7 % of native's (95 % interval
