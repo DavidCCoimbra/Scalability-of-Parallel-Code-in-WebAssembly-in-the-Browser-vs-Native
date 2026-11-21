@@ -11,7 +11,7 @@ import sys
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TextIO
+from typing import TextIO, TypedDict, cast
 
 from harness.context import JsonObject
 from harness.context.results import CSV_SUFFIX, ERROR_SUFFIX, METADATA_SUFFIX
@@ -21,7 +21,42 @@ CONTEXT_COLUMNS = ("orderPosition", "startedAt", "foreignCpuSeconds", "startDela
 CAMPAIGN_METADATA = "campaign"
 UNKNOWN_ENVIRONMENT = "unknown"
 
-Row = dict[str, object]
+
+
+# One joined row: the run id, the context columns (CONTEXT_COLUMNS, as the run's JSON holds
+# them) and the bench's CSV columns (CSV_HEADER), which stay the strings the bench wrote.
+# A test keeps the keys equal to those two lists.
+class Row(TypedDict):
+    run: str
+    orderPosition: object
+    startedAt: object
+    foreignCpuSeconds: object
+    startDelayMs: object
+    env: str
+    workload: str
+    input: str
+    k: str
+    width: str
+    height: str
+    seed: str
+    threads: str
+    phase: str
+    iter: str
+    ns: str
+    input_fingerprint: str
+    checksum: str
+    probe: str
+    mem_before_bytes: str
+    mem_after_bytes: str
+    input_addr_mod4096: str
+    input_addr_mod64: str
+    output_addr_mod4096: str
+    output_addr_mod64: str
+    pitch: str
+    palette: str
+    schema: str
+    passes: str
+    grain: str
 
 
 class IncompleteRun(ValueError):
@@ -111,7 +146,7 @@ def joined_rows(directory: Path, csvs: set[str]) -> list[Row]:
             if reader.fieldnames != CSV_HEADER.split(","):
                 raise ForeignSchema(f"{run_id}: CSV header is not the current schema")
             for row in reader:
-                rows.append({"run": run_id, **{key: context.get(key) for key in CONTEXT_COLUMNS}, **row})
+                rows.append(cast(Row, {"run": run_id, **{key: context.get(key) for key in CONTEXT_COLUMNS}, **row}))
     return rows
 
 

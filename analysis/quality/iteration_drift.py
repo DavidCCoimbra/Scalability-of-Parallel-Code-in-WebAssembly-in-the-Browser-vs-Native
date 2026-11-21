@@ -6,8 +6,8 @@ from statistics import median
 from typing import TextIO
 
 from analysis.configuration import Configuration, CsvCell, configuration_of
-from analysis.runs import MEASURED, Row
-from harness.collect import collect
+from analysis.runs import MEASURED
+from harness.collect import Row, collect
 
 # The first three measured iterations against the last three.
 DEFAULT_WINDOW = 3

@@ -7,7 +7,9 @@ from pathlib import Path
 
 from analysis.configuration import Configuration
 from analysis.cutoff import InvalidCutoffCampaign, main, size_campaigns, square_side
-from analysis.runs import Row, RunSummary
+from analysis.runs import RunSummary
+from analysis.tests.rows import partial_row
+from harness.collect import Row
 from analysis.scaling.crossing import (
     BREAK_EVEN_SPEEDUP,
     WORTH_IT_EFFICIENCY,
@@ -120,18 +122,18 @@ class CrossingTest(unittest.TestCase):
 class ForkJoinTest(unittest.TestCase):
     @staticmethod
     def calibration(run: str, env: str, threads: int, values: list[int]) -> list[Row]:
-        return [{"run": run, "env": env, "threads": str(threads), "phase": "calibration-warm", "ns": str(v)} for v in values]
+        return [partial_row(run=run, env=env, threads=str(threads), phase="calibration-warm", ns=str(v)) for v in values]
 
     def test_cost_is_the_median_over_runs_of_each_run_median_of_warm_calls(self) -> None:
         rows = self.calibration("a", "chrome", 8, [100, 110, 900]) + self.calibration("b", "chrome", 8, [120, 130, 140])
         rows += self.calibration("c", "chrome", 8, [50, 60, 70]) + self.calibration("d", "chrome", 4, [1, 1, 1])
-        rows += [{"run": "a", "env": "chrome", "threads": "8", "phase": "calibration-cold", "ns": "5000"}]
+        rows += [partial_row(run="a", env="chrome", threads="8", phase="calibration-cold", ns="5000")]
         self.assertEqual(fork_join_costs(rows), {"chrome": ForkJoinCost(3, 110.0)})
 
     def test_schema_2_rows_are_filtered_by_probe_and_old_rows_count_as_broadcast(self) -> None:
         old = self.calibration("a", "chrome", 8, [100])
-        broadcast = [{**row, "probe": "broadcast"} for row in self.calibration("b", "chrome", 8, [300])]
-        par_iter = [{**row, "probe": "par-iter"} for row in self.calibration("b", "chrome", 8, [7])]
+        broadcast = [partial_row(**row, probe="broadcast") for row in self.calibration("b", "chrome", 8, [300])]
+        par_iter = [partial_row(**row, probe="par-iter") for row in self.calibration("b", "chrome", 8, [7])]
         rows = old + broadcast + par_iter
         self.assertEqual(fork_join_costs(rows), {"chrome": ForkJoinCost(2, 200.0)})
         self.assertEqual(fork_join_costs(rows, probe="par-iter"), {"chrome": ForkJoinCost(1, 7.0)})
@@ -211,12 +213,12 @@ class CommandTest(unittest.TestCase):
                 size_campaigns([first, second])
 
     def test_a_campaign_must_hold_one_square_size(self) -> None:
-        rows: list[Row] = [{"width": "512", "height": "256"}]
+        rows = [partial_row(width="512", height="256")]
         with self.assertRaises(InvalidCutoffCampaign):
             square_side(rows, Path("x"))
         with self.assertRaises(InvalidCutoffCampaign):
-            square_side([{"width": "512", "height": "512"}, {"width": "1024", "height": "1024"}], Path("x"))
-        self.assertEqual(square_side([{"width": "512", "height": "512"}], Path("x")), 512)
+            square_side([partial_row(width="512", height="512"), partial_row(width="1024", height="1024")], Path("x"))
+        self.assertEqual(square_side([partial_row(width="512", height="512")], Path("x")), 512)
 
 
 if __name__ == "__main__":

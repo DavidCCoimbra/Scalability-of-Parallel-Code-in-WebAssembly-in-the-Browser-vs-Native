@@ -5,7 +5,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from harness.collect import ForeignSchema, IncompleteRun, collect, write_table
+from harness.collect import CONTEXT_COLUMNS, ForeignSchema, IncompleteRun, Row, collect, write_table
 from harness.native import CSV_HEADER
 
 ROW = "chrome,filter,noise,,8,8,24301,2,measured,0,123,0x01,0xab,,1000,1000,0,0,0,0,8,,2,1,"
@@ -93,6 +93,9 @@ class CollectTest(unittest.TestCase):
         (self.root / "discarded").mkdir()
         (self.root / "discarded" / "c-discard-chrome.csv").write_text(CSV_HEADER + "\n")
         self.assertEqual(len(collect(self.root).rows), 2)
+
+    def test_the_typed_row_names_exactly_the_joined_columns(self) -> None:
+        self.assertEqual(list(Row.__annotations__), ["run", *CONTEXT_COLUMNS, *CSV_HEADER.split(",")])
 
     def test_table_has_run_context_then_csv_columns(self) -> None:
         self.run_pair("c-0000-a", 0, rows=1)

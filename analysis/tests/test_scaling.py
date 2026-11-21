@@ -2,11 +2,13 @@ import unittest
 from typing import TypeVar
 
 from analysis.configuration import Configuration
-from analysis.runs import Row, RunSummary, run_summaries
+from analysis.runs import RunSummary, run_summaries
 from analysis.scaling.karp_flatt import karp_flatt_rows, serial_fraction
 from analysis.scaling.table import scaling_table
 from analysis.stats.bootstrap import bootstrap_interval
 from analysis.stats.summary import Summary
+from analysis.tests.rows import partial_row
+from harness.collect import Row
 
 
 T = TypeVar("T")
@@ -18,18 +20,18 @@ def known(value: T | None) -> T:
 
 
 def row(run: str, threads: int, phase: str, ns: int, env: str = "native", k: str = "") -> Row:
-    return {
-        "run": run,
-        "env": env,
-        "workload": "filter",
-        "input": "noise",
-        "k": k,
-        "width": "1024",
-        "height": "1024",
-        "threads": str(threads),
-        "phase": phase,
-        "ns": str(ns),
-    }
+    return partial_row(
+        run=run,
+        env=env,
+        workload="filter",
+        input="noise",
+        k=k,
+        width="1024",
+        height="1024",
+        threads=str(threads),
+        phase=phase,
+        ns=str(ns),
+    )
 
 
 def summaries(env: str, threads: int, values: list[float]) -> list[RunSummary]:

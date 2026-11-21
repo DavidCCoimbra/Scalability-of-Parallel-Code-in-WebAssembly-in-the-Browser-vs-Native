@@ -36,6 +36,7 @@ commands through `uv run --no-project --with matplotlib`, see `Makefile`).
 | `configuration.py` | A configuration (environment, workload, input, k, N) and the names the plan refers to |
 | `runs.py` | One value per run from the measured iterations |
 | `campaign.py` | What a campaign directory holds: run contexts, `campaign.json`, pinned browsers |
+| `run_context.py` | `RunContext`: the context JSON of one run, each field read with one type and one default |
 | `loading.py` | The one way a command reads a campaign: collect, stop on a checksum conflict, apply the plan's exclusions (ADR 0081) |
 | `provenance.py` | Commit and time stamp of a generated sidecar |
 | `stats/` | Generic statistics: summaries, bootstrap, Holm, Spearman, skewness, Cliff's delta, Mann-Whitney U |

@@ -21,7 +21,7 @@ from pathlib import Path
 
 from analysis.configuration import ENVIRONMENTS
 from analysis.loading import InvalidCampaign, add_exclusion_arguments, exclusion_rule, load_campaign
-from analysis.runs import Row
+from harness.collect import Row
 
 NS_PER_US = 1_000
 PHASES = {"calibration-warm": "warm", "calibration-cold": "cold"}

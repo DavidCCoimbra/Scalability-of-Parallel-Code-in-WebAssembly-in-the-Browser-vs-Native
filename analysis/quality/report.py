@@ -2,17 +2,17 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from analysis.campaign import Context, is_hybrid, pinned_browser_versions, run_context, strict_problems
+from analysis.campaign import is_hybrid, pinned_browser_versions
 from analysis.configuration import Configuration
 from analysis.quality.clock import CLOCK_FACTOR, ClockWarning, clock_warnings, run_passes, run_resolutions
-from analysis.quality.foreign_cpu import FOREIGN_CPU_THRESHOLD, above_threshold
+from analysis.quality.foreign_cpu import FOREIGN_CPU_THRESHOLD
 from analysis.quality.order_drift import DRIFT_LIMIT, DRIFT_MINIMUM_RUNS, OrderDrift, OrderedValue, order_drifts
 from analysis.quality.variants import UNNAMED_SETTINGS, mixed_configurations
+from analysis.run_context import RunContext, run_context
 from analysis.runs import RunSummary, run_summaries
 from analysis.stats.summary import RUN_SUMMARY
 from harness.collect import Collection, collect
 
-POSITION_KEY = "orderPosition"
 # Runs set aside by hand so that the campaign ran the same planned run again; each one keeps
 # its reason in the folder's README (a threshold fixed before the data).
 EXCLUDED_DIRECTORY = "excluded"
@@ -26,16 +26,16 @@ class RunChecks:
     foreign: Counter[str] = field(default_factory=Counter)
     observations: defaultdict[Configuration, list[OrderedValue]] = field(default_factory=lambda: defaultdict(list))
 
-    def check(self, run: RunSummary, context: Context, pinned: dict[str, str], hybrid: bool) -> None:
-        problems = strict_problems(context, pinned, hybrid)
+    def check(self, run: RunSummary, context: RunContext, pinned: dict[str, str], hybrid: bool) -> None:
+        problems = context.strict_problems(pinned, hybrid)
         if problems:
             self.strict_runs[run.configuration.environment] += 1
             self.strict_reasons.update(problem.split(":")[0] for problem in problems)
-        above = above_threshold(context, FOREIGN_CPU_THRESHOLD)
+        above = context.above_foreign_cpu(FOREIGN_CPU_THRESHOLD)
         if above:
             self.foreign[run.configuration.label] += 1
-        position = context.get(POSITION_KEY)
-        if isinstance(position, int) and not above and not problems:
+        position = context.order_position
+        if position is not None and not above and not problems:
             self.observations[run.configuration].append(OrderedValue(position, run.value))
 
 

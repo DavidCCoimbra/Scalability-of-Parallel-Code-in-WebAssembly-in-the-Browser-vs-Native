@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Any
 
 from harness.browsers import load_specs
-from harness.context import DEFAULT_PASSES, validate
 
 REPOSITORY = Path(__file__).resolve().parent.parent
 BROWSER_PINS = REPOSITORY / "harness/browsers.json"
@@ -14,16 +13,6 @@ Context = dict[str, Any]
 def read_json(path: Path) -> Context:
     data: Context = json.loads(path.read_text())
     return data
-
-
-def run_context(directory: Path, run_id: str) -> Context:
-    return read_json(directory / f"{run_id}.json")
-
-
-# The runs record their passes K; the runs stored before passes existed ran one.
-def passes_of(context: Context) -> int:
-    passes = context.get("passes", DEFAULT_PASSES)
-    return passes if isinstance(passes, int) and not isinstance(passes, bool) else DEFAULT_PASSES
 
 
 def campaign_metadata(directory: Path) -> Context | None:
@@ -49,9 +38,4 @@ def order_seed_and_build(directory: Path) -> Context:
 
 def pinned_browser_versions() -> dict[str, str]:
     return {name: spec.version for name, spec in load_specs(BROWSER_PINS).items()}
-
-
-def strict_problems(context: Context, pinned: dict[str, str], hybrid: bool = False) -> list[str]:
-    problems: list[str] = validate(context, strict=True, pinned=pinned, hybrid=hybrid)
-    return problems
 

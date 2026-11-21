@@ -1,11 +1,12 @@
 import unittest
 
 from analysis.calibration import calibration_rows
-from analysis.runs import Row
+from analysis.tests.rows import partial_row
+from harness.collect import Row
 
 
 def row(run: str, phase: str, ns: int, workload: str = "filter", env: str = "chrome", probe: str = "broadcast") -> Row:
-    return {"run": run, "env": env, "workload": workload, "threads": "8", "phase": phase, "probe": probe, "ns": str(ns)}
+    return partial_row(run=run, env=env, workload=workload, threads="8", phase=phase, probe=probe, ns=str(ns))
 
 
 class CalibrationTest(unittest.TestCase):

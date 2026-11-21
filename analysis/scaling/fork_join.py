@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from typing import Any
 
 from analysis.configuration import ENVIRONMENTS
-from analysis.runs import Row
 from analysis.scaling.cutoff import NS_PER_US, CutoffPoint
+from harness.collect import Row
 
 # The fork-join cost F at N = 8: per run, the median of its warm calibration calls (empty
 # broadcasts back to back); per environment, the median over runs. analysis.calibration writes

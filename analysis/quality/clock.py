@@ -4,15 +4,14 @@ from pathlib import Path
 from statistics import median
 from typing import Any, TextIO
 
-from analysis.campaign import Context, passes_of, run_context
 from analysis.configuration import Configuration
+from analysis.run_context import run_context
 from analysis.runs import RunSummary
 from harness.context import DEFAULT_PASSES
 
 # A configuration's median run value must be at least 100 times the coarsest clock
 # resolution of its runs (the plan's 1000 is out of reach in Firefox at any usable image size).
 CLOCK_FACTOR = 100
-RESOLUTION_KEY = "clockResolutionNs"
 NO_PASSES: Mapping[str, int] = {}
 
 
@@ -42,29 +41,17 @@ class ClockReport:
     unchecked: int
 
 
-# Browser runs record the resolution in the page metadata; native runs record it in the build block.
-def clock_resolution(context: Context) -> int | None:
-    if isinstance(context.get(RESOLUTION_KEY), int):
-        resolution: int = context[RESOLUTION_KEY]
-        return resolution
-    build = context.get("build")
-    if isinstance(build, dict) and isinstance(build.get(RESOLUTION_KEY), int):
-        built: int = build[RESOLUTION_KEY]
-        return built
-    return None
-
-
 def run_resolutions(directory: Path, run_ids: Iterable[str]) -> dict[str, int]:
     resolutions = {}
     for run_id in run_ids:
-        resolution = clock_resolution(run_context(directory, run_id))
+        resolution = run_context(directory, run_id).clock_resolution_ns
         if resolution is not None:
             resolutions[run_id] = resolution
     return resolutions
 
 
 def run_passes(directory: Path, run_ids: Iterable[str]) -> dict[str, int]:
-    return {run_id: passes_of(run_context(directory, run_id)) for run_id in run_ids}
+    return {run_id: run_context(directory, run_id).passes for run_id in run_ids}
 
 
 # A run value is the time per pass, so the clock reads K times that; the check is on the
