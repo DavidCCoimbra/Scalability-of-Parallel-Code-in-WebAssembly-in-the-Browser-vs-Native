@@ -45,7 +45,7 @@ def parser() -> argparse.ArgumentParser:
 
 def write_table(rows: list[dict[str, Any]], path: Path) -> None:
     with path.open("w", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=COLUMNS)
+        writer = csv.DictWriter(handle, fieldnames=COLUMNS, lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
 

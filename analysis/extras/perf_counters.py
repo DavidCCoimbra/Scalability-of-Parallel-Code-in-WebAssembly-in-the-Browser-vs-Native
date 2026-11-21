@@ -145,7 +145,7 @@ def short_cells(rows: list[RunCounters], repetitions: int) -> list[str]:
 
 def write_runs(rows: list[RunCounters], path: Path) -> None:
     with path.open("w", newline="") as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file, lineterminator="\n")
         writer.writerow(["run_id", "environment", "workload", "k", "threads", "operations", "intervals", *COUNTERS])
         for row in rows:
             run = row.run
@@ -164,7 +164,7 @@ def write_summary(rows: list[RunCounters], path: Path) -> None:
     for row in rows:
         cells[(row.run.environment, row.run.workload, row.run.k, row.run.threads)].append(row)
     with path.open("w", newline="") as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file, lineterminator="\n")
         writer.writerow(["environment", "workload", "k", "threads", "runs", "counter", "mean", "low", "high"])
         for (environment, workload, k, threads), cell in sorted(cells.items()):
             for name in COUNTERS:
@@ -185,7 +185,7 @@ def write_retries(rows: list[RunCounters], path: Path) -> None:
     for row in rows:
         lock_loads[(row.run.environment, row.run.workload, row.run.k)][row.run.threads].append(row.per_operation["lock_loads"])
     with path.open("w", newline="") as file:
-        writer = csv.writer(file)
+        writer = csv.writer(file, lineterminator="\n")
         writer.writerow(["environment", "workload", "k", "threads", "excess_lock_loads", "low", "high"])
         for (environment, workload, k), by_threads in sorted(lock_loads.items()):
             threads = max(by_threads)
