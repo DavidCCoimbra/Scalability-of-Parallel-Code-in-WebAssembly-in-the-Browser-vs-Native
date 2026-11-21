@@ -1,0 +1,39 @@
+{
+  "campaign": "data/raw/campaign-v2",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0,
+  "missingAbsolute": [],
+  "summary": "median",
+  "center": "median",
+  "confidence": 0.95,
+  "familyAlpha": 0.05,
+  "primaryContrasts": 10,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "foreignCpuThreshold": 0.25,
+  "strict": true,
+  "maxThreads": 8,
+  "partial": false,
+  "excluded": {
+    "foreignCpuSeconds": 0,
+    "strictValidation": 0
+  },
+  "excludedByEnvironment": {},
+  "excludedByConfiguration": [],
+  "campaignOrderSeed": 20261109,
+  "campaignBuild": {
+    "commit": "c8ea7157ad9e688d213fd96c47dd94bbe3443c9b",
+    "variant": "baseline",
+    "nativeSha256": "1cbc546176d370e1676ce4d30b25e393f4f16f1e63f690fc5d111c1b497af3c5",
+    "wasmSha256": "4ebced20192206e7b26489290eedfbf19e941c5db3e5d961fea14efb83c10ed8",
+    "browsers": {
+      "chrome": "Google Chrome for Testing 155.0.8059.84",
+      "firefox": "Mozilla Firefox 158.0"
+    }
+  },
+  "failed": {},
+  "missing": [],
+  "commit": "969580ae39ba6056084711ed3ca80408b5a20b55-dirty",
+  "createdAt": "2026-11-21T00:56:40.330+00:00"
+}

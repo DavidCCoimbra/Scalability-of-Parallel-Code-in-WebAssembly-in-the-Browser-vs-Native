@@ -64,4 +64,4 @@ intervals.
 
 ## Status
 
-Accepted; amended by ADR 0039 (absolute time ratios, clock check)
+Accepted; amended by ADR 0039 (absolute time ratios, clock check); amended by ADR 0077 (sensitivity checks run, RQ1 for Chrome not robust)

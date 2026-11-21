@@ -18,7 +18,7 @@ class ResultsOptions:
     directory: Path
     contrasts: Path
     shape: Path | None
-    foreign_cpu_threshold: float
+    foreign_cpu_threshold: float | None
     strict: bool
     summary: str
     center: str
