@@ -106,4 +106,4 @@ Decided on 2026-11-07; the option recommended from the data above was applied:
 
 ## Status
 
-Accepted; amends ADR 0008
+Accepted; amends ADR 0008; the pad64 feature was removed by ADR 0075

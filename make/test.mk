@@ -6,9 +6,8 @@ MYPY = uv run --no-project --with mypy --with matplotlib mypy --strict
 
 test: test-rust test-python lint ## What CI runs, minus LaTeX
 
-test-rust: #: Rust tests, default and pad64
+test-rust: #: Rust tests
 	$(CARGO) test --release
-	$(CARGO) test --release --features pad64
 
 test-python: #: Harness, analysis and scripts tests
 	python3 -m unittest discover -s scripts/tests -t .

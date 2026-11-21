@@ -94,3 +94,4 @@ Each record says so where it cites them; the measured data behind the paper is
 | [0072](0072-perf-counters-v2.md) | Hardware counters of the atomic histogram on measured/v2 | Accepted |
 | [0073](0073-explainer-documentation.md) | Documentation as a multi-page explainer | Accepted. The explainer lives in the working repository |
 | [0074](0074-explainer-for-juniors.md) | The explainer is written for juniors first, in two layers | Accepted. The explainer lives in the working repository |
+| [0075](0075-pad64-feature-removed.md) | The pad64 feature is removed from the bench, codegen-neutral | Accepted; amends ADR 0008 and ADR 0049 |

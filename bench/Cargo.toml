@@ -7,9 +7,6 @@ publish = false
 [lib]
 crate-type = ["cdylib", "rlib"]
 
-[features]
-pad64 = []
-
 [dependencies]
 rayon = "1.11"
 

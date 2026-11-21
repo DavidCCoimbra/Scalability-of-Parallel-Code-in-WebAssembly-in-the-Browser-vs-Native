@@ -25,7 +25,7 @@ directory, so embedded paths such as panic locations do not differ.
 flowchart TD
     start[codegen_diff.sh BASE_REF] --> reuse{CODEGEN_DIFF_REUSE_BASE=1 and base built?}
     reuse -->|no| base[git archive BASE_REF bench Makefile make into src/]
-    base --> buildbase[build native default, pad64, avx2, scalar and wasm default, pad64, scalar]
+    base --> buildbase[build native default, avx2, scalar and wasm default, scalar]
     buildbase --> outbase[out/base]
     reuse -->|yes| head
     outbase --> head[rsync working tree bench into src/, touch files]

@@ -33,4 +33,4 @@ region would add a synchronisation cost in WASM that native does not have.
 
 ## Status
 
-Accepted; amended by ADR 0049
+Accepted; amended by ADR 0049 and ADR 0075 (pad64 removed)
