@@ -113,9 +113,11 @@ mini-pilot the same day (table below).
   rule the browsers would need a larger region than this study measured.
 - **Amendment, 2026-11-09.** The primary share moved from 5 % to 1 % to follow the 100:1 rule
   of thumb, before any cutoff data were analysed. It was not motivated by data. The 5 % reading
-  stays as a secondary column. By the working repository's history, the change was committed at
-  02:31 UTC, seven minutes after the first cutoff campaign started (first run at 02:24 UTC) and
-  six hours before the results were first analysed (the results commit is of 08:31 UTC).
+  stays as a secondary column. The times are those of the first cutoff campaigns, on build
+  `measured/cutoff`, whose runs and history are in the working repository (the runs in this
+  repository are the later re-run of ADR 0069, of 2026-11-10): their first run has `startedAt`
+  2026-11-09T02:24 UTC, the amendment was committed at 02:31 UTC, seven minutes into the
+  seven campaigns, and the results were first analysed in the commit of 08:31 UTC.
 - **Phase 2 method.** Applying a cutoff inside the workloads (a later decision, ADR 0066) will
   follow the usual empirical method for a sequential threshold: make the threshold a parameter,
   sweep it over a range, plot the time against the threshold (expected U-shaped: too fine pays
