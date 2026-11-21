@@ -76,7 +76,8 @@ decisions, the understanding and the final say on every line are mine. So:
 - **Browser builds:** Chrome for Testing (pinned version) and Firefox from
   archive.mozilla.org (pinned version).
 - **Contention design:** shared atomic counters are padded to their own cache
-  line, `align(128)` by default with a `pad64` feature. Allocation and reset
+  line, `align(128)` (a 64-byte variant was measured in a pilot, ADR 0049, and
+  removed). Allocation and reset
   stay outside the timed region (the WASM default allocator has a global
   lock).
 

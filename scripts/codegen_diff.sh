@@ -14,8 +14,8 @@ readonly REPO
 readonly BASE_REF="${1:-main}"
 readonly WORK="${CODEGEN_DIFF_WORK:-${TMPDIR:-/tmp}/codegen-diff}"
 readonly SRC="${WORK}/src"
-readonly NATIVE_VARIANTS=(default pad64 avx2 scalar)
-readonly WASM_VARIANTS=(default pad64 scalar)
+readonly NATIVE_VARIANTS=(default avx2 scalar)
+readonly WASM_VARIANTS=(default scalar)
 
 populate() {
   local side="$1" export_dir="${WORK}/export"
@@ -57,7 +57,6 @@ build_native() {
   local variant="$1"
   case "${variant}" in
     default) make_in_src build-native ;;
-    pad64) cargo_in_src build --release --bin native --features pad64 --target-dir target/pad64 ;;
     avx2) make_in_src build-native-avx2 ;;
     scalar) make_in_src build-native-scalar ;;
   esac
@@ -74,7 +73,6 @@ build_wasm() {
   local variant="$1" out="$2"
   case "${variant}" in
     default) make_in_src build-wasm ;;
-    pad64) (cd "${SRC}/bench" && ./build-wasm.sh --features pad64) ;;
     scalar) make_in_src build-wasm-scalar ;;
   esac
   cp "${SRC}/bench/target/wasm32-unknown-unknown/release/bench.wasm" "${out}/wasm-${variant}-raw.wasm"

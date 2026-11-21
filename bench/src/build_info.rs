@@ -13,12 +13,10 @@ pub struct BuildInfo {
 
 impl BuildInfo {
     pub fn current() -> Self {
-        let features = [("pad64", cfg!(feature = "pad64"))]
-            .into_iter()
-            .filter_map(|(name, enabled)| enabled.then_some(name))
-            .collect();
         Self {
-            features,
+            // No cargo feature changes the measured code any more; the list stays so the
+            // build block of a run keeps the shape of the recorded campaigns.
+            features: Vec::new(),
             rustc: env!("BENCH_RUSTC_VERSION"),
             wasm_bindgen: env!("BENCH_WASM_BINDGEN_VERSION"),
             rustflags: env!("BENCH_RUSTFLAGS"),
@@ -68,15 +66,14 @@ mod tests {
     }
 
     #[test]
-    fn reports_enabled_features() {
-        let features = BuildInfo::current().features;
-        assert_eq!(features.contains(&"pad64"), cfg!(feature = "pad64"));
+    fn reports_no_features() {
+        assert!(BuildInfo::current().features.is_empty());
     }
 
     #[test]
     fn serialises_as_json_with_escaped_strings() {
         let info = BuildInfo {
-            features: vec!["pad64"],
+            features: vec!["extra"],
             rustc: "rustc 1.0 \"x\"",
             wasm_bindgen: "0.2.1",
             rustflags: "-C a",
@@ -84,7 +81,7 @@ mod tests {
         };
         assert_eq!(
             info.to_json(),
-            r#"{"features":["pad64"],"rustc":"rustc 1.0 \"x\"","wasmBindgen":"0.2.1","rustflags":"-C a","clockResolutionNs":41}"#
+            r#"{"features":["extra"],"rustc":"rustc 1.0 \"x\"","wasmBindgen":"0.2.1","rustflags":"-C a","clockResolutionNs":41}"#
         );
     }
 

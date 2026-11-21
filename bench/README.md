@@ -65,7 +65,6 @@ flowchart LR
 | Variant | Command (from the repository root) | Output |
 |---|---|---|
 | Native, x86-64 baseline (SSE2) | `make build-native` | `target/release/native` |
-| Native, 64-byte padding | `cargo build --release --bin native --features pad64` | `target/release/native` |
 | Native, AVX2 extra | `make build-native-avx2` | `target/avx2/release/native` |
 | Native, no auto-vectorization extra | `make build-native-scalar` | `target/scalar/release/native` |
 | WASM, `simd128` | `make build-wasm` | `www/pkg/` |
@@ -102,7 +101,7 @@ The WASM flags (threads, shared memory, `-Z build-std`) are in
 
 ## Checks
 
-- `make test-rust` runs the tests with the default build and with `pad64`.
+- `make test-rust` runs the tests.
 - `make lint` runs rustfmt, clippy (`-D warnings`) and the repository checks.
 - `scripts/check_simd.py` checks that `blur_interior` is vectorized.
 - `scripts/codegen_diff.sh [BASE_REF]` builds a base ref and the working
