@@ -6,9 +6,17 @@
   "confidence": 0.95,
   "bootstrapResamples": 10000,
   "bootstrapSeed": 24301,
-  "commit": "75892990540df5d0430577f8ffdddaa519489347",
-  "createdAt": "2026-11-13T04:23:08.936+00:00",
+  "commit": "4bfc01e37b009b70f1b47f977c5e4c03cb120c23",
+  "createdAt": "2026-11-21T11:09:50.606+00:00",
   "clockFactor": 100,
   "clockWarnings": [],
-  "clockUnchecked": 0
+  "clockUnchecked": 0,
+  "foreignCpuThreshold": 0.25,
+  "strict": true,
+  "excluded": {
+    "foreignCpuSeconds": 0,
+    "strictValidation": 0
+  },
+  "failed": {},
+  "missing": []
 }
