@@ -5,6 +5,8 @@ from pathlib import Path
 REPOSITORY = Path(__file__).resolve().parent.parent
 WWW = REPOSITORY / "bench/www"
 WASM_ARTIFACT = WWW / "pkg/bench_bg.wasm"
+WASM_PACKAGE = WWW / "pkg"
+CARGO_LOCK = REPOSITORY / "bench/Cargo.lock"
 NATIVE_TARGET = REPOSITORY / "bench/target"
 NATIVE_BINARY = NATIVE_TARGET / "release/native"
 BROWSER_VERSIONS = REPOSITORY / "harness/browsers.json"

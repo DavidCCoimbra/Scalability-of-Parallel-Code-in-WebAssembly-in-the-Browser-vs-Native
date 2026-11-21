@@ -17,10 +17,12 @@ from harness.campaign import (
     PlannedRun,
     Workload,
     WorkloadSpec,
+    build_identity,
     plan,
 )
-from harness.context import JsonObject, RunEnvironment
-from harness.launcher import RunStatus
+from harness.context import UNAVAILABLE, JsonObject, RunEnvironment
+from harness.campaign.identity import crate_versions, glue_digest
+from harness.launcher import FIREFOX_PREFS, RunStatus
 from harness.native import CSV_HEADER
 from harness.shield import UNIT_NAME
 
@@ -513,6 +515,46 @@ class CampaignTest(unittest.TestCase):
         second_ids = {run.run_id for run in second.calls if run.discarded}
         self.assertEqual(len(second_ids), 2)
         self.assertTrue(first_ids.isdisjoint(second_ids))
+
+
+class BuildIdentityTest(unittest.TestCase):
+    def test_the_runtime_crates_are_read_from_the_lock_file(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = Path(tmp) / "Cargo.lock"
+            lock.write_text(
+                '[[package]]\nname = "rayon-core"\nversion = "1.13.0"\n\n'
+                '[[package]]\nname = "libc"\nversion = "0.2.1"\n\n'
+                '[[package]]\nname = "wasm-bindgen-rayon"\nversion = "1.3.0"\n'
+            )
+            self.assertEqual(crate_versions(lock), {"rayon-core": "1.13.0", "wasm-bindgen-rayon": "1.3.0"})
+            self.assertEqual(crate_versions(Path(tmp) / "absent.lock"), {})
+
+    def test_a_crate_locked_twice_keeps_both_versions(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = Path(tmp) / "Cargo.lock"
+            lock.write_text('[[package]]\nname = "rayon"\nversion = "1.12.0"\n\n[[package]]\nname = "rayon"\nversion = "1.8.0"\n')
+            self.assertEqual(crate_versions(lock), {"rayon": "1.12.0, 1.8.0"})
+
+    def test_the_glue_digest_covers_the_bindings_and_the_snippets(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            package = Path(tmp)
+            self.assertEqual(glue_digest(package), UNAVAILABLE)
+            (package / "snippets/rayon").mkdir(parents=True)
+            (package / "bench.js").write_text("bindings")
+            (package / "snippets/rayon/workerHelpers.js").write_text("worker")
+            first = glue_digest(package)
+            (package / "snippets/rayon/workerHelpers.js").write_text("changed")
+            self.assertNotEqual(glue_digest(package), first)
+
+    def test_the_identity_names_the_crates_and_the_firefox_profile_settings(self) -> None:
+        browsers = {"firefox": Path("/nonexistent/firefox")}
+        identity = build_identity(spec(environments=["firefox"]), None, browsers)
+        crates = identity["crates"]
+        assert isinstance(crates, dict)
+        self.assertEqual(set(crates), {"rayon", "rayon-core", "wasm-bindgen", "wasm-bindgen-rayon"})
+        self.assertIn("wasmGlueSha256", identity)
+        self.assertEqual(identity["firefoxPrefs"], dict(FIREFOX_PREFS))
+        self.assertNotIn("firefoxPrefs", build_identity(spec(environments=["native"]), None, {}))
 
 
 class HostEnvironmentTest(unittest.TestCase):

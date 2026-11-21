@@ -7,7 +7,7 @@ MYPY = uv run --no-project --with mypy --with matplotlib mypy --strict
 test: test-rust test-python lint ## What CI runs, minus LaTeX
 
 test-rust: #: Rust tests
-	$(CARGO) test --release
+	$(CARGO) test --locked --release
 
 test-python: #: Harness, analysis and scripts tests
 	python3 -m unittest discover -s scripts/tests -t .
@@ -16,7 +16,7 @@ test-python: #: Harness, analysis and scripts tests
 
 lint: ## fmt, clippy, ADRs, shellcheck, mypy strict
 	$(CARGO) fmt --check
-	$(CARGO) clippy --release --all-targets -- -D warnings
+	$(CARGO) clippy --locked --release --all-targets -- -D warnings
 	python3 scripts/check_adrs.py docs/adr
 	shellcheck bench/build-wasm.sh harness/env/*.sh scripts/*.sh
 	$(MYPY) harness analysis scripts

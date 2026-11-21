@@ -8,16 +8,16 @@ NO_VECTORIZE = "-C", "llvm-args=-vectorize-loops=false", "-C", "llvm-args=-vecto
 build: build-native build-wasm ## Native runner and WASM package
 
 build-native: #: Native runner, x86-64 baseline
-	$(CARGO) build --release --bin native
+	$(CARGO) build --locked --release --bin native
 
 build-wasm: #: WASM with threads and simd128, into bench/www/pkg
 	source "$$HOME/.cargo/env" && bench/build-wasm.sh
 
 build-native-avx2: #: SIMD extra: native runner with target-cpu=native (AVX2), into bench/target/avx2
-	$(CARGO) build --release --bin native --target-dir target/avx2 --config 'build.rustflags=["-C", "target-cpu=native"]'
+	$(CARGO) build --locked --release --bin native --target-dir target/avx2 --config 'build.rustflags=["-C", "target-cpu=native"]'
 
 build-native-scalar: #: SIMD extra: native runner without auto-vectorization, into bench/target/scalar
-	$(CARGO) build --release --bin native --target-dir target/scalar --config 'build.rustflags=[$(NO_VECTORIZE)]'
+	$(CARGO) build --locked --release --bin native --target-dir target/scalar --config 'build.rustflags=[$(NO_VECTORIZE)]'
 
 build-wasm-scalar: #: SIMD extra: WASM without simd128, into bench/www/pkg (rebuild with build-wasm after)
 	source "$$HOME/.cargo/env" && bench/build-wasm.sh --config 'target.wasm32-unknown-unknown.rustflags=["-C", "target-feature=-simd128"]'

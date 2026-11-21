@@ -15,7 +15,8 @@ python3 -m harness.environment check --cpus 0,2,4,6,8,10,12,14 [--sysinfo PATH]
 |---|---|
 | `topology.py` | `p_core_mask`: the first CPU of every physical P-core |
 | `check.py` | `EnvironmentCheck`: the list of problems for a mask |
-| `sysinfo.py` | `sysinfo` record (CPU, frequencies, shield, quiet mode, versions) |
+| `sysinfo.py` | `sysinfo` record (CPU, frequencies, shield, quiet mode, versions, host state) |
+| `host_state.py` | `host_state`: settings recorded as found and not checked (huge pages, kernel command line, mitigations, idle states, memory, firmware, IRQ affinity; ADR 0083) |
 | `cli.py`, `__main__.py` | Command line |
 
 ## Flow

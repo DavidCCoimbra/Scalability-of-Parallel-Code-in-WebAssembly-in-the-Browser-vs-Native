@@ -8,6 +8,7 @@ from typing import TypedDict
 from harness.browsers import load_specs
 from harness.context import LinuxHost, command_output, git_commit, loadavg, parse_cpu_mask, read_text, utc_now
 from harness.context.sysfs import cpu_file
+from harness.environment.host_state import HostState, host_state
 from harness.environment.topology import p_core_mask
 from harness.paths import BROWSER_VERSIONS, REPOSITORY
 from harness.shield import CgroupShield
@@ -43,6 +44,7 @@ class Sysinfo(TypedDict):
     shield: dict[str, str] | str
     quietMode: QuietMode
     perfEventParanoid: int | None
+    hostState: HostState
     commit: str
     versions: dict[str, str]
     loadavg: list[float] | str
@@ -101,6 +103,7 @@ def sysinfo(root: Path, mask: str, versions: dict[str, str], quiet_state: Path |
         shield=CgroupShield(root).state(),
         quietMode=quiet_mode(quiet_state or default_quiet_state()),
         perfEventParanoid=perf_event_paranoid(root),
+        hostState=host_state(root, parse_cpu_mask(mask) or []),
         commit=git_commit(REPOSITORY),
         versions=versions,
         loadavg=loadavg(),
