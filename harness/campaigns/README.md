@@ -15,6 +15,20 @@ and the campaigns of earlier builds stay in the working repository.
 | `cutoff-{512,1024,2048,4096,8192}-v2.json`, `cutoff-control-{512,2048}-v2.json` | Speedup against image size (the cutoff), with passes so every timed sample covers 8192^2 pixels |
 | `grain-{1024,8192}-v2.json` | The grain sweep: fixed task sizes against Rayon's adaptive split |
 
+## Campaigns of the v3 build (ADR 0084)
+
+Every v2 spec has a `-v3` twin with a new order seed, and `make` runs and reads them with
+`MEASURED=v3`. What differs from v2:
+
+| Spec | Difference |
+|---|---|
+| `campaign-v3.json` | Adds the sequential references `filter-seq` and `hist-seq` (k = 1, 4, 16, 256), at one thread: 5310 runs |
+| `tier-v3.json` | New: three engine arms (as shipped, baseline compiler only, optimizing compiler only) on the filter and on both histograms at k = 1, N = 1 and 8 |
+| `grain-threads-v3.json` | New: the local histogram at k = 16 with the adaptive split and fixed grains of 256 and 1024 KB, at N = 1, 6, 7 and 8 |
+| `grain-8192-v3.json` | Adds the atomic histogram at the grains of the local one; `grain-1024-v3.json` cannot (it needs passes) |
+| `perf-v3.json` | Adds the filter and the local histogram at k = 256; the script counts two cache events more |
+| `gate-v3.json` | New: the cells whose code changed and the filter, 3 runs each, checked before the campaigns; never results |
+
 ## Extras (not part of RQ1 or RQ2)
 
 | Spec | What it measures |

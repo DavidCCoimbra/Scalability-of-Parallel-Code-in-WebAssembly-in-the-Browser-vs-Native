@@ -90,9 +90,9 @@ exploratory and is labelled as such.
 | Campaign | Change from v2 | Kind |
 |---|---|---|
 | main | plus `filter-seq` and `hist-seq` at k in {1, 4, 16, 256}, N = 1 | primary; the sequential cells are descriptive |
-| tier (new) | three arms per browser: default, baseline compiler only, optimizing compiler only; filter at N = 1 and 8, atomic k = 1 and local k = 256 at N = 8 | exploratory |
-| grain | both histograms; N = 6, 7 and 8 added at k = 16 | exploratory |
-| perf counters | plus the filter and the local histogram at k = 256, N = 1 and 8, with cycles, instructions and cache misses per pixel | exploratory |
+| tier (new) | three arms per browser: default, baseline compiler only, optimizing compiler only; the filter and both histograms at k = 1, at N = 1 and 8, so that each arm gives the filter's speedup and the RQ2 ratio at k = 1 (first written with the local histogram at k = 256, which gave no ratio with the atomic one at k = 1) | exploratory |
+| grain | the atomic histogram added to the 8192x8192 sweep (the 1024x1024 one needs passes, which its counters do not allow); a separate campaign for the local histogram at k = 16, N = 1, 6, 7 and 8, with the adaptive split and two fixed grains | exploratory |
+| perf counters | plus the filter and the local histogram at k = 256, N = 1 and 8, with cycles, instructions and two cache events per pixel (last-level and L2 misses; a third makes the P-cores multiplex) | exploratory |
 | cutoff, extras, weak, SIMD, hybrid | same design as v2 | exploratory |
 
 The exploratory campaigns run in this order, so that what is dropped for lack of time is dropped

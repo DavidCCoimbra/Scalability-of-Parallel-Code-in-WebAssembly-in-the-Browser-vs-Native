@@ -1,0 +1,309 @@
+{
+  "name": "grain-8192-v3",
+  "orderSeed": 2026112205,
+  "environments": [
+    "native",
+    "chrome",
+    "firefox"
+  ],
+  "workloads": [
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 1
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 2
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 4
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 8
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 16
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 32
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 64
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 128
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 256
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 512
+    },
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15,
+      "grain": 1024
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 1
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 2
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 4
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 8
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 16
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 32
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 64
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 128
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 256
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 512
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 1024
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 2048
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 4096
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15,
+      "grain": 8192
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 1
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 2
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 4
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 8
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 16
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 32
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 64
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 128
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 256
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 512
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 1024
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 2048
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 4096
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 8192
+    }
+  ],
+  "threads": [
+    8
+  ],
+  "repetitions": 30,
+  "width": 8192,
+  "height": 8192,
+  "warmup": 5,
+  "iterations": 10,
+  "calibration": 20,
+  "passes": 1,
+  "comment": "ADR 0066 grain sweep at N = 8: filter rows per task 1 to 1024, local histogram KB per task 1 to 8192, powers of two, plus Rayon's adaptive split (no grain). passes = (8192 / 8192)^2 = 1 as in the cutoff campaign (ADR 0064). The atomic histogram, which takes a grain since measured/v3, is swept at the grains of the local one. Run again on measured/v3 (ADR 0084).",
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 3000,
+  "timeoutSeconds": 900,
+  "discardFirstLaunch": true,
+  "strict": true
+}

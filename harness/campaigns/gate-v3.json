@@ -1,0 +1,83 @@
+{
+  "name": "gate-v3",
+  "orderSeed": 2026112219,
+  "environments": [
+    "native",
+    "chrome",
+    "firefox"
+  ],
+  "workloads": [
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 1,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5,
+      "grain": 256
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 1,
+      "warmup": 71
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15
+    },
+    {
+      "workload": "filter-seq",
+      "input": "noise",
+      "warmup": 15
+    },
+    {
+      "workload": "hist-seq",
+      "input": "few",
+      "k": 1,
+      "warmup": 71
+    },
+    {
+      "workload": "hist-seq",
+      "input": "few",
+      "k": 256,
+      "warmup": 15
+    }
+  ],
+  "threads": [
+    1,
+    8
+  ],
+  "repetitions": 3,
+  "width": 8192,
+  "height": 8192,
+  "warmup": 5,
+  "iterations": 10,
+  "calibration": 20,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 3000,
+  "timeoutSeconds": 900,
+  "discardFirstLaunch": true,
+  "strict": true,
+  "comment": "The gate before the v3 campaigns (ADR 0084): the cells whose code changed in measured/v3 and the filter as control, at the real size, 3 runs each; one cell gives the atomic histogram a fixed grain, a path that is new. It passes on equal checksums, samples at least 100 times the clock resolution and no drift over the measured iterations. Its runs are never results."
+}

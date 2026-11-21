@@ -16,7 +16,9 @@ SPEC=harness/campaigns/perf-$MEASURED.json
 OUT=data/raw/perf-$MEASURED/counters
 P_CORES=0,2,4,6,8,10,12,14
 INTERVAL_MS=100
-EVENTS=cpu_core/cycles/,cpu_core/instructions/,cpu_core/mem_inst_retired.lock_loads/,cpu_core/ocr.demand_rfo.l3_hit.snoop_hitm/,cpu_core/ocr.demand_data_rd.l3_hit.snoop_hitm/
+# Seven events is what the P-cores count at once here: with a third cache event perf multiplexes,
+# and the analysis refuses intervals that were not counted whole.
+EVENTS=cpu_core/cycles/,cpu_core/instructions/,cpu_core/mem_inst_retired.lock_loads/,cpu_core/ocr.demand_rfo.l3_hit.snoop_hitm/,cpu_core/ocr.demand_data_rd.l3_hit.snoop_hitm/,cpu_core/longest_lat_cache.miss/,cpu_core/mem_load_retired.l2_miss/
 UNIT=ppc-perf-$MEASURED
 SEGMENT=$(date -u +%Y%m%dT%H%M%SZ)
 TMP=/tmp/$UNIT-$SEGMENT

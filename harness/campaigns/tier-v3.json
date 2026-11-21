@@ -1,0 +1,70 @@
+{
+  "name": "tier-v3",
+  "environments": [
+    "native",
+    "chrome",
+    "firefox"
+  ],
+  "repetitions": 30,
+  "width": 8192,
+  "height": 8192,
+  "warmup": 5,
+  "iterations": 10,
+  "calibration": 20,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 3000,
+  "timeoutSeconds": 900,
+  "discardFirstLaunch": true,
+  "strict": true,
+  "orderSeed": 2026112202,
+  "threads": [
+    1,
+    8
+  ],
+  "workloads": [
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 1,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 1,
+      "warmup": 71
+    }
+  ],
+  "engineArms": [
+    {
+      "name": "default"
+    },
+    {
+      "name": "baseline",
+      "chromeJsFlags": [
+        "--liftoff-only"
+      ],
+      "firefoxPrefs": {
+        "javascript.options.wasm_optimizingjit": false
+      }
+    },
+    {
+      "name": "optimizing",
+      "chromeJsFlags": [
+        "--no-liftoff"
+      ],
+      "firefoxPrefs": {
+        "javascript.options.wasm_baselinejit": false
+      }
+    }
+  ],
+  "comment": "Which compiler tier the campaigns measure (ADR 0084): every browser cell with the engine as shipped, with its baseline compiler only and with its optimizing compiler only, interleaved. The cells give the filter's speedup and the RQ2 ratio at k = 1, at N = 1 and 8. Native runs once per repetition, as a reference for the session."
+}
