@@ -76,8 +76,13 @@ class ReportTest(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertIn("differs      core::fmt::write", output)
 
+    def test_the_fold_of_the_local_histogram_is_hot(self) -> None:
+        name = "bench::local_counts::<rayon::iter::len::MaxLen<rayon::slice::chunks::Chunks<u8>>>::{closure#0}"
+        self.assertEqual(compare({name: wasm("i64.add")}, {name: wasm("i64.sub")})[0], 1)
+
     def test_inlined_hot_items_are_reported_per_side(self) -> None:
-        output = compare({RUN: wasm("i32.add")}, {RUN: wasm("i32.add")})[1]
+        code, output = compare({RUN: wasm("i32.add")}, {RUN: wasm("i32.add")})
+        self.assertEqual(code, 0)
         self.assertIn("hot pattern without a function in base (inlined or renamed): bench::measure", output)
         self.assertIn("hot pattern without a function in head (inlined or renamed): bench::measure", output)
 
