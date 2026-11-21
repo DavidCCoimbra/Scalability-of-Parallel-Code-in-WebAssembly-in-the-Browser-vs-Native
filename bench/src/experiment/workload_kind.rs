@@ -4,10 +4,12 @@ use super::{Capabilities, UnknownName, parse_named};
 use crate::input::GrayImage;
 use crate::workloads::extras::sort::{ParallelSort, SortKind};
 use crate::workloads::gaussian::GaussianBlur;
+use crate::workloads::gaussian::sequential::SequentialBlur;
 use crate::workloads::histogram::atomic::AtomicHistogram;
 use crate::workloads::histogram::extras::packed::PackedAtomicHistogram;
 use crate::workloads::histogram::extras::private::PrivateAtomicHistogram;
 use crate::workloads::histogram::local::LocalHistogram;
+use crate::workloads::histogram::sequential::SequentialHistogram;
 use crate::workloads::{Grain, Workload};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -15,6 +17,9 @@ pub enum WorkloadKind {
     Filter,
     HistogramAtomic,
     HistogramLocal,
+    // The references without Rayon, for the speedup against sequential code.
+    FilterSequential,
+    HistogramSequential,
     // Extras: not part of RQ1 or RQ2.
     HistogramAtomicPrivate,
     HistogramAtomicPacked,
@@ -23,10 +28,12 @@ pub enum WorkloadKind {
 }
 
 impl WorkloadKind {
-    pub(super) const ALL: [Self; 7] = [
+    pub(super) const ALL: [Self; 9] = [
         Self::Filter,
         Self::HistogramAtomic,
         Self::HistogramLocal,
+        Self::FilterSequential,
+        Self::HistogramSequential,
         Self::HistogramAtomicPrivate,
         Self::HistogramAtomicPacked,
         Self::Sort,
@@ -37,6 +44,8 @@ impl WorkloadKind {
         match self {
             Self::Filter => "filter",
             Self::HistogramAtomic => "hist-atomic",
+            Self::FilterSequential => "filter-seq",
+            Self::HistogramSequential => "hist-seq",
             Self::HistogramLocal => "hist-local",
             Self::HistogramAtomicPrivate => "hist-atomic-private",
             Self::HistogramAtomicPacked => "hist-atomic-packed",
@@ -51,16 +60,25 @@ impl WorkloadKind {
                 repeats_identically: true,
                 takes_grain: true,
                 takes_pitch: true,
+                sequential: false,
             },
             Self::HistogramLocal => Capabilities {
                 repeats_identically: true,
                 takes_grain: true,
                 takes_pitch: false,
+                sequential: false,
+            },
+            Self::FilterSequential | Self::HistogramSequential => Capabilities {
+                repeats_identically: true,
+                takes_grain: false,
+                takes_pitch: false,
+                sequential: true,
             },
             Self::HistogramAtomic => Capabilities {
                 repeats_identically: false,
                 takes_grain: true,
                 takes_pitch: false,
+                sequential: false,
             },
             Self::HistogramAtomicPrivate
             | Self::HistogramAtomicPacked
@@ -79,6 +97,8 @@ impl WorkloadKind {
             Self::Filter => Box::new(GaussianBlur::with_grain(image, grain)),
             Self::HistogramAtomic => Box::new(AtomicHistogram::with_grain(image, grain)),
             Self::HistogramLocal => Box::new(LocalHistogram::with_grain(image, grain)),
+            Self::FilterSequential => Box::new(SequentialBlur::new(image)),
+            Self::HistogramSequential => Box::new(SequentialHistogram::new(image)),
             Self::HistogramAtomicPrivate => Box::new(PrivateAtomicHistogram::new(image)),
             Self::HistogramAtomicPacked => Box::new(PackedAtomicHistogram::new(image)),
             Self::Sort => Box::new(ParallelSort::new(image, SortKind::Stable)),

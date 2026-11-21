@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, TextIO
 
+from analysis.configuration import SEQUENTIAL_WORKLOADS
 from analysis.inference.exclusion import Exclusions, excluded_runs
 from analysis.quality.foreign_cpu import FOREIGN_CPU_THRESHOLD
 from analysis.runs import RunSummary, run_summaries
@@ -33,6 +34,8 @@ class LoadedCampaign:
     rule: ExclusionRule
     exclusions: Exclusions
     rows: list[Row]
+    # The runs of the sequential references, kept apart from the scaling curves in `rows`.
+    sequential_rows: list[Row]
 
     def summaries(self, summary: Summary = RUN_SUMMARY) -> list[RunSummary]:
         return run_summaries(self.rows, summary)
@@ -68,7 +71,15 @@ def load_campaign(directory: Path, rule: ExclusionRule = ExclusionRule()) -> Loa
     run_ids = {str(row["run"]) for row in collection.rows}
     exclusions = excluded_runs(directory, run_ids, rule.foreign_cpu_threshold, rule.strict)
     dropped = exclusions.dropped
-    return LoadedCampaign(directory, collection, rule, exclusions, [row for row in collection.rows if row["run"] not in dropped])
+    kept = [row for row in collection.rows if row["run"] not in dropped]
+    return LoadedCampaign(
+        directory,
+        collection,
+        rule,
+        exclusions,
+        [row for row in kept if row["workload"] not in SEQUENTIAL_WORKLOADS],
+        [row for row in kept if row["workload"] in SEQUENTIAL_WORKLOADS],
+    )
 
 
 def add_exclusion_arguments(parser: argparse.ArgumentParser) -> None:

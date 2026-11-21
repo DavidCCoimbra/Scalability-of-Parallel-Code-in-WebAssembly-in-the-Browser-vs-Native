@@ -17,6 +17,7 @@ from harness.server import MAX_RUN_ID_LENGTH
 from harness.shield import UNIT_NAME
 
 CURRENT_USER = "$USER"
+SEQUENTIAL_THREADS = 1
 MAX_SESSIONS = 99
 DEFAULT_TIMEOUT_SECONDS = 300.0
 ENVIRONMENT_NAMES = tuple(environment.value for environment in RunEnvironment)
@@ -116,6 +117,10 @@ class CampaignSpec:
         if self.engine_arms and not self.uses_browsers:
             raise ValueError("engineArms need a browser in environments")
 
+    # A sequential workload has one thread count, so it enters the plan once per repetition.
+    def threads_of(self, workload: WorkloadSpec) -> tuple[int, ...]:
+        return (SEQUENTIAL_THREADS,) if workload.workload.capabilities.sequential else self.threads
+
     def arms_of(self, environment: RunEnvironment) -> tuple[EngineArm | None, ...]:
         return self.engine_arms if self.engine_arms and environment in BROWSERS else (None,)
 
@@ -129,13 +134,14 @@ class CampaignSpec:
 
     def every_run_shape(self) -> list[PlannedRun]:
         launches = sum(len(self.arms_of(environment)) for environment in self.environments)
-        last = launches * len(self.workloads) * len(self.threads) * self.repetitions - 1
+        cells = sum(len(self.threads_of(workload)) for workload in self.workloads)
+        last = launches * cells * self.repetitions - 1
         return [
             PlannedRun(last, environment, workload, threads, self.repetitions - 1, self.name, discarded, MAX_SESSIONS, arm)
             for environment in self.environments
             for arm in self.arms_of(environment)
             for workload in self.workloads
-            for threads in self.threads
+            for threads in self.threads_of(workload)
             for discarded in (False, True)
         ]
 

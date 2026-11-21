@@ -22,6 +22,13 @@ class Workload(StrEnum):
     FILTER = "filter"
     HIST_ATOMIC = "hist-atomic"
     HIST_LOCAL = "hist-local"
+    FILTER_SEQ = "filter-seq"
+    HIST_SEQ = "hist-seq"
+
+
+# The references without Rayon. They have one thread count, so they are no scaling curve: the
+# scaling commands leave them out and the sequential table reads them.
+SEQUENTIAL_WORKLOADS = frozenset({Workload.FILTER_SEQ, Workload.HIST_SEQ})
 
 
 class Input(StrEnum):

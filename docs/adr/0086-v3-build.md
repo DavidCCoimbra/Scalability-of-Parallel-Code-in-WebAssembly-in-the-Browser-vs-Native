@@ -59,6 +59,38 @@ The packed and private extras, which the extras campaign compares with it, go th
 So the code that counts is unchanged and the code that splits is not; every histogram now goes
 through the same split code, which is what the change is for.
 
+### 2. Sequential references: `filter-seq` and `hist-seq`
+
+Two workloads with no Rayon call in `run`, accepted at one thread only:
+
+- `SequentialHistogram` counts into one plain table in one loop, as one task of the local
+  histogram counts its chunk.
+- `SequentialBlur` blurs every row in one loop with the shared `blur_interior`.
+
+**Adding a workload can change another one.** The first draft of `SequentialBlur` called the
+parallel filter's `blur_row`. That function has one caller in v2 and is inlined into the
+filter's task. With a second caller the compiler kept it as a call, and the machine code of the
+parallel filter changed, though its source did not. Forcing the inlining (`#[inline(always)]`
+on it, and then on the edge helpers `blur_clamped` and `clamped_neighbours`) gave yet other
+code, in WASM first and then natively too. So `SequentialBlur` has its own copy of the row and
+edge handling and shares only `blur_interior`, which is never inlined and does the work of all
+but two pixels of each row. A test keeps the copy's output equal to the parallel filter's.
+
+- **What the script reports with both changes.** The parallel filter's task function,
+  `blur_interior`, the local histogram and the checksum functions are identical to
+  `measured/v2` in the three native and the four WASM variants. Besides the functions of
+  section 1, only `native::run` differs (it now dispatches two more workloads), and the empty
+  `prepare` of the local histogram is no longer a function of its own: it is merged with the
+  new, equally empty ones.
+- **A first look, not a result.** Three native runs of each at 8192x8192, in one session: the
+  sequential filter took 22.4 ms against 22.5 to 22.6 ms for the pool of one thread, and the
+  sequential histogram matched the local one within 0.2 % at k = 1 and k = 256, with the same
+  checksums.
+
+In a campaign a sequential workload enters the plan once per repetition, at one thread,
+whatever the campaign's thread counts. The analysis keeps its runs apart from the scaling
+curves.
+
 ## Consequences
 
 - The runs of `measured/v3` are not compared number by number with those of `measured/v2`

@@ -1,4 +1,5 @@
 mod kernel;
+pub mod sequential;
 
 use rayon::prelude::*;
 

@@ -11,6 +11,10 @@ THREAD_COUNTS = (1, 2, 4)
 HISTOGRAM_KS = (1, 4, 16, 256)
 NOISE_WORKLOADS = ("filter", "sort", "sort-unstable")
 HISTOGRAM_WORKLOADS = ("hist-atomic", "hist-local", "hist-atomic-private", "hist-atomic-packed")
+# The references without Rayon take one thread only.
+SEQUENTIAL_THREADS = 1
+SEQUENTIAL_FILTER = "filter-seq"
+SEQUENTIAL_HISTOGRAM = "hist-seq"
 
 
 @dataclass(frozen=True)
@@ -42,3 +46,4 @@ class Case:
 CASES = tuple(Case(workload, None, threads) for workload in NOISE_WORKLOADS for threads in THREAD_COUNTS) + tuple(
     Case(workload, k, threads) for workload in HISTOGRAM_WORKLOADS for k in HISTOGRAM_KS for threads in THREAD_COUNTS
 )
+CASES += (Case(SEQUENTIAL_FILTER, None, SEQUENTIAL_THREADS),) + tuple(Case(SEQUENTIAL_HISTOGRAM, k, SEQUENTIAL_THREADS) for k in HISTOGRAM_KS)

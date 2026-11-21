@@ -308,6 +308,17 @@ class PlanTest(unittest.TestCase):
         self.assertEqual(len(keys), len(runs))
         self.assertEqual([run.position for run in runs], list(range(len(runs))))
 
+    def test_a_sequential_workload_enters_the_plan_at_one_thread_only(self) -> None:
+        workloads = [{"workload": "filter", "input": "noise"}, {"workload": "hist-seq", "input": "few", "k": 4}]
+        campaign = spec(workloads=workloads, threads=[2, 8])
+        runs = plan(campaign)
+        sequential = [run for run in runs if run.workload.workload == Workload.HIST_SEQ]
+        self.assertEqual({run.threads for run in sequential}, {1})
+        self.assertEqual(len(sequential), len(campaign.environments) * campaign.repetitions)
+        self.assertEqual(len(runs), len(campaign.environments) * campaign.repetitions * (2 + 1))
+        self.assertIn("&threads=1&", campaign.query(sequential[0]))
+        self.assertEqual({run.threads for run in runs if run.workload.workload == Workload.FILTER}, {2, 8})
+
     def test_engine_arms_cross_the_browser_runs_and_leave_native_alone(self) -> None:
         arms = [{"name": "default"}, {"name": "baseline", "chromeJsFlags": ["--liftoff-only"], "firefoxPrefs": {"javascript.options.wasm_optimizingjit": False}}]
         campaign = spec(engineArms=arms)

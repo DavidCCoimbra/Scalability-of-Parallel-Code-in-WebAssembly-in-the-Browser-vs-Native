@@ -12,6 +12,7 @@ cost of synchronization.
 | `extras/` | Variants outside RQ1 and RQ2: `private.rs`, `packed.rs` and the `packed_counter.rs` layout |
 | `counter.rs` | `Counter`: the layout of one shared counter (an `AtomicU64` inside) |
 | `counter_table.rs` | `CounterTable<C>`: exactly `BINS` counters (no bounds check on a `u8` index), `reset`, `increment`, `read` |
+| `sequential.rs` | `SequentialHistogram`: one plain table counted in one loop on the calling thread, the reference without Rayon (one thread only) |
 | `padded_counter.rs` | `PaddedCounter` (one counter per cache line) and `CACHE_LINE_BYTES` (128) |
 
 ```mermaid

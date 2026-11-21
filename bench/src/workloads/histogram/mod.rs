@@ -4,6 +4,7 @@ mod counter_table;
 pub mod extras;
 pub mod local;
 pub mod padded_counter;
+pub mod sequential;
 
 pub use counter::Counter;
 pub use counter_table::CounterTable;

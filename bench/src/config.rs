@@ -48,8 +48,7 @@ impl RunConfig {
         let environment = options.required("env")?;
         let workload = options.required("workload")?;
         let input = options.input()?;
-        let threads = ThreadCount::new(options.positive("threads")?)
-            .expect("options.positive never returns zero");
+        let threads = threads_for(workload, options.positive("threads")?)?;
         let width = options.positive("width")?;
         let image = ImageSpec {
             input,
@@ -114,6 +113,16 @@ fn pitch_for(
         }),
         Some(pitch) => Ok(Some(pitch)),
     }
+}
+
+fn threads_for(workload: WorkloadKind, threads: usize) -> Result<ThreadCount, ConfigError> {
+    if workload.capabilities().sequential && threads != 1 {
+        return Err(ConfigError::Unsupported {
+            option: "threads above 1",
+            workload: workload.name(),
+        });
+    }
+    Ok(ThreadCount::new(threads).expect("options.positive never returns zero"))
 }
 
 fn grain_for(workload: WorkloadKind, units: Option<usize>) -> Result<Grain, ConfigError> {
@@ -345,6 +354,22 @@ mod tests {
                 "k = {k}"
             );
         }
+    }
+
+    #[test]
+    fn a_sequential_workload_takes_one_thread_only() {
+        let line = "env=native&workload=hist-seq&input=few&k=4&width=64&height=32&warmup=1&iters=1";
+        assert_eq!(
+            query(&format!("{line}&threads=1")).unwrap().threads.get(),
+            1
+        );
+        assert_eq!(
+            query(&format!("{line}&threads=2")).unwrap_err(),
+            ConfigError::Unsupported {
+                option: "threads above 1",
+                workload: "hist-seq",
+            }
+        );
     }
 
     #[test]

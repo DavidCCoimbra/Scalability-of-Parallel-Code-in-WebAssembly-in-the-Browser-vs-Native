@@ -74,14 +74,34 @@ mod tests {
     }
 
     #[test]
-    fn only_filter_and_local_histogram_repeat_identically() {
+    fn the_filters_the_local_and_the_sequential_histogram_repeat_identically() {
         let repeating: Vec<_> = WorkloadKind::ALL
             .into_iter()
             .filter(|kind| kind.capabilities().repeats_identically)
             .collect();
         assert_eq!(
             repeating,
-            [WorkloadKind::Filter, WorkloadKind::HistogramLocal]
+            [
+                WorkloadKind::Filter,
+                WorkloadKind::HistogramLocal,
+                WorkloadKind::FilterSequential,
+                WorkloadKind::HistogramSequential
+            ]
+        );
+    }
+
+    #[test]
+    fn only_the_two_references_are_sequential() {
+        let sequential: Vec<_> = WorkloadKind::ALL
+            .into_iter()
+            .filter(|kind| kind.capabilities().sequential)
+            .collect();
+        assert_eq!(
+            sequential,
+            [
+                WorkloadKind::FilterSequential,
+                WorkloadKind::HistogramSequential
+            ]
         );
     }
 

@@ -16,8 +16,8 @@ counters of the atomic and packed variants; all of it is timed.
 | `checksum.rs` | `Checksum` of a byte slice, of fixed-size words or of several slices, streamed without a buffer |
 | `fnv1a.rs` | `Fnv1a`: 64-bit FNV-1a fed piece by piece |
 | `grain.rs` | `Grain`: Rayon's adaptive split or a fixed task size; `chunk_len` and `tasks`, the one split helper the filter and the atomic and local histograms share |
-| `gaussian.rs`, `gaussian/` | 3x3 Gaussian blur, the embarrassingly parallel baseline |
-| `histogram/` | Image histogram: shared atomics, per-task local counters and variants |
+| `gaussian.rs`, `gaussian/` | 3x3 Gaussian blur, the embarrassingly parallel baseline, and `gaussian/sequential.rs`, the same filter without Rayon |
+| `histogram/` | Image histogram: shared atomics, per-task local counters and variants, and `sequential.rs`, one plain table without Rayon |
 | `extras/` | Workloads outside RQ1 and RQ2: `sort.rs`, Rayon's stable and unstable parallel sort |
 
 ```mermaid
