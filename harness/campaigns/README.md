@@ -23,7 +23,7 @@ Every v2 spec has a `-v3` twin with a new order seed, and `make` runs and reads 
 | Spec | Difference |
 |---|---|
 | `campaign-v3.json` | Adds the sequential references `filter-seq` and `hist-seq` (k = 1, 4, 16, 256), at one thread: 5310 runs |
-| `tier-v3.json` | New: three engine arms (as shipped, baseline compiler only, optimizing compiler only) on the filter and on both histograms at k = 1, N = 1 and 8 |
+| `tier-v3.json` | New: three engine arms (as shipped, baseline compiler only, optimizing compiler only) on the filter and on both histograms at k = 1 and 256, N = 1 and 8 |
 | `grain-threads-v3.json` | New: the local histogram at k = 16 with the adaptive split and fixed grains of 256 and 1024 KB, at N = 1, 6, 7 and 8 |
 | `grain-8192-v3.json` | Adds the atomic histogram at the grains of the local one; `grain-1024-v3.json` cannot (it needs passes) |
 | `perf-v3.json` | Adds the filter and the local histogram at k = 256; the script counts two cache events more |
