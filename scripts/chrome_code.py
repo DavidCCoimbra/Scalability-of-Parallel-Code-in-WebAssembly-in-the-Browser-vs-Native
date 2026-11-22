@@ -20,7 +20,7 @@ COMPILERS = {"optimizing": "turbofan", "baseline": "liftoff"}
 MARKERS = {"atomic-loop": "lock", "local-loop": r"(inc|add)\w*\s.*\(|mov\s+%\w+,.*\(", "sequential-histogram": r"(inc|add)\w*\s.*\(|mov\s+%\w+,.*\("}
 
 
-def function(folder: Path, kernel: Kernel, compiler: str) -> CompiledCode:
+def versions(folder: Path, kernel: Kernel, compiler: str) -> list[CompiledCode]:
     found = [
         code
         for dump in sorted(folder.glob("jit-*.dump"))
@@ -29,8 +29,7 @@ def function(folder: Path, kernel: Kernel, compiler: str) -> CompiledCode:
     ]
     if not found:
         raise SystemExit(f"no {compiler} code for {kernel.name} in {folder}")
-    # A function compiled more than once in a run: the last is the one left running.
-    return found[-1]
+    return found
 
 
 def disassembly(code: CompiledCode) -> str:
@@ -46,14 +45,16 @@ def main(argv: list[str]) -> int:
     dumps, output = Path(argv[0]), Path(argv[1])
     for kernel in KERNELS:
         for tier, compiler in COMPILERS.items():
-            code = function(dumps / tier / CELL[kernel.name], kernel, compiler)
+            found = versions(dumps / tier / CELL[kernel.name], kernel, compiler)
+            # A function compiled more than once in a run: the last is the one left running.
+            code = found[-1]
             listing = disassembly(code)
             loop = native_loop(listing, MARKERS.get(kernel.name, kernel.native_marker), kernel.native_anchor)
             folder = output / kernel.name
             folder.mkdir(parents=True, exist_ok=True)
             (folder / f"chrome-{tier}.s").write_text(listing.rstrip() + "\n")
             (folder / f"chrome-{tier}-loop.s").write_text("\n".join(loop) + "\n")
-            print(f"{kernel.name:22} {tier:10} {len(code.code):5d} bytes, loop of {len(loop)} instructions")
+            print(f"{kernel.name:22} {tier:10} {len(found)} version(s), last of {len(code.code)} bytes, loop of {len(loop)} instructions")
     return 0
 
 

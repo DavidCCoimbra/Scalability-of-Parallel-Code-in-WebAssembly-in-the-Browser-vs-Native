@@ -56,8 +56,10 @@ other, not with the x86 ones.
 ## Limits
 
 - **Firefox is missing.** Its release build writes no such dump (ADR 0060).
-- The Chrome runs used `--no-sandbox` and `--perf-prof`, which no campaign uses. That these
-  flags leave the generated code as it is in a campaign is assumed, not shown.
+- The Chrome runs are diagnostic: `--no-sandbox` and `--perf-prof`, which no campaign uses,
+  images of 4096x4096 and two threads. That the code is the one a campaign runs is assumed, not
+  shown. A function is compiled more than once in a run; the listing is the last version, and
+  `scripts.chrome_code` prints how many it found.
 - A listing says which instructions run, not how long each takes. The times are the campaigns'.
 
 ## Reproducing it

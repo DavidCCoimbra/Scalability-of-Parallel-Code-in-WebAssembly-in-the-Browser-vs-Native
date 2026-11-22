@@ -73,8 +73,11 @@ the table: the compare-and-swap is slower at k = 1 and faster at k = 256 with ei
 
 ### 4. What these tests can and cannot show
 
-- The tier campaign and the native probe change one thing and look at the effect: they are the
-  tests that can show a cause, and they cover the atomic counters (RQ2) only.
+- The native probe changes one thing, the instructions of the increment, and looks at the
+  effect: it is the test that can show a cause. The tier campaign changes the whole compiler,
+  so every instruction of the loop changes with the increment; it shows that the effect follows
+  the compiler and supports the explanation without isolating the compare-and-swap. Both cover
+  the atomic counters (RQ2) only.
 - The counters, the cutoff and the SIMD builds give correlations. Three sources that agree
   support the explanation of RQ1; none of them is an intervention on what the filter asks of
   the memory.
