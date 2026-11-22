@@ -52,18 +52,19 @@ main() {
   step 03-results make results
 }
 
-# In the order of what the study wants most, so that a short week drops from the end.
+# In the order of what the open questions of the study need (ADR 0088), so that a short week
+# drops from the end. The scalar SIMD build overwrites bench/www/pkg, hence the rebuild after it.
 extras() {
   campaign 01-tier tier
-  campaign 02-grain-threads grain-threads
-  step 03-perf scripts/perf-counters.sh
-  step 04-grain make grain-campaigns
-  step 05-cutoff make cutoff-campaigns
-  campaign 06-extras extras
-  campaign 07-weak weak
-  campaign 08-simd-scalar simd-scalar
-  campaign 09-simd-avx2 simd-avx2
-  step 10-rebuild make build
+  step 02-perf scripts/perf-counters.sh
+  campaign 03-simd-scalar simd-scalar
+  step 04-rebuild make build
+  campaign 05-simd-avx2 simd-avx2
+  step 06-cutoff make cutoff-campaigns
+  campaign 07-grain-threads grain-threads
+  step 08-grain make grain-campaigns
+  campaign 09-weak weak
+  campaign 10-extras extras
 }
 
 case "$STAGE" in

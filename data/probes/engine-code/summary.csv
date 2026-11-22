@@ -1,0 +1,6 @@
+kernel,native_function_instructions,native_loop_instructions,wasm_function_instructions,wasm_loop_instructions
+blur-interior,233,65,355,129
+atomic-loop,195,27,372,95
+local-loop,316,11,582,71
+sequential-histogram,56,11,136,63
+sequential-filter,224,14,353,219

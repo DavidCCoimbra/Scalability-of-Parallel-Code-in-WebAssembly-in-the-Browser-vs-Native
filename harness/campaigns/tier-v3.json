@@ -41,6 +41,18 @@
       "input": "few",
       "k": 1,
       "warmup": 71
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15
     }
   ],
   "engineArms": [
@@ -66,5 +78,5 @@
       }
     }
   ],
-  "comment": "Which compiler tier the campaigns measure (ADR 0084): every browser cell with the engine as shipped, with its baseline compiler only and with its optimizing compiler only, interleaved. The cells give the filter's speedup and the RQ2 ratio at k = 1, at N = 1 and 8. Native runs once per repetition, as a reference for the session."
+  "comment": "Which compiler tier the campaigns measure (ADR 0084, ADR 0088): every browser cell with the engine as shipped, with its baseline compiler only and with its optimizing compiler only, interleaved. The cells give the filter's speedup and the RQ2 ratio at k = 1 and at k = 256, at N = 1 and 8. Native runs once per repetition, as a reference for the session."
 }
