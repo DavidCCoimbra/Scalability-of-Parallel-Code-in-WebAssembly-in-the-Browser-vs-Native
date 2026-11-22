@@ -1,0 +1,44 @@
+gate: firefox hist-local few k=1 N=8: the first 3 measured iterations are 1.077 times the last 3, outside 5%
+gate: 1 problem(s)
+
+# python3 -m analysis.iteration_drift data/checks/gate2-v3
+environment,workload,input,k,threads,runs,first_median_ns,last_median_ns,first_over_last
+chrome,filter,noise,,1,3,26485000,26510000,0.999
+chrome,filter,noise,,8,3,3840001,3844999,0.999
+chrome,filter-seq,noise,,1,3,26090000,26099999,1.000
+chrome,hist-atomic,few,1,1,3,697930000,697960000,1.000
+chrome,hist-atomic,few,1,8,3,1935975000,1938540000,0.999
+chrome,hist-atomic,few,256,1,6,411922500,411930000,1.000
+chrome,hist-atomic,few,256,8,6,210357501,210595000,0.999
+chrome,hist-local,few,1,1,3,150685000,150829999,0.999
+chrome,hist-local,few,1,8,3,18979999,19095000,0.994
+chrome,hist-local,few,256,1,3,33114999,33194999,0.998
+chrome,hist-local,few,256,8,3,4224999,4210000,1.004
+chrome,hist-seq,few,1,1,3,153820000,153815000,1.000
+chrome,hist-seq,few,256,1,3,34215000,34220001,1.000
+firefox,filter,noise,,1,3,30660000,30680000,0.999
+firefox,filter,noise,,8,3,4200000,4180000,1.005
+firefox,filter-seq,noise,,1,3,30340000,30300000,1.001
+firefox,hist-atomic,few,1,1,3,379820000,379840000,1.000
+firefox,hist-atomic,few,1,8,3,915660000,915180000,1.001
+firefox,hist-atomic,few,256,1,6,379840000,379870000,1.000
+firefox,hist-atomic,few,256,8,6,392870000,393010000,1.000
+firefox,hist-local,few,1,1,3,155680000,155620000,1.000
+firefox,hist-local,few,1,8,3,21240000,19720000,1.077
+firefox,hist-local,few,256,1,3,34039999,34000000,1.001
+firefox,hist-local,few,256,8,3,4180000,4180001,1.000
+firefox,hist-seq,few,1,1,3,153760000,153920000,0.999
+firefox,hist-seq,few,256,1,3,33280000,33260000,1.001
+native,filter,noise,,1,3,22611775,22618997,1.000
+native,filter,noise,,8,3,3278039,3259786,1.006
+native,filter-seq,noise,,1,3,22412387,22419027,1.000
+native,hist-atomic,few,1,1,3,379635275,379586206,1.000
+native,hist-atomic,few,1,8,3,960993768,962246799,0.999
+native,hist-atomic,few,256,1,6,379636086,379588226,1.000
+native,hist-atomic,few,256,8,6,414488859,415203387,0.998
+native,hist-local,few,1,1,3,154916415,154906881,1.000
+native,hist-local,few,1,8,3,19483288,19482168,1.000
+native,hist-local,few,256,1,3,27089296,27047711,1.002
+native,hist-local,few,256,8,3,3434761,3414316,1.006
+native,hist-seq,few,1,1,3,155171188,155175077,1.000
+native,hist-seq,few,256,1,3,26571906,26714208,0.995

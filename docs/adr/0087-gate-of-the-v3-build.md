@@ -11,7 +11,8 @@ session for a decision recorded before the main campaign starts.
 
 The gate ran on 2026-11-21 on `measured/v3` (commit `ac65af6a`, the binaries of
 `data/sessions/v3/build/digests.txt`), and then a second time. The runs are in
-`data/checks/gate-v3` and `data/checks/gate2-v3`. They are never results.
+`data/checks/gate-v3` and `data/checks/gate2-v3`, each with the output of its check and its
+drift table next to it (`gate-v3-check.txt`, `gate2-v3-check.txt`). They are never results.
 
 ## Decision
 
@@ -36,9 +37,10 @@ limit only because 30 runs dilute it. No other cell of that campaign reaches 1.0
 native show nothing at those indices in this cell. The filter in Firefox at N = 8 has a weaker
 form of it (index 1 and 2 in 7 and 6 of 30 runs, index 9 in 15).
 
-So it is a property of Firefox on this cell, at a fixed place in the run and not at the end of a
-warm-up that was too short: a longer warm-up of the same kind would not remove it, since 71
-iterations do not.
+So it looks like a property of Firefox on this cell that sits at a fixed place in the run. That
+71 warm-up iterations do not remove it suggests that a longer warm-up would not either, but no
+run with another warm-up length tested that, and the count over the v2 campaign was made after
+seeing the gates.
 
 **What it does to the value that is analysed.** The unit of analysis is the run, summarized by
 the median of its ten measured iterations (ADR 0037). One or two slow iterations out of ten do
@@ -64,7 +66,13 @@ from iterations 3 to 9 alone, and over the 30 runs of v2 it is 1.001 times.
    for the campaign to end. Every run still records the CPU time that other processes used on
    the measured cores, and the plan's threshold excludes a run that was disturbed (ADR 0051).
    What that record cannot see is work on the other cores that shares the cache, which is why
-   the rule is needed.
+   the rule is needed. A rule cannot be checked, but what each run records can: the load
+   average before it and the foreign CPU time. Over the 5310 runs of the v3 main campaign, run
+   under this rule, the one-minute load average before a run has a median of 3.00, a 95th
+   percentile of 4.57 and a maximum of 6.13, and the foreign CPU time a 95th percentile of
+   0.036 s and a maximum of 0.205 s. The v2 main campaign, with the assistant stopped, has 3.19,
+   4.70 and 6.36, and 0.037 s and 0.222 s. The two campaigns are not told apart by these
+   records. That is evidence of the same quiet, not proof that nothing ran.
 
 ## Consequences
 
