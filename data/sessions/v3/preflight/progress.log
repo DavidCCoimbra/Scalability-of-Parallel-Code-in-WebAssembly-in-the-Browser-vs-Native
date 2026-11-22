@@ -1,0 +1,11 @@
+2026-11-21 18:35:48  start  01-env-check
+2026-11-21 18:35:49  done   01-env-check
+2026-11-21 18:35:49  start  02-test
+2026-11-21 18:37:16  done   02-test
+2026-11-21 18:37:16  start  03-quick
+2026-11-21 18:39:14  failed 03-quick: see data/sessions/v3/preflight/03-quick.log
+2026-11-21 19:29:35  skip   01-env-check
+2026-11-21 19:29:35  skip   02-test
+2026-11-21 19:29:35  start  03-browser-check
+2026-11-21 19:34:05  done   03-browser-check
+2026-11-21 19:34:05  stage preflight finished

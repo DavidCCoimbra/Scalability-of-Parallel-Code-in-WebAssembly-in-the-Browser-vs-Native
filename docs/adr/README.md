@@ -122,4 +122,5 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0083](0083-recorded-host-state-and-build-inputs.md) | The host state and the build inputs that were not recorded are recorded from now on | Accepted |
 | [0084](0084-v3-design.md) | The v3 build and its campaigns: what changes, what is asked and how the session runs | Accepted; amended by ADR 0085 |
 | [0085](0085-per-core-check.md) | The per-core check: the degraded core is sound on the prepared PC, and what follows | Accepted; amends ADR 0084, ADR 0077 and ADR 0080 |
-| [0086](0086-v3-build.md) | The v3 build: what changed in the measured code and what the compiler made of it | Proposed |
+| [0086](0086-v3-build.md) | The v3 build: what changed in the measured code and what the compiler made of it | Accepted |
+| [0087](0087-gate-of-the-v3-build.md) | The gate of the v3 build: one cell fails the drift criterion twice, and what it is | Accepted; amends ADR 0070 |
