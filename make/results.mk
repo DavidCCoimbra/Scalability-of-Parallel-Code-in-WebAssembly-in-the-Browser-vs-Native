@@ -6,7 +6,7 @@ RESULTS = python3 -m analysis.results data/raw/campaign-$(MEASURED) --max-thread
 ##@ Tables and figures of the paper
 
 results: ## Every table and figure of the main campaign (MEASURED=v2 by default)
-	mkdir -p paper/figures
+	mkdir -p paper/figures data/tables/campaign-$(MEASURED)
 	python3 -m analysis.datacheck data/raw/campaign-$(MEASURED) --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-quality.md
 	python3 -m harness.collect data/raw/campaign-$(MEASURED) --output data/campaign-$(MEASURED).csv
 	python3 -m analysis.v0 data/raw/campaign-$(MEASURED) --strict --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-scaling.csv
@@ -32,6 +32,7 @@ sensitivity: #: The plan's three sensitivity checks on the primary contrasts
 		--check no_threshold=$(SENSITIVITY)-no-threshold.csv --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-sensitivity.csv
 
 extras-results: ## Tables and figures of the exploratory campaigns: extras, weak scaling, SIMD, hybrid P+E
+	mkdir -p data/tables/extras-$(MEASURED) data/tables/weak-$(MEASURED) data/tables/simd-$(MEASURED) data/tables/hybrid-$(MEASURED)
 	python3 -m analysis.datacheck data/raw/extras-$(MEASURED) --output data/tables/extras-$(MEASURED)/extras-$(MEASURED)-quality.md
 	python3 -m harness.collect data/raw/extras-$(MEASURED) --output data/extras-$(MEASURED).csv
 	python3 -m analysis.v0 data/raw/extras-$(MEASURED) --strict --output data/tables/extras-$(MEASURED)/extras-$(MEASURED)-scaling.csv
@@ -55,6 +56,7 @@ extras-results: ## Tables and figures of the exploratory campaigns: extras, weak
 	uv run --no-project --with matplotlib python -m analysis.extras.build_variants --strict baseline=data/raw/campaign-$(MEASURED) scalar=data/raw/simd-scalar-$(MEASURED) avx2=data/raw/simd-avx2-$(MEASURED) --table data/tables/simd-$(MEASURED)/simd-$(MEASURED)-variants.csv --figure paper/figures/simd-efficiency.pdf
 
 cutoff-results: ## Cutoff campaigns: data check and v0 per size, then the cutoff table, estimates, model and figure
+	mkdir -p data/tables/cutoff-$(MEASURED)
 	for side in $(CUTOFF_SIDES) control-512 control-2048; do \
 	  python3 -m analysis.datacheck data/raw/cutoff-$$side-$(MEASURED) --output data/tables/cutoff-$(MEASURED)/cutoff-$$side-$(MEASURED)-quality.md && \
 	  python3 -m analysis.v0 data/raw/cutoff-$$side-$(MEASURED) --strict --output data/tables/cutoff-$(MEASURED)/cutoff-$$side-$(MEASURED)-scaling.csv || exit 1; \
@@ -73,6 +75,7 @@ grain-results: ## Grain sweep campaigns: data check per size, then the U-curve p
 		--paper-figure paper/figures/grain-ucurve-8192.pdf
 
 perf-results: ## Hardware counters per atomic add and V8's retries from the perf campaign
+	mkdir -p data/tables/perf-$(MEASURED)
 	python3 -m analysis.datacheck data/raw/perf-$(MEASURED) --output data/tables/perf-$(MEASURED)/perf-$(MEASURED)-quality.md
 	python3 -m analysis.extras.perf_counters data/raw/perf-$(MEASURED) --strict --runs data/tables/perf-$(MEASURED)/perf-$(MEASURED)-runs.csv \
 		--summary data/tables/perf-$(MEASURED)/perf-$(MEASURED)-counters.csv --retries data/tables/perf-$(MEASURED)/perf-$(MEASURED)-retries.csv

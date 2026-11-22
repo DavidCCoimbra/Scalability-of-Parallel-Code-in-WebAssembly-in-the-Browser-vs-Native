@@ -1,0 +1,6 @@
+2026-11-21 21:10:17  start  01-campaign
+2026-11-22 11:10:01  done   01-campaign
+2026-11-22 11:10:01  start  02-status
+2026-11-22 11:10:02  done   02-status
+2026-11-22 11:10:02  start  03-results
+2026-11-22 11:10:11  failed 03-results: see data/sessions/v3/main/03-results.log
