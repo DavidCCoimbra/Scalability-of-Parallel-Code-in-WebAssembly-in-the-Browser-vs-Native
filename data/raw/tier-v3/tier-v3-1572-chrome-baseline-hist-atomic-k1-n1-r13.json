@@ -1,0 +1,158 @@
+{
+  "build": {
+    "features": [],
+    "rustc": "rustc 1.101.0-nightly (0abfedbc7 2026-10-02)",
+    "wasmBindgen": "0.2.129",
+    "rustflags": "-C target-feature=+atomics,+bulk-memory,+mutable-globals,+simd128 -C link-arg=--shared-memory -C link-arg=--import-memory -C link-arg=--max-memory=4294967296 -C link-arg=--export=__wasm_init_tls -C link-arg=--export=__tls_size -C link-arg=--export=__tls_align -C link-arg=--export=__tls_base",
+    "clockResolutionNs": null
+  },
+  "clockResolutionNs": 5000,
+  "clockSmallestStepNs": 4999,
+  "hardwareConcurrency": 8,
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/155.0.0.0 Safari/537.36",
+  "commit": "ac65af6a447c96164011c2784857a9c2dc443c53",
+  "cpuModel": "Intel(R) Core(TM) i9-14900KF",
+  "governor": "performance",
+  "turbo": "off",
+  "kernel": "7.0.0-43-generic",
+  "os": "Linux",
+  "environment": "chrome",
+  "browserVersion": "Google Chrome for Testing 155.0.8059.84",
+  "cpuMask": "0,2,4,6,8,10,12,14",
+  "smt": "off",
+  "pCpus": "0,2,4,6,8,10,12,14",
+  "maskSiblings": [
+    "0",
+    "2",
+    "4",
+    "6",
+    "8",
+    "10",
+    "12",
+    "14"
+  ],
+  "headless": true,
+  "launchFlags": [
+    "sudo",
+    "-n",
+    "systemd-run",
+    "--scope",
+    "--quiet",
+    "--slice=ppc-bench.slice",
+    "--unit=ppc-run-tier-v3-1572-chrome-baseline-hist-atomic-k1-n1-r13",
+    "--uid=dcoimbra",
+    "-p",
+    "AllowedCPUs=0,2,4,6,8,10,12,14",
+    "env",
+    "HOME=/home/dcoimbra",
+    "USER=dcoimbra",
+    "LOGNAME=dcoimbra",
+    "PATH=/home/dcoimbra/.cargo/bin:/home/dcoimbra/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin",
+    "DISPLAY=:0",
+    "WAYLAND_DISPLAY=wayland-0",
+    "XAUTHORITY=/run/user/1000/.mutter-Xwaylandauth.7MQIZ3",
+    "XDG_RUNTIME_DIR=/run/user/1000",
+    "taskset",
+    "-c",
+    "0,2,4,6,8,10,12,14",
+    "/home/dcoimbra/Desktop/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native/harness/browsers/chrome-155.0.8059.84/chrome-linux64/chrome",
+    "--user-data-dir=/tmp/bench-chrome-s312k0zi",
+    "--no-first-run",
+    "--no-default-browser-check",
+    "--disable-background-networking",
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-client-side-phishing-detection",
+    "--disable-domain-reliability",
+    "--disable-renderer-backgrounding",
+    "--disable-component-update",
+    "--disable-default-apps",
+    "--disable-extensions",
+    "--disable-sync",
+    "--metrics-recording-only",
+    "--password-store=basic",
+    "--js-flags=--liftoff-only",
+    "--headless=new",
+    "http://127.0.0.1:45181/index.html?run=tier-v3-1572-chrome-baseline-hist-atomic-k1-n1-r13&env=chrome&startDelayMs=3000&workload=hist-atomic&input=few&k=1&threads=1&width=8192&height=8192&warmup=5&iters=10&calibration=20"
+  ],
+  "orderSeed": 2026112202,
+  "orderPosition": 1572,
+  "startedAt": "2026-11-22T16:13:20.723+00:00",
+  "finishedAt": "2026-11-22T16:13:30.926+00:00",
+  "launchSeconds": 10.149,
+  "artifactSha256": "387871291106220da7f1d5ee5205b9b3fa7425a80eda2c81c614e0b276c2ca43",
+  "loadavgBefore": [
+    2.52,
+    2.89,
+    2.95
+  ],
+  "loadavgAfter": [
+    2.28,
+    2.82,
+    2.93
+  ],
+  "shield": {
+    "system.slice": "16-31",
+    "user.slice": "16-31",
+    "init.scope": "16-31"
+  },
+  "runCpuSeconds": 7.617,
+  "runCpuMethod": "scope",
+  "foreignCpuSeconds": 0.013,
+  "startDelayMs": 3000,
+  "passes": 1,
+  "leftoverProcesses": 0,
+  "escapedProcesses": 0,
+  "grain": null,
+  "cores": {
+    "0": {
+      "busySeconds": 0.09,
+      "khzBefore": 911934,
+      "khzAfter": 800000
+    },
+    "2": {
+      "busySeconds": 0.1,
+      "khzBefore": 800000,
+      "khzAfter": 800000
+    },
+    "4": {
+      "busySeconds": 0.11,
+      "khzBefore": 800000,
+      "khzAfter": 800000
+    },
+    "6": {
+      "busySeconds": 0.1,
+      "khzBefore": 800000,
+      "khzAfter": 800000
+    },
+    "8": {
+      "busySeconds": 0.08,
+      "khzBefore": 800000,
+      "khzAfter": 800000
+    },
+    "10": {
+      "busySeconds": 0.11,
+      "khzBefore": 800000,
+      "khzAfter": 800000
+    },
+    "12": {
+      "busySeconds": 6.79,
+      "khzBefore": 800000,
+      "khzAfter": 957242
+    },
+    "14": {
+      "busySeconds": 0.25,
+      "khzBefore": 800000,
+      "khzAfter": 800000
+    }
+  },
+  "engineArm": {
+    "name": "baseline",
+    "chromeJsFlags": [
+      "--liftoff-only"
+    ],
+    "firefoxPrefs": {
+      "javascript.options.wasm_optimizingjit": false
+    }
+  }
+}
