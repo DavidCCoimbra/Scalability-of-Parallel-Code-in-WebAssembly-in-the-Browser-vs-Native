@@ -27,6 +27,7 @@ Every v2 spec has a `-v3` twin with a new order seed, and `make` runs and reads 
 | `grain-threads-v3.json` | New: the local histogram at k = 16 with the adaptive split and fixed grains of 256 and 1024 KB, at N = 1, 6, 7 and 8 |
 | `grain-8192-v3.json` | Adds the atomic histogram at the grains of the local one; `grain-1024-v3.json` cannot (it needs passes) |
 | `perf-v3.json` | Adds the filter and the local histogram at k = 256; the script counts two cache events more |
+| `perf-loop1-v3.json`, `perf-loop8-v3.json` | New: the filter and the local histogram (k = 16 and 256) with 1 and with 8 passes per sample; the difference of their counters is the loop alone (ADR 0090). Run with `MEASURED=loop1-v3 scripts/perf-counters.sh` and `MEASURED=loop8-v3 scripts/perf-counters.sh` |
 | `gate-v3.json` | New: the cells whose code changed and the filter, 3 runs each, checked before the campaigns; never results |
 
 ## Extras (not part of RQ1 or RQ2)

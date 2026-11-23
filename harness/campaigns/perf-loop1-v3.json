@@ -1,0 +1,48 @@
+{
+  "name": "perf-loop1-v3",
+  "comment": "Counters of the loop alone (ADR 0090): the cells of perf-v3 that do not use atomics, with 1 pass(es) per timed sample. perf-loop8-v3 minus perf-loop1-v3 is seven passes of every timed sample and nothing else, so the difference of their counters, per pixel of those passes, leaves out the start of the process or browser, the input generation and the checksums. The run times are not reported; the counters are.",
+  "orderSeed": 2026112301,
+  "environments": [
+    "native",
+    "chrome",
+    "firefox"
+  ],
+  "workloads": [
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 16,
+      "warmup": 15
+    }
+  ],
+  "threads": [
+    1,
+    8
+  ],
+  "repetitions": 10,
+  "width": 8192,
+  "height": 8192,
+  "warmup": 5,
+  "iterations": 10,
+  "calibration": 20,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 3000,
+  "timeoutSeconds": 1200,
+  "discardFirstLaunch": true,
+  "strict": true,
+  "passes": 1
+}

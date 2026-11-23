@@ -126,3 +126,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0087](0087-gate-of-the-v3-build.md) | The gate of the v3 build: one cell fails the drift criterion twice, and what it is | Accepted; amends ADR 0070 |
 | [0088](0088-what-explains-the-results.md) | What explains the results: the open questions, what tests each, and what it would show | Accepted; amends ADR 0084 |
 | [0089](0089-tier-and-atomic-increment-results.md) | What the tier campaign and the atomic increment probe show (questions 6 and 7) | Accepted |
+| [0090](0090-counters-of-the-loop-alone.md) | Counters of the loop alone, by the difference of two pass counts | Accepted |
