@@ -9,7 +9,7 @@ from them. The paper's numbers come from here.
 | `raw/<campaign>-v2/excluded/` | Runs kept but left out of the analysis, each with its reason in the folder's README |
 | `raw/<campaign>-v2/discarded/` | The discarded first browser launch of each session |
 | `raw/campaign-v3/`, `tables/campaign-v3/` | The main campaign of the build `measured/v3` (ADR 0084) and its tables, written by `make results MEASURED=v3`; the raw folder has the same `discarded/` launches and `sysinfo/` as the v2 ones |
-| `raw/*-v3/`, `tables/*-v3/` | The other campaigns of `measured/v3` that ADR 0088 uses: `tier`, `perf`, `perf-loop1` and `perf-loop8`, `simd-scalar`, `simd-avx2`, the seven `cutoff` and `grain-threads`. Tables by `make v3-results simd-results cutoff-results perf-results MEASURED=v3`; what they show is in ADR 0089 and ADR 0091 |
+| `raw/*-v3/`, `tables/*-v3/` | The other campaigns of `measured/v3` that ADR 0088 uses: `tier`, `perf`, `perf-loop1` and `perf-loop8`, `simd-scalar`, `simd-avx2`, the seven `cutoff` and `grain-threads`. Tables by `make v3-results simd-results cutoff-results perf-results MEASURED=v3`; what they show is in ADR 0089 and ADR 0091. Also the two grain sweeps (`grain-1024`, `grain-8192`) and `weak`, by `make grain-results weak-results MEASURED=v3` (ADR 0092) |
 | `probes/atomic-increment/` | The shared histogram counted natively with the increment sequences of LLVM and of V8's two compilers (ADR 0089); a probe, not results |
 | `probes/engine-code/` | The machine code of each kernel: native, WASM, and V8's two compilers (ADR 0088); a probe, not results |
 | `checks/gate-v3/`, `checks/gate2-v3/` | The two gates before the v3 campaigns (ADR 0087); not results |
