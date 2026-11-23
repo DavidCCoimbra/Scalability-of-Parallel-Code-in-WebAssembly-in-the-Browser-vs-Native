@@ -1,0 +1,22 @@
+{
+  "campaign": "data/raw/weak-v3",
+  "summary": "median",
+  "center": "geometric",
+  "scaling": "weak",
+  "confidence": 0.95,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "commit": "bb106680a5501799a8fae4856924a8adbd4e2f05-dirty",
+  "createdAt": "2026-11-23T13:14:36.424+00:00",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0,
+  "foreignCpuThreshold": 0.25,
+  "strict": true,
+  "excluded": {
+    "foreignCpuSeconds": 0,
+    "strictValidation": 0
+  },
+  "failed": {},
+  "missing": []
+}

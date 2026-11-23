@@ -1,0 +1,138 @@
+{
+  "build": {
+    "features": [],
+    "rustc": "rustc 1.101.0-nightly (0abfedbc7 2026-10-02)",
+    "wasmBindgen": "0.2.129",
+    "rustflags": "-C target-feature=+atomics,+bulk-memory,+mutable-globals,+simd128 -C link-arg=--shared-memory -C link-arg=--import-memory -C link-arg=--max-memory=4294967296 -C link-arg=--export=__wasm_init_tls -C link-arg=--export=__tls_size -C link-arg=--export=__tls_align -C link-arg=--export=__tls_base",
+    "clockResolutionNs": null
+  },
+  "clockResolutionNs": 20000,
+  "clockSmallestStepNs": 20000,
+  "hardwareConcurrency": 32,
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:158.0) Gecko/20100101 Firefox/158.0",
+  "commit": "ac65af6a447c96164011c2784857a9c2dc443c53",
+  "cpuModel": "Intel(R) Core(TM) i9-14900KF",
+  "governor": "performance",
+  "turbo": "off",
+  "kernel": "7.0.0-43-generic",
+  "os": "Linux",
+  "environment": "firefox",
+  "browserVersion": "Mozilla Firefox 158.0",
+  "cpuMask": "0,2,4,6,8,10,12,14",
+  "smt": "off",
+  "pCpus": "0,2,4,6,8,10,12,14",
+  "maskSiblings": [
+    "0",
+    "2",
+    "4",
+    "6",
+    "8",
+    "10",
+    "12",
+    "14"
+  ],
+  "headless": true,
+  "launchFlags": [
+    "sudo",
+    "-n",
+    "systemd-run",
+    "--scope",
+    "--quiet",
+    "--slice=ppc-bench.slice",
+    "--unit=ppc-run-grain-8192-v3-3164-firefox-hist-atomic-k256-g8-n8-r5",
+    "--uid=dcoimbra",
+    "-p",
+    "AllowedCPUs=0,2,4,6,8,10,12,14",
+    "env",
+    "HOME=/home/dcoimbra",
+    "USER=dcoimbra",
+    "LOGNAME=dcoimbra",
+    "PATH=/home/dcoimbra/.cargo/bin:/home/dcoimbra/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin",
+    "DISPLAY=:0",
+    "WAYLAND_DISPLAY=wayland-0",
+    "XAUTHORITY=/run/user/1000/.mutter-Xwaylandauth.7MQIZ3",
+    "XDG_RUNTIME_DIR=/run/user/1000",
+    "taskset",
+    "-c",
+    "0,2,4,6,8,10,12,14",
+    "/home/dcoimbra/Desktop/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native/harness/browsers/firefox-158.0/firefox/firefox",
+    "-no-remote",
+    "-new-instance",
+    "-profile",
+    "/tmp/bench-firefox-a8rsss0m",
+    "-headless",
+    "http://127.0.0.1:39633/index.html?run=grain-8192-v3-3164-firefox-hist-atomic-k256-g8-n8-r5&env=firefox&startDelayMs=3000&workload=hist-atomic&input=few&k=256&grain=8&threads=8&width=8192&height=8192&warmup=5&iters=10&calibration=20"
+  ],
+  "orderSeed": 2026112205,
+  "orderPosition": 3164,
+  "startedAt": "2026-11-23T10:21:48.215+00:00",
+  "finishedAt": "2026-11-23T10:21:58.832+00:00",
+  "launchSeconds": 10.563,
+  "artifactSha256": "387871291106220da7f1d5ee5205b9b3fa7425a80eda2c81c614e0b276c2ca43",
+  "loadavgBefore": [
+    4.0,
+    3.04,
+    2.75
+  ],
+  "loadavgAfter": [
+    4.61,
+    3.2,
+    2.8
+  ],
+  "shield": {
+    "system.slice": "16-31",
+    "user.slice": "16-31",
+    "init.scope": "16-31"
+  },
+  "runCpuSeconds": 51.524,
+  "runCpuMethod": "scope",
+  "foreignCpuSeconds": -0.024,
+  "startDelayMs": 3000,
+  "passes": 1,
+  "leftoverProcesses": 0,
+  "escapedProcesses": 0,
+  "grain": 8,
+  "cores": {
+    "0": {
+      "busySeconds": 6.17,
+      "khzBefore": 1030312,
+      "khzAfter": 2194204
+    },
+    "2": {
+      "busySeconds": 6.13,
+      "khzBefore": 800000,
+      "khzAfter": 800000
+    },
+    "4": {
+      "busySeconds": 6.21,
+      "khzBefore": 800000,
+      "khzAfter": 1125798
+    },
+    "6": {
+      "busySeconds": 6.21,
+      "khzBefore": 800000,
+      "khzAfter": 800000
+    },
+    "8": {
+      "busySeconds": 6.21,
+      "khzBefore": 800000,
+      "khzAfter": 800000
+    },
+    "10": {
+      "busySeconds": 6.14,
+      "khzBefore": 800000,
+      "khzAfter": 800000
+    },
+    "12": {
+      "busySeconds": 6.98,
+      "khzBefore": 800000,
+      "khzAfter": 800000
+    },
+    "14": {
+      "busySeconds": 7.45,
+      "khzBefore": 800179,
+      "khzAfter": 800000
+    }
+  },
+  "engineArm": null
+}

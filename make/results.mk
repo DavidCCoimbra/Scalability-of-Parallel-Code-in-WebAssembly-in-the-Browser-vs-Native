@@ -1,7 +1,7 @@
 SENSITIVITY = data/tables/campaign-$(MEASURED)/sensitivity/campaign-$(MEASURED)
 RESULTS = python3 -m analysis.results data/raw/campaign-$(MEASURED) --max-threads 8 --strict
 
-.PHONY: results sensitivity extras-results simd-results cutoff-results grain-results perf-results v3-results all-results tables-check
+.PHONY: results sensitivity extras-results weak-results simd-results cutoff-results grain-results perf-results v3-results all-results tables-check
 
 ##@ Tables and figures of the paper
 
@@ -32,23 +32,27 @@ sensitivity: #: The plan's three sensitivity checks on the primary contrasts
 		--check no_threshold=$(SENSITIVITY)-no-threshold.csv --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-sensitivity.csv
 
 extras-results: ## Tables and figures of the exploratory campaigns: extras, weak scaling, SIMD, hybrid P+E
-	mkdir -p data/tables/extras-$(MEASURED) data/tables/weak-$(MEASURED) data/tables/hybrid-$(MEASURED)
+	mkdir -p data/tables/extras-$(MEASURED) data/tables/hybrid-$(MEASURED)
 	python3 -m analysis.datacheck data/raw/extras-$(MEASURED) --output data/tables/extras-$(MEASURED)/extras-$(MEASURED)-quality.md
 	python3 -m harness.collect data/raw/extras-$(MEASURED) --output data/extras-$(MEASURED).csv
 	python3 -m analysis.v0 data/raw/extras-$(MEASURED) --strict --output data/tables/extras-$(MEASURED)/extras-$(MEASURED)-scaling.csv
 	python3 -m analysis.results data/raw/extras-$(MEASURED) --max-threads 8 --strict --foreign-cpu-threshold 0.25 --partial --contrasts data/tables/extras-$(MEASURED)/extras-$(MEASURED)-contrasts.csv --shape data/tables/extras-$(MEASURED)/extras-$(MEASURED)-shape.csv
 	uv run --no-project --with matplotlib python -m analysis.figures data/raw/extras-$(MEASURED) --strict --output paper/figures --prefix extras
-	python3 -m analysis.datacheck data/raw/weak-$(MEASURED) --output data/tables/weak-$(MEASURED)/weak-$(MEASURED)-quality.md
-	python3 -m analysis.v0 data/raw/weak-$(MEASURED) --strict --weak --output data/tables/weak-$(MEASURED)/weak-$(MEASURED)-scaling.csv
-	python3 -m analysis.iteration_drift data/raw/weak-$(MEASURED) --output data/tables/weak-$(MEASURED)/weak-$(MEASURED)-iteration-drift.csv
-	uv run --no-project --with matplotlib python -m analysis.figures data/raw/weak-$(MEASURED) --strict --output paper/figures --prefix weak
-	rm -f paper/figures/weak-speedup.pdf paper/figures/weak-efficiency.pdf
+	$(MAKE) weak-results
 	python3 -m analysis.datacheck data/raw/hybrid-$(MEASURED) --output data/tables/hybrid-$(MEASURED)/hybrid-$(MEASURED)-quality.md
 	python3 -m analysis.v0 data/raw/hybrid-$(MEASURED) --strict --output data/tables/hybrid-$(MEASURED)/hybrid-$(MEASURED)-scaling.csv
 	python3 -m analysis.iteration_drift data/raw/hybrid-$(MEASURED) --output data/tables/hybrid-$(MEASURED)/hybrid-$(MEASURED)-iteration-drift.csv
 	uv run --no-project --with matplotlib python -m analysis.figures data/raw/hybrid-$(MEASURED) --strict --output paper/figures --prefix hybrid --diagonal "speedup = N"
 	rm -f paper/figures/hybrid-efficiency.pdf
 	$(MAKE) simd-results
+
+weak-results: ## Weak scaling: the image grows with the thread count
+	mkdir -p data/tables/weak-$(MEASURED) paper/figures
+	python3 -m analysis.datacheck data/raw/weak-$(MEASURED) --output data/tables/weak-$(MEASURED)/weak-$(MEASURED)-quality.md
+	python3 -m analysis.v0 data/raw/weak-$(MEASURED) --strict --weak --output data/tables/weak-$(MEASURED)/weak-$(MEASURED)-scaling.csv
+	python3 -m analysis.iteration_drift data/raw/weak-$(MEASURED) --output data/tables/weak-$(MEASURED)/weak-$(MEASURED)-iteration-drift.csv
+	uv run --no-project --with matplotlib python -m analysis.figures data/raw/weak-$(MEASURED) --strict --output paper/figures --prefix weak
+	rm -f paper/figures/weak-speedup.pdf paper/figures/weak-efficiency.pdf
 
 simd-results: ## The SIMD build variants of the filter: scalar, baseline and AVX2
 	mkdir -p data/tables/simd-$(MEASURED)

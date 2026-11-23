@@ -128,3 +128,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0089](0089-tier-and-atomic-increment-results.md) | What the tier campaign and the atomic increment probe show (questions 6 and 7) | Accepted |
 | [0090](0090-counters-of-the-loop-alone.md) | Counters of the loop alone, by the difference of two pass counts | Accepted |
 | [0091](0091-what-explains-the-scaling.md) | What the counters of the loop, the SIMD builds, the cutoff and the grain by threads show (questions 1 to 5 and 9) | Accepted |
+| [0092](0092-grain-sweeps-and-weak-scaling-on-v3.md) | The grain sweeps and the weak scaling on measured/v3 | Accepted |
