@@ -146,9 +146,12 @@ contention that differ from run to run; what sets the state of a run is not know
 
 - **The pool of one thread** costs between -7 % and +5 % against the sequential reference
   (`campaign-v3-sequential.csv`): the relative speedup is not inflated by its baseline.
-- **Placement at one thread** (`campaign-v3-core-split.csv`): the work lands on CPU 12 or 14.
-  The native filter ran on CPU 12, the degraded core (ADR 0085), in 9 of its 30 runs, with a
-  median 1.0003 times that of the configuration.
+- **Placement at one thread** (`campaign-v3-core-split.csv`): the busiest core of a run is CPU
+  12 or 14. For the native filter it is CPU 12, the degraded core (ADR 0085), in 9 of its 30
+  runs, with a median 1.0003 times that of the configuration. The busiest core has 70 to 80 %
+  of a native run's busy time and 47 to 64 % of a browser run's, the rest being the main thread
+  and, in a browser, its other threads: the split says where most of the work was, not that one
+  core did it all.
 
 ## Consequences
 

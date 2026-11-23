@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from analysis.configuration import Configuration
-from analysis.extras import core_split, variants
+from analysis.extras import core_split, perf_loop, variants
 from analysis.extras.perf.loop import loop_counters
 from analysis.extras.perf.run_counters import Run, RunCounters
 from analysis import sequential
@@ -80,7 +80,22 @@ class V3TablesTest(unittest.TestCase):
         write_run(self.root, "r1", "filter", 1, 120, busy_on_12(0.1))
         write_run(self.root, "r2", "filter", 8, 20, busy_on_12(3.0))
         self.assertEqual(core_split.main([str(self.root), "--output", str(self.output)]), 0)
-        self.assertEqual([(row["cpu"], row["runs"], row["threads"]) for row in table(self.output)], [("12", "1", "1"), ("14", "1", "1")])
+        rows = table(self.output)
+        self.assertEqual([(row["cpu"], row["runs"], row["threads"]) for row in rows], [("12", "1", "1"), ("14", "1", "1")])
+        self.assertEqual(rows[0]["median_busy_share"], "0.750")
+
+    def test_two_counter_campaigns_may_differ_only_in_what_names_them_and_their_passes(self) -> None:
+        def campaign(name: str, passes: int, commit: str = "abc", width: int = 8) -> Path:
+            folder = self.root / name
+            folder.mkdir()
+            spec = {"name": name, "orderSeed": passes, "passes": passes, "width": width}
+            (folder / "campaign.json").write_text(json.dumps({"spec": spec, "build": {"commit": commit}}))
+            return folder
+
+        few = campaign("few", 1)
+        self.assertEqual(perf_loop.differences(few, campaign("many", 8)), [])
+        self.assertEqual(perf_loop.differences(few, campaign("other-build", 8, commit="def")), ["the builds differ"])
+        self.assertEqual(perf_loop.differences(few, campaign("other-size", 8, width=16)), ["spec.width differs"])
 
     def test_the_loop_counter_is_the_difference_of_counts_over_the_difference_of_pixels(self) -> None:
         cell = Configuration("native", "hist-local", "few", 256, 1)

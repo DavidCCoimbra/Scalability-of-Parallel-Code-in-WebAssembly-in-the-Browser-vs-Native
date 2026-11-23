@@ -80,6 +80,17 @@ class RunContext:
         known = {cpu: seconds for cpu, seconds in busy.items() if isinstance(seconds, (int, float))}
         return max(known, key=lambda cpu: known[cpu]) if known else None
 
+    # The share of the busy time of all measured CPUs that the busiest one has: near 1 when one
+    # core did the run's work, lower when other cores were busy too (a browser's helper threads).
+    @property
+    def busiest_share(self) -> float | None:
+        cores = self.raw.get("cores")
+        if not isinstance(cores, dict):
+            return None
+        busy = [core.get("busySeconds") for core in cores.values() if isinstance(core, dict)]
+        known = [seconds for seconds in busy if isinstance(seconds, (int, float))]
+        return max(known) / sum(known) if known and sum(known) > 0 else None
+
     def above_foreign_cpu(self, threshold: float) -> bool:
         seconds = self.foreign_cpu_seconds
         return seconds is not None and seconds > threshold

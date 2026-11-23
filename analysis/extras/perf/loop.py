@@ -1,6 +1,7 @@
 """Counters of the loop alone: two campaigns that differ only in passes per timed sample."""
 
 import csv
+import math
 import statistics
 from collections import defaultdict
 from dataclasses import dataclass
@@ -92,14 +93,20 @@ def write_rises(few: list[RunCounters], many: list[RunCounters], path: Path) -> 
                 continue
             pixels = mean_operations(high_passes) - mean_operations(low_passes)
             base_pixels = mean_operations(base_high) - mean_operations(base_low)
+            if pixels <= 0 or base_pixels <= 0:
+                raise ValueError(f"{configuration.label}: the second campaign does not do more pixels than the first")
 
             def rise(groups: list[list[float]], pixels: float = pixels, base_pixels: float = base_pixels) -> float:
                 loop = (statistics.fmean(groups[1]) - statistics.fmean(groups[0])) / pixels
                 base = (statistics.fmean(groups[3]) - statistics.fmean(groups[2])) / base_pixels
-                return loop / base
+                # A resample can leave the one-thread difference at zero or below.
+                return loop / base if base > 0 else math.inf
 
             for counter in counter_names(low_passes):
                 groups = [totals(low_passes, counter), totals(high_passes, counter), totals(base_low, counter), totals(base_high, counter)]
+                # A counter the loop does not move at one thread has no rise to speak of.
+                if statistics.fmean(groups[3]) <= statistics.fmean(groups[2]):
+                    continue
                 interval = bootstrap_interval(groups, rise)
                 values = (rise(groups), interval.low, interval.high)
                 writer.writerow([*cell_columns(configuration), counter, *(f"{value:.{SIGNIFICANT_DIGITS}g}" for value in values)])
