@@ -147,7 +147,8 @@ int main(void) {
         fill(images[k], ks[k]);
     }
     printf("sequence,k,threads,round,ns,counted\n");
-    // Every cell once per round, so that a drift of the machine falls on all of them alike.
+    // Every cell once per round, in a fixed order: a slow drift of the machine falls on all of
+    // them, but a sequence always runs after the same other one.
     for (int round = -WARMUP_PASSES; round < ROUNDS; round++)
         for (int k = 0; k < KS; k++)
             for (int c = 0; c < COUNTS; c++)

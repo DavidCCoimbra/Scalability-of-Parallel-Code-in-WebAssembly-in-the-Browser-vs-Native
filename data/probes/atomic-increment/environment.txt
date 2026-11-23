@@ -1,0 +1,9 @@
+# The host when data/probes/atomic-increment/passes.csv was written (2026-11-22, after make env-setup)
+kernel: 7.0.0-43-generic
+cpu: Intel(R) Core(TM) i9-14900KF
+governor (cpu0): performance
+no_turbo: 1
+smt: off
+compiler: cc (Ubuntu 15.2.0-16ubuntu1) 15.2.0
+source: bench/probes/atomic_increment.c as first committed on the branch of this probe; the comment changed since, the code did not
+launched in a run scope with AllowedCPUs=0,2,4,6,8,10,12,14 (harness.shield.confine)

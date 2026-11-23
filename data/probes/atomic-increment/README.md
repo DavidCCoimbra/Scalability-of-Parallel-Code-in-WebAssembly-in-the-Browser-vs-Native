@@ -40,9 +40,10 @@ The slowest pass of a cell is at most 0.8 % above its fastest.
 
 - **The prediction holds.** The compare-and-swap is 1.78 times the locked increment at k = 1
   with one thread and 2.18 times with eight, and 0.58 times at k = 256 with eight.
-- **It gives Chrome's times.** In the main campaign Chrome's atomic histogram takes 698, 488
-  and 412 ms with one thread at k = 1, 16 and 256; the compare-and-swap gives 677, 485 and
-  408 ms. With eight threads at k = 256 Chrome takes 210 ms and the compare-and-swap 240 ms.
+- **It comes close to Chrome's times.** In the main campaign Chrome's atomic histogram takes
+  698, 488 and 412 ms with one thread at k = 1, 16 and 256; the compare-and-swap gives 677,
+  485 and 408 ms, within 3 %. With eight threads at k = 256 Chrome takes 210 ms and the
+  compare-and-swap 240 ms, 14 % more.
 - **The locked increment gives the native times**: 380 ms with one thread at every k and
   415 ms at k = 256 with eight threads, against 380 and 415 ms in the campaign.
 - **The baseline compiler's sequence gains at k = 256 too, less**: 349 ms against 415 ms. The
@@ -50,8 +51,11 @@ The slowest pass of a cell is at most 0.8 % above its fastest.
 
 **Limits.** Each thread has a fixed slice and a fixed core, where the bench splits the image
 into Rayon tasks and leaves placement to the kernel, so the eight-thread times at k = 1 and 16
-are not the bench's (976 against 856 ms at k = 1). One session, ten passes per cell. The probe
-shows that the sequence is enough to produce the effect on this CPU; why a load before the
+are not the bench's (976 against 856 ms at k = 1). One session, ten passes per cell, the cells
+always in the same order within a round, and the P-cores of this PC written in the source. The
+host and the compiler of the run are in `environment.txt`. The probe shows that the sequence is
+enough to produce the effect on this CPU, which is less than showing that nothing else
+contributes to Chrome's times; why a load before the
 locked write contends less over 256 lines is not shown.
 
 ## Reproducing it
