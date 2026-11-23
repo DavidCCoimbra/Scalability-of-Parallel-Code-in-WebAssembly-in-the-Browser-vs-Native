@@ -5,7 +5,6 @@ from collections.abc import Iterable
 from pathlib import Path
 
 from analysis.configuration import Configuration
-from analysis.extras.perf.intervals import COUNTERS
 from analysis.extras.perf.run_counters import RunCounters
 from analysis.stats.bootstrap import bootstrap_interval
 
@@ -23,15 +22,21 @@ def short_cells(completed: Iterable[Configuration], repetitions: int) -> list[st
     return [f"{cell.label}: {count} runs" for cell, count in sorted(runs.items()) if count < repetitions]
 
 
+# Every row of one campaign has the same counters, in table order.
+def counter_names(rows: list[RunCounters]) -> tuple[str, ...]:
+    return tuple(rows[0].per_operation) if rows else ()
+
+
 def write_runs(rows: list[RunCounters], path: Path) -> None:
     with path.open("w", newline="") as file:
         writer = csv.writer(file, lineterminator="\n")
-        writer.writerow(["run_id", "environment", "workload", "k", "threads", "operations", "intervals", *COUNTERS])
+        names = counter_names(rows)
+        writer.writerow(["run_id", "environment", "workload", "k", "threads", "operations", "intervals", *names])
         for row in rows:
             run = row.run
             writer.writerow(
                 [run.run_id, *cell_columns(run.configuration), run.operations, row.intervals]
-                + [f"{row.per_operation[name]:.4f}" for name in COUNTERS]
+                + [f"{row.per_operation[name]:.4f}" for name in names]
             )
 
 
@@ -48,7 +53,7 @@ def write_summary(rows: list[RunCounters], path: Path) -> None:
         writer = csv.writer(file, lineterminator="\n")
         writer.writerow(["environment", "workload", "k", "threads", "runs", "counter", "mean", "low", "high"])
         for configuration, cell in sorted(cells.items()):
-            for name in COUNTERS:
+            for name in counter_names(rows):
                 values = [row.per_operation[name] for row in cell]
                 interval = bootstrap_interval([values], mean_of)
                 writer.writerow(

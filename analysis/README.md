@@ -15,6 +15,7 @@ commands through `uv run --no-project --with matplotlib`, see `Makefile`).
 | Command | What it writes |
 |---|---|
 | `datacheck` | Data quality report of a campaign |
+| `sequential` | The speedup against sequential code, from the sequential references of a campaign (`filter-seq`, `hist-seq`) |
 | `gate` | The gate before a build's campaigns: exits 1 unless a gate campaign is fit to start from |
 | `v0` | Speedup and efficiency per configuration, `<campaign>-scaling.csv` |
 | `results` | The plan's RQ1, RQ2 and absolute contrasts, `<campaign>-contrasts.csv`, and the shape table |

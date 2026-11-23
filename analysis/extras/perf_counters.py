@@ -23,7 +23,7 @@ from pathlib import Path
 
 from analysis.campaign import campaign_spec
 from analysis.configuration import Configuration, configuration_of
-from analysis.extras.perf.intervals import read_intervals
+from analysis.extras.perf.intervals import counters_in, read_intervals
 from analysis.extras.perf.run_counters import counters_of, runs_of
 from analysis.extras.perf.tables import short_cells, write_retries, write_runs, write_summary
 from analysis.loading import InvalidCampaign, LoadedCampaign, add_exclusion_arguments, exclusion_rule, load_campaign
@@ -59,7 +59,8 @@ def main(argv: list[str]) -> int:
         return problem(str(invalid))
     campaign.report_gaps()
     intervals = read_intervals(args.raw / COUNTERS_DIRECTORY)
-    rows = [counters_of(run, intervals) for run in runs]
+    names = counters_in(intervals)
+    rows = [counters_of(run, intervals, names) for run in runs]
     empty = [row.run.run_id for row in rows if row.intervals == 0]
     if empty:
         return problem(f"runs with no counter interval: {empty}")

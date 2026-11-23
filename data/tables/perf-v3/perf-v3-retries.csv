@@ -1,0 +1,13 @@
+environment,workload,k,threads,excess_lock_loads,low,high
+chrome,filter,,8,0.0011,0.0007,0.0016
+chrome,hist-atomic,1,8,0.2422,0.2251,0.2588
+chrome,hist-atomic,256,8,0.0146,0.0142,0.0151
+chrome,hist-local,256,8,0.0014,0.0011,0.0017
+firefox,filter,,8,0.0001,-0.0004,0.0005
+firefox,hist-atomic,1,8,0.0021,0.0017,0.0025
+firefox,hist-atomic,256,8,0.0008,0.0003,0.0014
+firefox,hist-local,256,8,0.0004,0.0003,0.0006
+native,filter,,8,0.0004,0.0003,0.0005
+native,hist-atomic,1,8,0.0010,0.0001,0.0020
+native,hist-atomic,256,8,0.0004,-0.0008,0.0017
+native,hist-local,256,8,0.0003,-0.0000,0.0005

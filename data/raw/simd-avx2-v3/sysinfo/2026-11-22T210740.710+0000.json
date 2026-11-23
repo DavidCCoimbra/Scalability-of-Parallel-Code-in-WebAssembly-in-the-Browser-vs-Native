@@ -1,0 +1,148 @@
+{
+  "cpuModel": "Intel(R) Core(TM) i9-14900KF",
+  "kernel": "7.0.0-43-generic",
+  "distro": "Ubuntu 26.04.1 LTS",
+  "microcode": "0x133",
+  "governor": "performance",
+  "turbo": "off",
+  "smt": "off",
+  "pCoreMask": "0,2,4,6,8,10,12,14",
+  "frequenciesKHz": {
+    "0": {
+      "min": 800000,
+      "max": 3200000,
+      "current": 898594
+    },
+    "2": {
+      "min": 800000,
+      "max": 3200000,
+      "current": 800000
+    },
+    "4": {
+      "min": 800000,
+      "max": 3200000,
+      "current": 800000
+    },
+    "6": {
+      "min": 800000,
+      "max": 3200000,
+      "current": 800000
+    },
+    "8": {
+      "min": 800000,
+      "max": 3200000,
+      "current": 800000
+    },
+    "10": {
+      "min": 800000,
+      "max": 3200000,
+      "current": 800000
+    },
+    "12": {
+      "min": 800000,
+      "max": 3200000,
+      "current": 800000
+    },
+    "14": {
+      "min": 800000,
+      "max": 3200000,
+      "current": 800000
+    }
+  },
+  "shield": {
+    "system.slice": "16-31",
+    "user.slice": "16-31",
+    "init.scope": "16-31"
+  },
+  "quietMode": {
+    "on": true,
+    "stopped": [
+      "docker.socket",
+      "docker.service",
+      "containerd.service",
+      "snapd.socket",
+      "snapd.service",
+      "apt-daily.timer",
+      "apt-daily-upgrade.timer",
+      "unattended-upgrades.service",
+      "fwupd.service",
+      "man-db.timer",
+      "motd-news.timer",
+      "localsearch-3.service",
+      "evolution-source-registry.service",
+      "speech-dispatcher.service",
+      "snap.firmware-updater.firmware-notifier.service"
+    ]
+  },
+  "perfEventParanoid": 1,
+  "hostState": {
+    "transparentHugepage": {
+      "enabled": "always [madvise] never",
+      "defrag": "always defer defer+madvise [madvise] never"
+    },
+    "kernelCmdline": "BOOT_IMAGE=/boot/vmlinuz-7.0.0-43-generic root=UUID=1efc8c65-8684-4dc2-b54f-721e39146da7 ro quiet splash crashkernel=2G-4G:320M,4G-32G:512M,32G-64G:1024M,64G-128G:2048M,128G-:4096M",
+    "mitigations": {
+      "gather_data_sampling": "Not affected",
+      "ghostwrite": "Not affected",
+      "indirect_target_selection": "Not affected",
+      "itlb_multihit": "Not affected",
+      "l1tf": "Not affected",
+      "mds": "Not affected",
+      "meltdown": "Not affected",
+      "mmio_stale_data": "Not affected",
+      "old_microcode": "Not affected",
+      "reg_file_data_sampling": "Mitigation: Clear Register File",
+      "retbleed": "Not affected",
+      "spec_rstack_overflow": "Not affected",
+      "spec_store_bypass": "Mitigation: Speculative Store Bypass disabled via prctl",
+      "spectre_v1": "Mitigation: usercopy/swapgs barriers and __user pointer sanitization",
+      "spectre_v2": "Mitigation: Enhanced / Automatic IBRS; IBPB: conditional; PBRSB-eIBRS: SW sequence; BHI: BHI_DIS_S",
+      "srbds": "Not affected",
+      "tsa": "Not affected",
+      "tsx_async_abort": "Not affected",
+      "vmscape": "Mitigation: IBPB before exit to userspace"
+    },
+    "cpuIdle": {
+      "driver": "intel_idle",
+      "states": [
+        {
+          "name": "POLL",
+          "disabled": false
+        },
+        {
+          "name": "C1_ACPI",
+          "disabled": false
+        },
+        {
+          "name": "C2_ACPI",
+          "disabled": false
+        },
+        {
+          "name": "C3_ACPI",
+          "disabled": false
+        }
+      ]
+    },
+    "memTotalKb": 65584656,
+    "firmware": {
+      "bios_vendor": "American Megatrends Inc.",
+      "bios_version": "3202",
+      "bios_date": "05/07/2026",
+      "board_name": "ProArt Z790-CREATOR WIFI"
+    },
+    "defaultIrqAffinity": "ffffffff"
+  },
+  "commit": "ac65af6a447c96164011c2784857a9c2dc443c53",
+  "versions": {
+    "rustc": "rustc 1.101.0-nightly (0abfedbc7 2026-10-02)",
+    "chrome": "Google Chrome for Testing 155.0.8059.84",
+    "firefox": "Mozilla Firefox 158.0"
+  },
+  "loadavg": [
+    1.35,
+    0.92,
+    0.9
+  ],
+  "collectedAt": "2026-11-22T21:07:40.841+00:00",
+  "problems": []
+}

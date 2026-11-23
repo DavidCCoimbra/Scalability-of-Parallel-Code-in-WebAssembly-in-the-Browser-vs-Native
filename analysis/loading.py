@@ -40,6 +40,9 @@ class LoadedCampaign:
     def summaries(self, summary: Summary = RUN_SUMMARY) -> list[RunSummary]:
         return run_summaries(self.rows, summary)
 
+    def sequential_summaries(self, summary: Summary = RUN_SUMMARY) -> list[RunSummary]:
+        return run_summaries(self.sequential_rows, summary)
+
     # Disjoint by construction: a missing run has no file, a failed run has only an error file, and
     # an excluded run has its data and is counted by reason.
     def gaps_json(self) -> dict[str, Any]:
