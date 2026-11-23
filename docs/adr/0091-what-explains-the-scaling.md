@@ -33,8 +33,11 @@ The check of that method holds: the native local histogram at one thread gives 2
 Both engines run about a third more instructions per pixel than native code (1.34 and 1.32
 times). Chrome runs them at a higher rate and ends 1.17 times the native cycles; Firefox runs
 them at the native rate or below and ends 1.36 times. Those two ratios are the time ratios of
-the main campaign. Why SpiderMonkey's instructions are slower is not known: its code could not
-be read (ADR 0060).
+the main campaign. The listings agree with the counters: the filter loops of
+`data/probes/engine-code` handle 16 pixels in 65 instructions natively, 87 in Chrome and 85 in
+Firefox, which is 4.06, 5.44 and 5.31 per pixel. Firefox's loop is as long as Chrome's and runs
+slower; it mixes VEX-encoded and legacy-encoded vector instructions and uses `palignr` where
+V8 does not. Whether that is why it gets fewer instructions per cycle was not tested.
 
 The local histogram is the same in larger: 2.77 instructions per pixel natively against 7.0 in
 Chrome and 6.8 in Firefox, at twice the native rate, for 1.23 and 1.31 times the cycles.
@@ -158,8 +161,9 @@ contention that differ from run to run; what sets the state of a run is not know
 - Of the nine questions of ADR 0088: 6 answered and 7 answered for the sequence (ADR 0089); 3
   answered as far as counters go; 1, 2, 5 and 9 supported; 8 follows from 5; 4 not supported
   and open.
-- What stays open, to be declared: why SpiderMonkey's code is slower per instruction and misses
-  more with one thread; what Chrome loses outside the loop; the mechanism at k = 256; the dip at
+- What stays open, to be declared: why SpiderMonkey's filter loop, which is now readable, runs
+  fewer instructions per cycle than V8's, and why its local histogram misses more with one
+  thread; what Chrome loses outside the loop; the mechanism at k = 256; the dip at
   six and seven threads; what sets a run's state of contention.
 - For the paper: the RQ1 finding (Firefox scales better) is read as a slower loop asking less
   of the memory, supported by three sources and by an intervention inside one engine. It is not

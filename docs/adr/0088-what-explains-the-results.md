@@ -83,7 +83,8 @@ the table: the compare-and-swap is slower at k = 1 and faster at k = 256 with ei
   the memory.
 - Why SpiderMonkey compiles the filter and the local histogram as it does stays out of reach if
   its code cannot be read (ADR 0060). Questions 3 and 5 can then be answered only as far as the
-  counters go.
+  counters go. (Its code was read later, from the memory of a running Firefox:
+  `data/probes/engine-code`, ADR 0091.)
 
 ## Consequences
 
