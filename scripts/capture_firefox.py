@@ -27,22 +27,36 @@ CELLS = {
     "atomic-loop": "workload=hist-atomic&input=few&k=256&threads=1&width=8192&height=8192&warmup=5&iters=50&calibration=0",
     "local-loop": "workload=hist-local&input=few&k=256&threads=1&width=8192&height=8192&warmup=20&iters=600&calibration=0",
 }
+# SpiderMonkey names the mapping that holds its compiled code.
+CODE_MAPPING = "js-executable-memory"
 SETTLE_SECONDS = 8
 SAMPLE_SECONDS = 5
 PAGE = 4096
 WINDOW_PAGES = 2
 
 
-def busiest_firefox() -> int:
-    listing = subprocess.run(["ps", "-eo", "pid,pcpu,comm", "--sort=-pcpu"], capture_output=True, text=True, check=True).stdout
+# The page's code runs in a content process, which Firefox starts with this flag; the parent
+# process and the other helpers are not it.
+CONTENT_PROCESS_FLAG = "-contentproc"
+
+
+def busiest_content_process() -> tuple[int, str]:
+    listing = subprocess.run(["ps", "-eo", "pid,pcpu,args", "--sort=-pcpu"], capture_output=True, text=True, check=True).stdout
     for line in listing.splitlines()[1:]:
         pid, _cpu, command = line.split(None, 2)
-        if "firefox" in command or "Isolated Web" in command or "Web Content" in command:
-            return int(pid)
-    raise SystemExit("no Firefox process found")
+        if CONTENT_PROCESS_FLAG in command:
+            return int(pid), command
+    raise SystemExit("no Firefox content process found")
 
 
-def sample(pid: int, folder: Path) -> None:
+def read_memory(pid: int, start: int, length: int, target: Path) -> None:
+    command = f"dd if=/proc/{pid}/mem of={target} bs=1 skip={start} count={length} status=none"
+    done = subprocess.run(["sudo", "-n", "systemd-run", "--quiet", "--wait", "--collect", "--", "sh", "-c", command], capture_output=True, text=True, check=False)
+    if done.returncode != 0 or not target.exists() or target.stat().st_size != length:
+        raise SystemExit(f"could not read {length} bytes at {start:#x} of process {pid}: {done.stderr.strip()}")
+
+
+def sample(pid: int, command: str, folder: Path) -> None:
     data = folder / "perf.data"
     subprocess.run(["perf", "record", "-q", "-e", "cycles:u", "-p", str(pid), "-o", str(data), "--", "sleep", str(SAMPLE_SECONDS)], check=False, capture_output=True)
     script = subprocess.run(["perf", "script", "-i", str(data), "-F", "ip,dso"], capture_output=True, text=True, check=False).stdout
@@ -53,22 +67,28 @@ def sample(pid: int, folder: Path) -> None:
         if len(fields) < 2:
             continue
         total += 1
-        # SpiderMonkey names the mapping of its compiled code.
-        if "js-executable-memory" in fields[1]:
+        if CODE_MAPPING in fields[1]:
             pages[int(fields[0], 16) // PAGE] += 1
     if not pages:
         (folder / "result.txt").write_text(f"{total} samples, none in anonymous memory\n")
         return
     page, hits = pages.most_common(1)[0]
     start, length = (page - 1) * PAGE, (WINDOW_PAGES + 1) * PAGE
-    dump = folder / "hot.bin"
-    command = f"dd if=/proc/{pid}/mem of={dump} bs=1 skip={start} count={length} status=none"
-    done = subprocess.run(["sudo", "-n", "systemd-run", "--quiet", "--wait", "--collect", "--", "sh", "-c", command], capture_output=True, text=True, check=False)
+    dump, again = folder / "hot.bin", folder / "hot-again.bin"
+    read_memory(pid, start, length, dump)
+    # A second sampling between two reads: if the engine had recompiled or patched this code
+    # while it was sampled, the two reads would differ.
+    subprocess.run(["perf", "record", "-q", "-e", "cycles:u", "-p", str(pid), "-o", str(folder / "perf-again.data"), "--", "sleep", str(SAMPLE_SECONDS)], check=False, capture_output=True)
+    read_memory(pid, start, length, again)
+    unchanged = dump.read_bytes() == again.read_bytes()
     (folder / "result.txt").write_text(
-        f"pid {pid}: {total} samples, {sum(pages.values())} in anonymous memory, {hits} in the page at {page * PAGE:#x}\n"
-        f"read {length} bytes from {start:#x}: exit {done.returncode} {done.stderr.strip()}\n"
+        f"pid {pid} ({command[:120]})\n"
+        f"{total} samples, {sum(pages.values())} in SpiderMonkey's code, {hits} in the page at {page * PAGE:#x}\n"
+        f"read {length} bytes from {start:#x}; the same bytes after {SAMPLE_SECONDS} s more: {'yes' if unchanged else 'NO'}\n"
         f"top pages: {[(hex(p * PAGE), n) for p, n in pages.most_common(5)]}\n"
     )
+    if not unchanged:
+        raise SystemExit(f"{folder.name}: the code changed while it was sampled")
 
 
 def main(argv: list[str]) -> int:
@@ -83,7 +103,7 @@ def main(argv: list[str]) -> int:
         run = threading.Thread(target=launcher.run, args=(f"code-firefox-{cell}-{int(time.time())}", query))
         run.start()
         time.sleep(SETTLE_SECONDS)
-        sample(busiest_firefox(), folder)
+        sample(*busiest_content_process(), folder)
         run.join()
         server.stop()
         print(cell, (folder / "result.txt").read_text().strip(), flush=True)

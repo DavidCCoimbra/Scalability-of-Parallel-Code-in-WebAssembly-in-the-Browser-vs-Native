@@ -67,9 +67,16 @@ other, not with the x86 ones.
   the pages of the mapping SpiderMonkey names `js-executable-memory` that hold the samples, and
   reads them from `/proc/<pid>/mem` through a root unit. The bytes have no function names and
   no known start: `scripts.firefox_code` starts the disassembly at the offset that puts the
-  samples on instruction starts (all but 3 to 19 of 20 000 do) and cuts the shortest loop with
+  samples on instruction starts (all but a few of 20 000 do) and cuts the shortest loop with
   the kernel's marker that holds a tenth of the samples. Only the optimizing compiler's code
   was captured, at one thread, for three kernels.
+- **How those listings were checked.** The pages are read twice, with five more seconds of
+  sampling in between, and the capture stops unless the two reads are the same bytes
+  (`firefox-capture.txt` in each folder, with the process and the pages). The loop cut out holds
+  all the samples of the atomic and the local histogram and a quarter of the filter run's, the
+  rest being the checksum; its first line says how many. The choice of the loop was checked
+  against a measurement made apart: the instructions per pixel of each listing are those of the
+  counters of the loop alone (5.31 against 5.41 for the filter).
 - In the filter run the most sampled loop of Firefox is not the filter but the checksum of its
   output, which runs after every iteration outside the timed region; the listing is the filter's
   loop, found by its vector instructions.

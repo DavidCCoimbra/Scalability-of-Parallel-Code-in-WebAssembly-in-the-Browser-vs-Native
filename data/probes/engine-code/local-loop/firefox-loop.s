@@ -1,82 +1,82 @@
-# 19948 samples in SpiderMonkey's code, 19929 on the start of an instruction of this listing
-+d2081     178  movzbl (%r15,%rdx,1),%esi
-+d2086     588  mov    -0x24(%rbp),%ecx
-+d2089     204  lea    (%rcx,%rsi,8),%ebx
-+d208c     203  mov    (%r15,%rbx,1),%rsi
-+d2090     862  add    $0x1,%rsi
-+d2094     164  mov    %rsi,(%r15,%rbx,1)
-+d2098     364  lea    0x1(%rdx),%ebx
-+d209b     102  movzbl (%r15,%rbx,1),%esi
-+d20a0     157  lea    (%rcx,%rsi,8),%ebx
-+d20a3     140  mov    (%r15,%rbx,1),%rsi
-+d20a7     413  add    $0x1,%rsi
-+d20ab     159  mov    %rsi,(%r15,%rbx,1)
-+d20af     415  lea    0x2(%rdx),%ebx
-+d20b2     113  movzbl (%r15,%rbx,1),%esi
-+d20b7     226  lea    (%rcx,%rsi,8),%ebx
-+d20ba     136  mov    (%r15,%rbx,1),%rsi
-+d20be     402  add    $0x1,%rsi
-+d20c2     140  mov    %rsi,(%r15,%rbx,1)
-+d20c6     308  lea    0x3(%rdx),%ebx
-+d20c9      94  movzbl (%r15,%rbx,1),%esi
-+d20ce     277  lea    (%rcx,%rsi,8),%ebx
-+d20d1     134  mov    (%r15,%rbx,1),%rsi
-+d20d5     421  add    $0x1,%rsi
-+d20d9     115  mov    %rsi,(%r15,%rbx,1)
-+d20dd     315  add    $0x4,%edx
-+d20e0      92  cmp    %edx,-0x8(%rbp)
-+d20e3       0  je     0x32ffc6344ecd
-+d20e9     187  movzbl (%r15,%rdx,1),%esi
-+d20ee     534  lea    (%rcx,%rsi,8),%ebx
-+d20f1     318  mov    (%r15,%rbx,1),%rsi
-+d20f5     748  add    $0x1,%rsi
-+d20f9     280  mov    %rsi,(%r15,%rbx,1)
-+d20fd     237  lea    0x1(%rdx),%ebx
-+d2100     149  movzbl (%r15,%rbx,1),%esi
-+d2105     113  lea    (%rcx,%rsi,8),%ebx
-+d2108     229  mov    (%r15,%rbx,1),%rsi
-+d210c     344  add    $0x1,%rsi
-+d2110     298  mov    %rsi,(%r15,%rbx,1)
-+d2114     328  lea    0x2(%rdx),%ebx
-+d2117     187  movzbl (%r15,%rbx,1),%esi
-+d211c     105  lea    (%rcx,%rsi,8),%ebx
-+d211f     201  mov    (%r15,%rbx,1),%rsi
-+d2123     320  add    $0x1,%rsi
-+d2127     245  mov    %rsi,(%r15,%rbx,1)
-+d212b     227  lea    0x3(%rdx),%ebx
-+d212e     182  movzbl (%r15,%rbx,1),%esi
-+d2133     188  lea    (%rcx,%rsi,8),%ebx
-+d2136     243  mov    (%r15,%rbx,1),%rsi
-+d213a     281  add    $0x1,%rsi
-+d213e     151  mov    %rsi,(%r15,%rbx,1)
-+d2142     241  add    $0x4,%edx
-+d2145     132  cmp    %edx,-0x8(%rbp)
-+d2148       0  je     0x32ffc6344ecd
-+d214e     132  cmpl   $0x0,0x38(%r14)
-+d2153     171  jne    0x32ffc6345779
-+d2159     183  movzbl (%r15,%rdx,1),%esi
-+d215e     591  lea    (%rcx,%rsi,8),%ebx
-+d2161     205  mov    (%r15,%rbx,1),%rsi
-+d2165     771  add    $0x1,%rsi
-+d2169     191  mov    %rsi,(%r15,%rbx,1)
-+d216d     271  lea    0x1(%rdx),%ebx
-+d2170     122  movzbl (%r15,%rbx,1),%esi
-+d2175     165  lea    (%rcx,%rsi,8),%ebx
-+d2178     196  mov    (%r15,%rbx,1),%rsi
-+d217c     400  add    $0x1,%rsi
-+d2180     167  mov    %rsi,(%r15,%rbx,1)
-+d2184     386  lea    0x2(%rdx),%ebx
-+d2187     105  movzbl (%r15,%rbx,1),%esi
-+d218c     182  lea    (%rcx,%rsi,8),%ebx
-+d218f     173  mov    (%r15,%rbx,1),%rsi
-+d2193     425  add    $0x1,%rsi
-+d2197     180  mov    %rsi,(%r15,%rbx,1)
-+d219b     337  lea    0x3(%rdx),%ebx
-+d219e      97  movzbl (%r15,%rbx,1),%esi
-+d21a3     256  lea    (%rcx,%rsi,8),%ebx
-+d21a6     137  mov    (%r15,%rbx,1),%rcx
-+d21aa     349  add    $0x1,%rcx
-+d21ae     116  mov    %rcx,(%r15,%rbx,1)
-+d21b2     328  add    $0x4,%edx
-+d21b5      87  cmp    %edx,-0x8(%rbp)
-+d21b8       0  jne    0x32ffc6344d90
+# 19953 samples in SpiderMonkey's code, 19929 on an instruction start of the disassembly; 19916 in this loop of 81 instructions (columns: offset, samples, instruction)
+    +0     208  movzbl (%r15,%rdx,1),%esi
+    +5     609  mov    -0x24(%rbp),%ecx
+    +8     219  lea    (%rcx,%rsi,8),%ebx
+    +b     195  mov    (%r15,%rbx,1),%rsi
+    +f     882  add    $0x1,%rsi
+   +13     155  mov    %rsi,(%r15,%rbx,1)
+   +17     367  lea    0x1(%rdx),%ebx
+   +1a      92  movzbl (%r15,%rbx,1),%esi
+   +1f     150  lea    (%rcx,%rsi,8),%ebx
+   +22     121  mov    (%r15,%rbx,1),%rsi
+   +26     409  add    $0x1,%rsi
+   +2a     169  mov    %rsi,(%r15,%rbx,1)
+   +2e     403  lea    0x2(%rdx),%ebx
+   +31     109  movzbl (%r15,%rbx,1),%esi
+   +36     240  lea    (%rcx,%rsi,8),%ebx
+   +39     131  mov    (%r15,%rbx,1),%rsi
+   +3d     401  add    $0x1,%rsi
+   +41     158  mov    %rsi,(%r15,%rbx,1)
+   +45     314  lea    0x3(%rdx),%ebx
+   +48      98  movzbl (%r15,%rbx,1),%esi
+   +4d     293  lea    (%rcx,%rsi,8),%ebx
+   +50     120  mov    (%r15,%rbx,1),%rsi
+   +54     406  add    $0x1,%rsi
+   +58      97  mov    %rsi,(%r15,%rbx,1)
+   +5c     329  add    $0x4,%edx
+   +5f     112  cmp    %edx,-0x8(%rbp)
+   +62       0  je     0x1e42e7a52ecd
+   +68     201  movzbl (%r15,%rdx,1),%esi
+   +6d     491  lea    (%rcx,%rsi,8),%ebx
+   +70     340  mov    (%r15,%rbx,1),%rsi
+   +74     784  add    $0x1,%rsi
+   +78     289  mov    %rsi,(%r15,%rbx,1)
+   +7c     207  lea    0x1(%rdx),%ebx
+   +7f     151  movzbl (%r15,%rbx,1),%esi
+   +84     123  lea    (%rcx,%rsi,8),%ebx
+   +87     180  mov    (%r15,%rbx,1),%rsi
+   +8b     295  add    $0x1,%rsi
+   +8f     308  mov    %rsi,(%r15,%rbx,1)
+   +93     310  lea    0x2(%rdx),%ebx
+   +96     191  movzbl (%r15,%rbx,1),%esi
+   +9b     149  lea    (%rcx,%rsi,8),%ebx
+   +9e     184  mov    (%r15,%rbx,1),%rsi
+   +a2     316  add    $0x1,%rsi
+   +a6     223  mov    %rsi,(%r15,%rbx,1)
+   +aa     241  lea    0x3(%rdx),%ebx
+   +ad     201  movzbl (%r15,%rbx,1),%esi
+   +b2     166  lea    (%rcx,%rsi,8),%ebx
+   +b5     213  mov    (%r15,%rbx,1),%rsi
+   +b9     330  add    $0x1,%rsi
+   +bd     149  mov    %rsi,(%r15,%rbx,1)
+   +c1     215  add    $0x4,%edx
+   +c4     122  cmp    %edx,-0x8(%rbp)
+   +c7       0  je     0x1e42e7a52ecd
+   +cd     141  cmpl   $0x0,0x38(%r14)
+   +d2     192  jne    0x1e42e7a53779
+   +d8     201  movzbl (%r15,%rdx,1),%esi
+   +dd     583  lea    (%rcx,%rsi,8),%ebx
+   +e0     186  mov    (%r15,%rbx,1),%rsi
+   +e4     774  add    $0x1,%rsi
+   +e8     201  mov    %rsi,(%r15,%rbx,1)
+   +ec     297  lea    0x1(%rdx),%ebx
+   +ef     112  movzbl (%r15,%rbx,1),%esi
+   +f4     168  lea    (%rcx,%rsi,8),%ebx
+   +f7     193  mov    (%r15,%rbx,1),%rsi
+   +fb     374  add    $0x1,%rsi
+   +ff     153  mov    %rsi,(%r15,%rbx,1)
+  +103     403  lea    0x2(%rdx),%ebx
+  +106     120  movzbl (%r15,%rbx,1),%esi
+  +10b     173  lea    (%rcx,%rsi,8),%ebx
+  +10e     148  mov    (%r15,%rbx,1),%rsi
+  +112     399  add    $0x1,%rsi
+  +116     166  mov    %rsi,(%r15,%rbx,1)
+  +11a     335  lea    0x3(%rdx),%ebx
+  +11d      98  movzbl (%r15,%rbx,1),%esi
+  +122     232  lea    (%rcx,%rsi,8),%ebx
+  +125     149  mov    (%r15,%rbx,1),%rcx
+  +129     410  add    $0x1,%rcx
+  +12d      97  mov    %rcx,(%r15,%rbx,1)
+  +131     343  add    $0x4,%edx
+  +134     102  cmp    %edx,-0x8(%rbp)
+  +137       0  jne    0x1e42e7a52d90

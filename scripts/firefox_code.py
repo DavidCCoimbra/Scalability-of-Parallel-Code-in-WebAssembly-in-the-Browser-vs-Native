@@ -12,13 +12,14 @@ import subprocess
 import sys
 from pathlib import Path
 
+CODE_MAPPING = "js-executable-memory"
 LINE = re.compile(r"^\s*([0-9a-f]+):\s+(.*)$")
 TRIED_OFFSETS = 16
 
 
 def samples(folder: Path) -> collections.Counter[int]:
     script = subprocess.run(["perf", "script", "-i", str(folder / "perf.data"), "-F", "ip,dso"], capture_output=True, text=True, check=True).stdout
-    return collections.Counter(int(line.split()[0], 16) for line in script.splitlines() if "js-executable-memory" in line)
+    return collections.Counter(int(line.split()[0], 16) for line in script.splitlines() if CODE_MAPPING in line)
 
 
 def disassembly(dump: Path, address: int, skip: int) -> list[tuple[int, str]]:
@@ -67,7 +68,6 @@ def main(argv: list[str]) -> int:
         start = int(re.search(r"bytes from (0x[0-9a-f]+)", (folder / "result.txt").read_text()).group(1), 16)  # type: ignore[union-attr]
         hits = samples(folder)
         low = min(address for address, count in hits.items() if count >= max(hits.values()) // 200)
-        high = max(address for address, count in hits.items() if count >= max(hits.values()) // 200)
         best: list[tuple[int, str]] = []
         best_score = -1
         for skip in range(TRIED_OFFSETS):
@@ -77,12 +77,16 @@ def main(argv: list[str]) -> int:
             if score > best_score:
                 best, best_score = lines, score
         span = hot_loop(best, hits, MARKERS[folder.name])
-        text = [f"# {sum(hits.values())} samples in SpiderMonkey's code, {best_score} on the start of an instruction of this listing"]
+        inside = sum(hits.get(address, 0) for address, _ in span)
+        text = [
+            f"# {sum(hits.values())} samples in SpiderMonkey's code, {best_score} on an instruction start of the disassembly; "
+            f"{inside} in this loop of {len(span)} instructions (columns: offset, samples, instruction)"
+        ]
         text += [f"{address - low:+6x}  {hits.get(address, 0):6d}  {instruction}" for address, instruction in span]
         target = output / folder.name
         target.mkdir(parents=True, exist_ok=True)
         (target / "firefox-loop.s").write_text("\n".join(text) + "\n")
-        print(folder.name, len(span), "instructions,", best_score, "of", sum(hits.values()), "samples aligned")
+        print(f"{folder.name}: {len(span)} instructions, {inside} of {sum(hits.values())} samples in the loop, {best_score} aligned")
     return 0
 
 

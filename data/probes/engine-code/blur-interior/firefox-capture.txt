@@ -1,0 +1,4 @@
+pid 1131894 (/home/dcoimbra/Desktop/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native/harness/browsers/firefox-158)
+20049 samples, 20014 in SpiderMonkey's code, 14951 in the page at 0x191141c8a000
+read 12288 bytes from 0x191141c89000; the same bytes after 5 s more: yes
+top pages: [('0x191141c8a000', 14951), ('0x191141c89000', 5062), ('0x191141ba5000', 1)]
