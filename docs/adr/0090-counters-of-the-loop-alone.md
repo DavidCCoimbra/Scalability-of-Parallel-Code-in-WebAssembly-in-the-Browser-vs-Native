@@ -5,7 +5,7 @@ Date: 2026-11-23
 ## Context
 
 The counters campaign `perf-v3` counts the eight P-cores for the whole of each run and divides
-by the pixels of its timed iterations (ADR 0072). For the atomic histogram that is close to the
+by the pixels of its timed samples, warm-up and measured (ADR 0072). For the atomic histogram that is close to the
 loop's own cost: its 15 iterations take 6 to 28 seconds and dominate the run. For the filter and
 the local histogram, added for questions 1, 2, 3 and 5 of ADR 0088, it is not. Their 25
 iterations take about half a second, less than the start of a browser, the generation of the
@@ -33,12 +33,20 @@ checksums. So for each cell and counter
 
     (mean count of perf-loop8 - mean count of perf-loop1) / (7 x samples x pixels)
 
-is the count per pixel of the loop alone. The interval comes from a bootstrap over the runs of
-both campaigns.
+is the count per pixel of the loop alone. The samples are every timed sample of a run, the
+warm-up ones included (15 + 10 = 25 here): the warm-up samples also do the extra passes, and
+the counted window covers them. The interval comes from a bootstrap over the runs of both
+campaigns.
 
-The two campaigns run one after the other, not interleaved: a spec has one pass count. A count
-of instructions or of cache misses does not drift as a time does, and the two blocks are 25
-minutes apart.
+The native local histogram at one thread is the check that the difference works: its loop is
+2.75 instructions per pixel (`data/probes/engine-code`), so the difference must give that.
+
+The two campaigns run one after the other, not interleaved: a spec has one pass count. That
+confounds the pass count with the block. A count of instructions does not drift as a time
+does, and the two blocks are 25 minutes apart, but cycles and cache misses could differ between
+blocks for a reason that is not the passes. A browser's compiling and tier change are also a
+larger share of a one-pass run; they happen once per run in both campaigns and so cancel in the
+difference only as far as they are the same work in both.
 
 **What the counters of the loop should show**, written before the runs (questions of ADR 0088):
 
@@ -48,6 +56,12 @@ minutes apart.
 | 2. Firefox scales better because its thread is slower | The rise in cycles per pixel from N = 1 to 8 is smaller in Firefox than natively, in proportion | The same rise as natively |
 | 3. Why the filter takes 1.36 times the native time in Firefox and 1.17 in Chrome at N = 1 | More instructions per pixel than natively, or as many with fewer per cycle; the counters say which | - |
 | 5. The local histogram's speedup passes 8 in Firefox | Fewer cache misses per pixel at N = 8 than at N = 1 in Firefox, and not natively | The same misses: unexplained. `perf-v3` already points this way (11.4 against 11.5 L2 misses per thousand pixels), diluted as described |
+
+**How the comparisons are decided.** These were added on 2026-11-23 after a first look at the
+differences, on review, and so are not predictions: two values are "the same" when their 95 %
+bootstrap intervals overlap; for question 2 the rise from N = 1 to 8 is "smaller in Firefox"
+when the interval of Firefox's ratio lies below that of the native ratio; question 3 has no
+failing branch, it asks which of the two it is.
 
 ## Consequences
 
