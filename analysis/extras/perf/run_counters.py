@@ -52,7 +52,7 @@ def runs_of(campaign: LoadedCampaign) -> list[Run]:
 
 
 # Runs are sequential, so the intervals that end inside a run's window belong to that run.
-def counters_of(run: Run, intervals: Iterable[Interval]) -> RunCounters:
+def counters_of(run: Run, intervals: Iterable[Interval], names: tuple[str, ...] = COUNTERS) -> RunCounters:
     inside = [interval for interval in intervals if run.start < interval.end <= run.end]
-    totals = {name: sum(interval.counts.get(name, 0.0) for interval in inside) for name in COUNTERS}
-    return RunCounters(run, len(inside), {name: totals[name] / run.operations for name in COUNTERS})
+    totals = {name: sum(interval.counts.get(name, 0.0) for interval in inside) for name in names}
+    return RunCounters(run, len(inside), {name: totals[name] / run.operations for name in names})

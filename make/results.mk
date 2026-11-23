@@ -1,7 +1,7 @@
 SENSITIVITY = data/tables/campaign-$(MEASURED)/sensitivity/campaign-$(MEASURED)
 RESULTS = python3 -m analysis.results data/raw/campaign-$(MEASURED) --max-threads 8 --strict
 
-.PHONY: results sensitivity extras-results cutoff-results grain-results perf-results all-results tables-check
+.PHONY: results sensitivity extras-results simd-results cutoff-results grain-results perf-results v3-results all-results tables-check
 
 ##@ Tables and figures of the paper
 
@@ -32,7 +32,7 @@ sensitivity: #: The plan's three sensitivity checks on the primary contrasts
 		--check no_threshold=$(SENSITIVITY)-no-threshold.csv --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-sensitivity.csv
 
 extras-results: ## Tables and figures of the exploratory campaigns: extras, weak scaling, SIMD, hybrid P+E
-	mkdir -p data/tables/extras-$(MEASURED) data/tables/weak-$(MEASURED) data/tables/simd-$(MEASURED) data/tables/hybrid-$(MEASURED)
+	mkdir -p data/tables/extras-$(MEASURED) data/tables/weak-$(MEASURED) data/tables/hybrid-$(MEASURED)
 	python3 -m analysis.datacheck data/raw/extras-$(MEASURED) --output data/tables/extras-$(MEASURED)/extras-$(MEASURED)-quality.md
 	python3 -m harness.collect data/raw/extras-$(MEASURED) --output data/extras-$(MEASURED).csv
 	python3 -m analysis.v0 data/raw/extras-$(MEASURED) --strict --output data/tables/extras-$(MEASURED)/extras-$(MEASURED)-scaling.csv
@@ -43,16 +43,20 @@ extras-results: ## Tables and figures of the exploratory campaigns: extras, weak
 	python3 -m analysis.iteration_drift data/raw/weak-$(MEASURED) --output data/tables/weak-$(MEASURED)/weak-$(MEASURED)-iteration-drift.csv
 	uv run --no-project --with matplotlib python -m analysis.figures data/raw/weak-$(MEASURED) --strict --output paper/figures --prefix weak
 	rm -f paper/figures/weak-speedup.pdf paper/figures/weak-efficiency.pdf
-	for c in simd-scalar simd-avx2; do \
-	  python3 -m analysis.datacheck data/raw/$$c-$(MEASURED) --output data/tables/simd-$(MEASURED)/$$c-$(MEASURED)-quality.md && \
-	  python3 -m analysis.v0 data/raw/$$c-$(MEASURED) --strict --output data/tables/simd-$(MEASURED)/$$c-$(MEASURED)-scaling.csv && \
-	  python3 -m analysis.iteration_drift data/raw/$$c-$(MEASURED) --output data/tables/simd-$(MEASURED)/$$c-$(MEASURED)-iteration-drift.csv || exit 1; \
-	done
 	python3 -m analysis.datacheck data/raw/hybrid-$(MEASURED) --output data/tables/hybrid-$(MEASURED)/hybrid-$(MEASURED)-quality.md
 	python3 -m analysis.v0 data/raw/hybrid-$(MEASURED) --strict --output data/tables/hybrid-$(MEASURED)/hybrid-$(MEASURED)-scaling.csv
 	python3 -m analysis.iteration_drift data/raw/hybrid-$(MEASURED) --output data/tables/hybrid-$(MEASURED)/hybrid-$(MEASURED)-iteration-drift.csv
 	uv run --no-project --with matplotlib python -m analysis.figures data/raw/hybrid-$(MEASURED) --strict --output paper/figures --prefix hybrid --diagonal "speedup = N"
 	rm -f paper/figures/hybrid-efficiency.pdf
+	$(MAKE) simd-results
+
+simd-results: ## The SIMD build variants of the filter: scalar, baseline and AVX2
+	mkdir -p data/tables/simd-$(MEASURED)
+	for c in simd-scalar simd-avx2; do \
+	  python3 -m analysis.datacheck data/raw/$$c-$(MEASURED) --output data/tables/simd-$(MEASURED)/$$c-$(MEASURED)-quality.md && \
+	  python3 -m analysis.v0 data/raw/$$c-$(MEASURED) --strict --output data/tables/simd-$(MEASURED)/$$c-$(MEASURED)-scaling.csv && \
+	  python3 -m analysis.iteration_drift data/raw/$$c-$(MEASURED) --output data/tables/simd-$(MEASURED)/$$c-$(MEASURED)-iteration-drift.csv || exit 1; \
+	done
 	uv run --no-project --with matplotlib python -m analysis.extras.build_variants --strict baseline=data/raw/campaign-$(MEASURED) scalar=data/raw/simd-scalar-$(MEASURED) avx2=data/raw/simd-avx2-$(MEASURED) --table data/tables/simd-$(MEASURED)/simd-$(MEASURED)-variants.csv --figure paper/figures/simd-efficiency.pdf
 
 cutoff-results: ## Cutoff campaigns: data check and v0 per size, then the cutoff table, estimates, model and figure
@@ -79,6 +83,18 @@ perf-results: ## Hardware counters per atomic add and V8's retries from the perf
 	python3 -m analysis.datacheck data/raw/perf-$(MEASURED) --output data/tables/perf-$(MEASURED)/perf-$(MEASURED)-quality.md
 	python3 -m analysis.extras.perf_counters data/raw/perf-$(MEASURED) --strict --runs data/tables/perf-$(MEASURED)/perf-$(MEASURED)-runs.csv \
 		--summary data/tables/perf-$(MEASURED)/perf-$(MEASURED)-counters.csv --retries data/tables/perf-$(MEASURED)/perf-$(MEASURED)-retries.csv
+
+# What only the v3 build has: the sequential references and the busy time per core of the main
+# campaign, the engine arms, the grain by threads and the counters of the loop alone (ADR 0088).
+v3-results: ## The tables of the campaigns that only measured/v3 has (MEASURED=v3)
+	mkdir -p $(foreach name,campaign tier grain-threads perf-loop,data/tables/$(name)-$(MEASURED))
+	python3 -m analysis.sequential data/raw/campaign-$(MEASURED) --strict --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-sequential.csv
+	python3 -m analysis.extras.core_split data/raw/campaign-$(MEASURED) --strict --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-core-split.csv
+	python3 -m analysis.datacheck data/raw/tier-$(MEASURED) --output data/tables/tier-$(MEASURED)/tier-$(MEASURED)-quality.md
+	python3 -m analysis.extras.variants data/raw/tier-$(MEASURED) --by engine-arm --strict --output data/tables/tier-$(MEASURED)/tier-$(MEASURED)-arms.csv
+	python3 -m analysis.datacheck data/raw/grain-threads-$(MEASURED) --output data/tables/grain-threads-$(MEASURED)/grain-threads-$(MEASURED)-quality.md
+	python3 -m analysis.extras.variants data/raw/grain-threads-$(MEASURED) --by grain --strict --output data/tables/grain-threads-$(MEASURED)/grain-threads-$(MEASURED)-grains.csv
+	python3 -m analysis.extras.perf_loop data/raw/perf-loop1-$(MEASURED) data/raw/perf-loop8-$(MEASURED) --strict --output data/tables/perf-loop-$(MEASURED)/perf-loop-$(MEASURED)-counters.csv --rises data/tables/perf-loop-$(MEASURED)/perf-loop-$(MEASURED)-rises.csv
 
 all-results: results extras-results cutoff-results grain-results perf-results ## Every table and figure of every campaign
 

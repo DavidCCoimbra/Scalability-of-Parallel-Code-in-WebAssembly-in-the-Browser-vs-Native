@@ -1,0 +1,22 @@
+{
+  "campaign": "data/raw/cutoff-4096-v3",
+  "summary": "median",
+  "center": "geometric",
+  "scaling": "strong",
+  "confidence": 0.95,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "commit": "7fb3bc46b171c6e6eab654c89b82f6e37e30db39-dirty",
+  "createdAt": "2026-11-23T03:19:11.141+00:00",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0,
+  "foreignCpuThreshold": 0.25,
+  "strict": true,
+  "excluded": {
+    "foreignCpuSeconds": 0,
+    "strictValidation": 0
+  },
+  "failed": {},
+  "missing": []
+}

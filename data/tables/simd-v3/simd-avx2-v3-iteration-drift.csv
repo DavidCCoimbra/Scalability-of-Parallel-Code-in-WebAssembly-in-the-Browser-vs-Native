@@ -1,0 +1,7 @@
+environment,workload,input,k,threads,runs,first_median_ns,last_median_ns,first_over_last
+native,filter,noise,,1,30,15468876,15475924,1.000
+native,filter,noise,,2,30,8045697,8049482,1.000
+native,filter,noise,,4,30,4321973,4312773,1.002
+native,filter,noise,,6,30,3232392,3239364,0.998
+native,filter,noise,,7,30,2969742,2955397,1.005
+native,filter,noise,,8,30,2683701,2679173,1.002

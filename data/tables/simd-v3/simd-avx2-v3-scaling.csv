@@ -1,0 +1,7 @@
+environment,workload,input,k,threads,runs,baseline_runs,center_ns,speedup,speedup_low,speedup_high,efficiency,efficiency_low,efficiency_high
+native,filter,noise,,1,30,30,15471135,1.000,1.000,1.000,1.000,1.000,1.000
+native,filter,noise,,2,30,30,8033210,1.926,1.923,1.929,0.963,0.961,0.965
+native,filter,noise,,4,30,30,4320097,3.581,3.572,3.591,0.895,0.893,0.898
+native,filter,noise,,6,30,30,3245504,4.767,4.749,4.784,0.794,0.792,0.797
+native,filter,noise,,7,30,30,2961215,5.225,5.214,5.235,0.746,0.745,0.748
+native,filter,noise,,8,30,30,2682166,5.768,5.758,5.778,0.721,0.720,0.722
