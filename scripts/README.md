@@ -17,6 +17,7 @@ only; `mypy --strict` covers them (`make lint`).
 | `build_twice.sh` | Builds the native runner and the WASM package twice from scratch and fails unless the digests agree | `session.sh build` |
 | `kernel_code.py` | Extracts each kernel's function and its main loop from a native binary and a WASM module | By hand: `python3 -m scripts.kernel_code` (see `data/probes/engine-code/README.md`) |
 | `capture_chrome.py`, `chrome_code.py` | One diagnostic Chrome run per kernel and compiler with V8 writing its compiled code, and the extraction of each kernel from those dumps | By hand, on the PC, no campaign running |
+| `capture_firefox.py`, `firefox_code.py` | One long Firefox run per kernel sampled with `perf`, the sampled pages of its compiled code read from the process memory, and the kernel's loop cut out of them | By hand, on the PC, no campaign running |
 | `tests/` | unittest suite of the checks (`python3 -m unittest discover -s scripts/tests -t .`) | `make test-python`, CI (`python` job) |
 
 ## codegen_diff
