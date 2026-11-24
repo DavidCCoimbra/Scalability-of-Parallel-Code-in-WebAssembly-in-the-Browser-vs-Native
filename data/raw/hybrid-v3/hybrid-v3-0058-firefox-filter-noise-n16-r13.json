@@ -1,0 +1,210 @@
+{
+  "build": {
+    "features": [],
+    "rustc": "rustc 1.101.0-nightly (0abfedbc7 2026-10-02)",
+    "wasmBindgen": "0.2.129",
+    "rustflags": "-C target-feature=+atomics,+bulk-memory,+mutable-globals,+simd128 -C link-arg=--shared-memory -C link-arg=--import-memory -C link-arg=--max-memory=4294967296 -C link-arg=--export=__wasm_init_tls -C link-arg=--export=__tls_size -C link-arg=--export=__tls_align -C link-arg=--export=__tls_base",
+    "clockResolutionNs": null
+  },
+  "clockResolutionNs": 20000,
+  "clockSmallestStepNs": 20000,
+  "hardwareConcurrency": 32,
+  "userAgent": "Mozilla/5.0 (X11; Linux x86_64; rv:158.0) Gecko/20100101 Firefox/158.0",
+  "commit": "ac65af6a447c96164011c2784857a9c2dc443c53",
+  "cpuModel": "Intel(R) Core(TM) i9-14900KF",
+  "governor": "performance",
+  "turbo": "off",
+  "kernel": "7.0.0-43-generic",
+  "os": "Linux",
+  "environment": "firefox",
+  "browserVersion": "Mozilla Firefox 158.0",
+  "cpuMask": "0,2,4,6,8,10,12,14,16-27",
+  "smt": "off",
+  "pCpus": "0,2,4,6,8,10,12,14",
+  "maskSiblings": [
+    "0",
+    "2",
+    "4",
+    "6",
+    "8",
+    "10",
+    "12",
+    "14",
+    "16",
+    "17",
+    "18",
+    "19",
+    "20",
+    "21",
+    "22",
+    "23",
+    "24",
+    "25",
+    "26",
+    "27"
+  ],
+  "headless": true,
+  "launchFlags": [
+    "sudo",
+    "-n",
+    "systemd-run",
+    "--scope",
+    "--quiet",
+    "--slice=ppc-bench.slice",
+    "--unit=ppc-run-hybrid-v3-0058-firefox-filter-noise-n16-r13",
+    "--uid=dcoimbra",
+    "-p",
+    "AllowedCPUs=0,2,4,6,8,10,12,14,16-27",
+    "env",
+    "HOME=/home/dcoimbra",
+    "USER=dcoimbra",
+    "LOGNAME=dcoimbra",
+    "PATH=/home/dcoimbra/.cargo/bin:/home/dcoimbra/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin",
+    "DISPLAY=:0",
+    "WAYLAND_DISPLAY=wayland-0",
+    "XAUTHORITY=/run/user/1000/.mutter-Xwaylandauth.7MQIZ3",
+    "XDG_RUNTIME_DIR=/run/user/1000",
+    "taskset",
+    "-c",
+    "0,2,4,6,8,10,12,14,16-27",
+    "/home/dcoimbra/Desktop/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native/harness/browsers/firefox-158.0/firefox/firefox",
+    "-no-remote",
+    "-new-instance",
+    "-profile",
+    "/tmp/bench-firefox-nm2m5c4p",
+    "-headless",
+    "http://127.0.0.1:37917/index.html?run=hybrid-v3-0058-firefox-filter-noise-n16-r13&env=firefox&startDelayMs=3000&workload=filter&input=noise&threads=16&width=8192&height=8192&warmup=15&iters=10&calibration=20"
+  ],
+  "orderSeed": 2026112217,
+  "orderPosition": 58,
+  "startedAt": "2026-11-24T13:48:27.501+00:00",
+  "finishedAt": "2026-11-24T13:48:37.741+00:00",
+  "launchSeconds": 10.172,
+  "artifactSha256": "387871291106220da7f1d5ee5205b9b3fa7425a80eda2c81c614e0b276c2ca43",
+  "loadavgBefore": [
+    1.17,
+    1.43,
+    0.78
+  ],
+  "loadavgAfter": [
+    1.07,
+    1.4,
+    0.78
+  ],
+  "shield": {
+    "system.slice": "28-31",
+    "user.slice": "28-31",
+    "init.scope": "28-31"
+  },
+  "runCpuSeconds": 8.159,
+  "runCpuMethod": "scope",
+  "foreignCpuSeconds": -0.009,
+  "startDelayMs": 3000,
+  "passes": 1,
+  "leftoverProcesses": 0,
+  "escapedProcesses": 0,
+  "grain": null,
+  "cores": {
+    "0": {
+      "busySeconds": 0.19,
+      "khzBefore": 2379842,
+      "khzAfter": 3200000
+    },
+    "2": {
+      "busySeconds": 0.61,
+      "khzBefore": 806514,
+      "khzAfter": 3200045
+    },
+    "4": {
+      "busySeconds": 0.34,
+      "khzBefore": 800000,
+      "khzAfter": 3200000
+    },
+    "6": {
+      "busySeconds": 0.77,
+      "khzBefore": 800000,
+      "khzAfter": 3200000
+    },
+    "8": {
+      "busySeconds": 0.28,
+      "khzBefore": 800000,
+      "khzAfter": 3200000
+    },
+    "10": {
+      "busySeconds": 0.45,
+      "khzBefore": 800000,
+      "khzAfter": 3199960
+    },
+    "12": {
+      "busySeconds": 1.79,
+      "khzBefore": 800000,
+      "khzAfter": 3200000
+    },
+    "14": {
+      "busySeconds": 2.03,
+      "khzBefore": 800000,
+      "khzAfter": 3199966
+    },
+    "16": {
+      "busySeconds": 0.25,
+      "khzBefore": 800000,
+      "khzAfter": 2400189
+    },
+    "17": {
+      "busySeconds": 0.18,
+      "khzBefore": 800000,
+      "khzAfter": 2400196
+    },
+    "18": {
+      "busySeconds": 0.13,
+      "khzBefore": 800000,
+      "khzAfter": 2399942
+    },
+    "19": {
+      "busySeconds": 0.1,
+      "khzBefore": 800000,
+      "khzAfter": 2400149
+    },
+    "20": {
+      "busySeconds": 0.13,
+      "khzBefore": 800000,
+      "khzAfter": 2400078
+    },
+    "21": {
+      "busySeconds": 0.18,
+      "khzBefore": 800000,
+      "khzAfter": 2400140
+    },
+    "22": {
+      "busySeconds": 0.08,
+      "khzBefore": 800000,
+      "khzAfter": 2399985
+    },
+    "23": {
+      "busySeconds": 0.11,
+      "khzBefore": 800000,
+      "khzAfter": 2399913
+    },
+    "24": {
+      "busySeconds": 0.13,
+      "khzBefore": 800000,
+      "khzAfter": 2399713
+    },
+    "25": {
+      "busySeconds": 0.13,
+      "khzBefore": 800000,
+      "khzAfter": 2400194
+    },
+    "26": {
+      "busySeconds": 0.13,
+      "khzBefore": 800000,
+      "khzAfter": 2400452
+    },
+    "27": {
+      "busySeconds": 0.14,
+      "khzBefore": 800000,
+      "khzAfter": 2399981
+    }
+  },
+  "engineArm": null
+}
