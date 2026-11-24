@@ -1,0 +1,144 @@
+{
+  "commit": "ac65af6a447c96164011c2784857a9c2dc443c53",
+  "cpuModel": "Intel(R) Core(TM) i9-14900KF",
+  "governor": "performance",
+  "turbo": "off",
+  "kernel": "7.0.0-43-generic",
+  "os": "Linux",
+  "environment": "native",
+  "browserVersion": "native",
+  "cpuMask": "0,2,4,6,8,10,12,14",
+  "smt": "off",
+  "pCpus": "0,2,4,6,8,10,12,14",
+  "maskSiblings": [
+    "0",
+    "2",
+    "4",
+    "6",
+    "8",
+    "10",
+    "12",
+    "14"
+  ],
+  "headless": null,
+  "launchFlags": [
+    "sudo",
+    "-n",
+    "systemd-run",
+    "--scope",
+    "--quiet",
+    "--slice=ppc-bench.slice",
+    "--unit=ppc-run-extras-v3-4664-native-sort-noise-n8-r15",
+    "--uid=dcoimbra",
+    "-p",
+    "AllowedCPUs=0,2,4,6,8,10,12,14",
+    "env",
+    "HOME=/home/dcoimbra",
+    "USER=dcoimbra",
+    "LOGNAME=dcoimbra",
+    "PATH=/home/dcoimbra/.cargo/bin:/home/dcoimbra/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin",
+    "DISPLAY=:0",
+    "WAYLAND_DISPLAY=wayland-0",
+    "XAUTHORITY=/run/user/1000/.mutter-Xwaylandauth.7MQIZ3",
+    "XDG_RUNTIME_DIR=/run/user/1000",
+    "taskset",
+    "-c",
+    "0,2,4,6,8,10,12,14",
+    "/home/dcoimbra/Desktop/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native/bench/target/release/native",
+    "--workload",
+    "sort",
+    "--input",
+    "noise",
+    "--threads",
+    "8",
+    "--width",
+    "8192",
+    "--height",
+    "8192",
+    "--warmup",
+    "5",
+    "--iters",
+    "10",
+    "--calibration",
+    "20"
+  ],
+  "orderSeed": 2026112213,
+  "orderPosition": 4664,
+  "startedAt": "2026-11-24T03:41:31.784+00:00",
+  "finishedAt": "2026-11-24T03:41:39.801+00:00",
+  "launchSeconds": 8.018,
+  "artifactSha256": "525707dedef95487ddc4efca3a8bbab48668201b3d90773f55e03c5108494bf3",
+  "build": {
+    "features": [],
+    "rustc": "rustc 1.101.0-nightly (0abfedbc7 2026-10-02)",
+    "wasmBindgen": "0.2.129",
+    "rustflags": "",
+    "clockResolutionNs": 71
+  },
+  "loadavgBefore": [
+    3.13,
+    3.3,
+    3.09
+  ],
+  "loadavgAfter": [
+    2.88,
+    3.24,
+    3.07
+  ],
+  "shield": {
+    "system.slice": "16-31",
+    "user.slice": "16-31",
+    "init.scope": "16-31"
+  },
+  "runCpuSeconds": 23.84,
+  "runCpuMethod": "rusage",
+  "foreignCpuSeconds": -0.02,
+  "startDelayMs": 0,
+  "passes": 1,
+  "leftoverProcesses": 0,
+  "escapedProcesses": 0,
+  "grain": null,
+  "cores": {
+    "0": {
+      "busySeconds": 2.72,
+      "khzBefore": 879648,
+      "khzAfter": 1046787
+    },
+    "2": {
+      "busySeconds": 2.75,
+      "khzBefore": 800000,
+      "khzAfter": 1296951
+    },
+    "4": {
+      "busySeconds": 2.8,
+      "khzBefore": 800000,
+      "khzAfter": 2088715
+    },
+    "6": {
+      "busySeconds": 2.77,
+      "khzBefore": 800000,
+      "khzAfter": 2168575
+    },
+    "8": {
+      "busySeconds": 2.8,
+      "khzBefore": 800000,
+      "khzAfter": 1324265
+    },
+    "10": {
+      "busySeconds": 2.86,
+      "khzBefore": 800000,
+      "khzAfter": 1351276
+    },
+    "12": {
+      "busySeconds": 3.97,
+      "khzBefore": 800000,
+      "khzAfter": 800154
+    },
+    "14": {
+      "busySeconds": 3.15,
+      "khzBefore": 800000,
+      "khzAfter": 800172
+    }
+  },
+  "engineArm": null
+}
