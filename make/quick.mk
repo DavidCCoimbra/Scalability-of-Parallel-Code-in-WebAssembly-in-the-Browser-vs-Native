@@ -13,13 +13,13 @@
 # the machine and confines each run to a systemd scope.
 #
 # Target          Spec(s)                          Real campaign
-# quick-rq1       quick-rq1                        campaign-v2 (filter)
-# quick-rq2       quick-rq2                        campaign-v2 (histograms)
+# quick-rq1       quick-rq1                        campaign-v3 (filter)
+# quick-rq2       quick-rq2                        campaign-v3 (histograms)
 # quick-headless  quick-headless                   one headless filter run per browser
-# quick-extras    quick-extras                     extras-v2
-# quick-weak      quick-weak                       weak-v2
-# quick-simd      quick-simd-scalar, -simd-avx2    simd-scalar-v2, simd-avx2-v2
-# quick-hybrid    quick-hybrid                     hybrid-v2
+# quick-extras    quick-extras                     extras-v3
+# quick-weak      quick-weak                       weak-v3
+# quick-simd      quick-simd-scalar, -simd-avx2    simd-scalar-v3, simd-avx2-v3
+# quick-hybrid    quick-hybrid                     hybrid-v3
 #
 # quick runs every target above except quick-hybrid, which measures on
 # E-cores outside the P-core mask of every other campaign. quick-simd runs last because the

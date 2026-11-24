@@ -6,7 +6,7 @@ P_MASK ?= 0,2,4,6,8,10,12,14
 E_CPUS ?= 16-31
 # The measured build whose campaigns the targets run and read: specs harness/campaigns/*-<it>.json,
 # runs data/raw/*-<it>, tables data/tables/*-<it>. Runs of two builds are never mixed (ADR 0062).
-MEASURED ?= v2
+MEASURED ?= v3
 SPEC ?= harness/campaigns/smoke.json
 NAME = $(shell python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["name"])' $(SPEC))
 RAW = data/raw/$(NAME)

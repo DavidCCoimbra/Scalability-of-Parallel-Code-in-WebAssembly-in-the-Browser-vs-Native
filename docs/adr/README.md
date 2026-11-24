@@ -131,3 +131,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0092](0092-grain-sweeps-and-weak-scaling-on-v3.md) | The grain sweeps and the weak scaling on measured/v3 | Accepted |
 | [0093](0093-extras-on-v3.md) | The extras campaign on measured/v3 | Accepted |
 | [0094](0094-hybrid-on-v3.md) | The hybrid campaign on measured/v3, and analysis on this PC after the measurements | Accepted |
+| [0095](0095-v3-is-the-reported-build.md) | measured/v3 is the reported build | Accepted |
