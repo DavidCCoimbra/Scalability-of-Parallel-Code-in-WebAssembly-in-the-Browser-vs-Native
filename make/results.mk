@@ -5,7 +5,7 @@ RESULTS = python3 -m analysis.results data/raw/campaign-$(MEASURED) --max-thread
 
 ##@ Tables and figures of the paper
 
-results: ## Every table and figure of the main campaign (MEASURED=v2 by default)
+results: ## Every table and figure of the main campaign (MEASURED=v3 by default)
 	mkdir -p paper/figures data/tables/campaign-$(MEASURED)
 	python3 -m analysis.datacheck data/raw/campaign-$(MEASURED) --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-quality.md
 	python3 -m harness.collect data/raw/campaign-$(MEASURED) --output data/campaign-$(MEASURED).csv
@@ -95,7 +95,7 @@ perf-results: ## Hardware counters per atomic add and V8's retries from the perf
 
 # What only the v3 build has: the sequential references and the busy time per core of the main
 # campaign, the engine arms, the grain by threads and the counters of the loop alone (ADR 0088).
-v3-results: ## The tables of the campaigns that only measured/v3 has (MEASURED=v3)
+v3-results: ## The tables of the campaigns that only measured/v3 has
 	mkdir -p $(foreach name,campaign tier grain-threads perf-loop,data/tables/$(name)-$(MEASURED))
 	python3 -m analysis.sequential data/raw/campaign-$(MEASURED) --strict --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-sequential.csv
 	python3 -m analysis.extras.core_split data/raw/campaign-$(MEASURED) --strict --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-core-split.csv
@@ -105,7 +105,7 @@ v3-results: ## The tables of the campaigns that only measured/v3 has (MEASURED=v
 	python3 -m analysis.extras.variants data/raw/grain-threads-$(MEASURED) --by grain --strict --output data/tables/grain-threads-$(MEASURED)/grain-threads-$(MEASURED)-grains.csv
 	python3 -m analysis.extras.perf_loop data/raw/perf-loop1-$(MEASURED) data/raw/perf-loop8-$(MEASURED) --strict --output data/tables/perf-loop-$(MEASURED)/perf-loop-$(MEASURED)-counters.csv --rises data/tables/perf-loop-$(MEASURED)/perf-loop-$(MEASURED)-rises.csv
 
-all-results: results extras-results cutoff-results grain-results perf-results ## Every table and figure of every campaign
+all-results: results extras-results cutoff-results grain-results perf-results v3-results ## Every table and figure of every campaign
 
 tables-check: all-results ## Regenerate every table and fail if one differs from the committed one
 	python3 scripts/tables_diff.py data/tables
