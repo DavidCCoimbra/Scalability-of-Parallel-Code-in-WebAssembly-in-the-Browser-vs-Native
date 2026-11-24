@@ -130,3 +130,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0091](0091-what-explains-the-scaling.md) | What the counters of the loop, the SIMD builds, the cutoff and the grain by threads show (questions 1 to 5 and 9) | Accepted |
 | [0092](0092-grain-sweeps-and-weak-scaling-on-v3.md) | The grain sweeps and the weak scaling on measured/v3 | Accepted |
 | [0093](0093-extras-on-v3.md) | The extras campaign on measured/v3 | Accepted |
+| [0094](0094-hybrid-on-v3.md) | The hybrid campaign on measured/v3, and analysis on this PC after the measurements | Accepted |

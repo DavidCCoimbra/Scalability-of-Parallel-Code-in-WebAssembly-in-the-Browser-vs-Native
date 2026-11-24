@@ -1,0 +1,22 @@
+{
+  "campaign": "data/raw/hybrid-v3",
+  "summary": "median",
+  "center": "geometric",
+  "scaling": "strong",
+  "confidence": 0.95,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "commit": "3a738d5365376ce3ff610daa1ba70bd1d534ccdd",
+  "createdAt": "2026-11-24T19:57:37.717+00:00",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0,
+  "foreignCpuThreshold": 0.25,
+  "strict": true,
+  "excluded": {
+    "foreignCpuSeconds": 0,
+    "strictValidation": 0
+  },
+  "failed": {},
+  "missing": []
+}
