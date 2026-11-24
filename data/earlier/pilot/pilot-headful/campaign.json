@@ -1,0 +1,97 @@
+{
+  "name": "pilot-headful",
+  "orderSeed": 20261135,
+  "plannedRuns": 40,
+  "spec": {
+    "name": "pilot-headful",
+    "orderSeed": 20261135,
+    "environments": [
+      "chrome",
+      "firefox"
+    ],
+    "workloads": [
+      {
+        "workload": "filter",
+        "input": "noise",
+        "warmup": 15
+      },
+      {
+        "workload": "hist-local",
+        "input": "few",
+        "k": 1,
+        "warmup": 71
+      }
+    ],
+    "threads": [
+      8
+    ],
+    "repetitions": 10,
+    "width": 8192,
+    "height": 8192,
+    "warmup": 5,
+    "iterations": 10,
+    "calibration": 20,
+    "cpus": "0,2,4,6,8,10,12,14",
+    "harnessCpus": "16-31",
+    "scopeUser": "$USER",
+    "headless": false,
+    "startDelayMs": 0,
+    "timeoutSeconds": 300,
+    "discardFirstLaunch": false,
+    "strict": true
+  },
+  "build": {
+    "commit": "728400d4b725712388cc2b1b24018f7f83164bf6",
+    "wasmSha256": "cfe35328849c64e803b16acd04c88de8a834543c3d9b1876df791db2aceb24c8",
+    "browsers": {
+      "chrome": "Google Chrome for Testing 155.0.8059.84",
+      "firefox": "Mozilla Firefox 158.0"
+    }
+  },
+  "startedAt": "2026-11-07T02:41:41.314+00:00",
+  "runs": [
+    "pilot-headful-0000-firefox-filter-noise-n8-r8",
+    "pilot-headful-0001-firefox-hist-local-k1-n8-r8",
+    "pilot-headful-0002-firefox-filter-noise-n8-r9",
+    "pilot-headful-0003-chrome-hist-local-k1-n8-r0",
+    "pilot-headful-0004-firefox-hist-local-k1-n8-r6",
+    "pilot-headful-0005-chrome-filter-noise-n8-r5",
+    "pilot-headful-0006-chrome-filter-noise-n8-r0",
+    "pilot-headful-0007-firefox-filter-noise-n8-r3",
+    "pilot-headful-0008-chrome-filter-noise-n8-r7",
+    "pilot-headful-0009-firefox-hist-local-k1-n8-r5",
+    "pilot-headful-0010-firefox-hist-local-k1-n8-r3",
+    "pilot-headful-0011-chrome-hist-local-k1-n8-r1",
+    "pilot-headful-0012-chrome-hist-local-k1-n8-r3",
+    "pilot-headful-0013-firefox-filter-noise-n8-r1",
+    "pilot-headful-0014-chrome-hist-local-k1-n8-r2",
+    "pilot-headful-0015-firefox-hist-local-k1-n8-r2",
+    "pilot-headful-0016-firefox-filter-noise-n8-r7",
+    "pilot-headful-0017-chrome-filter-noise-n8-r8",
+    "pilot-headful-0018-chrome-hist-local-k1-n8-r4",
+    "pilot-headful-0019-firefox-filter-noise-n8-r5",
+    "pilot-headful-0020-chrome-hist-local-k1-n8-r8",
+    "pilot-headful-0021-firefox-hist-local-k1-n8-r0",
+    "pilot-headful-0022-chrome-filter-noise-n8-r2",
+    "pilot-headful-0023-firefox-filter-noise-n8-r4",
+    "pilot-headful-0024-firefox-hist-local-k1-n8-r1",
+    "pilot-headful-0025-chrome-filter-noise-n8-r4",
+    "pilot-headful-0026-chrome-filter-noise-n8-r6",
+    "pilot-headful-0027-chrome-filter-noise-n8-r1",
+    "pilot-headful-0028-chrome-filter-noise-n8-r9",
+    "pilot-headful-0029-chrome-hist-local-k1-n8-r9",
+    "pilot-headful-0030-chrome-hist-local-k1-n8-r5",
+    "pilot-headful-0031-firefox-hist-local-k1-n8-r9",
+    "pilot-headful-0032-firefox-hist-local-k1-n8-r7",
+    "pilot-headful-0033-firefox-filter-noise-n8-r0",
+    "pilot-headful-0034-firefox-filter-noise-n8-r6",
+    "pilot-headful-0035-firefox-hist-local-k1-n8-r4",
+    "pilot-headful-0036-firefox-filter-noise-n8-r2",
+    "pilot-headful-0037-chrome-hist-local-k1-n8-r7",
+    "pilot-headful-0038-chrome-filter-noise-n8-r3",
+    "pilot-headful-0039-chrome-hist-local-k1-n8-r6"
+  ],
+  "resumedAt": [
+    "2026-11-07T02:53:57.924+00:00"
+  ]
+}

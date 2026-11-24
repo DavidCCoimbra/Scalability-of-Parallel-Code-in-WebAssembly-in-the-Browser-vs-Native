@@ -1,0 +1,38 @@
+{
+  "name": "pilot-headful",
+  "orderSeed": 20261135,
+  "environments": [
+    "chrome",
+    "firefox"
+  ],
+  "workloads": [
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 1,
+      "warmup": 71
+    }
+  ],
+  "threads": [
+    8
+  ],
+  "repetitions": 10,
+  "width": 8192,
+  "height": 8192,
+  "warmup": 5,
+  "iterations": 10,
+  "calibration": 20,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": false,
+  "startDelayMs": 0,
+  "timeoutSeconds": 300,
+  "discardFirstLaunch": false,
+  "strict": true
+}

@@ -1,0 +1,38 @@
+{
+  "campaign": "data/raw/extras",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0,
+  "missingAbsolute": [],
+  "summary": "median",
+  "center": "geometric",
+  "confidence": 0.95,
+  "familyAlpha": 0.05,
+  "primaryContrasts": 0,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "foreignCpuThreshold": 0.25,
+  "strict": true,
+  "maxThreads": 8,
+  "partial": true,
+  "excluded": {
+    "foreignCpuSeconds": 0,
+    "strictValidation": 0
+  },
+  "excludedByEnvironment": {},
+  "excludedByConfiguration": [],
+  "campaignOrderSeed": 20261108,
+  "campaignBuild": {
+    "commit": "4c56012bd95a7831fdf7a69f8b033a43dcae6393",
+    "nativeSha256": "41f6e27bf98eeefde5280ba10c61cce7df35b56bd52b5e51bf2ba0f2b4048c7e",
+    "wasmSha256": "12cb7d09712e79fde576ceab7b7fbd17d4385e0c9db96c3d981a1c33b1e4fec7",
+    "browsers": {
+      "chrome": "Google Chrome for Testing 155.0.8059.84",
+      "firefox": "Mozilla Firefox 158.0"
+    }
+  },
+  "failed": {},
+  "missing": [],
+  "commit": "4c56012bd95a7831fdf7a69f8b033a43dcae6393",
+  "createdAt": "2026-11-08T14:08:08.701+00:00"
+}

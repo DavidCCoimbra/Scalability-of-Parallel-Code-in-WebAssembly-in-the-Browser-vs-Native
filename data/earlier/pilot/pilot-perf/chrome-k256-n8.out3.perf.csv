@@ -1,0 +1,6 @@
+# started on Sat Nov  7 06:17:09 2026
+
+88339777827,,cpu_core/cycles/,52534946077,100.00,,
+1040825669,,cpu_core/mem_inst_retired.lock_loads/,52534918446,100.00,,
+363101955,,cpu_core/ocr.demand_rfo.l3_hit.snoop_hitm/,52534883785,100.00,,
+780801639,,cpu_core/ocr.demand_data_rd.l3_hit.snoop_hitm/,52534895358,100.00,,

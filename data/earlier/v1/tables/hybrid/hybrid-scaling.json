@@ -1,0 +1,14 @@
+{
+  "campaign": "data/raw/hybrid",
+  "summary": "median",
+  "center": "geometric",
+  "scaling": "strong",
+  "confidence": 0.95,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "commit": "3cad15c1fb20dc00d2b0dd86cc8a13ba99f884d7-dirty",
+  "createdAt": "2026-11-08T20:58:24.517+00:00",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0
+}

@@ -16,18 +16,18 @@ checksum conflicts, 0 runs failing strict validation (in hybrid mode), 0 runs ab
 CPU threshold (`data/tables/hybrid/hybrid-quality.md`). Tables:
 `data/tables/hybrid/hybrid-scaling.csv` and `data/tables/hybrid/hybrid-iteration-drift.csv`.
 Figures: `paper/figures/hybrid-speedup.pdf` and `paper/figures/hybrid-absolute.pdf`. These are
-the tables and figures of this build; they are in the working repository, and the final
-repository holds the re-run on the v2 build (ADR 0069, `data/tables/hybrid-v2/`).
+the tables and figures of this build; the tables are kept under `data/earlier/v1/`, and the
+campaign was run again on v2 (ADR 0069) and on v3 (`data/tables/hybrid-v3/`).
 
 The P-only reference is the main campaign (`data/tables/campaign/campaign-scaling.csv`), which
 ran on other days. ADR 0058 states the same caveat for its SIMD comparison.
 
-Two probes were added after the campaign to interpret the result (both in the working
-repository):
+Two probes were added after the campaign to interpret the result (both in
+`data/earlier/probes`):
 
-- `data/probes/ecore-workloads.txt` (in the working repository, like the next file): the native runner at N = 1 pinned to one P-core (CPU 2)
+- `ecore-workloads.txt`: the native runner at N = 1 pinned to one P-core (CPU 2)
   or one E-core (CPUs 16, 20, 24), 10 measured iterations each.
-- `data/probes/rmw-chain-ecore.txt`: the read-modify-write microbenchmark of ADR 0060 on
+- `rmw-chain-ecore.txt`: the read-modify-write microbenchmark of ADR 0060 on
   E-cores (CPUs 16, 22, 26), with a P-core control.
 
 ## Decision

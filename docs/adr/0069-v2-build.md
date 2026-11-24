@@ -117,7 +117,7 @@ are consistent with the lost bounds check but within that noise.
   asymmetry too.
 - **Memory check.** It covers the end of the warm-up to the last iteration, including the
   untimed `prepare` and `checksum`. With `warmup=0` a first allocation would fail a WASM run;
-  only the old pilot-warmup specs (in the working repository) use 0.
+  only the old pilot-warmup specs (`data/earlier/pilot/specs`) use 0.
 - **Settings outside `Configuration`.** Campaigns keep palette, pitch, passes and size in
   separate campaigns, and the data check blocks a mix.
 - **Calibration takes longer.** The second probe adds about 0.4 s at 200 samples, and runs after

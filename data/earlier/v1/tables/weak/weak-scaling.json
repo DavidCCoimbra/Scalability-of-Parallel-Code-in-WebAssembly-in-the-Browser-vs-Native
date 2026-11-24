@@ -1,0 +1,14 @@
+{
+  "campaign": "data/raw/weak",
+  "summary": "median",
+  "center": "geometric",
+  "scaling": "weak",
+  "confidence": 0.95,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "commit": "7ebf51cc26f96c0c930bffda3ca86e09e7f91430-dirty",
+  "createdAt": "2026-11-08T16:06:23.506+00:00",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0
+}

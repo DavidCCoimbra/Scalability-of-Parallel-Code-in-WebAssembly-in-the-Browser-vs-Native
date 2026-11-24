@@ -13,9 +13,10 @@ The records of the extra experiments (0052 to 0059 and 0061: exploratory campaig
 and RQ2) are in [`extras/`](extras/README.md). They keep their numbers, so every reference
 between records reads the same.
 
-Some records cite evidence that stays in the working repository and is not part of this one:
-the one-off probes under `data/probes/`, pilot and v1 data, and pull request numbers (`PR #77`).
-Each record says so where it cites them. The measured data behind the paper is
+Some records cite evidence older than the final build: one-off probes, pilot runs and the
+tables of the builds before v2. It is kept in [`data/earlier/`](../../data/earlier/README.md),
+and each record names the file it cites. The runs of the builds before v2 are not in this
+repository; their tables are. The measured data behind the paper is
 `data/raw/*-v3` (ADR 0095). The records up to ADR 0083 were written on `measured/v2` or earlier
 builds: the `data/raw/*-v2`, `data/tables/*-v2` and `*-v2.json` specs they name are at the tag
 `data/v2`.
@@ -31,8 +32,8 @@ The records were written over several weeks, so a few symbols changed meaning:
 - **F**, the fork-join cost, is quoted with different values because the records took it from
   different builds, campaigns and statistics; each names its source, and ADR 0076 gives the
   values of the main campaign of `measured/v2`.
-- ADR 0063, 0073 and 0074 record tooling of the working repository (Notion, the explainer),
-  which is not part of this one.
+- ADR 0063, 0073 and 0074 record tooling used while the study was developed (Notion, the
+  explainer), which is not part of this repository.
 - The result records 0054, 0056, 0058, 0061, 0065 and 0067 hold the numbers of the build they
   were first measured on and say so; the numbers of `measured/v2` are listed in ADR 0079, with
   their tables at the tag `data/v2`, and those of `measured/v3` in ADR 0089 and ADR 0091 to 0095.
@@ -111,8 +112,8 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0070](0070-quiet-campaigns.md) | Campaigns run in quiet mode, with the coding assistant stopped | Accepted |
 | [0071](0071-firefox-pin-guard.md) | Firefox cannot update itself, and a campaign checks the pinned browser versions first | Accepted |
 | [0072](0072-perf-counters-v2.md) | Hardware counters of the atomic histogram on measured/v2 | Accepted |
-| [0073](0073-explainer-documentation.md) | Documentation as a multi-page explainer | Accepted. The explainer lives in the working repository. |
-| [0074](0074-explainer-for-juniors.md) | The explainer is written for juniors first, in two layers | Accepted. The explainer lives in the working repository. |
+| [0073](0073-explainer-documentation.md) | Documentation as a multi-page explainer | Accepted. The explainer is not part of this repository. |
+| [0074](0074-explainer-for-juniors.md) | The explainer is written for juniors first, in two layers | Accepted. The explainer is not part of this repository. |
 | [0075](0075-pad64-feature-removed.md) | The pad64 feature is removed from the bench, codegen-neutral | Accepted; amends ADR 0008 and ADR 0049 |
 | [0076](0076-below-the-shared-source.md) | What differs below the shared source, and what the v2 calibration measured | Accepted; amends ADR 0009 and ADR 0030 |
 | [0077](0077-sensitivity-checks-on-campaign-v2.md) | The plan's sensitivity checks, run on the main campaign of measured/v2 | Accepted; amends ADR 0037 and ADR 0038 |

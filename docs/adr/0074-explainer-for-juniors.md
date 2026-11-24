@@ -45,8 +45,8 @@ someone from the field, and it explains the reason behind every decision.
   hard idea, a figure per spatial idea.
 - **A validator.** The validator checks ids, links, sources, code keys and glossary terms across
   every page.
-- **Where it lives.** The explainer is in the working repository, not in this final repository.
+- **Where it lives.** The explainer is not part of this repository.
 
 ## Status
 
-Accepted. The explainer lives in the working repository.
+Accepted. The explainer is not part of this repository.

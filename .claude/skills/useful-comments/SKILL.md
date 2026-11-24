@@ -35,5 +35,5 @@ comment.
 
 For every comment, read it and ask: "if I delete it, does a reader lose
 information they cannot get from the next lines?" If not, delete it. When
-copying code from the working repository, keep its comments unless they fail
+copying code from elsewhere, keep its comments unless they fail
 this check or point to a document that is not in this repository.

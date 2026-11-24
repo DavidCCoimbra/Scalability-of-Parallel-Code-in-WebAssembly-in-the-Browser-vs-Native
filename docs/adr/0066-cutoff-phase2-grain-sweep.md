@@ -48,8 +48,8 @@ path was relaxed: the measured path may change when an ADR records why, checked 
 
    Two campaigns, `harness/campaigns/grain-1024.json` (18 workload entries) and
    `grain-8192.json` (27), each randomized on its own (seeds 2026110911 and 2026110912). These
-   v1 specs are in the working repository; the final repository holds their v2 re-runs
-   (`grain-1024-v2.json`, `grain-8192-v2.json`, ADR 0069). Both use N = 8 only, native, Chrome
+   v1 specs are in `data/earlier/v1/specs`; they were run again on v2 (ADR 0069) and on v3
+   (`grain-1024-v3.json`, `grain-8192-v3.json`). Both use N = 8 only, native, Chrome
    and Firefox, 30 runs, K = (8192 / side)^2 passes as in ADR 0064, and the rest of the cutoff
    campaign's settings: 45 x 3 x 30 = 4050 runs, about 4 hours.
 3. **Codegen.** `scripts/codegen_diff.sh main` (2026-11-09):

@@ -4,7 +4,7 @@ Date: 2026-11-08
 
 ## Context
 
-A readability refactor of the whole repository was requested (PR #77 of the working repository): one type per file,
+A readability refactor of the whole repository was requested (an earlier pull request, before this repository): one type per file,
 named constants with references to where their values come from, and a README with a Mermaid
 flowchart per module.
 
@@ -35,7 +35,7 @@ change what is measured.
   identical functions can land at different addresses. Native hot loops start 16 bytes lower
   modulo 64 (that is, at a different offset inside a 64-byte cache line); the avx2 variant is
   unchanged. To check that this does not change the times, an interleaved native A/B on the
-  P-cores (`data/probes/refactor-ab.csv`, in the working repository) compared the old binary
+  P-cores (`data/earlier/probes/refactor-ab.csv`) compared the old binary
   with the new one:
   - **Quiet session, 12 runs each:**
     - filter N = 8: new/old 0.996, 95 % CI [0.990, 1.001];

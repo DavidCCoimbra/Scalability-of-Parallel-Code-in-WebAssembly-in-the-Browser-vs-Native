@@ -6,7 +6,7 @@ Date: 2026-11-07
 
 ADR 0001 measures on the 8 P-cores only (the performance cores of the hybrid i9-14900KF, as
 opposed to its slower E-cores). That choice needed preliminary experiments to justify it. The mask
-pilot (`harness/campaigns/pilot-mask-{p,pe}.json`, in the working repository, 2026-11-07) ran the
+pilot (`pilot-mask-{p,pe}` in `data/earlier/pilot`, 2026-11-07) ran the
 filter and `hist-local` k = 16 at 8192x8192, N = 1 and 8, 10 runs per environment, with two masks:
 
 - P: the P-cores, `0,2,...,14`, strict validation;

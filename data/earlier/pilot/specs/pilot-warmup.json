@@ -1,0 +1,73 @@
+{
+  "name": "pilot-warmup",
+  "orderSeed": 20261133,
+  "environments": [
+    "native",
+    "chrome",
+    "firefox"
+  ],
+  "workloads": [
+    {
+      "workload": "filter",
+      "input": "noise"
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 1
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 4
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 16
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 1
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 4
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 16
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256
+    }
+  ],
+  "threads": [
+    1,
+    8
+  ],
+  "repetitions": 2,
+  "width": 8192,
+  "height": 8192,
+  "warmup": 0,
+  "iterations": 100,
+  "calibration": 20,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 0,
+  "timeoutSeconds": 900,
+  "discardFirstLaunch": false,
+  "strict": true
+}

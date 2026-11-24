@@ -1,0 +1,14 @@
+{
+  "campaign": "data/raw/cutoff-control-512",
+  "summary": "median",
+  "center": "geometric",
+  "scaling": "strong",
+  "confidence": 0.95,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "commit": "1a5303275f2a7df6a1a797f5216a9aa4170330a6",
+  "createdAt": "2026-11-09T06:04:37.103+00:00",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0
+}

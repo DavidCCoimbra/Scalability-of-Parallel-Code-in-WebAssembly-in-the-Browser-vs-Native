@@ -26,7 +26,7 @@ be chosen so that such an effect can be located, at an acceptable campaign time.
 - All 252 new runs have `escapedProcesses` = 0 (no browser process outside the run scope,
   ADR 0045).
 
-The specs and the pilot data are in the working repository.
+The specs and the pilot data are in `data/earlier/pilot` (`pilot-threads-*`).
 
 ### Speedups
 

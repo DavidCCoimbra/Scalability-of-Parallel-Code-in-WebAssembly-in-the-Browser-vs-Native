@@ -1,0 +1,92 @@
+# native runner bench/target/release/native built from 7624d024 (bench/ unchanged on main 162e2eb3), 2026-11-08
+# i9-14900KF, turbo off (P 3.2 GHz, E 2.4 GHz), shield on 28-31; one process per line block, N = 1, 8192^2
+# run: sudo -n systemd-run --scope --slice=ppc-bench.slice --uid=$USER -p AllowedCPUs=<cpu> native --workload W --input I [--k 1] --threads 1 --width 8192 --height 8192 --warmup W --iters 10 --calibration 20
+# columns: environment,workload,input,k,width,height,seed,threads,phase,iteration,ns,checksum,...
+# cpu 2 filter
+native,filter,noise,,8192,8192,24301,1,measured,0,22547419,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,1,22560446,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,2,22564202,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,3,22563902,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,4,22831137,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,5,22575443,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,6,22574293,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,7,22578829,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,8,22583510,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,9,22600088,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+# cpu 2 hist-local k1
+native,hist-local,few,1,8192,8192,24301,1,measured,0,154929656,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,1,154858160,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,2,154838203,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,3,155032057,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,4,154895488,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,5,154843759,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,6,154841593,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,7,154834194,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,8,154828611,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,9,154920058,0x805f256ad4222325,0x71d70b3e4ead1319
+# cpu 16 filter
+native,filter,noise,,8192,8192,24301,1,measured,0,29720499,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,1,29774781,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,2,29740202,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,3,29576562,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,4,29711958,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,5,29830429,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,6,29756174,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,7,29711104,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,8,29690810,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,9,29694571,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+# cpu 16 hist-local k1
+native,hist-local,few,1,8192,8192,24301,1,measured,0,74695706,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,1,74630429,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,2,74814494,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,3,74746533,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,4,74564918,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,5,74736074,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,6,74274820,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,7,74415691,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,8,74565199,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,9,74496239,0x805f256ad4222325,0x71d70b3e4ead1319
+# cpu 20 filter
+native,filter,noise,,8192,8192,24301,1,measured,0,29668260,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,1,29714517,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,2,29639197,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,3,29698760,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,4,29766700,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,5,29855267,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,6,29666403,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,7,29713353,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,8,29767947,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,9,29731269,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+# cpu 20 hist-local k1
+native,hist-local,few,1,8192,8192,24301,1,measured,0,75020905,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,1,75160218,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,2,74646137,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,3,99608405,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,4,75079294,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,5,75012788,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,6,96721151,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,7,115665017,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,8,114849930,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,9,115565098,0x805f256ad4222325,0x71d70b3e4ead1319
+# cpu 24 filter
+native,filter,noise,,8192,8192,24301,1,measured,0,29703640,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,1,29652676,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,2,29632928,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,3,29611692,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,4,29669443,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,5,29656006,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,6,29648050,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,7,29740107,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,8,29660008,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+native,filter,noise,,8192,8192,24301,1,measured,9,29731253,0x12f1b74f43c1d551,0x0c94a2fe53b365dd
+# cpu 24 hist-local k1
+native,hist-local,few,1,8192,8192,24301,1,measured,0,112178769,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,1,113874791,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,2,115465380,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,3,115546810,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,4,115619783,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,5,115493438,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,6,115504767,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,7,115617120,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,8,84183902,0x805f256ad4222325,0x71d70b3e4ead1319
+native,hist-local,few,1,8192,8192,24301,1,measured,9,74579581,0x805f256ad4222325,0x71d70b3e4ead1319

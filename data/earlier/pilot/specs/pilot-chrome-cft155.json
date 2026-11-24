@@ -1,0 +1,38 @@
+{
+  "name": "pilot-chrome-cft155",
+  "orderSeed": 20261137,
+  "environments": [
+    "chrome"
+  ],
+  "workloads": [
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 16,
+      "warmup": 5
+    }
+  ],
+  "threads": [
+    1,
+    8
+  ],
+  "repetitions": 10,
+  "width": 8192,
+  "height": 8192,
+  "warmup": 5,
+  "iterations": 10,
+  "calibration": 20,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 3000,
+  "timeoutSeconds": 300,
+  "discardFirstLaunch": false,
+  "strict": true
+}

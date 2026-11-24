@@ -1,0 +1,114 @@
+{
+  "name": "pilot-size-2048",
+  "orderSeed": 20263155,
+  "plannedRuns": 54,
+  "spec": {
+    "name": "pilot-size-2048",
+    "orderSeed": 20263155,
+    "environments": [
+      "native",
+      "chrome",
+      "firefox"
+    ],
+    "workloads": [
+      {
+        "workload": "filter",
+        "input": "noise"
+      },
+      {
+        "workload": "hist-local",
+        "input": "few",
+        "k": 16
+      },
+      {
+        "workload": "hist-atomic",
+        "input": "few",
+        "k": 1
+      }
+    ],
+    "threads": [
+      1,
+      8
+    ],
+    "repetitions": 3,
+    "width": 2048,
+    "height": 2048,
+    "warmup": 2,
+    "iterations": 5,
+    "calibration": 20,
+    "cpus": "0,2,4,6,8,10,12,14",
+    "harnessCpus": "16-31",
+    "scopeUser": "$USER",
+    "headless": true,
+    "startDelayMs": 0,
+    "timeoutSeconds": 300,
+    "discardFirstLaunch": false,
+    "strict": true
+  },
+  "build": {
+    "commit": "3cd50758cb52a21ac8fbcc0e9496f7fb00f11ecd",
+    "nativeSha256": "9dd9139bf3c2aa3845435ea106905db3537314c58429f5f850bacbb591a9f406",
+    "wasmSha256": "cfe35328849c64e803b16acd04c88de8a834543c3d9b1876df791db2aceb24c8",
+    "browsers": {
+      "chrome": "Google Chrome for Testing 155.0.8059.84",
+      "firefox": "Mozilla Firefox 158.0"
+    }
+  },
+  "startedAt": "2026-11-06T22:03:32.949+00:00",
+  "runs": [
+    "pilot-size-2048-0000-firefox-hist-local-k16-n8-r2",
+    "pilot-size-2048-0001-firefox-hist-atomic-k1-n1-r0",
+    "pilot-size-2048-0002-firefox-filter-noise-n1-r2",
+    "pilot-size-2048-0003-chrome-filter-noise-n1-r1",
+    "pilot-size-2048-0004-chrome-hist-local-k16-n8-r1",
+    "pilot-size-2048-0005-firefox-filter-noise-n8-r2",
+    "pilot-size-2048-0006-firefox-hist-atomic-k1-n8-r0",
+    "pilot-size-2048-0007-native-hist-local-k16-n1-r1",
+    "pilot-size-2048-0008-native-hist-atomic-k1-n1-r0",
+    "pilot-size-2048-0009-chrome-hist-atomic-k1-n1-r0",
+    "pilot-size-2048-0010-native-hist-atomic-k1-n1-r1",
+    "pilot-size-2048-0011-chrome-hist-local-k16-n1-r1",
+    "pilot-size-2048-0012-firefox-filter-noise-n8-r0",
+    "pilot-size-2048-0013-chrome-filter-noise-n8-r1",
+    "pilot-size-2048-0014-firefox-hist-atomic-k1-n1-r2",
+    "pilot-size-2048-0015-native-hist-atomic-k1-n8-r1",
+    "pilot-size-2048-0016-chrome-hist-atomic-k1-n1-r2",
+    "pilot-size-2048-0017-native-hist-atomic-k1-n8-r0",
+    "pilot-size-2048-0018-native-filter-noise-n8-r1",
+    "pilot-size-2048-0019-chrome-hist-atomic-k1-n1-r1",
+    "pilot-size-2048-0020-native-hist-local-k16-n8-r1",
+    "pilot-size-2048-0021-chrome-hist-local-k16-n1-r2",
+    "pilot-size-2048-0022-chrome-hist-local-k16-n1-r0",
+    "pilot-size-2048-0023-chrome-hist-atomic-k1-n8-r2",
+    "pilot-size-2048-0024-native-filter-noise-n1-r0",
+    "pilot-size-2048-0025-native-filter-noise-n8-r2",
+    "pilot-size-2048-0026-chrome-filter-noise-n1-r0",
+    "pilot-size-2048-0027-native-hist-local-k16-n8-r2",
+    "pilot-size-2048-0028-chrome-filter-noise-n1-r2",
+    "pilot-size-2048-0029-chrome-hist-atomic-k1-n8-r0",
+    "pilot-size-2048-0030-firefox-filter-noise-n8-r1",
+    "pilot-size-2048-0031-native-hist-atomic-k1-n8-r2",
+    "pilot-size-2048-0032-firefox-hist-atomic-k1-n1-r1",
+    "pilot-size-2048-0033-firefox-hist-atomic-k1-n8-r2",
+    "pilot-size-2048-0034-firefox-filter-noise-n1-r1",
+    "pilot-size-2048-0035-firefox-hist-atomic-k1-n8-r1",
+    "pilot-size-2048-0036-chrome-hist-local-k16-n8-r2",
+    "pilot-size-2048-0037-chrome-hist-atomic-k1-n8-r1",
+    "pilot-size-2048-0038-firefox-hist-local-k16-n8-r0",
+    "pilot-size-2048-0039-native-hist-local-k16-n1-r0",
+    "pilot-size-2048-0040-chrome-filter-noise-n8-r2",
+    "pilot-size-2048-0041-native-filter-noise-n1-r1",
+    "pilot-size-2048-0042-firefox-hist-local-k16-n1-r2",
+    "pilot-size-2048-0043-firefox-hist-local-k16-n8-r1",
+    "pilot-size-2048-0044-native-hist-local-k16-n8-r0",
+    "pilot-size-2048-0045-chrome-filter-noise-n8-r0",
+    "pilot-size-2048-0046-native-hist-local-k16-n1-r2",
+    "pilot-size-2048-0047-firefox-filter-noise-n1-r0",
+    "pilot-size-2048-0048-firefox-hist-local-k16-n1-r0",
+    "pilot-size-2048-0049-firefox-hist-local-k16-n1-r1",
+    "pilot-size-2048-0050-chrome-hist-local-k16-n8-r0",
+    "pilot-size-2048-0051-native-filter-noise-n1-r2",
+    "pilot-size-2048-0052-native-hist-atomic-k1-n1-r2",
+    "pilot-size-2048-0053-native-filter-noise-n8-r0"
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "name": "pw-extras",
+  "orderSeed": 20261162,
+  "environments": [
+    "native",
+    "chrome",
+    "firefox"
+  ],
+  "workloads": [
+    {
+      "workload": "hist-atomic-private",
+      "input": "few",
+      "k": 1,
+      "warmup": 0
+    },
+    {
+      "workload": "hist-atomic-private",
+      "input": "few",
+      "k": 256,
+      "warmup": 0
+    },
+    {
+      "workload": "hist-atomic-packed",
+      "input": "few",
+      "k": 1,
+      "warmup": 0
+    },
+    {
+      "workload": "hist-atomic-packed",
+      "input": "few",
+      "k": 256,
+      "warmup": 0
+    },
+    {
+      "workload": "sort",
+      "input": "noise",
+      "warmup": 0
+    },
+    {
+      "workload": "sort-unstable",
+      "input": "noise",
+      "warmup": 0
+    }
+  ],
+  "threads": [
+    1,
+    8
+  ],
+  "repetitions": 2,
+  "width": 8192,
+  "height": 8192,
+  "warmup": 0,
+  "iterations": 60,
+  "calibration": 20,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 3000,
+  "timeoutSeconds": 1200,
+  "discardFirstLaunch": true,
+  "strict": true
+}

@@ -1,0 +1,56 @@
+{
+  "name": "pilot-warmup-ff-k1",
+  "orderSeed": 20261134,
+  "plannedRuns": 10,
+  "spec": {
+    "name": "pilot-warmup-ff-k1",
+    "orderSeed": 20261134,
+    "environments": [
+      "firefox"
+    ],
+    "workloads": [
+      {
+        "workload": "hist-local",
+        "input": "few",
+        "k": 1
+      }
+    ],
+    "threads": [
+      8
+    ],
+    "repetitions": 10,
+    "width": 8192,
+    "height": 8192,
+    "warmup": 0,
+    "iterations": 100,
+    "calibration": 20,
+    "cpus": "0,2,4,6,8,10,12,14",
+    "harnessCpus": "16-31",
+    "scopeUser": "$USER",
+    "headless": true,
+    "startDelayMs": 0,
+    "timeoutSeconds": 900,
+    "discardFirstLaunch": false,
+    "strict": true
+  },
+  "build": {
+    "commit": "25493642dceabe468ce0c58d86e28dd4e0bcfd97",
+    "wasmSha256": "cfe35328849c64e803b16acd04c88de8a834543c3d9b1876df791db2aceb24c8",
+    "browsers": {
+      "firefox": "Mozilla Firefox 158.0"
+    }
+  },
+  "startedAt": "2026-11-07T01:43:07.099+00:00",
+  "runs": [
+    "pilot-warmup-ff-k1-0000-firefox-hist-local-k1-n8-r3",
+    "pilot-warmup-ff-k1-0001-firefox-hist-local-k1-n8-r0",
+    "pilot-warmup-ff-k1-0002-firefox-hist-local-k1-n8-r2",
+    "pilot-warmup-ff-k1-0003-firefox-hist-local-k1-n8-r7",
+    "pilot-warmup-ff-k1-0004-firefox-hist-local-k1-n8-r6",
+    "pilot-warmup-ff-k1-0005-firefox-hist-local-k1-n8-r5",
+    "pilot-warmup-ff-k1-0006-firefox-hist-local-k1-n8-r1",
+    "pilot-warmup-ff-k1-0007-firefox-hist-local-k1-n8-r4",
+    "pilot-warmup-ff-k1-0008-firefox-hist-local-k1-n8-r8",
+    "pilot-warmup-ff-k1-0009-firefox-hist-local-k1-n8-r9"
+  ]
+}

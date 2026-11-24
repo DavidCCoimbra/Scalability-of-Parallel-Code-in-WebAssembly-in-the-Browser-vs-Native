@@ -8,7 +8,7 @@ ADR 0052 defined four new workloads (`hist-atomic-private`, `hist-atomic-packed`
 `sort-unstable`) to run in one interleaved campaign with their controls. Their warm-up W and
 input size had to be fixed from a pilot, as for the main workloads (ADR 0043).
 
-The pilot `pw-extras` (in the working repository) ran every new workload with no warm-up and
+The pilot `pw-extras` (`data/earlier/pilot/pw-extras`) ran every new workload with no warm-up and
 60 measured iterations, at N = 1 and N = 8, two runs per environment (72 runs, no failures).
 From the pilot (about 5 s per run plus the iterations), the full design would take about 30 h:
 4 histogram variants x 3 levels of k, plus 2 sorts, in 3 environments, at 6 thread counts, with

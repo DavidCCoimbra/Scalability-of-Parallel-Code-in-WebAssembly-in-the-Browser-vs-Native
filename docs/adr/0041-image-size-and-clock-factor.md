@@ -14,7 +14,7 @@ has compared with the fixed cost of forking and joining threads.
 
 ### The size sweep
 
-The size sweep on the PC (`harness/campaigns/pilot-size-*.json`, in the working repository: the
+The size sweep on the PC (specs `data/earlier/pilot/specs/pilot-size-*.json`, runs `data/earlier/pilot/pilot-size-*`: the
 filter, `hist-local` k = 16 and `hist-atomic` k = 1, at N = 1 and 8, 3 runs each, 2026-11-06)
 gave:
 

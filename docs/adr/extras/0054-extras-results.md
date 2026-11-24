@@ -13,8 +13,8 @@ The extras campaign (ADR 0053, tag `measured/extras`, commit 4c56012) ran 5400 r
   rho = -0.51), which is at the level expected by chance.
 
 The tables are `data/tables/extras/extras-quality.md`, `data/tables/extras/extras-scaling.csv`
-and `data/tables/extras/extras-contrasts.csv`, in the working repository. This campaign was
-later re-run on the `measured/v2` build (ADR 0069), whose data are in `data/raw/extras-v2`; the
+and `data/tables/extras/extras-contrasts.csv`, kept under `data/earlier/v1/`. This campaign was
+later re-run on the `measured/v2` build (ADR 0069) and on v3 (`data/raw/extras-v3`); the
 numbers below are those of `measured/extras`.
 
 All numbers below are exploratory (ADR 0052): geometric means over 30 runs with 95 % bootstrap

@@ -64,8 +64,8 @@ mini-pilot the same day (table below).
   type index, with identical bodies.
 - **Campaigns.** Five specs, `harness/campaigns/cutoff-<side>.json`, one per side in {512, 1024,
   2048, 4096, 8192}. Each is its own randomized campaign (seeds 2026110901 to 2026110905), run
-  one after another (`make cutoff-campaigns`). These v1 specs are in the working repository;
-  the final repository holds their v2 re-runs (`cutoff-<side>-v2.json`, ADR 0069).
+  one after another (`make cutoff-campaigns`). These v1 specs are in `data/earlier/v1/specs`;
+  their re-runs are those of ADR 0069 (v2) and of `cutoff-<side>-v3.json`.
   - Workloads: the filter (W = 15 warm-up iterations) and the local histogram at k = 256
     (W = 15, the main campaign's). Not k = 1, whose single-counter chain is a microarchitecture
     artefact (ADR 0060).
@@ -114,8 +114,8 @@ mini-pilot the same day (table below).
 - **Amendment, 2026-11-09.** The primary share moved from 5 % to 1 % to follow the 100:1 rule
   of thumb, before any cutoff data were analysed. It was not motivated by data. The 5 % reading
   stays as a secondary column. The times are those of the first cutoff campaigns, on build
-  `measured/cutoff`, whose runs and history are in the working repository (the runs in this
-  repository are the later re-run of ADR 0069, of 2026-11-10): their first run has `startedAt`
+  `measured/cutoff`, whose tables are in `data/earlier/v1/tables/cutoff` and whose runs are not
+  in this repository (the later re-run of ADR 0069 is of 2026-11-10): their first run has `startedAt`
   2026-11-09T02:24 UTC, the amendment was committed at 02:31 UTC, seven minutes into the
   seven campaigns, and the results were first analysed in the commit of 08:31 UTC.
 - **Phase 2 method.** Applying a cutoff inside the workloads (a later decision, ADR 0066) will

@@ -1,0 +1,14 @@
+{
+  "campaign": "data/raw/simd-avx2",
+  "summary": "median",
+  "center": "geometric",
+  "scaling": "strong",
+  "confidence": 0.95,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "commit": "c6ea5f24adb0a7dcbe7a956a6c8cd43d3394a76b",
+  "createdAt": "2026-11-08T17:55:46.807+00:00",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0
+}

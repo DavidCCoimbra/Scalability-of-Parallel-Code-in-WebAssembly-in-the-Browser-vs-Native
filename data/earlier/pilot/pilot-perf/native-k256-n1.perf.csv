@@ -1,0 +1,4 @@
+19200624140,,cpu_core/cycles/,6014341008,100.00,,
+9716165979,,cpu_core/instructions/,6014341008,100.00,,
+1006953394,,cpu_core/mem_inst_retired.lock_loads/,6014341008,100.00,,
+1982,,cpu_core/ocr.demand_rfo.l3_hit.snoop_hitm/,6014341008,100.00,,

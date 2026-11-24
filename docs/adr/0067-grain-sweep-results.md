@@ -11,8 +11,8 @@ configuration. The question is whether there is a best task size, and whether it
 the browsers, whose fork-join costs more. Both campaigns ran on 2026-11-09 on build `841b788a`
 (tag `measured/grain`), and this ADR records what they found.
 
-The tables named below are those of this build, in the working repository. The final
-repository holds the re-run on the v2 build (ADR 0069), under `data/tables/grain-v2/`.
+The tables named below are those of this build, kept in `data/earlier/v1/tables/grain`. The
+sweeps were run again on the v2 build (ADR 0069) and on v3 (`data/tables/grain-v3/`).
 
 Data quality (`data/tables/grain/grain-*-quality.md`): 4050 runs (1620 and 2430), none missing
 or failed, no checksum conflict, none failing strict validation or above the foreign CPU
@@ -141,7 +141,7 @@ hypothesis, not verified.
   grain at 8192^2 (within 1 %), so their RQ1 and RQ2 numbers do not come from a badly chosen
   grain.
 - **Reproduction.** `make grain-results` regenerates every number in this ADR from this build's
-  `data/raw/grain-*` (in the working repository).
+  `data/raw/grain-*`. Those runs are not in this repository; the tables are.
 
 ## Status
 
