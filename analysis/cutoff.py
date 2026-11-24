@@ -1,9 +1,9 @@
 """Empirical sequential cutoff of the cutoff campaigns.
 
 Usage: uv run --no-project --with matplotlib python -m analysis.cutoff
-       data/raw/cutoff-512-v2 data/raw/cutoff-1024-v2 ... data/raw/cutoff-8192-v2
-       --table data/tables/cutoff-v2/cutoff-table.csv --estimates data/tables/cutoff-v2/cutoff-estimates.csv
-       --model data/tables/cutoff-v2/cutoff-model.csv [--figure paper/figures/cutoff-speedup.pdf]
+       data/raw/cutoff-512-v3 data/raw/cutoff-1024-v3 ... data/raw/cutoff-8192-v3
+       --table data/tables/cutoff-v3/cutoff-table.csv --estimates data/tables/cutoff-v3/cutoff-estimates.csv
+       --model data/tables/cutoff-v3/cutoff-model.csv [--figure paper/figures/cutoff-speedup.pdf]
 Each directory is one image size, its own randomized campaign; sizes are
 compared only through speedups within a size. The table has, per
 environment, workload, N and size, T1 and TN (time per pass), the speedup

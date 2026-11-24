@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Hardware counters of the atomic histogram on one measured build (MEASURED, default v2).
+# Hardware counters of the atomic histogram on one measured build (MEASURED, default v3).
 #
 # Runs the perf-<build> campaign (an ordinary randomized campaign, quiet mode) while `perf stat`
 # counts the eight P-cores system-wide in 100 ms intervals. analysis/extras/perf_counters.py sums the
@@ -11,7 +11,7 @@
 # A resumed campaign appends a new segment: each segment keeps its own start time.
 set -euo pipefail
 
-MEASURED=${MEASURED:-v2}
+MEASURED=${MEASURED:-v3}
 SPEC=harness/campaigns/perf-$MEASURED.json
 OUT=data/raw/perf-$MEASURED/counters
 P_CORES=0,2,4,6,8,10,12,14

@@ -9,8 +9,8 @@ second terminal while a campaign measures.
 It reports progress, not data quality. A checksum mismatch inside a run already fails that run, which is then logged as an error. Checksum conflicts across runs, order drift and the clock checks belong to `python3 -m analysis.datacheck`, which runs once the campaign is over.
 
 ```bash
-python3 -m harness.campaign.status harness/campaigns/campaign-v2.json [--results data/raw]
-make status SPEC=harness/campaigns/campaign-v2.json
+python3 -m harness.campaign.status harness/campaigns/campaign-v3.json [--results data/raw]
+make status SPEC=harness/campaigns/campaign-v3.json
 ```
 
 The planned runs come from the spec's seeded plan, so the report also works

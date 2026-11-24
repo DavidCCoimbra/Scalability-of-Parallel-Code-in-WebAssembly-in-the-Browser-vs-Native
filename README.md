@@ -16,19 +16,22 @@ design decision, with its reasons, is a record in [`docs/adr/`](docs/adr/README.
 
 ## Provenance
 
-Every number of the paper comes from one build, tagged `measured/v2` (commit `c8ea7157a` of the
-working repository, where the study was developed). This repository holds that build's code and
-its measured data, `data/raw/*-v2` and `data/tables/*-v2` (see [`data/README.md`](data/README.md)).
-The pilot data, the data of earlier builds and the one-off probes stay in the working repository.
+Every number of the paper comes from one build, tagged `measured/v3` (commit `ac65af6a` of this
+repository, built twice from scratch with equal digests, ADR 0086). This repository holds that
+build's code and its measured data, `data/raw/*-v3` and `data/tables/*-v3` (see
+[`data/README.md`](data/README.md)). The paper reports v3 by a rule fixed before its data existed
+(ADR 0084, ADR 0095).
 
-The code comments were revised for this repository, and the extra workloads moved into `extras/`
-modules, so this code is not byte-identical to `measured/v2` but has the same machine code in every
-hot function. `scripts/codegen_diff.sh measured/v2` (with the tag fetched from the working
-repository) finds every hot function identical in the WASM builds; the only function that differs is
-`__wasm_init_memory`, which writes the data segment and is not timed. In the native builds the hot
-functions are identical once the `extras::` module path in call targets is ignored. The script
-normalizes x86-64 listings; on another host (such as an arm64 Mac) the native listings have to be
-compared by hand with addresses normalized.
+The study was first measured on an earlier build, `measured/v2`, whose primary conclusions v3
+repeats. Its data, tables and campaign specs are at the tag `data/v2`; no table or figure
+combines runs of the two builds (ADR 0062). The pilot data and the data of builds before v2 are
+not part of this repository.
+
+Code merged after the tag does not change the measured path. `scripts/codegen_diff.sh
+measured/v3` compares the hot functions of a checkout with those of the tagged build; a change
+that is not codegen-neutral makes a new build (ADR 0062). The script normalizes x86-64 listings;
+on another host (such as an arm64 Mac) the native listings have to be compared by hand with
+addresses normalized.
 
 ## Setup
 
@@ -56,7 +59,7 @@ to the dedicated PC and remove it (`sudo rm /etc/sudoers.d/ppc-bench`) after the
 | `make env-setup` / `make env-restore` | Prepare the PC for measuring (SMT and turbo off, governor `performance`, P-cores shielded) and undo it |
 | `make campaign SPEC=harness/campaigns/<name>.json` | Run a campaign: every run a fresh process, in a seeded random order, resumed if stopped |
 | `make status SPEC=...` | Progress of a campaign, read-only |
-| `make results` | Every table and figure of the main campaign, from `data/raw/campaign-v2` |
+| `make results` | Every table and figure of the main campaign, from `data/raw/campaign-v3` |
 | `make all-results` | The same for every campaign, the exploratory ones and the hardware counters included |
 | `make tables-check` | Regenerate every table and fail if one differs from the committed one |
 | `make quick` | Tiny copies of every campaign, to check the pipeline end to end (never results) |
@@ -73,10 +76,9 @@ A campaign of the study needs more than the commands above:
   `P_MASK` and `E_CPUS` in the `Makefile` (the measured cores and the cores left to the system)
   and `cpus` and `harnessCpus` in every campaign spec. They describe an i9-14900KF: P-cores on
   the even CPUs 0 to 14, E-cores on 16 to 31.
-- **Time.** The main campaign is 4860 runs and takes about 13 hours; it resumes if stopped.
+- **Time.** The main campaign is 5310 runs and takes about 14 hours; it resumes if stopped.
 - **Firefox must not update itself.** The harness now writes a `policies.json` that disables
-  the updater and checks the pinned versions before a campaign (ADR 0071). The main campaign of
-  `measured/v2` ran before that guard existed, with the same pinned 158.0.
+  the updater and checks the pinned versions before a campaign (ADR 0071).
 
 `make help` lists the rest. The campaigns are described in
 [`harness/campaigns/README.md`](harness/campaigns/README.md).
@@ -108,9 +110,9 @@ python3 ../scripts/check_simd.py bench.wasm.dis wasm32
 ```mermaid
 flowchart LR
     bench["bench: workloads, native runner, WASM"] --> harness["harness: campaigns"]
-    harness --> raw[("data/raw/*-v2")]
+    harness --> raw[("data/raw/*-v3")]
     raw --> analysis["analysis: tables and figures"]
-    analysis --> tables[("data/tables/*-v2")]
+    analysis --> tables[("data/tables/*-v3")]
     tables --> paper["paper"]
     adr["docs/adr: decisions"] -.-> bench
     adr -.-> harness

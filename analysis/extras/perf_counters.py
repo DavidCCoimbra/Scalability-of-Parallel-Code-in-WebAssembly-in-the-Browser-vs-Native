@@ -1,4 +1,4 @@
-"""Hardware counters per atomic operation, per run, from the perf-v2 campaign.
+"""Hardware counters per atomic operation, per run, from the perf-v3 campaign.
 
 scripts/perf-counters.sh counts the eight P-cores system-wide in 100 ms intervals while an
 ordinary campaign runs. Runs are sequential, so the intervals that end inside one run's
@@ -7,9 +7,9 @@ operations: one per pixel per warm-up or measured iteration (8192^2 x 15 per run
 also holds the browser's start-up and the calibration, which add few locked operations next to
 the 1.0e9 of the timed loop.
 
-Usage: python3 -m analysis.extras.perf_counters data/raw/perf-v2
-       --runs data/tables/perf-v2/perf-v2-runs.csv --summary data/tables/perf-v2/perf-v2-counters.csv
-       --retries data/tables/perf-v2/perf-v2-retries.csv
+Usage: python3 -m analysis.extras.perf_counters data/raw/perf-v3
+       --runs data/tables/perf-v3/perf-v3-runs.csv --summary data/tables/perf-v3/perf-v3-counters.csv
+       --retries data/tables/perf-v3/perf-v3-retries.csv
        [--foreign-cpu-threshold SECONDS | --no-foreign-cpu-threshold] [--strict]
 The campaign is read like any other (analysis.loading): a checksum conflict stops it and the
 plan's exclusions apply. The summary has the arithmetic mean per configuration with a 95 %
