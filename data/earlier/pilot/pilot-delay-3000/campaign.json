@@ -1,0 +1,94 @@
+{
+  "name": "pilot-delay-3000",
+  "orderSeed": 20264138,
+  "plannedRuns": 40,
+  "spec": {
+    "name": "pilot-delay-3000",
+    "orderSeed": 20264138,
+    "environments": [
+      "chrome",
+      "firefox"
+    ],
+    "workloads": [
+      {
+        "workload": "filter",
+        "input": "noise",
+        "warmup": 15
+      },
+      {
+        "workload": "hist-local",
+        "input": "few",
+        "k": 16,
+        "warmup": 15
+      }
+    ],
+    "threads": [
+      8
+    ],
+    "repetitions": 10,
+    "width": 8192,
+    "height": 8192,
+    "warmup": 15,
+    "iterations": 10,
+    "calibration": 20,
+    "cpus": "0,2,4,6,8,10,12,14",
+    "harnessCpus": "16-31",
+    "scopeUser": "$USER",
+    "headless": true,
+    "startDelayMs": 3000,
+    "timeoutSeconds": 300,
+    "discardFirstLaunch": false,
+    "strict": true
+  },
+  "build": {
+    "commit": "4960dd2c4084024893bc9ba9078b0830a34c7b7d",
+    "wasmSha256": "cfe35328849c64e803b16acd04c88de8a834543c3d9b1876df791db2aceb24c8",
+    "browsers": {
+      "chrome": "Google Chrome for Testing 155.0.8059.84",
+      "firefox": "Mozilla Firefox 158.0"
+    }
+  },
+  "startedAt": "2026-11-07T05:16:42.123+00:00",
+  "runs": [
+    "pilot-delay-3000-0000-chrome-filter-noise-n8-r8",
+    "pilot-delay-3000-0001-chrome-filter-noise-n8-r6",
+    "pilot-delay-3000-0002-firefox-filter-noise-n8-r1",
+    "pilot-delay-3000-0003-firefox-filter-noise-n8-r3",
+    "pilot-delay-3000-0004-chrome-filter-noise-n8-r0",
+    "pilot-delay-3000-0005-firefox-filter-noise-n8-r8",
+    "pilot-delay-3000-0006-chrome-hist-local-k16-n8-r2",
+    "pilot-delay-3000-0007-firefox-hist-local-k16-n8-r7",
+    "pilot-delay-3000-0008-chrome-filter-noise-n8-r3",
+    "pilot-delay-3000-0009-firefox-hist-local-k16-n8-r1",
+    "pilot-delay-3000-0010-chrome-hist-local-k16-n8-r4",
+    "pilot-delay-3000-0011-firefox-filter-noise-n8-r7",
+    "pilot-delay-3000-0012-firefox-filter-noise-n8-r0",
+    "pilot-delay-3000-0013-chrome-filter-noise-n8-r5",
+    "pilot-delay-3000-0014-chrome-filter-noise-n8-r7",
+    "pilot-delay-3000-0015-chrome-hist-local-k16-n8-r7",
+    "pilot-delay-3000-0016-firefox-hist-local-k16-n8-r5",
+    "pilot-delay-3000-0017-chrome-filter-noise-n8-r9",
+    "pilot-delay-3000-0018-firefox-hist-local-k16-n8-r4",
+    "pilot-delay-3000-0019-chrome-filter-noise-n8-r4",
+    "pilot-delay-3000-0020-chrome-hist-local-k16-n8-r6",
+    "pilot-delay-3000-0021-firefox-hist-local-k16-n8-r8",
+    "pilot-delay-3000-0022-firefox-hist-local-k16-n8-r3",
+    "pilot-delay-3000-0023-chrome-filter-noise-n8-r1",
+    "pilot-delay-3000-0024-chrome-hist-local-k16-n8-r3",
+    "pilot-delay-3000-0025-chrome-hist-local-k16-n8-r5",
+    "pilot-delay-3000-0026-firefox-hist-local-k16-n8-r6",
+    "pilot-delay-3000-0027-firefox-filter-noise-n8-r4",
+    "pilot-delay-3000-0028-chrome-hist-local-k16-n8-r8",
+    "pilot-delay-3000-0029-firefox-hist-local-k16-n8-r9",
+    "pilot-delay-3000-0030-chrome-hist-local-k16-n8-r9",
+    "pilot-delay-3000-0031-firefox-filter-noise-n8-r9",
+    "pilot-delay-3000-0032-chrome-hist-local-k16-n8-r1",
+    "pilot-delay-3000-0033-firefox-hist-local-k16-n8-r2",
+    "pilot-delay-3000-0034-chrome-filter-noise-n8-r2",
+    "pilot-delay-3000-0035-firefox-hist-local-k16-n8-r0",
+    "pilot-delay-3000-0036-firefox-filter-noise-n8-r5",
+    "pilot-delay-3000-0037-chrome-hist-local-k16-n8-r0",
+    "pilot-delay-3000-0038-firefox-filter-noise-n8-r2",
+    "pilot-delay-3000-0039-firefox-filter-noise-n8-r6"
+  ]
+}

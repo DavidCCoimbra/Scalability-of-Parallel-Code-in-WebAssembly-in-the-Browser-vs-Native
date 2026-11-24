@@ -8,7 +8,8 @@ The weak scaling campaign of ADR 0055 ran 1080 runs from the commit tagged `meas
 filter and the local histogram at k = 1, on 8192 x 1024N pixels, N in {1, 2, 4, 6, 7, 8}, 30
 runs per configuration.
 
-Data, in the working repository: `data/raw/weak`, `data/tables/weak/weak-quality.md`,
+Data (the tables are kept under `data/earlier/v1/`, the runs are not in this repository):
+`data/raw/weak`, `data/tables/weak/weak-quality.md`,
 `data/tables/weak/weak-scaling.csv` (from `analysis.v0 --weak`, which reports T1 / TN as
 `weak_efficiency` and leaves out the speedup / N columns, which have no meaning for weak
 scaling), `data/tables/weak/weak-iteration-drift.csv` (from `analysis.iteration_drift`) and the

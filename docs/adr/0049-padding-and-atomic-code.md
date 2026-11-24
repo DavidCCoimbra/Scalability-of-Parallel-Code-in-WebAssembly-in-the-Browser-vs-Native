@@ -22,7 +22,7 @@ Three questions were open:
 
 ### Padding pilot
 
-The pilot (`harness/campaigns/pilot-pad{128,64}.json`, 2026-11-07; in the working repository)
+The pilot (`pilot-pad{128,64}`, 2026-11-07; specs and runs in `data/earlier/pilot`)
 ran native `hist-atomic` at k = 1, 4, 16 and 256, at 8192x8192, N = 1 and 8, 10 runs each,
 once with the default build and once with `--features pad64`. Each run records
 `build.features` and `artifactSha256`, so the build of each run is known.
@@ -41,7 +41,7 @@ ruled out there.
 
 ### Hardware counters (exploratory)
 
-`perf stat` was run on the P-cores (`data/raw/pilot-perf`, in the working repository), one run
+`perf stat` was run on the P-cores (`data/earlier/pilot/pilot-perf`), one run
 per row, for `hist-atomic` k = 256 at N = 8. The values are per atomic operation, counted with
 `mem_inst_retired.lock_loads` (about 1.0e9 per run in every environment).
 

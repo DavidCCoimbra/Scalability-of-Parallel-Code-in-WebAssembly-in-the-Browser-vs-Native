@@ -24,8 +24,8 @@ build's code and its measured data, `data/raw/*-v3` and `data/tables/*-v3` (see
 
 The study was first measured on an earlier build, `measured/v2`, whose primary conclusions v3
 repeats. Its data, tables and campaign specs are at the tag `data/v2`; no table or figure
-combines runs of the two builds (ADR 0062). The pilot data and the data of builds before v2 are
-not part of this repository.
+combines runs of the two builds (ADR 0062). The evidence older than v2 that the decision records cite (pilot runs, probes, tables of
+earlier builds) is in [`data/earlier/`](data/earlier/README.md).
 
 Code merged after the tag does not change the measured path. `scripts/codegen_diff.sh
 measured/v3` compares the hot functions of a checkout with those of the tagged build; a change

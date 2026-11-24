@@ -1,0 +1,43 @@
+{
+  "name": "pilot-size-8192",
+  "orderSeed": 20269299,
+  "environments": [
+    "native",
+    "chrome",
+    "firefox"
+  ],
+  "workloads": [
+    {
+      "workload": "filter",
+      "input": "noise"
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 16
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 1
+    }
+  ],
+  "threads": [
+    1,
+    8
+  ],
+  "repetitions": 3,
+  "width": 8192,
+  "height": 8192,
+  "warmup": 2,
+  "iterations": 5,
+  "calibration": 20,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 0,
+  "timeoutSeconds": 300,
+  "discardFirstLaunch": false,
+  "strict": true
+}

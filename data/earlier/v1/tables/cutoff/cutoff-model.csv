@@ -1,0 +1,7 @@
+environment,workload,input,k,threads,fork_join_runs,fork_join_us,work_1pct_us,side_1pct,work_5pct_us,side_5pct,model_break_even_us,model_worth_it_us
+native,filter,noise,,8,300,10.7,8461.9,4985,1624.0,2184,12.2,85.5
+native,hist-local,few,256,8,300,10.7,8461.9,4566,1624.0,2000,12.2,85.5
+chrome,filter,noise,,8,300,107.5,85140.0,14710,16340.0,6444,122.9,860.0
+chrome,hist-local,few,256,8,300,107.5,85140.0,12987,16340.0,5689,122.9,860.0
+firefox,filter,noise,,8,300,60.0,47520.0,10198,9120.0,4468,68.6,480.0
+firefox,hist-local,few,256,8,300,60.0,47520.0,9662,9120.0,4233,68.6,480.0

@@ -1,0 +1,37 @@
+# bench/probes/rmw_chain.c from main ecdf9a9b, gcc 15.2.0 (Ubuntu 15.2.0-16ubuntu1) -O2 -masm=intel, 2026-11-08
+# i9-14900KF, kernel 7.0.0-42-generic, governor performance, turbo off (P-cores 3.2 GHz), SMT off, shield on 16-31
+# one process per core; the variants run in a fixed order, two rounds, the first discarded (order effects not excluded)
+# run: sudo -n systemd-run --scope --slice=ppc-bench.slice --uid=$USER -p AllowedCPUs=<cpu> rmw_chain <k>
+# 8192^2 pixels, median of 15 repetitions after one round of warm-up; k = number of distinct values
+# cpu 2, k = 1
+k=1   native: inc [b+i*8]        median  155.15 ms  2.312 ns/pixel  ok
+k=1   add [b+i*8],1              median  152.67 ms  2.275 ns/pixel  ok
+k=1   load/add/store [b+i*8]     median  152.19 ms  2.268 ns/pixel  ok
+k=1   load/add/store [reg]       median   23.97 ms  0.357 ns/pixel  ok
+k=1   inc [reg]                  median   24.60 ms  0.367 ns/pixel  ok
+k=1   V8 exact [b+i] + check     median  152.74 ms  2.276 ns/pixel  ok
+k=1   V8 exact [b+i] no check    median  150.74 ms  2.246 ns/pixel  ok
+# cpu 2, k = 256
+k=256 native: inc [b+i*8]        median   26.55 ms  0.396 ns/pixel  ok
+k=256 add [b+i*8],1              median   26.43 ms  0.394 ns/pixel  ok
+k=256 load/add/store [b+i*8]     median   26.74 ms  0.398 ns/pixel  ok
+k=256 load/add/store [reg]       median   27.08 ms  0.404 ns/pixel  ok
+k=256 inc [reg]                  median   27.91 ms  0.416 ns/pixel  ok
+k=256 V8 exact [b+i] + check     median   28.43 ms  0.424 ns/pixel  ok
+k=256 V8 exact [b+i] no check    median   27.22 ms  0.406 ns/pixel  ok
+# cpu 8, k = 1
+k=1   native: inc [b+i*8]        median  155.19 ms  2.313 ns/pixel  ok
+k=1   add [b+i*8],1              median  152.74 ms  2.276 ns/pixel  ok
+k=1   load/add/store [b+i*8]     median  151.76 ms  2.261 ns/pixel  ok
+k=1   load/add/store [reg]       median   24.04 ms  0.358 ns/pixel  ok
+k=1   inc [reg]                  median   24.57 ms  0.366 ns/pixel  ok
+k=1   V8 exact [b+i] + check     median  153.38 ms  2.285 ns/pixel  ok
+k=1   V8 exact [b+i] no check    median  150.88 ms  2.248 ns/pixel  ok
+# cpu 12, k = 1
+k=1   native: inc [b+i*8]        median  155.12 ms  2.311 ns/pixel  ok
+k=1   add [b+i*8],1              median  152.78 ms  2.277 ns/pixel  ok
+k=1   load/add/store [b+i*8]     median  151.59 ms  2.259 ns/pixel  ok
+k=1   load/add/store [reg]       median   24.07 ms  0.359 ns/pixel  ok
+k=1   inc [reg]                  median   24.58 ms  0.366 ns/pixel  ok
+k=1   V8 exact [b+i] + check     median  153.56 ms  2.288 ns/pixel  ok
+k=1   V8 exact [b+i] no check    median  150.68 ms  2.245 ns/pixel  ok

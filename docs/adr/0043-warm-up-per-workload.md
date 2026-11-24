@@ -11,7 +11,8 @@ optimizing compiler ("tier-up"). W was left to a pilot.
 
 ### The warm-up pilot
 
-The warm-up pilot (`harness/campaigns/pilot-warmup.json`, in the working repository, 2026-11-06)
+The warm-up pilot (spec `data/earlier/pilot/specs/pilot-warmup.json`, runs `data/earlier/pilot/pilot-warmup`,
+2026-11-06)
 ran every campaign workload at 8192x8192 with no warm-up and 100 measured iterations, at N = 1 and
 8, 2 runs per environment (108 runs, 0 failed). The cell that sets the largest W (Firefox
 `hist-local` k = 1, N = 8) got 10 more runs (`pilot-warmup-ff-k1.json`), because its tier-up time

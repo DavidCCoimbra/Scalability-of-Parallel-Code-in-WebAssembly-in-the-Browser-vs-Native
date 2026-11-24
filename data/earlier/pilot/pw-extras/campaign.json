@@ -1,0 +1,153 @@
+{
+  "name": "pw-extras",
+  "orderSeed": 20261162,
+  "plannedRuns": 72,
+  "spec": {
+    "name": "pw-extras",
+    "orderSeed": 20261162,
+    "environments": [
+      "native",
+      "chrome",
+      "firefox"
+    ],
+    "workloads": [
+      {
+        "workload": "hist-atomic-private",
+        "input": "few",
+        "k": 1,
+        "warmup": 0
+      },
+      {
+        "workload": "hist-atomic-private",
+        "input": "few",
+        "k": 256,
+        "warmup": 0
+      },
+      {
+        "workload": "hist-atomic-packed",
+        "input": "few",
+        "k": 1,
+        "warmup": 0
+      },
+      {
+        "workload": "hist-atomic-packed",
+        "input": "few",
+        "k": 256,
+        "warmup": 0
+      },
+      {
+        "workload": "sort",
+        "input": "noise",
+        "warmup": 0
+      },
+      {
+        "workload": "sort-unstable",
+        "input": "noise",
+        "warmup": 0
+      }
+    ],
+    "threads": [
+      1,
+      8
+    ],
+    "repetitions": 2,
+    "width": 8192,
+    "height": 8192,
+    "warmup": 0,
+    "iterations": 60,
+    "calibration": 20,
+    "cpus": "0,2,4,6,8,10,12,14",
+    "harnessCpus": "16-31",
+    "scopeUser": "$USER",
+    "headless": true,
+    "startDelayMs": 3000,
+    "timeoutSeconds": 1200,
+    "discardFirstLaunch": true,
+    "strict": true,
+    "heightPerThread": null
+  },
+  "build": {
+    "commit": "c828530c4b742960904ea3e1af75762697f75b5c",
+    "nativeSha256": "41f6e27bf98eeefde5280ba10c61cce7df35b56bd52b5e51bf2ba0f2b4048c7e",
+    "wasmSha256": "12cb7d09712e79fde576ceab7b7fbd17d4385e0c9db96c3d981a1c33b1e4fec7",
+    "browsers": {
+      "chrome": "Google Chrome for Testing 155.0.8059.84",
+      "firefox": "Mozilla Firefox 158.0"
+    }
+  },
+  "startedAt": "2026-11-07T21:13:32.934+00:00",
+  "runs": [
+    "pw-extras-0000-chrome-hist-atomic-private-k256-n1-r1",
+    "pw-extras-0001-native-hist-atomic-packed-k256-n1-r0",
+    "pw-extras-0002-chrome-sort-unstable-noise-n1-r0",
+    "pw-extras-0003-native-hist-atomic-private-k1-n1-r0",
+    "pw-extras-0004-native-hist-atomic-private-k256-n8-r0",
+    "pw-extras-0005-native-sort-noise-n8-r1",
+    "pw-extras-0006-chrome-sort-noise-n1-r0",
+    "pw-extras-0007-native-hist-atomic-packed-k1-n1-r0",
+    "pw-extras-0008-chrome-sort-noise-n8-r1",
+    "pw-extras-0009-native-sort-noise-n1-r1",
+    "pw-extras-0010-firefox-hist-atomic-packed-k256-n8-r0",
+    "pw-extras-0011-firefox-hist-atomic-packed-k1-n1-r0",
+    "pw-extras-0012-chrome-hist-atomic-private-k1-n1-r1",
+    "pw-extras-0013-chrome-hist-atomic-private-k256-n1-r0",
+    "pw-extras-0014-native-hist-atomic-private-k1-n8-r1",
+    "pw-extras-0015-firefox-hist-atomic-private-k256-n8-r0",
+    "pw-extras-0016-firefox-sort-noise-n1-r0",
+    "pw-extras-0017-chrome-hist-atomic-private-k256-n8-r0",
+    "pw-extras-0018-chrome-hist-atomic-packed-k256-n1-r1",
+    "pw-extras-0019-chrome-hist-atomic-packed-k1-n1-r0",
+    "pw-extras-0020-native-hist-atomic-packed-k1-n8-r0",
+    "pw-extras-0021-chrome-hist-atomic-packed-k1-n8-r0",
+    "pw-extras-0022-firefox-sort-unstable-noise-n1-r1",
+    "pw-extras-0023-firefox-hist-atomic-packed-k256-n1-r1",
+    "pw-extras-0024-firefox-sort-noise-n8-r1",
+    "pw-extras-0025-firefox-hist-atomic-private-k1-n1-r1",
+    "pw-extras-0026-chrome-hist-atomic-packed-k256-n8-r1",
+    "pw-extras-0027-chrome-hist-atomic-packed-k256-n8-r0",
+    "pw-extras-0028-firefox-hist-atomic-private-k256-n8-r1",
+    "pw-extras-0029-chrome-hist-atomic-packed-k1-n8-r1",
+    "pw-extras-0030-firefox-sort-noise-n8-r0",
+    "pw-extras-0031-native-hist-atomic-private-k1-n8-r0",
+    "pw-extras-0032-firefox-hist-atomic-packed-k1-n8-r1",
+    "pw-extras-0033-native-hist-atomic-private-k256-n1-r1",
+    "pw-extras-0034-native-hist-atomic-packed-k256-n1-r1",
+    "pw-extras-0035-chrome-sort-noise-n8-r0",
+    "pw-extras-0036-native-hist-atomic-packed-k1-n1-r1",
+    "pw-extras-0037-firefox-hist-atomic-private-k1-n1-r0",
+    "pw-extras-0038-native-sort-unstable-noise-n1-r1",
+    "pw-extras-0039-native-sort-unstable-noise-n8-r1",
+    "pw-extras-0040-firefox-hist-atomic-private-k256-n1-r0",
+    "pw-extras-0041-chrome-hist-atomic-packed-k1-n1-r1",
+    "pw-extras-0042-native-sort-noise-n8-r0",
+    "pw-extras-0043-chrome-hist-atomic-private-k256-n8-r1",
+    "pw-extras-0044-firefox-sort-noise-n1-r1",
+    "pw-extras-0045-chrome-sort-noise-n1-r1",
+    "pw-extras-0046-firefox-sort-unstable-noise-n1-r0",
+    "pw-extras-0047-chrome-sort-unstable-noise-n8-r1",
+    "pw-extras-0048-chrome-sort-unstable-noise-n1-r1",
+    "pw-extras-0049-native-sort-unstable-noise-n1-r0",
+    "pw-extras-0050-chrome-hist-atomic-private-k1-n1-r0",
+    "pw-extras-0051-chrome-hist-atomic-packed-k256-n1-r0",
+    "pw-extras-0052-firefox-hist-atomic-packed-k1-n8-r0",
+    "pw-extras-0053-firefox-hist-atomic-private-k256-n1-r1",
+    "pw-extras-0054-chrome-hist-atomic-private-k1-n8-r0",
+    "pw-extras-0055-firefox-hist-atomic-private-k1-n8-r0",
+    "pw-extras-0056-native-sort-unstable-noise-n8-r0",
+    "pw-extras-0057-firefox-sort-unstable-noise-n8-r1",
+    "pw-extras-0058-native-hist-atomic-packed-k256-n8-r0",
+    "pw-extras-0059-chrome-sort-unstable-noise-n8-r0",
+    "pw-extras-0060-native-hist-atomic-packed-k256-n8-r1",
+    "pw-extras-0061-native-hist-atomic-packed-k1-n8-r1",
+    "pw-extras-0062-native-hist-atomic-private-k1-n1-r1",
+    "pw-extras-0063-firefox-hist-atomic-packed-k256-n8-r1",
+    "pw-extras-0064-native-sort-noise-n1-r0",
+    "pw-extras-0065-firefox-hist-atomic-packed-k1-n1-r1",
+    "pw-extras-0066-firefox-hist-atomic-packed-k256-n1-r0",
+    "pw-extras-0067-native-hist-atomic-private-k256-n1-r0",
+    "pw-extras-0068-native-hist-atomic-private-k256-n8-r1",
+    "pw-extras-0069-firefox-hist-atomic-private-k1-n8-r1",
+    "pw-extras-0070-firefox-sort-unstable-noise-n8-r0",
+    "pw-extras-0071-chrome-hist-atomic-private-k1-n8-r1"
+  ]
+}

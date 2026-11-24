@@ -11,7 +11,8 @@ The SIMD campaigns of ADR 0057 ran from the commit tagged `measured/simd`:
 
 Both ran the filter at 8192^2, W = 15, N in {1, 2, 4, 6, 7, 8}, 30 runs per configuration.
 
-Data, in the working repository: `data/raw/simd-scalar`, `data/raw/simd-avx2`,
+Data (the tables are kept under `data/earlier/v1/`, the runs are not in this repository):
+`data/raw/simd-scalar`, `data/raw/simd-avx2`,
 `data/tables/simd/simd-*-quality.md`, `data/tables/simd/simd-*-scaling.csv`,
 `data/tables/simd/simd-*-iteration-drift.csv`, and `data/tables/simd/simd-variants.csv` with
 the figure `paper/figures/simd-efficiency.pdf`. The variants table comes from

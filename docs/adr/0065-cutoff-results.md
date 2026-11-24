@@ -12,8 +12,8 @@ K = 1 control campaigns at 512^2 and 2048^2, to see whether repeating the work K
 the time per pass. All seven campaigns ran on the night of 2026-11-08/09 on build `4dace4db`
 (tag `measured/cutoff`). This ADR records what they found and how they are read.
 
-The tables named below are those of this build, in the working repository. The final
-repository holds the re-run on the v2 build (ADR 0069), under `data/tables/cutoff-v2/`.
+The tables named below are those of this build, kept in `data/earlier/v1/tables/cutoff`. The
+campaign was run again on the v2 build (ADR 0069) and on v3 (`data/tables/cutoff-v3/`).
 
 Data quality (`data/tables/cutoff/cutoff-*-quality.md`): 4080 runs, none missing or failed, no
 checksum conflict, none above the foreign CPU threshold, none under 100 times the clock
@@ -125,7 +125,7 @@ to 1024 crossing and do not depend on it.
 - **Phase 2.** Applying a threshold inside the workloads, with a grain-size sweep, is ADR 0066,
   approved on 2026-11-09.
 - **Reproduction.** `make cutoff-results` regenerates every number in this ADR from
-  this build's `data/raw/cutoff-*` (in the working repository).
+  this build's `data/raw/cutoff-*`. Those runs are not in this repository; the tables are.
 
 ## Status
 

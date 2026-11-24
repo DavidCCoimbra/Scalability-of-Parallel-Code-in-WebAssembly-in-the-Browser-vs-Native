@@ -6,7 +6,7 @@ its runs land in `data/raw/<name>`, where `<name>` is the spec's `name` key.
 
 Only the specs of the final build, `measured/v3`, are here, and `make` runs
 and reads them by default (`MEASURED`). The specs of `measured/v2` are at the
-tag `data/v2`; the pilot specs are not part of this repository.
+tag `data/v2`; the pilot specs are in `data/earlier/pilot/specs`.
 
 ## Campaigns of the study
 

@@ -19,7 +19,7 @@ at N = 8.
 
 ### Run count pilot
 
-The pilot (`harness/campaigns/pilot-runs-rq{1,2}.json`, 2026-11-07; in the working repository)
+The pilot (`pilot-runs-rq{1,2}`, 2026-11-07; specs and runs in `data/earlier/pilot`)
 ran 30 runs of every cell the primary contrasts need:
 
 - the filter at N = 1 and 8 (RQ1);

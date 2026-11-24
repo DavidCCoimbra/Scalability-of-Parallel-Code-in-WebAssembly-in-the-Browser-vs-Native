@@ -1,0 +1,51 @@
+{
+  "name": "pilot-pad64",
+  "orderSeed": 20261141,
+  "environments": [
+    "native"
+  ],
+  "workloads": [
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 1,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 4,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 16,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5
+    }
+  ],
+  "threads": [
+    1,
+    8
+  ],
+  "repetitions": 10,
+  "width": 8192,
+  "height": 8192,
+  "warmup": 5,
+  "iterations": 10,
+  "calibration": 20,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 0,
+  "timeoutSeconds": 300,
+  "discardFirstLaunch": false,
+  "strict": true
+}

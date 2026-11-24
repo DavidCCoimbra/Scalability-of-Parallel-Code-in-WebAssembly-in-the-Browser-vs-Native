@@ -1,0 +1,13 @@
+{
+  "campaign": "data/raw/extras",
+  "summary": "median",
+  "center": "geometric",
+  "confidence": 0.95,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "commit": "4c56012bd95a7831fdf7a69f8b033a43dcae6393",
+  "createdAt": "2026-11-08T14:07:28.529+00:00",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0
+}

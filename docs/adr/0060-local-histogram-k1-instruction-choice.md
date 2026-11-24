@@ -31,8 +31,8 @@ stored value to reach the next load of the same address), not by throughput. The
 
 ### The two machine codes
 
-- **Native** (`data/probes/native-hist-local-k1-loop.asm` in the working repository, like every
-  `data/probes/` file below; `objdump` of the baseline build):
+- **Native** (`data/earlier/probes/native-hist-local-k1-loop.asm`, where every `data/probes/` file
+  named below is; `objdump` of the baseline build):
   LLVM unrolls the loop by four and uses one read-modify-write instruction per pixel,
   `inc QWORD PTR [rsp+rcx*8+0x48]`.
 - **Chrome** (`data/probes/v8-hist-local-k1-loop.asm`): Chrome was started with
@@ -43,7 +43,7 @@ stored value to reach the next load of the same address), not by throughput. The
   `mov rdx,[r15+rbx]; add rdx,1; mov [r15+rbx],rdx`, addressed as memory base plus a 32-bit
   offset. It also adds an interrupt check (`cmp BYTE PTR [r13-0x4f],0`) every four pixels.
 
-The two `.asm` files and the microbenchmark results below are in the working repository.
+The two `.asm` files and the microbenchmark results below are in `data/earlier/probes`.
 
 ### The microbenchmark
 

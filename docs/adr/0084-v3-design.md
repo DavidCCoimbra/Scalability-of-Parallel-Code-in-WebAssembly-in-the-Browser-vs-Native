@@ -152,7 +152,7 @@ gates are kept and reported, and the session goes on.
 | Does the first touch of the buffers end in the warm-up? | ADR 0080 | the memory size before the measured phase | answered |
 | Why is the Firefox filter 1.33 times the native one at N = 1, and the scalar WASM further still? | ADR 0079, ADR 0058 | instructions and cycles per pixel, the engine code | where the time goes (more instructions or slower ones); the cause inside the compiler may stay open |
 | Why is the local histogram superlinear in Firefox at k = 256 (8.47 at N = 8)? | ADR 0079 | cache misses per pixel at N = 1 and 8 | supported or not; not proven |
-| Why does Chrome's atomic histogram at k = 1, N = 8 drift along a campaign (17 % from the first runs to the last)? | the v2 data check, noted in the working repository | whether it repeats, with the frequencies per run | observed again or not; the two frequency samples per run can suggest a cause, not establish one |
+| Why does Chrome's atomic histogram at k = 1, N = 8 drift along a campaign (17 % from the first runs to the last)? | the v2 data check | whether it repeats, with the frequencies per run | observed again or not; the two frequency samples per run can suggest a cause, not establish one |
 | Why does the filter step up between grains of 8 and 16 rows? | ADR 0067 | nothing new | stays declared |
 
 ### 6. Rules fixed before the data
@@ -179,7 +179,7 @@ gates are kept and reported, and the session goes on.
 ## Consequences
 
 - The paper describes one build. The v2 data and specs leave this repository when v3 is adopted
-  and stay in its history and in the working repository.
+  and stay in its history (the tag `data/v2`, ADR 0095).
 - The sequential cells add 450 runs to the main campaign (5 cells, 3 environments, 30 runs).
 - The CSV gains one column, so the reader accepts v2 files without it for as long as v2 is kept.
 - A campaign started on v2 cannot be continued on v3, and the reverse.

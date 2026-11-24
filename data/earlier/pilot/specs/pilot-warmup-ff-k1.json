@@ -1,0 +1,31 @@
+{
+  "name": "pilot-warmup-ff-k1",
+  "orderSeed": 20261134,
+  "environments": [
+    "firefox"
+  ],
+  "workloads": [
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 1
+    }
+  ],
+  "threads": [
+    8
+  ],
+  "repetitions": 10,
+  "width": 8192,
+  "height": 8192,
+  "warmup": 0,
+  "iterations": 100,
+  "calibration": 20,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 0,
+  "timeoutSeconds": 900,
+  "discardFirstLaunch": false,
+  "strict": true
+}

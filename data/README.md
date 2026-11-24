@@ -14,6 +14,7 @@ the earlier build `measured/v2` are at the tag `data/v2`.
 | `probes/engine-code/` | The machine code of each kernel: native, WASM, V8's two compilers and SpiderMonkey's (ADR 0088); a probe, not results |
 | `checks/core-check/` | The per-core check of the measuring PC before the v3 build (ADR 0085); not results |
 | `checks/gate-v3/`, `checks/gate2-v3/` | The two gates before the v3 campaigns (ADR 0087); not results |
+| `earlier/` | Pilot runs and specs, one-off probes, and the tables and specs of the builds before v2 that the decision records cite; see its README |
 | `sessions/v3/` | The progress log of each stage of the v3 measuring session, and the digests of the two builds |
 
 No v3 campaign has a run left out of the analysis, so no `excluded/` folder
@@ -33,8 +34,8 @@ exists.
 
 Only the main campaign answers RQ1 and RQ2; every other campaign is
 exploratory. The campaigns are described in `harness/campaigns/README.md`.
-The pilot data and the data of builds before v2 are not part of this
-repository.
+What the decision records cite from before v2 is in `earlier/`: evidence
+for decisions, never results.
 
 Every table can be regenerated from `raw/` with `make all-results`; the
 sidecar JSON files keep a fixed key order, so a regeneration changes only

@@ -15,8 +15,8 @@ The rule was fixed before measuring: run headless if the effect of the mode is n
 report the number; run headful otherwise. "Negligible" means that the 95 % interval of the
 ratio headful / headless includes 1 and the ratio is within 2 %.
 
-The pilot (`harness/campaigns/pilot-head{less,ful}.json`, 2026-11-07; these pilot specs and
-their data are in the working repository) ran:
+The pilot (`pilot-head{less,ful}`, 2026-11-07; these pilot specs and their data are in
+`data/earlier/pilot`) ran:
 
 - the Gaussian filter (W = 15 warm-up iterations) and `hist-local` (the per-task local
   histogram) at k = 1 (W = 71), at 8192x8192 and N = 8 threads;

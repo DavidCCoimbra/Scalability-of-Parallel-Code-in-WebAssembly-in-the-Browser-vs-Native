@@ -109,7 +109,7 @@ When the PR's code produces (or is measured in) a figure or table of the paper, 
 
 ## 5. The claude[bot] review
 
-The project was already reviewed in the working repo; this review is a double check.
+The author reviews every change; this review is a double check.
 
 - **Minor findings** (style, naming, wording, suggestions): ignore them. Do not reply and do not
   change the code.

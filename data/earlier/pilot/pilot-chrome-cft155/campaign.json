@@ -1,0 +1,93 @@
+{
+  "name": "pilot-chrome-cft155",
+  "orderSeed": 20261137,
+  "plannedRuns": 40,
+  "spec": {
+    "name": "pilot-chrome-cft155",
+    "orderSeed": 20261137,
+    "environments": [
+      "chrome"
+    ],
+    "workloads": [
+      {
+        "workload": "filter",
+        "input": "noise",
+        "warmup": 15
+      },
+      {
+        "workload": "hist-atomic",
+        "input": "few",
+        "k": 16,
+        "warmup": 5
+      }
+    ],
+    "threads": [
+      1,
+      8
+    ],
+    "repetitions": 10,
+    "width": 8192,
+    "height": 8192,
+    "warmup": 5,
+    "iterations": 10,
+    "calibration": 20,
+    "cpus": "0,2,4,6,8,10,12,14",
+    "harnessCpus": "16-31",
+    "scopeUser": "$USER",
+    "headless": true,
+    "startDelayMs": 3000,
+    "timeoutSeconds": 300,
+    "discardFirstLaunch": false,
+    "strict": true
+  },
+  "build": {
+    "commit": "4960dd2c4084024893bc9ba9078b0830a34c7b7d",
+    "wasmSha256": "cfe35328849c64e803b16acd04c88de8a834543c3d9b1876df791db2aceb24c8",
+    "browsers": {
+      "chrome": "Google Chrome for Testing 155.0.8059.84"
+    }
+  },
+  "startedAt": "2026-11-07T06:20:22.795+00:00",
+  "runs": [
+    "pilot-chrome-cft155-0000-chrome-hist-atomic-k16-n1-r9",
+    "pilot-chrome-cft155-0001-chrome-filter-noise-n8-r7",
+    "pilot-chrome-cft155-0002-chrome-filter-noise-n1-r1",
+    "pilot-chrome-cft155-0003-chrome-hist-atomic-k16-n1-r0",
+    "pilot-chrome-cft155-0004-chrome-filter-noise-n1-r5",
+    "pilot-chrome-cft155-0005-chrome-hist-atomic-k16-n8-r0",
+    "pilot-chrome-cft155-0006-chrome-hist-atomic-k16-n8-r8",
+    "pilot-chrome-cft155-0007-chrome-filter-noise-n8-r3",
+    "pilot-chrome-cft155-0008-chrome-filter-noise-n1-r9",
+    "pilot-chrome-cft155-0009-chrome-filter-noise-n1-r6",
+    "pilot-chrome-cft155-0010-chrome-hist-atomic-k16-n1-r7",
+    "pilot-chrome-cft155-0011-chrome-hist-atomic-k16-n8-r3",
+    "pilot-chrome-cft155-0012-chrome-filter-noise-n8-r1",
+    "pilot-chrome-cft155-0013-chrome-hist-atomic-k16-n8-r2",
+    "pilot-chrome-cft155-0014-chrome-filter-noise-n8-r2",
+    "pilot-chrome-cft155-0015-chrome-hist-atomic-k16-n1-r3",
+    "pilot-chrome-cft155-0016-chrome-hist-atomic-k16-n8-r4",
+    "pilot-chrome-cft155-0017-chrome-hist-atomic-k16-n8-r1",
+    "pilot-chrome-cft155-0018-chrome-hist-atomic-k16-n1-r5",
+    "pilot-chrome-cft155-0019-chrome-filter-noise-n1-r2",
+    "pilot-chrome-cft155-0020-chrome-hist-atomic-k16-n8-r5",
+    "pilot-chrome-cft155-0021-chrome-hist-atomic-k16-n1-r6",
+    "pilot-chrome-cft155-0022-chrome-filter-noise-n1-r7",
+    "pilot-chrome-cft155-0023-chrome-hist-atomic-k16-n8-r9",
+    "pilot-chrome-cft155-0024-chrome-hist-atomic-k16-n1-r2",
+    "pilot-chrome-cft155-0025-chrome-hist-atomic-k16-n1-r4",
+    "pilot-chrome-cft155-0026-chrome-filter-noise-n8-r9",
+    "pilot-chrome-cft155-0027-chrome-hist-atomic-k16-n1-r8",
+    "pilot-chrome-cft155-0028-chrome-hist-atomic-k16-n8-r7",
+    "pilot-chrome-cft155-0029-chrome-filter-noise-n8-r0",
+    "pilot-chrome-cft155-0030-chrome-filter-noise-n8-r4",
+    "pilot-chrome-cft155-0031-chrome-filter-noise-n8-r8",
+    "pilot-chrome-cft155-0032-chrome-filter-noise-n1-r4",
+    "pilot-chrome-cft155-0033-chrome-filter-noise-n1-r3",
+    "pilot-chrome-cft155-0034-chrome-filter-noise-n1-r8",
+    "pilot-chrome-cft155-0035-chrome-filter-noise-n8-r5",
+    "pilot-chrome-cft155-0036-chrome-filter-noise-n8-r6",
+    "pilot-chrome-cft155-0037-chrome-hist-atomic-k16-n8-r6",
+    "pilot-chrome-cft155-0038-chrome-filter-noise-n1-r0",
+    "pilot-chrome-cft155-0039-chrome-hist-atomic-k16-n1-r1"
+  ]
+}

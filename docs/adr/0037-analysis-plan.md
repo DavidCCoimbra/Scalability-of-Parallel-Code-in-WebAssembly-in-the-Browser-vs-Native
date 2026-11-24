@@ -11,7 +11,7 @@ handling of the RQ2 metric to an analysis plan, and ADR 0036 marks the analysis 
 provisional.
 
 The analysis plan was written as a separate document and committed and tagged `analysis-plan`
-on `main` in the working repository before the full campaign. This ADR, with ADR 0038 (its
+on `main` before the full campaign (the tag is in this repository). This ADR, with ADR 0038 (its
 implementation) and ADR 0039 (its first amendment), carries its content.
 
 ## Decision

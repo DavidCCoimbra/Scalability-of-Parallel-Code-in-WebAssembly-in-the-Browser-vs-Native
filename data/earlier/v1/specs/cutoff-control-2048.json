@@ -1,0 +1,42 @@
+{
+  "name": "cutoff-control-2048",
+  "orderSeed": 2026110912,
+  "environments": [
+    "native"
+  ],
+  "workloads": [
+    {
+      "workload": "filter",
+      "input": "noise",
+      "warmup": 15
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15
+    }
+  ],
+  "threads": [
+    1,
+    2,
+    4,
+    8
+  ],
+  "repetitions": 30,
+  "width": 2048,
+  "height": 2048,
+  "warmup": 5,
+  "iterations": 10,
+  "calibration": 20,
+  "passes": 1,
+  "comment": "Control for ADR 0064: native only, passes = 1 at 2048^2, to compare with cutoff-2048 (passes = 16) and bound how much back-to-back warm passes change the time per pass.",
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 3000,
+  "timeoutSeconds": 900,
+  "discardFirstLaunch": false,
+  "strict": true
+}

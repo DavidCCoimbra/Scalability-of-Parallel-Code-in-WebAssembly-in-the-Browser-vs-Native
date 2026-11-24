@@ -36,9 +36,9 @@ numbers come from the measured reports, and the same model was chosen here.
 - **Pointers updated.** Code comments that pointed at the reading guide now point at the
   matching explainer page.
 - **Older ADRs.** ADRs keep their old references to the reading guide, as records of their time.
-- **Where it lives.** The explainer, its data script and the documents it replaced are in the
-  working repository, not in this final repository, which keeps the ADRs and the module READMEs.
+- **Where it lives.** The explainer, its data script and the documents it replaced are not
+  part of this repository, which keeps the ADRs and the module READMEs.
 
 ## Status
 
-Accepted. The explainer lives in the working repository.
+Accepted. The explainer is not part of this repository.

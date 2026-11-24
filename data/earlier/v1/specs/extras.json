@@ -1,0 +1,91 @@
+{
+  "name": "extras",
+  "orderSeed": 20261108,
+  "environments": [
+    "native",
+    "chrome",
+    "firefox"
+  ],
+  "workloads": [
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 1,
+      "warmup": 71
+    },
+    {
+      "workload": "hist-atomic-private",
+      "input": "few",
+      "k": 1,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 1,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-atomic-packed",
+      "input": "few",
+      "k": 1,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-local",
+      "input": "few",
+      "k": 256,
+      "warmup": 15
+    },
+    {
+      "workload": "hist-atomic-private",
+      "input": "few",
+      "k": 256,
+      "warmup": 8
+    },
+    {
+      "workload": "hist-atomic",
+      "input": "few",
+      "k": 256,
+      "warmup": 5
+    },
+    {
+      "workload": "hist-atomic-packed",
+      "input": "few",
+      "k": 256,
+      "warmup": 5
+    },
+    {
+      "workload": "sort",
+      "input": "noise",
+      "warmup": 5
+    },
+    {
+      "workload": "sort-unstable",
+      "input": "noise",
+      "warmup": 5
+    }
+  ],
+  "threads": [
+    1,
+    2,
+    4,
+    6,
+    7,
+    8
+  ],
+  "repetitions": 30,
+  "width": 8192,
+  "height": 8192,
+  "warmup": 5,
+  "iterations": 10,
+  "calibration": 20,
+  "cpus": "0,2,4,6,8,10,12,14",
+  "harnessCpus": "16-31",
+  "scopeUser": "$USER",
+  "headless": true,
+  "startDelayMs": 3000,
+  "timeoutSeconds": 1200,
+  "discardFirstLaunch": true,
+  "strict": true
+}

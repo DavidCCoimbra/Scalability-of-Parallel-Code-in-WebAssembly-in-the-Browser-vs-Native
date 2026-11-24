@@ -38,7 +38,7 @@ only if the machine code of the hot functions is unchanged, and the check is rec
 - The data of `measured/v2` stays valid for this code: the hot functions compile to the same
   machine code.
 - The 64-byte comparison of ADR 0049 can no longer be rebuilt from this repository; its record
-  and numbers stay in ADR 0049, and the pilot data in the working repository.
+  and numbers stay in ADR 0049, and the pilot data in `data/earlier/pilot`.
 - `pitch` and `Palette::Consecutive`, the other options no campaign uses, are decided
   separately: `pitch` stays, because the filter kernel chunks by `pitch()` and its removal is
   not certainly codegen-neutral.

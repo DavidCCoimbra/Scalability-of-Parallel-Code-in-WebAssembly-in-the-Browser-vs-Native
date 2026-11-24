@@ -23,8 +23,8 @@ Decided on 2026-11-08: Notion is no longer part of the workflow.
 - **Paper material.** It moves to `docs/paper-material/`, translated to English: one file per
   paper section (method, setup, results, threats to validity, related work), each entry under
   its first section and linked from the others, with an index in
-  `docs/paper-material/README.md`. That folder is in the working repository, not in the final
-  one.
+  `docs/paper-material/README.md`. That folder was a working document and is not part of this
+  repository.
 - **ADRs.** They stay only in `docs/adr/` and are no longer mirrored.
 - **Post-merge step.** After a merge, the workflow adds the ticket's paper material to
   `docs/paper-material/` (updating an entry with the same title, or adding it) on a small branch
