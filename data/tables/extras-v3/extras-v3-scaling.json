@@ -1,0 +1,22 @@
+{
+  "campaign": "data/raw/extras-v3",
+  "summary": "median",
+  "center": "geometric",
+  "scaling": "strong",
+  "confidence": 0.95,
+  "bootstrapResamples": 10000,
+  "bootstrapSeed": 24301,
+  "commit": "25ffea0d6adc6469f34cbf3985cde96e9288815c-dirty",
+  "createdAt": "2026-11-24T06:05:23.843+00:00",
+  "clockFactor": 100,
+  "clockWarnings": [],
+  "clockUnchecked": 0,
+  "foreignCpuThreshold": 0.25,
+  "strict": true,
+  "excluded": {
+    "foreignCpuSeconds": 0,
+    "strictValidation": 0
+  },
+  "failed": {},
+  "missing": []
+}

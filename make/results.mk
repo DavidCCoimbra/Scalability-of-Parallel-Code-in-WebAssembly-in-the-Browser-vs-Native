@@ -1,7 +1,7 @@
 SENSITIVITY = data/tables/campaign-$(MEASURED)/sensitivity/campaign-$(MEASURED)
 RESULTS = python3 -m analysis.results data/raw/campaign-$(MEASURED) --max-threads 8 --strict
 
-.PHONY: results sensitivity extras-results weak-results simd-results cutoff-results grain-results perf-results v3-results all-results tables-check
+.PHONY: results sensitivity extras-results extras-workloads-results hybrid-results weak-results simd-results cutoff-results grain-results perf-results v3-results all-results tables-check
 
 ##@ Tables and figures of the paper
 
@@ -31,20 +31,25 @@ sensitivity: #: The plan's three sensitivity checks on the primary contrasts
 		--check summary_mean=$(SENSITIVITY)-summary-mean.csv --check center_median=$(SENSITIVITY)-center-median.csv \
 		--check no_threshold=$(SENSITIVITY)-no-threshold.csv --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-sensitivity.csv
 
-extras-results: ## Tables and figures of the exploratory campaigns: extras, weak scaling, SIMD, hybrid P+E
-	mkdir -p data/tables/extras-$(MEASURED) data/tables/hybrid-$(MEASURED)
+# The extras, weak scaling, SIMD and hybrid tables each have their own target, so that one
+# campaign's tables do not wait for another campaign's data.
+extras-results: extras-workloads-results weak-results simd-results hybrid-results ## Tables and figures of the exploratory campaigns: extras, weak scaling, SIMD, hybrid P+E
+
+extras-workloads-results: ## The extra workloads: private, shared and packed atomics, the local control, sorts
+	mkdir -p data/tables/extras-$(MEASURED) paper/figures
 	python3 -m analysis.datacheck data/raw/extras-$(MEASURED) --output data/tables/extras-$(MEASURED)/extras-$(MEASURED)-quality.md
 	python3 -m harness.collect data/raw/extras-$(MEASURED) --output data/extras-$(MEASURED).csv
 	python3 -m analysis.v0 data/raw/extras-$(MEASURED) --strict --output data/tables/extras-$(MEASURED)/extras-$(MEASURED)-scaling.csv
 	python3 -m analysis.results data/raw/extras-$(MEASURED) --max-threads 8 --strict --foreign-cpu-threshold 0.25 --partial --contrasts data/tables/extras-$(MEASURED)/extras-$(MEASURED)-contrasts.csv --shape data/tables/extras-$(MEASURED)/extras-$(MEASURED)-shape.csv
 	uv run --no-project --with matplotlib python -m analysis.figures data/raw/extras-$(MEASURED) --strict --output paper/figures --prefix extras
-	$(MAKE) weak-results
+
+hybrid-results: ## P-cores plus E-cores
+	mkdir -p data/tables/hybrid-$(MEASURED) paper/figures
 	python3 -m analysis.datacheck data/raw/hybrid-$(MEASURED) --output data/tables/hybrid-$(MEASURED)/hybrid-$(MEASURED)-quality.md
 	python3 -m analysis.v0 data/raw/hybrid-$(MEASURED) --strict --output data/tables/hybrid-$(MEASURED)/hybrid-$(MEASURED)-scaling.csv
 	python3 -m analysis.iteration_drift data/raw/hybrid-$(MEASURED) --output data/tables/hybrid-$(MEASURED)/hybrid-$(MEASURED)-iteration-drift.csv
 	uv run --no-project --with matplotlib python -m analysis.figures data/raw/hybrid-$(MEASURED) --strict --output paper/figures --prefix hybrid --diagonal "speedup = N"
 	rm -f paper/figures/hybrid-efficiency.pdf
-	$(MAKE) simd-results
 
 weak-results: ## Weak scaling: the image grows with the thread count
 	mkdir -p data/tables/weak-$(MEASURED) paper/figures
