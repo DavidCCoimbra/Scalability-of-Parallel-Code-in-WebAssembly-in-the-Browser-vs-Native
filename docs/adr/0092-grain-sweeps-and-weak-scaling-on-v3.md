@@ -22,11 +22,16 @@ The tables are `data/tables/grain-v3` (`make grain-results MEASURED=v3`) and
 - **Rayon's adaptive split stays within 3 % of the best fixed grain at 8192x8192** (0.995 to
   1.027 times) and 3 to 18 % slower at 1024x1024, as in v2. The main campaign's use of the
   adaptive split costs it nothing at its size.
-- **The atomic histogram does not depend on the grain.** At k = 256 with eight threads its time
-  over the fifteen grains, from 1 KB to 8192 KB and the adaptive split, stays within 0.3 % of the
-  best natively, 0.6 % in Chrome and 1.3 % in Firefox. Its time is the contention for the counters, which the size of
-  a task does not change. So giving it the grain (ADR 0086) could not have moved its times, and
-  the sweep is the measurement of that.
+- **The atomic histogram hardly depends on the grain.** At k = 256 with eight threads, the only
+  cell swept, its time over the fifteen grains from 1 KB to 8192 KB and the adaptive split stays
+  within 0.3 % of the best natively, 0.6 % in Chrome and 1.3 % in Firefox. Inside that there is
+  a small trend in the browsers, with intervals that do not overlap and opposite signs: Firefox
+  is 1.1 to 1.3 % slower with grains of 1 to 8 KB than from 1024 KB up, and Chrome 0.5 to 0.6 %
+  slower with grains of 64 to 4096 KB than with 1 to 8 KB. Native is flat. This is consistent
+  with a time set by the contention for the counters (ADR 0089), which this sweep does not
+  measure. `best_grain` in `grain-best.csv` is not an optimum for this workload: it is a pick
+  among points 1 % apart. The change that gave the atomic histogram the grain (ADR 0086) is
+  therefore worth at most that much on its times at this cell.
 - **Weak scaling is that of v2**: with 1024 rows per thread the filter keeps 0.860 of its
   one-thread rate at eight threads natively, 0.851 in Chrome and 0.915 in Firefox (0.855, 0.852
   and 0.913 in v2), and the local histogram 0.993 to 0.997.
