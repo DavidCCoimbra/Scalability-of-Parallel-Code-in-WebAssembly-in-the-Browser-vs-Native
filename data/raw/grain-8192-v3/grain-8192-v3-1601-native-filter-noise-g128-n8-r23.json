@@ -1,0 +1,146 @@
+{
+  "commit": "ac65af6a447c96164011c2784857a9c2dc443c53",
+  "cpuModel": "Intel(R) Core(TM) i9-14900KF",
+  "governor": "performance",
+  "turbo": "off",
+  "kernel": "7.0.0-43-generic",
+  "os": "Linux",
+  "environment": "native",
+  "browserVersion": "native",
+  "cpuMask": "0,2,4,6,8,10,12,14",
+  "smt": "off",
+  "pCpus": "0,2,4,6,8,10,12,14",
+  "maskSiblings": [
+    "0",
+    "2",
+    "4",
+    "6",
+    "8",
+    "10",
+    "12",
+    "14"
+  ],
+  "headless": null,
+  "launchFlags": [
+    "sudo",
+    "-n",
+    "systemd-run",
+    "--scope",
+    "--quiet",
+    "--slice=ppc-bench.slice",
+    "--unit=ppc-run-grain-8192-v3-1601-native-filter-noise-g128-n8-r23",
+    "--uid=dcoimbra",
+    "-p",
+    "AllowedCPUs=0,2,4,6,8,10,12,14",
+    "env",
+    "HOME=/home/dcoimbra",
+    "USER=dcoimbra",
+    "LOGNAME=dcoimbra",
+    "PATH=/home/dcoimbra/.cargo/bin:/home/dcoimbra/.local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin:/snap/bin",
+    "DISPLAY=:0",
+    "WAYLAND_DISPLAY=wayland-0",
+    "XAUTHORITY=/run/user/1000/.mutter-Xwaylandauth.7MQIZ3",
+    "XDG_RUNTIME_DIR=/run/user/1000",
+    "taskset",
+    "-c",
+    "0,2,4,6,8,10,12,14",
+    "/home/dcoimbra/Desktop/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native/bench/target/release/native",
+    "--workload",
+    "filter",
+    "--input",
+    "noise",
+    "--grain",
+    "128",
+    "--threads",
+    "8",
+    "--width",
+    "8192",
+    "--height",
+    "8192",
+    "--warmup",
+    "15",
+    "--iters",
+    "10",
+    "--calibration",
+    "20"
+  ],
+  "orderSeed": 2026112205,
+  "orderPosition": 1601,
+  "startedAt": "2026-11-23T07:31:42.815+00:00",
+  "finishedAt": "2026-11-23T07:31:49.148+00:00",
+  "launchSeconds": 6.333,
+  "artifactSha256": "525707dedef95487ddc4efca3a8bbab48668201b3d90773f55e03c5108494bf3",
+  "build": {
+    "features": [],
+    "rustc": "rustc 1.101.0-nightly (0abfedbc7 2026-10-02)",
+    "wasmBindgen": "0.2.129",
+    "rustflags": "",
+    "clockResolutionNs": 64
+  },
+  "loadavgBefore": [
+    3.02,
+    3.19,
+    2.98
+  ],
+  "loadavgAfter": [
+    2.78,
+    3.14,
+    2.96
+  ],
+  "shield": {
+    "system.slice": "16-31",
+    "user.slice": "16-31",
+    "init.scope": "16-31"
+  },
+  "runCpuSeconds": 3.178,
+  "runCpuMethod": "rusage",
+  "foreignCpuSeconds": -0.028,
+  "startDelayMs": 0,
+  "passes": 1,
+  "leftoverProcesses": 0,
+  "escapedProcesses": 0,
+  "grain": 128,
+  "cores": {
+    "0": {
+      "busySeconds": 0.09,
+      "khzBefore": 1832829,
+      "khzAfter": 800143
+    },
+    "2": {
+      "busySeconds": 0.09,
+      "khzBefore": 800000,
+      "khzAfter": 2740200
+    },
+    "4": {
+      "busySeconds": 0.1,
+      "khzBefore": 800000,
+      "khzAfter": 3200000
+    },
+    "6": {
+      "busySeconds": 0.09,
+      "khzBefore": 800000,
+      "khzAfter": 1747181
+    },
+    "8": {
+      "busySeconds": 0.19,
+      "khzBefore": 800000,
+      "khzAfter": 1397689
+    },
+    "10": {
+      "busySeconds": 0.15,
+      "khzBefore": 800000,
+      "khzAfter": 800000
+    },
+    "12": {
+      "busySeconds": 2.08,
+      "khzBefore": 800000,
+      "khzAfter": 1361395
+    },
+    "14": {
+      "busySeconds": 0.36,
+      "khzBefore": 800000,
+      "khzAfter": 1416316
+    }
+  },
+  "engineArm": null
+}
