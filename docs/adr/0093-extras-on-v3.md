@@ -19,18 +19,22 @@ tasks through `Grain::Adaptive.tasks`, as the padded atomic histogram does (ADR 
 The tables are `data/tables/extras-v3` (`make extras-workloads-results MEASURED=v3`).
 
 - **The extras give the times of v2.** At eight threads every cell is within 1 % of its v2 time,
-  except the shared counters at k = 1, which are within 3.4 % and are the cells that fall on
-  several time levels from run to run (ADR 0091, question 9).
+  except the counters that all threads share at k = 1: the padded atomic histogram (within
+  3.4 %) and the packed one (within 2.7 %). Those are the cells that fall on several time levels
+  from run to run (ADR 0091, question 9).
 - **The change of ADR 0086 did not move the histograms it touched.** The private histogram is
   within 0.2 % of v2 in all six cells at eight threads (47.67 against 47.70 ms natively at
-  k = 1), the packed one within 0.3 % at k = 256. Their counting loops were found identical to
+  k = 1), the packed one within 0.4 % at k = 256. Their counting loops were found identical to
   v2's in the machine code; this is the same statement in times.
-- **The private histogram shows the cost of V8's increment without any contention.** Each thread
-  has its own table, so no line is shared. At k = 1 Chrome takes 88.0 ms against 47.7 ms
-  natively and 47.8 ms in Firefox, 1.85 times; at k = 256, 52.1 against 47.7 ms. That is the
-  dependence on k of the compare-and-swap sequence with one thread (ADR 0089), now at eight
-  threads that do not disturb each other: the chain through memory at k = 1 is in the sequence
-  itself.
+- **The private histogram is consistent with the cost of V8's increment without contention.**
+  Each thread has its own table, so no line is shared. At eight threads Chrome takes 88.0 ms at
+  k = 1 against 47.7 ms natively and 47.8 ms in Firefox, and 52.1 against 47.7 ms at k = 256:
+  about 4 ms of Chrome's excess is there at both k and about 36 ms depends on k. This campaign
+  has times only and cannot say what the excess is. It has the shape that the native probe of
+  ADR 0089 found for the compare-and-swap sequence with one thread (slower at k = 1, close to
+  the locked increment at k = 256), which is the evidence for that reading. The cell at eight
+  threads does not trend with the execution order; the one that does is the same workload at
+  N = 2.
 
 ## Consequences
 
