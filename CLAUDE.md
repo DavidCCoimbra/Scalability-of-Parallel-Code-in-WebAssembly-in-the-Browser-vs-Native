@@ -101,8 +101,8 @@ decisions, the understanding and the final say on every line are mine. So:
 ## Workflow
 
 This repository is the final submission: the code, data and documents of
-the final build (`measured/v2`). It is built from the working repository
-in small PRs; development and the full history happened there.
+the final build (`measured/v3`). The earlier build's data, tables and
+specs are at the tag `data/v2`. Work goes in small PRs.
 
 - **Commits and PR titles:** Conventional Commits, see the
   `conventional-commits` skill. No ticket prefixes.
@@ -154,6 +154,6 @@ in small PRs; development and the full history happened there.
 | `harness/` | Server, browser launcher (no automation framework), environment scripts, orchestrator, campaign specs |
 | `analysis/` | Statistical analysis and plots |
 | `scripts/` | Repository checks (SIMD, codegen diff, ADRs) |
-| `data/` | `raw/<campaign>-v2/` (the measured runs) and `tables/<campaign>-v2/` (tables derived from them) |
+| `data/` | `raw/<campaign>-v3/` (the measured runs) and `tables/<campaign>-v3/` (tables derived from them), with `probes/`, `checks/` and `sessions/` (evidence that is not results) |
 | `docs/adr/` | Architecture and experimental-design decisions |
 | `paper/` | LaTeX, ACM template: `final/` (the paper), `pilot/` (pilot report), `proposal/`, with shared `figures/`, `bib/` and the kept PDFs in `pdf/` |

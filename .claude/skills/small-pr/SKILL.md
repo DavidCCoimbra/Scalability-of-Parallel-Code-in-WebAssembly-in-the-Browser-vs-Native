@@ -96,7 +96,7 @@ When the PR's code produces (or is measured in) a figure or table of the paper, 
   ```markdown
   ![Figure 2: relative speedup per environment](https://raw.githubusercontent.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native/pr-assets/<branch-name>/<name>.png)
 
-  *Figure 2 of the paper: produced by this PR's code from `data/raw/campaign-v2`.*
+  *Figure 2 of the paper: produced by this PR's code from `data/raw/campaign-v3`.*
   ```
 - If no figure comes from this code, leave the Mermaid diagram on its own. Never add a figure
   that this code does not produce.

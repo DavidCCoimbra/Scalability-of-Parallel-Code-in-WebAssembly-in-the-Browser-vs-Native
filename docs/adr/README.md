@@ -15,8 +15,10 @@ between records reads the same.
 
 Some records cite evidence that stays in the working repository and is not part of this one:
 the one-off probes under `data/probes/`, pilot and v1 data, and pull request numbers (`PR #77`).
-Each record says so where it cites them; the measured data behind the paper is
-`data/raw/*-v2`.
+Each record says so where it cites them. The measured data behind the paper is
+`data/raw/*-v3` (ADR 0095). The records up to ADR 0083 were written on `measured/v2` or earlier
+builds: the `data/raw/*-v2`, `data/tables/*-v2` and `*-v2.json` specs they name are at the tag
+`data/v2`.
 
 ## Notation and sources
 
@@ -33,7 +35,7 @@ The records were written over several weeks, so a few symbols changed meaning:
   which is not part of this one.
 - The result records 0054, 0056, 0058, 0061, 0065 and 0067 hold the numbers of the build they
   were first measured on and say so; the numbers of `measured/v2` are listed in ADR 0079, with
-  their tables in `data/tables/*-v2`.
+  their tables at the tag `data/v2`, and those of `measured/v3` in ADR 0089 and ADR 0091 to 0095.
 
 | ADR | Decision | Status |
 |---|---|---|

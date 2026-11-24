@@ -27,7 +27,7 @@ commands through `uv run --no-project --with matplotlib`, see `Makefile`).
 | `karp_flatt` | Karp-Flatt serial fraction per configuration from a scaling table, `<campaign>-karp-flatt.csv` |
 | `distributions` | Violins of the per-run medians for the filter and the atomic histogram, `<campaign>-distributions.pdf`, and their quartiles, `<campaign>-distributions.csv` |
 | `iteration_drift` | First over last measured iterations per configuration |
-| `extras.perf_counters` | Extra: hardware counters per atomic operation per run, from the perf-v2 campaign and its 100 ms perf intervals |
+| `extras.perf_counters` | Extra: hardware counters per atomic operation per run, from the perf-v3 campaign and its 100 ms perf intervals |
 | `figures` | Speedup, efficiency, absolute ratio and RQ2 figures of a campaign |
 | `extras.build_variants` | Extra: SIMD build variants table and figure |
 | `cutoff` | Cutoff campaigns: table, break-even and worth-it sizes, fork-join model, figure |
