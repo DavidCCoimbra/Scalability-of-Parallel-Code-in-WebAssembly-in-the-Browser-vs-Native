@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add a workload - WASM threads vs native</title>
+<meta name="description" content="From a Rust struct to a measured campaign: write the kernel, register it in the bench and the harness, check it in the browsers, give it a spec and an analysis.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .steps li { margin: 6px 0; }
+</style>
+</head>
+<body data-page="workload">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Add a workload</h1>
+    <p class="lead">A workload is one Rust struct that implements a small trait. This guide takes you from the
+      struct to a measured campaign: write the kernel, name it in the bench and in the harness, check it in the
+      browsers, give it a campaign spec, and add its analysis.</p>
+
+    <h2 id="trait">The trait</h2>
+    <p>Every workload implements <code>Workload</code>: <code>prepare</code> runs outside the timed region,
+      <code>run</code> inside it, and <code>checksum</code> hashes the result.</p>
+    <div data-code="bench/src/workloads/workload.rs|pub trait Workload|10" data-title="The trait"></div>
+
+    <h2 id="workload">Write and register the workload</h2>
+    <ol class="steps">
+      <li><b>Write it</b> in <code>bench/src/workloads/</code>, one struct per file. Keep allocation in
+        <code>prepare</code> or in the constructor.</li>
+      <li><b>Name it</b> in <code>WorkloadKind</code> (<code>bench/src/experiment/workload_kind.rs</code>): the enum
+        variant, its string name, its capabilities (whether it repeats identically for <code>passes</code>, whether
+        it takes a grain) and its line in <code>build_with</code>.</li>
+      <li><b>Mirror the name</b> in the harness: the <code>Workload</code> enum of
+        <code>harness/campaign/workload.py</code> and its capabilities in
+        <code>harness/campaign/capabilities.py</code>, so that a spec can name it and the harness can refuse what
+        it cannot do.</li>
+      <li><b>Give it a checksum of its final result.</b> Two environments or two thread counts that give different
+        checksums are wrong, and <code>analysis.datacheck</code> blocks the analysis.</li>
+      <li><b>Add it to the CI cases</b> in <code>harness/browser_check/cases.py</code>. CI runs every listed
+        workload small in headless Chrome and Firefox and compares the checksums with native. A workload that is
+        not listed is not checked in a browser.</li>
+      <li><b>Add a quick spec</b> (<code>harness/campaigns/quick-*.json</code> and a <code>make quick-*</code>
+        target), so that anyone can watch it run on a laptop in a minute.</li>
+      <li><b>Run the checks.</b></li>
+    </ol>
+    <pre data-lang="shell">make test
+bash scripts/codegen_diff.sh measured/v3</pre>
+    <div data-code="bench/src/experiment/workload_kind.rs|    pub fn build_with|12" data-title="Where a name becomes a workload"></div>
+    <aside class="callout warning"><p class="callout-title">Warning</p><p>Keep allocation out of <code>run</code>.
+      The default WASM allocator takes a global lock, and a lock inside the timed region is a synchronization cost
+      that is not the one under study. A WASM run whose memory grows during the measured phase fails.</p></aside>
+    <aside class="callout warning"><p class="callout-title">Warning</p><p>A new workload can change the machine code
+      of an existing one, for example by adding a second caller to a function that was inlined (ADR 0086). Run the
+      codegen diff; if a hot function of a measured workload changed, you have a new build
+      (<a href="changing.html#hotpath">Change the measured code</a>).</p></aside>
+
+    <h2 id="campaign">Give it a campaign</h2>
+    <ol class="steps">
+      <li><b>Copy the closest spec</b> in <code>harness/campaigns/</code>. Give it a new <code>name</code> (the
+        results folder) and a new <code>orderSeed</code> (any integer; it is recorded, so the order can be
+        rebuilt). <a href="spec.html">Campaign spec format</a> lists every key.</li>
+      <li><b>Keep the protocol</b> unless the question needs otherwise: 30 repetitions, the P-core mask, the
+        warm-up per workload, <code>"strict": true</code> on the PC. A changed protocol value is a design decision:
+        write the ADR first (<a href="workflow.html#adr">When a decision needs an ADR</a>).</li>
+      <li><b>Add a row</b> to <code>harness/campaigns/README.md</code> with its ADR. For a sequence of specs, add a
+        target in <code>make/campaign.mk</code> like <code>cutoff-campaigns</code>.</li>
+      <li><b>Try it small first</b>: a <code>quick-</code> copy with 3 repetitions and a 4096 x 4096 image, on any
+        machine.</li>
+      <li><b>Measure on the PC</b>, with nothing else running on it
+        (<a href="campaigns.html">Run a campaign</a>).</li>
+      <li><b>Add the results target</b> in <code>make/results.mk</code>: the data check first, then the tables into
+        <code>data/tables/&lt;name&gt;/</code>. Add it to <code>all-results</code>.</li>
+    </ol>
+    <pre data-lang="shell">make env-setup
+make campaign SPEC=harness/campaigns/&lt;name&gt;.json
+make status SPEC=harness/campaigns/&lt;name&gt;.json</pre>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a file and not command-line flags?</b>
+      The file is committed. Months later the spec says exactly what ran, the harness stores it in
+      <code>campaign.json</code> next to the runs, and a restart checks that nothing in it changed
+      (<a href="campaigns.html#resume">Sessions, status and resume</a>). A flag typed in a terminal is gone when the
+      terminal closes.</p></aside>
+
+    <h2 id="analysis">Add its analysis</h2>
+    <ol class="steps">
+      <li>A command is a top-level module in <code>analysis/</code>, run as
+        <code>python3 -m analysis.&lt;name&gt; data/raw/&lt;campaign&gt; --output ...</code>. The statistics it uses
+        live in the subpackages (<code>stats/</code>, <code>scaling/</code>, <code>inference/</code>). Reuse them:
+        the bootstrap, Holm and the run summaries are there, with the seed and settings the analysis plan fixed.</li>
+      <li>Read the raw folder through <code>analysis.loading.load_campaign</code>, never the CSVs by hand: it
+        applies the same exclusions as every other table (ADR 0081).</li>
+      <li>Write a CSV table and, for a statistic with settings, a <code>.json</code> sidecar with the settings and
+        the commit (<a href="reproduce.html#chain">Reproduce the tables and figures</a>).</li>
+      <li>Add a unit test in <code>analysis/tests/</code> on a small made-up campaign, a row in
+        <code>analysis/README.md</code>, and the command in a <code>make *-results</code> target.</li>
+      <li>To show the table in this documentation, run <code>make explainer</code>: it picks up every CSV in
+        <code>data/tables/*-v3/</code> (<a href="reproduce.html#explainer">The numbers of this documentation</a>).</li>
+    </ol>
+    <aside class="callout note"><p class="callout-title">Note</p><p>A new analysis is exploratory. The analysis plan
+      (ADR 0037) fixed the tests, the ten primary contrasts and the exclusions before the campaign; with 162
+      configurations and many statistics to choose from, something always looks significant by chance
+      (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>).</p></aside>
+    <p class="takeaway"><strong>In summary.</strong> Add a workload through the trait and the two name lists (bench
+      and harness), check it in the browsers through the CI cases, measure it through a committed spec, and analyse
+      it with a command that reuses the plan's statistics.</p>
+    <p class="src" data-files="bench/src/workloads/workload.rs, bench/src/experiment/workload_kind.rs, harness/campaign/workload.py, harness/campaign/capabilities.py, harness/browser_check/cases.py, harness/campaigns/README.md, analysis/README.md, docs/adr/0037-analysis-plan.md, docs/adr/0081-one-loader-for-every-analysis-command.md"></p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // nothing page-specific
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

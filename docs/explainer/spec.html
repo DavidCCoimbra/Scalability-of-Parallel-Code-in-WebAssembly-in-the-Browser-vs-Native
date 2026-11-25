@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campaign spec format - WASM threads vs native</title>
+<meta name="description" content="Every key of a campaign spec: its type, its default and what it does, for the spec, its workload objects and its engine arms.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+</head>
+<body data-page="spec">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Campaign spec format</h1>
+    <p class="lead">A campaign spec is one JSON file in <code>harness/campaigns/</code> that holds every parameter
+      of a campaign. This page lists every key: its type, its default, and what it does. The harness rejects a
+      spec with a key that is not listed here.</p>
+
+    <h2 id="example">Example</h2>
+    <p>The spec of the main campaign, as it is in the repository:</p>
+    <div data-code="harness/campaigns/campaign-v3.json|^{|16" data-title="The first workloads of the main campaign"></div>
+    <div data-code="harness/campaigns/campaign-v3.json|threads|23" data-title="The protocol keys of the main campaign"></div>
+    <p>Run a spec with <code>make campaign SPEC=harness/campaigns/&lt;file&gt;</code>. Its runs land in
+      <code>data/raw/&lt;name&gt;</code>, and the harness stores the spec in <code>campaign.json</code> there; a
+      resumed campaign must find an identical spec (<a href="campaigns.html#resume">Sessions, status and resume</a>).</p>
+
+    <h2 id="required">Required keys</h2>
+    <div class="scroll-x"><table>
+      <thead><tr><th>Key</th><th>Type</th><th>What it does</th><th>Main campaign</th></tr></thead>
+      <tbody>
+        <tr><td><code>name</code></td><td>string of letters, digits, <code>-</code>, <code>_</code></td><td>The campaign's name. The runs go to <code>data/raw/&lt;name&gt;</code> and every run id starts with it. A name too long for the run ids is rejected</td><td><code>campaign-v3</code></td></tr>
+        <tr><td><code>orderSeed</code></td><td>integer</td><td>Seed of the shuffle that orders the runs. It is recorded, so the order can be rebuilt (ADR 0034)</td><td>2026112201</td></tr>
+        <tr><td><code>environments</code></td><td>non-empty list of <code>native</code>, <code>chrome</code>, <code>firefox</code></td><td>Where each configuration runs</td><td>all three</td></tr>
+        <tr><td><code>workloads</code></td><td>non-empty list of <a href="#workloads">workload objects</a></td><td>What runs, on which input</td><td>14 entries</td></tr>
+        <tr><td><code>threads</code></td><td>non-empty list of integers, each at least 1</td><td>The thread counts N (ADR 0044). A sequential workload runs at one thread whatever this list says</td><td>1, 2, 4, 6, 7, 8</td></tr>
+        <tr><td><code>repetitions</code></td><td>integer, at least 1</td><td>Runs per configuration. Each run is a fresh process or browser launch (ADR 0047)</td><td>30</td></tr>
+        <tr><td><code>width</code>, <code>height</code></td><td>integers, at least 1</td><td>Image size in pixels (ADR 0041)</td><td>8192, 8192</td></tr>
+        <tr><td><code>warmup</code></td><td>integer</td><td>Warm-up iterations for a workload that does not set its own (ADR 0043)</td><td>5</td></tr>
+        <tr><td><code>iterations</code></td><td>integer, at least 1</td><td>Measured iterations per run (ADR 0047)</td><td>10</td></tr>
+        <tr><td><code>calibration</code></td><td>integer</td><td>Fork-join calibration samples per probe, warm and cold (ADR 0030)</td><td>20</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="optional">Optional keys</h2>
+    <div class="scroll-x"><table>
+      <thead><tr><th>Key</th><th>Type</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>cpus</code></td><td>string, a CPU list</td><td>none</td><td>The CPU mask of every run (ADR 0001, ADR 0045). Required when <code>strict</code> is true. The main campaign uses <code>0,2,4,6,8,10,12,14</code>, the eight P-cores</td></tr>
+        <tr><td><code>harnessCpus</code></td><td>string, a CPU list</td><td>none</td><td>Where the harness and the results server run (ADR 0028). The main campaign uses <code>16-31</code>, the E-cores</td></tr>
+        <tr><td><code>hybrid</code></td><td>boolean</td><td><code>false</code></td><td>Declares that the mask holds P-cores and E-cores, for the hybrid campaign (ADR 0059)</td></tr>
+        <tr><td><code>scopeUser</code></td><td>string or <code>null</code></td><td>none</td><td>Runs each run in its own systemd scope as this user, so that its CPU time and escaped processes are counted (ADR 0045). <code>$USER</code> means the current user; <code>null</code> runs without a scope and without sudo</td></tr>
+        <tr><td><code>headless</code></td><td>boolean</td><td><code>true</code></td><td>Browsers without a window (ADR 0046)</td></tr>
+        <tr><td><code>startDelayMs</code></td><td>integer</td><td><code>0</code></td><td>Wait between the page loading and the run starting, so that the browser's start-up work is over (ADR 0048). The campaigns of the study use 3000</td></tr>
+        <tr><td><code>timeoutSeconds</code></td><td>number</td><td><code>300</code></td><td>A run longer than this is killed and recorded as failed</td></tr>
+        <tr><td><code>discardFirstLaunch</code></td><td>boolean</td><td><code>false</code></td><td>One extra launch per browser and session that is not kept: the first launch on a machine is much slower (ADR 0034)</td></tr>
+        <tr><td><code>strict</code></td><td>boolean</td><td><code>false</code></td><td>Refuses to start unless the machine is prepared and the browsers are the pinned versions, and validates the context of every run (ADR 0040, ADR 0071)</td></tr>
+        <tr><td><code>heightPerThread</code></td><td>integer, at least 1</td><td>none</td><td>Weak scaling: the image height is this value times N (ADR 0055)</td></tr>
+        <tr><td><code>build</code></td><td><code>baseline</code>, <code>scalar</code> or <code>avx2</code></td><td><code>baseline</code></td><td>The build variant the campaign runs (ADR 0057)</td></tr>
+        <tr><td><code>passes</code></td><td>integer, at least 1</td><td><code>1</code></td><td>Calls of <code>run</code> per timed sample, for images too small for the browser clock (ADR 0064). Only workloads that repeat identically accept more than 1</td></tr>
+        <tr><td><code>engineArms</code></td><td>list of <a href="#arms">engine arm objects</a></td><td>none</td><td>Crosses every browser run with these arms. It needs a browser in <code>environments</code>, and the arm names must differ (ADR 0084)</td></tr>
+        <tr><td><code>comment</code></td><td>string</td><td>none</td><td>Free text. The harness ignores it</td></tr>
+      </tbody>
+    </table></div>
+    <aside class="callout note"><p class="callout-title">Note</p><p><code>passes</code>, <code>comment</code> and
+      <code>engineArms</code> were added after the first campaigns. The harness leaves them out of the stored
+      spec while they are unset, so that an older campaign still resumes against an identical spec.</p></aside>
+
+    <h2 id="workloads">Workload objects</h2>
+    <p>Each entry of <code>workloads</code> is one workload on one input. A key that is not listed is rejected.</p>
+    <div class="scroll-x"><table>
+      <thead><tr><th>Key</th><th>Type</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>workload</code></td><td>one of the names below</td><td>required</td><td>The kernel to run</td></tr>
+        <tr><td><code>input</code></td><td><code>noise</code> or <code>few</code></td><td>required</td><td><code>noise</code> is uniform random pixels, the filter's input; <code>few</code> is an image with k distinct grey levels, the histograms' input (ADR 0011, ADR 0026)</td></tr>
+        <tr><td><code>k</code></td><td>integer</td><td>none</td><td>The number of distinct grey levels. Required for <code>few</code> and rejected for <code>noise</code></td></tr>
+        <tr><td><code>warmup</code></td><td>integer, at least 0</td><td>the spec's <code>warmup</code></td><td>Warm-up iterations of this workload (ADR 0043). A sequential workload takes the warm-up of its parallel counterpart</td></tr>
+        <tr><td><code>passes</code></td><td>integer, at least 1</td><td>the spec's <code>passes</code></td><td>Passes per timed sample for this workload</td></tr>
+        <tr><td><code>grain</code></td><td>integer, at least 1</td><td>none (Rayon's adaptive split)</td><td>A fixed task size: rows for the filter, KB for the atomic and local histograms (ADR 0066). Other workloads reject it</td></tr>
+        <tr><td><code>pitch</code></td><td>integer, at least 1</td><td>none</td><td>Row stride in bytes, wider than the width; the filter only. No measured campaign uses it</td></tr>
+        <tr><td><code>palette</code></td><td><code>spread</code> or <code>consecutive</code></td><td>none (<code>spread</code>)</td><td>Which k grey levels a <code>few</code> input uses. No measured campaign sets it</td></tr>
+      </tbody>
+    </table></div>
+    <p>The workload names and what each accepts:</p>
+    <div class="scroll-x"><table>
+      <thead><tr><th>Name</th><th>What it is</th><th>Several passes</th><th>Grain</th><th>Thread counts</th></tr></thead>
+      <tbody>
+        <tr><td><code>filter</code></td><td>The 3x3 Gaussian filter</td><td>yes</td><td>rows</td><td>the spec's</td></tr>
+        <tr><td><code>hist-atomic</code></td><td>The histogram with shared padded atomic counters</td><td>no</td><td>KB</td><td>the spec's</td></tr>
+        <tr><td><code>hist-local</code></td><td>The histogram with per-task local counters</td><td>yes</td><td>KB</td><td>the spec's</td></tr>
+        <tr><td><code>filter-seq</code></td><td>The filter with no Rayon call</td><td>yes</td><td>no</td><td>1 only</td></tr>
+        <tr><td><code>hist-seq</code></td><td>The histogram with no Rayon call</td><td>yes</td><td>no</td><td>1 only</td></tr>
+        <tr><td><code>hist-atomic-private</code></td><td>One padded atomic table per thread</td><td>no</td><td>no</td><td>the spec's</td></tr>
+        <tr><td><code>hist-atomic-packed</code></td><td>Shared atomic counters without padding</td><td>no</td><td>no</td><td>the spec's</td></tr>
+        <tr><td><code>sort</code>, <code>sort-unstable</code></td><td>Rayon's two parallel sorts</td><td>no</td><td>no</td><td>the spec's</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="arms">Engine arm objects</h2>
+    <p>An engine arm is one way of starting the browsers. Arms are a dimension of the plan: they are shuffled into
+      the run order like everything else, and every run records its arm. Only the tier campaign uses them.</p>
+    <div class="scroll-x"><table>
+      <thead><tr><th>Key</th><th>Type</th><th>Default</th><th>What it does</th></tr></thead>
+      <tbody>
+        <tr><td><code>name</code></td><td>string of lowercase letters and digits</td><td>required</td><td>The arm's name, part of the run id</td></tr>
+        <tr><td><code>chromeJsFlags</code></td><td>list of flags like <code>--name</code>, without spaces</td><td>empty</td><td>Passed to Chrome in <code>--js-flags</code></td></tr>
+        <tr><td><code>firefoxPrefs</code></td><td>object of preference name to string, boolean or integer</td><td>empty</td><td>Written to the fresh Firefox profile of the run</td></tr>
+      </tbody>
+    </table></div>
+    <div data-code="harness/campaigns/tier-v3.json|engineArms|22" data-title="The three arms of the tier campaign"></div>
+
+    <h2 id="plan">What the harness plans from a spec</h2>
+    <p>The plan is every combination of environment, workload, thread count, engine arm and repetition, shuffled
+      once with <code>orderSeed</code>. For the main campaign that is 3 environments x 9 parallel workloads x 6
+      thread counts x 30 repetitions = 4860 runs, plus 5 sequential workloads at one thread (3 x 5 x 30 = 450):
+      5310 runs, plus the discarded first launches.</p>
+    <p>A run id names its place in the plan: <code>campaign-v3-2666-chrome-filter-noise-n8-r27</code> is position
+      2666 of the order, Chrome, the filter on noise, 8 threads, repetition 27.</p>
+    <div data-code="harness/campaign/plan.py|def plan(spec: CampaignSpec)|14" data-title="The shuffled plan"></div>
+    <p class="src" data-files="harness/campaign/spec.py, harness/campaign/workload.py, harness/campaign/capabilities.py, harness/launcher/engine_arm.py, harness/campaign/plan.py, harness/campaigns/README.md, harness/campaigns/campaign-v3.json, harness/campaigns/tier-v3.json"></p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // nothing page-specific
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

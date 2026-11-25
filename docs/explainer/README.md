@@ -14,15 +14,14 @@ the design, reports results, walks through a task, or is looked up.
 | Group | Pages | What goes here |
 |---|---|---|
 | Getting started | `index`, `setup`, `code` | What the study is and found, a working checkout, the repository tour |
-| Concepts | `machines`, `memory`, `compilers`, `threads`, `atomics`, `measuring`, `ratios`, `validity`, `rust` | Ideas a newcomer needs before the design makes sense |
+| Concepts | `machines`, `memory`, `compilers`, `threads`, `atomics`, `measuring`, `ratios`, `validity`, `rust` | Ideas a newcomer needs before the design makes sense. No measured numbers: a concept page links to the Study or Results page that has them |
 | The study | `questions`, `workloads`, `environments`, `machine`, `protocol`, `reading` | The design and why: questions, workloads, environment control, run protocol, analysis plan |
 | Results | `rq1`, `rq2`, `explains`, `extras`, `threats` | What was measured, what explains it, what it cannot establish |
-| Guides | `campaigns`, `reproduce`, `changing`, `debugging`, `trace`, `session`, `workflow` | One task each, in the order you would do it |
-| Reference | `commands`, `data`, `decisions`, `lectures`, `glossary` | Looked up, not read through: commands, files and schemas, decision records, terms |
+| Guides | `campaigns`, `reproduce`, `workload`, `changing`, `debugging`, `trace`, `session`, `workflow` | One task each, in the order you would do it |
+| Reference | `commands`, `spec`, `data`, `decisions`, `lectures`, `glossary` | Looked up, not read through: commands, files and schemas, decision records, terms |
 
 The sidebar, the previous and next links and the search index are built from `PAGES` in
-`assets/app.js`: one entry per page with its group, title and sections. An entry with
-`"alias": true` is a sidebar link into another page (the campaign spec format).
+`assets/app.js`: one entry per page with its group, title and sections.
 
 ```mermaid
 flowchart LR

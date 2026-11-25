@@ -713,10 +713,25 @@ window.PPC = {
    "line": 177,
    "text": "def keep_failure(error: Path, failed: Path) -> None:\n    failed.mkdir(exist_ok=True)\n    target = failed / error.name\n    attempt = 1\n    while target.exists():\n        attempt += 1\n        target = failed / f\"{error.name.removesuffix(ERROR_SUFFIX)}.attempt{attempt}{ERROR_SUFFIX}\"\n    error.rename(target)"
   },
+  "harness/campaigns/campaign-v3.json|^{|16": {
+   "file": "harness/campaigns/campaign-v3.json",
+   "line": 1,
+   "text": "{\n  \"name\": \"campaign-v3\",\n  \"orderSeed\": 2026112201,\n  \"environments\": [\n    \"native\",\n    \"chrome\",\n    \"firefox\"\n  ],\n  \"workloads\": [\n    {\n      \"workload\": \"filter\",\n      \"input\": \"noise\",\n      \"warmup\": 15\n    },\n    {\n      \"workload\": \"hist-atomic\","
+  },
   "harness/campaigns/campaign-v3.json|^{|86": {
    "file": "harness/campaigns/campaign-v3.json",
    "line": 1,
    "text": "{\n  \"name\": \"campaign-v3\",\n  \"orderSeed\": 2026112201,\n  \"environments\": [\n    \"native\",\n    \"chrome\",\n    \"firefox\"\n  ],\n  \"workloads\": [\n    {\n      \"workload\": \"filter\",\n      \"input\": \"noise\",\n      \"warmup\": 15\n    },\n    {\n      \"workload\": \"hist-atomic\",\n      \"input\": \"few\",\n      \"k\": 1,\n      \"warmup\": 5\n    },\n    {\n      \"workload\": \"hist-atomic\",\n      \"input\": \"few\",\n      \"k\": 4,\n      \"warmup\": 5\n    },\n    {\n      \"workload\": \"hist-atomic\",\n      \"input\": \"few\",\n      \"k\": 16,\n      \"warmup\": 5\n    },\n    {\n      \"workload\": \"hist-atomic\",\n      \"input\": \"few\",\n      \"k\": 256,\n      \"warmup\": 5\n    },\n    {\n      \"workload\": \"hist-local\",\n      \"input\": \"few\",\n      \"k\": 1,\n      \"warmup\": 71\n    },\n    {\n      \"workload\": \"hist-local\",\n      \"input\": \"few\",\n      \"k\": 4,\n      \"warmup\": 21\n    },\n    {\n      \"workload\": \"hist-local\",\n      \"input\": \"few\",\n      \"k\": 16,\n      \"warmup\": 15\n    },\n    {\n      \"workload\": \"hist-local\",\n      \"input\": \"few\",\n      \"k\": 256,\n      \"warmup\": 15\n    },\n    {\n      \"workload\": \"filter-seq\",\n      \"input\": \"noise\",\n      \"warmup\": 15\n    },\n    {\n      \"workload\": \"hist-seq\",\n      \"input\": \"few\",\n      \"k\": 1,\n      \"warmup\": 71\n    },\n    {\n      \"workload\": \"hist-seq\",\n      \"input\": \"few\",\n      \"k\": 4,\n      \"warmup\": 21\n    },\n    {\n      \"workload\": \"hist-seq\",\n      \"input\": \"few\",\n      \"k\": 16,\n      \"warmup\": 15\n    },\n    {"
+  },
+  "harness/campaigns/campaign-v3.json|threads|23": {
+   "file": "harness/campaigns/campaign-v3.json",
+   "line": 93,
+   "text": "  \"threads\": [\n    1,\n    2,\n    4,\n    6,\n    7,\n    8\n  ],\n  \"repetitions\": 30,\n  \"width\": 8192,\n  \"height\": 8192,\n  \"warmup\": 5,\n  \"iterations\": 10,\n  \"calibration\": 20,\n  \"cpus\": \"0,2,4,6,8,10,12,14\",\n  \"harnessCpus\": \"16-31\",\n  \"scopeUser\": \"$USER\",\n  \"headless\": true,\n  \"startDelayMs\": 3000,\n  \"timeoutSeconds\": 900,\n  \"discardFirstLaunch\": true,\n  \"strict\": true,\n  \"comment\": \"The main campaign on measured/v3 (ADR 0084): the design of campaign-v2 plus the sequential references filter-seq and hist-seq, which run at one thread only. The sequential workloads take the warm-up of their parallel counterparts.\""
+  },
+  "harness/campaigns/tier-v3.json|engineArms|22": {
+   "file": "harness/campaigns/tier-v3.json",
+   "line": 58,
+   "text": "  \"engineArms\": [\n    {\n      \"name\": \"default\"\n    },\n    {\n      \"name\": \"baseline\",\n      \"chromeJsFlags\": [\n        \"--liftoff-only\"\n      ],\n      \"firefoxPrefs\": {\n        \"javascript.options.wasm_optimizingjit\": false\n      }\n    },\n    {\n      \"name\": \"optimizing\",\n      \"chromeJsFlags\": [\n        \"--no-liftoff\"\n      ],\n      \"firefoxPrefs\": {\n        \"javascript.options.wasm_baselinejit\": false\n      }\n    }"
   },
   "harness/collect.py|def joined_rows(directory: Path, csvs: set[str])|15": {
    "file": "harness/collect.py",
