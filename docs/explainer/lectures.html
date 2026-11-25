@@ -152,7 +152,7 @@
         <tr><td>Atomics, <code>SeqCst</code> by default</td><td>The histogram uses <code>Relaxed</code>; on x86 a <code>lock</code> RMW is a full barrier and WASM atomics are always sequentially consistent, so the ordering does not change the code (ADR 0014)</td><td><a href="atomics.html#order">Memory order</a></td></tr>
         <tr><td>Rayon, work-stealing pool</td><td>The only parallelism crate; wasm-bindgen-rayon starts its pool on Web Workers (ADR 0018)</td><td><a href="threads.html#rayon">Rayon and work stealing</a>, <a href="environments.html#wasm">What WASM threads need</a></td></tr>
         <tr><td>CPU-bound vs IO-bound, async/await, Tokio</td><td class="not">Every workload is CPU-bound, so no async runtime</td><td>-</td></tr>
-        <tr><td>Cargo, <code>cargo test</code></td><td><code>bench/Cargo.toml</code>, features (<code>pad64</code>), tests in the same file as the code (<code>make test-rust</code>)</td><td><a href="commands.html#make">make targets</a></td></tr>
+        <tr><td>Cargo, <code>cargo test</code></td><td><code>bench/Cargo.toml</code>, tests in the same file as the code (<code>make test-rust</code>)</td><td><a href="commands.html#make">make targets</a></td></tr>
       </tbody>
     </table></div>
     </div>

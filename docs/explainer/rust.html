@@ -235,8 +235,7 @@ class AtomicHistogram implements Workload { /* ... */ }</pre></figure>
     <p><code>#[derive(...)]</code> generates standard methods; <code>Copy</code> makes the value copy on
       assignment, like a JS number. <code>#[cfg(...)]</code> removes code at compile time, like a bundler's
       dead-code elimination on <code>process.env.X</code>, but the removed code is never type-checked or
-      shipped; it selects the native or browser clock, and the <span data-term="pad64">pad64</span>
-      <span data-term="cargo-feature">feature</span>. A <code>const _: () = assert!(...)</code> makes the
+      shipped; it selects the native or browser clock. A <code>const _: () = assert!(...)</code> makes the
       <b>build</b> fail if the check is false: here, that the kernel weights sum to 16 and that the largest
       weighted sum fits in a <code>u16</code>, so the 16-bit SIMD arithmetic cannot overflow.</p>
     <p class="whyline">Why: an integer kernel gives exactly the same output on every target (ADR 0012), and one source builds for two targets.</p></div>
@@ -335,8 +334,7 @@ Atomics.add(counters, value * STRIDE, 1n);</pre></figure>
     <div class="item"><h3>Tests in the same file</h3>
     <div data-code="bench/src/workloads/histogram/padded_counter.rs|#[cfg(test)]|10"></div>
     <p><code>#[cfg(test)]</code> compiles the module only for <code>cargo test</code>, like in-source tests in
-      Vitest. Most files in <code>bench/src/</code> end with one; <code>make test-rust</code> runs them with and
-      without <code>pad64</code>, and <code>bench/tests/golden_checksums.rs</code> pins the output checksums, so a
+      Vitest. Most files in <code>bench/src/</code> end with one; <code>make test-rust</code> runs them, and <code>bench/tests/golden_checksums.rs</code> pins the output checksums, so a
       refactor that changes a result fails CI (ADR 0062).</p></div>
     </details>
 

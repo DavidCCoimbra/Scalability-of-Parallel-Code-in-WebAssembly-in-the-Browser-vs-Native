@@ -75,19 +75,16 @@
     </div>
 
     <h2 id="answers">What we found, in words</h2>
-    <p><b>RQ1.</b> Yes, when each cook has enough to do. On the blur, Chrome and Firefox gain from eight cores
-      almost exactly as much as the native program does. The browser is a fixed amount slower at everything, like
+    <p><b>RQ1.</b> Yes, when each cook has enough to do. On the blur, Chrome and Firefox gain from eight cores almost exactly as much as the native program does (Firefox even a little more, not because its cooks work together better but because each of them is slower, so together they crowd the pantry less). The browser is a fixed amount slower at everything, like
       a kitchen with a slightly longer walk to the stove, but that amount does not grow as cooks are added. What
       does cost the browser more is <i>handing out the work and collecting it</i>, which only matters when each
       piece of work is tiny.</p>
     <p><b>RQ2.</b> It depends on the browser. In Firefox, waiting for each other costs the same as natively, or
       less. In Chrome it costs more when everyone crowds one tally, and, surprisingly, less when the tallies are
       spread out. The reason turned out to be in the machine instructions Chrome's engine chose for "add one to
-      the shared tally": a "try, check, try again" loop where the others use a single step, and we could count
-      the retries happening.</p>
+      the shared tally": a "try, check, try again" loop where the others use a single step. We counted the retries happening, and then tested it: a normal program rewritten to add Chrome's way gets Chrome's times, slower on one tally and faster on many.</p>
     <p>We also hit, and fixed, three traps of measuring inside a browser: Chrome quietly used cores it was told
-      not to; Firefox's slow start made short runs look slow; and a browser we had pinned to one version updated
-      itself in the middle of the work.</p>
+      not to; Firefox's slow start made short runs look slow; and a browser we had pinned to one version updated itself in the middle of the work. And we measured the whole study twice, on two copies of the program, with the rules for the second time written down before it started: every answer came back the same (<a href="session.html">The session of a build</a>).</p>
     <details class="deeper"><summary>If you already know this: the two numbers behind the words</summary>
       <p>Speedup of the filter at N = 8 (T<sub>1</sub> / T<sub>8</sub>, geometric mean of 30 runs):</p>
       <div id="rq1-bars"></div>
@@ -96,7 +93,7 @@
         (1 = as native; above 1 = synchronization costs more than natively):</p>
       <div id="rq2-bars"></div>
       <p class="src" data-src="campaign-v3-contrasts"></p>
-      <p>Full results: <a href="rq1.html">RQ1</a>, <a href="rq2.html">RQ2</a>, <a href="why.html">Why Chrome</a>.</p>
+      <p>Full results: <a href="rq1.html">RQ1</a>, <a href="rq2.html">RQ2</a>, <a href="why.html">Why Chrome</a>, <a href="explains.html">What explains the results</a>.</p>
     </details>
 
     <h2 id="how">How to read this guide</h2>
@@ -107,8 +104,8 @@
       <div class="card"><h3>1 · Foundations</h3><p>Processes and cores, memory and caches, compilers, measuring time, ratios, and how a study fools itself. No project numbers.</p></div>
       <div class="card"><h3>2 · The study</h3><p>The questions, the two workloads, the three places the code runs, the project's own words.</p></div>
       <div class="card"><h3>3 · Concepts</h3><p>Threads and fork-join, contention and padding, atomics in machine code, the Rust you need.</p></div>
-      <div class="card"><h3>4 · Method</h3><p>The machine, the harness, the protocol, how to read the numbers, and the statistics in detail.</p></div>
-      <div class="card"><h3>5 · Results</h3><p>RQ1, RQ2, why Chrome differs, the side experiments, when parallelism pays, problems found, threats.</p></div>
+      <div class="card"><h3>4 · Method</h3><p>The machine, the harness, the protocol, the measuring session from first check to last campaign, how to read the numbers, and the statistics in detail.</p></div>
+      <div class="card"><h3>5 · Results</h3><p>RQ1, RQ2, why Chrome differs, what explains the results and how each explanation was tested, the side experiments, when parallelism pays, problems found, threats.</p></div>
       <div class="card"><h3>6 · Working on it</h3><p>How the pieces talk, every command, campaigns, data, reproducing the paper, changing things safely, debugging, the workflow.</p></div>
       <div class="card"><h3>7 · The code</h3><p>How the code is organised, one run followed through it, where things are, the decisions.</p></div>
     </div>
@@ -147,9 +144,9 @@
         <tr><td>Motivation and the research questions</td><td><a href="questions.html#why">Why this matters</a>, <a href="questions.html#rqs">RQ1 and RQ2</a></td></tr>
         <tr><td>Related work</td><td><a href="questions.html#related">What others measured</a></td></tr>
         <tr><td>Methodology: workloads, padding, unit of analysis, CPU mask, turbo, warm-up, versions, order, tests</td><td><a href="workloads.html">The workloads</a>, <a href="machine.html">The machine</a>, <a href="protocol.html">Runs, warm-up and order</a>, <a href="stats.html">The statistics</a></td></tr>
-        <tr><td>Rigor: controls, repetitions, intervals, effect sizes, multiple comparisons, reproducibility</td><td><a href="protocol.html#thirty">30 runs</a>, <a href="stats.html#bootstrap">Bootstrap</a>, <a href="stats.html#holm">Holm</a>, <a href="stats.html#robust">Mann-Whitney and Cliff's delta</a>, <a href="reproduce.html">From raw runs to the paper</a></td></tr>
+        <tr><td>Rigor: controls, repetitions, intervals, effect sizes, multiple comparisons, reproducibility</td><td><a href="protocol.html#thirty">30 runs</a>, <a href="stats.html#bootstrap">Bootstrap</a>, <a href="stats.html#holm">Holm</a>, <a href="stats.html#robust">Mann-Whitney and Cliff's delta</a>, <a href="session.html">The session of a build</a>, <a href="reproduce.html">From raw runs to the paper</a></td></tr>
         <tr><td>Results with uncertainty, figures, numbers matching the data</td><td><a href="rq1.html">RQ1</a>, <a href="rq2.html">RQ2</a>, <a href="extras.html">Exploratory campaigns</a>, <a href="granularity.html">When parallelism pays</a></td></tr>
-        <tr><td>Analysis: why, and the explicit answers</td><td><a href="why.html">Why Chrome</a>, <a href="rq1.html#answer">Answer to RQ1</a>, <a href="rq2.html#answer">Answer to RQ2</a></td></tr>
+        <tr><td>Analysis: why, and the explicit answers</td><td><a href="why.html">Why Chrome</a>, <a href="explains.html">What explains the results</a>, <a href="rq1.html#answer">Answer to RQ1</a>, <a href="rq2.html#answer">Answer to RQ2</a></td></tr>
         <tr><td>Threats to validity</td><td><a href="threats.html">Threats to validity</a>, <a href="pitfalls.html">Problems found and fixed</a></td></tr>
       </tbody>
     </table></div>

@@ -127,7 +127,7 @@
         <tr><td>Environment</td><td><span class="chip native">native</span> <span class="chip chrome">chrome</span> <span class="chip firefox">firefox</span></td><td>The thing compared: a normal Linux program, Chrome's engine (V8), Firefox's engine (SpiderMonkey). <a href="environments.html">Three runtimes, one source</a></td></tr>
         <tr><td>Workload</td><td>filter, <code>hist-atomic</code>, <code>hist-local</code></td><td>No coordination (RQ1); shared atomics against their no-sharing control (RQ2). <a href="workloads.html">The workloads</a></td></tr>
         <tr><td><span data-term="k">k</span>, distinct grey levels</td><td>1, 4, 16, 256</td><td>How many counters the adds spread over: all on one, or over 256. <a href="workloads.html#k">k: the contention dial</a></td></tr>
-        <tr><td>Threads N</td><td>1, 2, 4, 6, 7, 8</td><td>Up to one per fast core; 7 shows where Firefox starts to bend; the decisive comparisons are at 8 (ADR 0044)</td></tr>
+        <tr><td>Threads N</td><td>1, 2, 4, 6, 7, 8</td><td>Up to one per fast core; 6 and 7 show whether a curve bends before the last core is used; the decisive comparisons are at 8 (ADR 0044)</td></tr>
         <tr><th colspan="3">Held fixed</th></tr>
         <tr><td>Source, compiler, flags</td><td>One Rust crate, <code>nightly-2026-10-03</code>, <code>lto=fat</code>, 128-bit SIMD on both sides</td><td>So that the code is the same and only the runtime differs. <a href="environments.html#same">Same source, same flags</a></td></tr>
         <tr><td>Input</td><td>8192 x 8192 grey image, fixed seed</td><td>The same bytes everywhere; a checksum proves the same result. <a href="workloads.html#inputs">Inputs and checksums</a></td></tr>

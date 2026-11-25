@@ -51,7 +51,7 @@
     <figure class="figure">
       <svg viewBox="0 0 560 120" role="img" aria-label="A run id built from environment, workload, k and N">
         <g font-family="ui-monospace, monospace" font-size="15">
-          <rect class="cell" x="10" y="30" width="150" height="34" rx="6"/><text x="85" y="52" text-anchor="middle">campaign-v3-1801</text>
+          <rect class="cell" x="10" y="30" width="150" height="34" rx="6"/><text x="85" y="52" text-anchor="middle">campaign-v3-4610</text>
           <rect class="cell on" x="166" y="30" width="78" height="34" rx="6"/><text x="205" y="52" text-anchor="middle">native</text>
           <rect class="cell on" x="250" y="30" width="118" height="34" rx="6"/><text x="309" y="52" text-anchor="middle">hist-atomic</text>
           <rect class="cell on" x="374" y="30" width="44" height="34" rx="6"/><text x="396" y="52" text-anchor="middle">k1</text>
@@ -89,11 +89,10 @@
       <div class="card"><h3><span data-term="iteration">Iteration</span></h3><p>One timed pass over the whole image inside a
         run. A run does a few <span data-term="warm-up-w">warm-up</span> iterations that are not counted, then 10 measured
         ones. The run's value is the middle one (the median) of the 10.</p></div>
-      <div class="card"><h3>Configuration</h3><p>One cell (environment, workload, k, N) with its 30 runs. The main campaign
-        has 162 configurations; "the filter in Chrome at N = 8" is one of them.</p></div>
+      <div class="card"><h3>Configuration</h3><p>One cell (environment, workload, k, N) with its 30 runs. The main campaign has 162 configurations (and 15 more for the sequential references); "the filter in Chrome at N = 8" is one of them.</p></div>
       <div class="card"><h3><span data-term="campaign">Campaign</span></h3><p>Every run of a whole experiment, run in one
         seeded random order and kept in one folder, <code>data/raw/&lt;name&gt;/</code>. The main one,
-        <code>campaign-v3</code>, has 4860 runs. <a href="campaigns.html">Campaigns, specs and resume</a>.</p></div>
+        <code>campaign-v3</code>, has 5310 runs. <a href="campaigns.html">Campaigns, specs and resume</a>.</p></div>
       <div class="card"><h3>Primary and exploratory</h3><p>The 10 comparisons that answer RQ1 and RQ2 are <b>primary</b>:
         they were fixed before the data and get a stricter bar. Everything else (weak scaling, SIMD, E-cores, cutoffs)
         is <b>exploratory</b>: reported, but with the ordinary bar and no claim of having been planned.</p></div>
@@ -110,9 +109,7 @@
       <div class="card"><h3>Tag</h3><p>A name on the exact version of the code a campaign ran: <code>measured/v3</code>
         is the one every reported number comes from. The build's hashes are recorded with every run, so a run can always
         be traced to its code. <a href="environments.html#builds">Builds and tags</a>.</p></div>
-      <div class="card"><h3>Variant</h3><p>A build switched by a compile-time feature for an exploratory question:
-        <code>scalar</code> (no SIMD), <code>avx2</code> (wider native SIMD), <code>pad64</code> (half the padding). The
-        default build is <code>baseline</code>.</p></div>
+      <div class="card"><h3>Variant</h3><p>A build made with other compiler flags for an exploratory question: <code>scalar</code> (no SIMD) and <code>avx2</code> (wider native SIMD). The default build is <code>baseline</code>.</p></div>
     </div>
 
     <h2 id="numbers">The numbers</h2>

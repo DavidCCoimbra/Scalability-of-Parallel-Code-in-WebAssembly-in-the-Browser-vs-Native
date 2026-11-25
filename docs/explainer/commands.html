@@ -109,7 +109,7 @@
       <thead><tr><th>Target</th><th>What it does</th></tr></thead>
       <tbody>
         <tr><td><code>make test</code></td><td>What CI runs, minus LaTeX: <code>test-rust</code>, <code>test-python</code>, <code>lint</code></td></tr>
-        <tr><td><code>make test-rust</code></td><td><code>cargo test --release</code>, with the default 128-byte padding and with <code>--features pad64</code></td></tr>
+        <tr><td><code>make test-rust</code></td><td><code>cargo test --locked --release</code></td></tr>
         <tr><td><code>make test-python</code></td><td>The unittest suites of <code>scripts/</code>, <code>harness/</code> and <code>analysis/</code></td></tr>
         <tr><td><code>make lint</code></td><td><code>cargo fmt --check</code>, <code>clippy -D warnings</code>, the ADR structure, no em dash in any tracked file, shellcheck, <code>mypy --strict</code> on <code>harness analysis scripts</code></td></tr>
       </tbody>

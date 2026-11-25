@@ -134,8 +134,7 @@
 
     <h2 id="thirty">30 runs, 10 iterations</h2>
     <p>Each configuration (one environment, one workload, one N) is measured by 30 runs, each with 10 measured
-      iterations (<a href="../adr/0047-runs-and-iterations.md">ADR 0047</a>). The main campaign is 3
-      environments, 9 workload settings and 6 thread counts (N in {1, 2, 4, 6, 7, 8}), times 30: 4860 runs.</p>
+      iterations (<a href="../adr/0047-runs-and-iterations.md">ADR 0047</a>). The main campaign is 3 environments, 9 workload settings and 6 thread counts (N in {1, 2, 4, 6, 7, 8}), times 30: 4860 runs, plus 450 runs of plain sequential code at one thread (<a href="explains.html#baseline">Is the one-thread baseline fair?</a>): 5310 in all.</p>
     <div class="why"><b>Why 30, and not 5 or 100?</b> More runs make the estimate more precise, but each one
       costs machine time, and the gain shrinks: going from 5 to 30 narrows the uncertainty a lot; going from
       30 to 100 narrows it only a little more. Thirty is the course's rule, and a pilot checked that 30 gives
@@ -150,7 +149,7 @@
     <p class="src" data-src="campaign-v3-contrasts"></p>
 
     <h2 id="order">Random interleaved order</h2>
-    <p>The 4860 runs took many hours. Over that time, a machine drifts: it warms up, a background job wakes
+    <p>The 5310 runs took 14 hours. Over that time, a machine drifts: it warms up, a background job wakes
       up, memory fragments. Now imagine all the native runs were taken first and all the Firefox runs last.
       Any slow change of the machine would land on Firefox and not on native, and would look like a
       difference between the two environments. It would be invisible, and it would be wrong.</p>
@@ -158,19 +157,16 @@
       (every environment, workload, N and repetition) and shuffles it once, so native, Chrome and Firefox runs
       are mixed throughout. Drift still happens, but it now falls on all three alike: it becomes noise, which
       the intervals account for, instead of a bias, which nothing would catch. The shuffle uses a recorded
-      <span data-term="order-seed">seed</span> (20261109 for the main campaign), so the same order can be
+      <span data-term="order-seed">seed</span> (2026112201 for the main campaign), so the same order can be
       rebuilt later: a stopped campaign resumes at exactly the position it stopped, and anyone can reproduce
       the sequence (<a href="../adr/0034-campaign-orchestrator.md">ADR 0034</a>).</div>
     <p>After the campaign, the data check looks for drift that slipped through anyway: in each configuration,
-      do the run values trend with the run's position in the order? Three of the 162 configurations showed a
-      trend, about what chance alone would produce, and all three were kept: the one that is a primary cell
-      gives an RQ2 effect of 2.26 over its first 15 runs and 1.94 over its last 15 (from the paper), both far
-      from 1, so the conclusion does not depend on the drift.</p>
+      do the run values trend with the run's position in the order? One of the 177 configurations showed a trend, about what chance alone would produce. It is kept, and it is not one of the cells the ten primary comparisons use.</p>
     <details class="deeper"><summary>If you already know this: the plan, the seed and the drift check</summary>
       <div data-code="harness/campaign/plan.py|def plan(spec: CampaignSpec)|14" data-title="The shuffled plan"></div>
       <p>The drift check is <span data-term="spearman-s-rho">Spearman's rho</span> between a run's order
         position and its value, flagged at |rho| above 0.5 with at least 10 runs. With 30 runs and no drift
-        that happens by chance about 0.7 % of the time, so about 1.1 of the 162 configurations are expected
+        that happens by chance about 0.7 % of the time, so about 1.2 of the 177 configurations are expected
         (<a href="../adr/0051-foreign-cpu-threshold-and-data-check.md">ADR 0051</a>).</p>
       <div data-code="data/tables/campaign-v3/campaign-v3-quality.md|Configurations whose valid run values trend|4" data-title="From the data check of the main campaign"></div>
     </details>

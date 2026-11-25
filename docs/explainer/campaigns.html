@@ -73,7 +73,7 @@
       <thead><tr><th>Key</th><th>Meaning</th><th>In campaign-v3</th></tr></thead>
       <tbody>
         <tr><td><code>name</code></td><td>The campaign's name: the results go to <code>data/raw/&lt;name&gt;</code> and every run id starts with it</td><td><code>campaign-v3</code></td></tr>
-        <tr><td><code>orderSeed</code></td><td>Seed of the shuffle that orders the runs; recorded, so the order can be rebuilt (ADR 0034)</td><td>20261109</td></tr>
+        <tr><td><code>orderSeed</code></td><td>Seed of the shuffle that orders the runs; recorded, so the order can be rebuilt (ADR 0034)</td><td>2026112201</td></tr>
         <tr><td><code>environments</code></td><td>Any of <code>native</code>, <code>chrome</code>, <code>firefox</code></td><td>all three</td></tr>
         <tr><td><code>workloads</code></td><td>One entry per workload and input: <code>workload</code>, <code>input</code> (<code>noise</code> or <code>few</code>), <code>k</code> for <code>few</code>, its own <code>warmup</code>, and optionally <code>passes</code>, <code>grain</code>, <code>pitch</code>, <code>palette</code></td><td>the filter, and both histograms at k = 1, 4, 16, 256</td></tr>
         <tr><td><code>threads</code></td><td>The thread counts N (ADR 0044)</td><td>1, 2, 4, 6, 7, 8</td></tr>
@@ -98,9 +98,7 @@
       </tbody>
     </table></div>
 </details>
-    <p>From this spec the harness plans 3 environments × 9 workloads × 6 thread counts × 30 repetitions
-      = <b>4860 runs</b>, plus the discarded first launches. A run id names one of them:
-      <code>campaign-v3-2666-chrome-filter-noise-n8-r27</code> is the 171st in the order, Chrome, the
+    <p>From this spec the harness plans 3 environments × 9 workloads × 6 thread counts × 30 repetitions = 4860 runs, plus the 5 sequential references at one thread (3 × 5 × 30 = 450): <b>5310 runs</b>, plus the discarded first launches. A run id names one of them: <code>campaign-v3-2666-chrome-filter-noise-n8-r27</code> is at position 2666 of the order, Chrome, the
       filter on noise, N = 8, repetition 27.</p>
     <div data-code="harness/campaign/plan.py|def discarded_runs|8" data-title="The discarded first launches"></div>
     <p class="src" data-files="harness/campaigns/campaign-v3.json, harness/campaign/spec.py, harness/campaign/plan.py, harness/campaign/README.md"></p>
@@ -155,44 +153,38 @@
       </tbody>
     </table></div>
     <p>The report of the main campaign:</p>
-    <pre class="out">- Runs done: 4860; missing: 0; failed: 0 {}
+    <pre class="out">- Runs done: 5310; missing: 0; failed: 0 {}
 - Runs replaced by a re-run (kept in `excluded/`): 0
 - Checksum conflicts: 0
 - Runs failing strict validation: 0 {}; reasons: {}
 - Runs above the foreign CPU threshold (0.25 s): 0 {}
 - Configurations under 100 times the clock resolution: 0
-- Configurations whose valid run values trend with the execution order (|rho| &gt; 0.5, at least 10 runs): 3
-  - chrome hist-atomic k1 N=8: rho = -0.56 over 30 runs
-  - chrome hist-atomic k16 N=4: rho = -0.62 over 30 runs
-  - firefox hist-local k4 N=4: rho = -0.62 over 30 runs
+- Configurations whose valid run values trend with the execution order (|rho| &gt; 0.5, at least 10 runs): 1
+  - firefox hist-local k1 N=7: rho = +0.54 over 30 runs
 - Configurations mixing width, height, pitch, palette, passes: 0
 - Blocking the analysis (checksum conflicts, missing or failed runs, mixed settings): no</pre>
-    <p>Three trending configurations out of 162: about one would be expected with no trend at all, and
-      none is in the RQ1 filter cells. Every reported campaign has its report next to its tables, as
+    <p>One trending configuration out of 177 (162 parallel cells and 15 sequential ones): about one would be expected with no trend at all, and it is not a primary cell. Every reported campaign has its report next to its tables, as
       <code>data/tables/&lt;campaign&gt;/&lt;campaign&gt;-quality.md</code>.</p>
     <p class="src" data-files="data/tables/campaign-v3/campaign-v3-quality.md, analysis/datacheck.py, analysis/quality/report.py, docs/adr/0051-foreign-cpu-threshold-and-data-check.md"></p>
 
     <h2 id="list">Every campaign of the study</h2>
     <p>Every result in the paper and in this guide comes from a campaign on the build tagged
-      <code>measured/v3</code> (commit <code>c8ea7157</code>; the perf campaign ran on a later commit with
-      the same <code>bench/</code> code and the same artifact hashes). The earlier campaigns of the
-      first build stay in the repository, valid for their own build, but builds are never mixed in one
-      comparison (ADR 0062, 0069). Pilots only sized the design.</p>
+      <code>measured/v3</code> (commit <code>ac65af6a</code>; every campaign records the digests of the binaries it ran). The campaigns of the earlier build, <code>measured/v2</code>, are at the tag <code>data/v2</code>, valid for their own build, but builds are never mixed in one comparison (ADR 0062, 0095). Pilots only sized the design; their runs and specs are in <code>data/earlier/pilot/</code>.</p>
     <details class="deeper"><summary>If you already know this: every spec, its runs, its status and its ADR</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Spec</th><th>What it measures</th><th>Runs</th><th>Status</th><th>ADR</th></tr></thead>
       <tbody>
         <tr><th colspan="5">Reported: build measured/v3</th></tr>
-        <tr><td><code>campaign-v3</code></td><td>The main campaign: RQ1 and RQ2</td><td>4860</td><td><span class="chip native">reported</span></td><td>0069</td></tr>
-        <tr><td><code>extras-v3</code></td><td>Private, shared and packed atomics, the local control, two sorts</td><td>5400</td><td><span class="chip native">reported</span></td><td>0052, 0053</td></tr>
-        <tr><td><code>weak-v3</code></td><td>Weak scaling, 1024 rows per thread</td><td>1080</td><td><span class="chip native">reported</span></td><td>0055</td></tr>
-        <tr><td><code>simd-scalar-v3</code>, <code>simd-avx2-v3</code></td><td>The filter without SIMD, and native with AVX2</td><td>540 + 180</td><td><span class="chip native">reported</span></td><td>0057</td></tr>
-        <tr><td><code>hybrid-v3</code></td><td>P-cores plus E-cores, N up to 20</td><td>900</td><td><span class="chip native">reported</span></td><td>0059</td></tr>
-        <tr><td><code>cutoff-{512,1024,2048,4096,8192}-v3</code>, <code>cutoff-control-{512,2048}-v3</code></td><td>Speedup against the work per parallel region, repeated passes per sample</td><td>5 × 720 + 2 × 240 = 4080</td><td><span class="chip native">reported</span></td><td>0064</td></tr>
-        <tr><td><code>grain-1024-v3</code>, <code>grain-8192-v3</code></td><td>Fixed task sizes: the grain U-curve</td><td>1620 + 2430 = 4050</td><td><span class="chip native">reported</span></td><td>0066</td></tr>
-        <tr><td><code>perf-v3</code></td><td>Hardware counters of the atomic histogram, k = 1 and 256, N = 1 and 8</td><td>360</td><td><span class="chip native">reported</span></td><td>0072</td></tr>
-        <tr><th colspan="5">First build: kept, not reported</th></tr>
-        <tr><td><code>campaign</code>, <code>extras</code>, <code>weak</code>, <code>simd-*</code>, <code>hybrid</code>, <code>cutoff-*</code>, <code>grain-*</code></td><td>The same designs on the earlier builds; replaced by their <code>-v3</code> copies after the bottleneck audit found asymmetries in the measured code</td><td>same counts</td><td><span class="chip">superseded</span></td><td>0062, 0069</td></tr>
+        <tr><td><code>campaign-v3</code></td><td>The main campaign: RQ1 and RQ2, plus the sequential references</td><td>4860 + 450 = 5310</td><td><span class="chip native">reported</span></td><td>0084, 0095</td></tr>
+        <tr><td><code>extras-v3</code></td><td>Private, shared and packed atomics, the local control, two sorts</td><td>5400</td><td><span class="chip native">reported</span></td><td>0052, 0053, 0093</td></tr>
+        <tr><td><code>weak-v3</code></td><td>Weak scaling, 1024 rows per thread</td><td>1080</td><td><span class="chip native">reported</span></td><td>0055, 0092</td></tr>
+        <tr><td><code>simd-scalar-v3</code>, <code>simd-avx2-v3</code></td><td>The filter without SIMD, and native with AVX2</td><td>540 + 180</td><td><span class="chip native">reported</span></td><td>0057, 0091</td></tr>
+        <tr><td><code>hybrid-v3</code></td><td>P-cores plus E-cores, N up to 20</td><td>900</td><td><span class="chip native">reported</span></td><td>0059, 0094</td></tr>
+        <tr><td><code>cutoff-{512,1024,2048,4096,8192}-v3</code>, <code>cutoff-control-{512,2048}-v3</code></td><td>Speedup against the work per parallel region, repeated passes per sample</td><td>5 × 720 + 2 × 240 = 4080</td><td><span class="chip native">reported</span></td><td>0064, 0091</td></tr>
+        <tr><td><code>grain-1024-v3</code>, <code>grain-8192-v3</code></td><td>Fixed task sizes: the grain U-curve, with the atomic histogram in the 8192² sweep</td><td>1620 + 3780 = 5400</td><td><span class="chip native">reported</span></td><td>0066, 0092</td></tr> <tr><td><code>grain-threads-v3</code></td><td>The local histogram at k = 16 with Rayon's split and two fixed grains, N = 1, 6, 7, 8</td><td>1080</td><td><span class="chip native">reported</span></td><td>0091</td></tr> <tr><td><code>tier-v3</code></td><td>Each browser as shipped, with its baseline compiler only and with its optimizing compiler only</td><td>2100</td><td><span class="chip native">reported</span></td><td>0088, 0089</td></tr> <tr><td><code>perf-loop1-v3</code>, <code>perf-loop8-v3</code></td><td>Counters of the loop alone: the same runs with 1 and with 8 passes per sample</td><td>180 + 180</td><td><span class="chip native">reported</span></td><td>0090, 0091</td></tr>
+        <tr><td><code>perf-v3</code></td><td>Hardware counters of the atomic histogram at k = 1 and 256, the filter and the local histogram at k = 256, N = 1 and 8</td><td>720</td><td><span class="chip native">reported</span></td><td>0072, 0089</td></tr> <tr><th colspan="5">Checks before the campaigns: never results</th></tr> <tr><td><code>gate-v3</code>, <code>gate2-v3</code></td><td>The gate of the build: the cells whose code changed and the filter, 3 runs each (<a href="session.html#gate">The gate</a>)</td><td>135 + 135</td><td><span class="chip">check</span></td><td>0087</td></tr>
+        <tr><th colspan="5">Earlier builds: at the tag data/v2, not reported</th></tr>
+        <tr><td><code>campaign</code>, <code>extras</code>, <code>weak</code>, <code>simd-*</code>, <code>hybrid</code>, <code>cutoff-*</code>, <code>grain-*</code></td><td>The same designs on the earlier builds, <code>measured/v2</code> and the one before it; replaced by their <code>-v3</code> copies</td><td>same counts</td><td><span class="chip">superseded</span></td><td>0062, 0069</td></tr>
         <tr><th colspan="5">Pilots: sized the design</th></tr>
         <tr><td><code>pilot-size-*</code></td><td>Image size against the browser clock resolution</td><td>4 × 54</td><td><span class="chip copy">pilot</span></td><td>0041</td></tr>
         <tr><td><code>pilot-warmup</code>, <code>pilot-warmup-ff-k1</code>, <code>pilot-warmup-extras</code></td><td>Warm-up iterations W per workload</td><td>108 + 10 + 72</td><td><span class="chip copy">pilot</span></td><td>0043, 0053</td></tr>
@@ -204,19 +196,14 @@
         <tr><td><code>pilot-pad128</code>, <code>pilot-pad64</code></td><td>Padding of the shared counters</td><td>80 + 80</td><td><span class="chip copy">pilot</span></td><td>0049</td></tr>
         <tr><td><code>pilot-chrome-{cft155,cft157,stable157}</code></td><td>Chrome for Testing against stable Chrome</td><td>3 × 40</td><td><span class="chip copy">pilot</span></td><td>0050</td></tr>
         <tr><th colspan="5">End-to-end checks and quick checks: never results</th></tr>
-        <tr><td><code>smoke</code>, <code>mini</code></td><td>Every workload at 1024², 2 runs; strict and not strict</td><td>-</td><td><span class="chip">check</span></td><td>0034, 0040</td></tr>
+        <tr><td><code>smoke</code></td><td>Every workload at 1024², 2 runs</td><td>-</td><td><span class="chip">check</span></td><td>0034, 0040</td></tr>
         <tr><td><code>quick-*</code></td><td>Tiny copies of each campaign, run by <code>make quick*</code></td><td>-</td><td><span class="chip">check</span></td><td>-</td></tr>
       </tbody>
     </table></div>
 </details>
     <div class="stats" id="totals"></div>
-    <div class="callout"><b>The Firefox repeat in the exploratory campaigns.</b> During the first pass
-      of <code>extras-v3</code>, <code>weak-v3</code>, <code>simd-scalar-v3</code> and <code>hybrid-v3</code>
-      the pinned Firefox updated itself to 160.0. Its 2640 runs were moved to <code>excluded/</code> and
-      repeated on 158.0 in one block, after native and Chrome; since then a strict campaign refuses to
-      start with an unpinned browser (ADR 0071). See <a href="pitfalls.html#update">A pinned Firefox
-      updates itself</a>.</div>
-    <p class="src" data-files="harness/campaigns/README.md, docs/adr/0069-v2-build.md, docs/adr/0071-firefox-pin-guard.md"></p>
+    <div class="callout"><b>No run left out.</b> No campaign of <code>measured/v3</code> has a failed, missing or excluded run, so no <code>excluded/</code> folder exists. On the earlier build the pinned Firefox once updated itself in the middle of the exploratory campaigns; since then a strict campaign refuses to start with an unpinned browser (ADR 0071). See <a href="pitfalls.html#update">A pinned Firefox updates itself</a>.</div>
+    <p class="src" data-files="harness/campaigns/README.md, data/README.md, docs/adr/0084-v3-design.md, docs/adr/0095-v3-is-the-reported-build.md, docs/adr/0071-firefox-pin-guard.md"></p>
 
     <footer class="pager" id="pager"></footer>
   </article>
@@ -228,9 +215,9 @@
 <script>
 window.page = function (UI) {
   var el = UI.el, $ = UI.$;
-  var REPORTED = [["campaign-v3", 4860], ["extras-v3", 5400], ["weak-v3", 1080], ["simd", 720], ["hybrid-v3", 900], ["cutoff", 4080], ["grain", 4050], ["perf-v3", 360]];
+  var REPORTED = [["campaign-v3", 5310], ["extras-v3", 5400], ["weak-v3", 1080], ["simd", 720], ["hybrid-v3", 900], ["cutoff", 4080], ["grain", 5400], ["grain-threads-v3", 1080], ["tier-v3", 2100], ["perf-v3", 720], ["perf-loop", 360]];
   var total = REPORTED.reduce(function (a, c) { return a + c[1]; }, 0);
-  [[UI.int(total), "runs in the reported campaigns"], [UI.int(4860), "runs in the main campaign"], ["30", "runs per configuration, every campaign"], ["0", "failed or conflicting runs in the main campaign"]].forEach(function (s) {
+  [[UI.int(total), "runs in the reported campaigns"], [UI.int(5310), "runs in the main campaign"], ["30", "runs per configuration, every campaign"], ["0", "failed, excluded or conflicting runs in any campaign"]].forEach(function (s) {
     $("#totals").appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: s[0] }), el("div", { class: "k", text: s[1] })]));
   });
 };

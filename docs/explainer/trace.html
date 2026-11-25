@@ -93,7 +93,7 @@
 
         <rect class="proc" x="540" y="140" width="196" height="40" rx="8"/>
         <text x="638" y="157" text-anchor="middle" font-weight="600">analysis</text>
-        <text x="638" y="172" text-anchor="middle" class="muted">Python, reads 4860 runs</text>
+        <text x="638" y="172" text-anchor="middle" class="muted">Python, reads 5310 runs</text>
 
         <rect class="file" x="540" y="224" width="196" height="40" rx="8"/>
         <text x="638" y="241" text-anchor="middle" font-weight="600">data/tables, paper/figures</text>
@@ -251,9 +251,9 @@ window.page = function (UI) {
   UI.trace($("#native-trace"), steps([
     { title: "The campaign shuffles every run", code: K.plan, highlight: /shuffle|combinations = \[|PlannedRun\(position/,
       plain: "A campaign is a list of every run to do. The list is shuffled once, with a number (the seed) that lets anyone shuffle it the same way again, so native, Chrome and Firefox runs are mixed through the day instead of done in blocks.",
-      say: "<code>make campaign SPEC=harness/campaigns/campaign-v3.json</code> starts the orchestrator. It lists every (environment, workload, N, repetition) of the spec: 3 &times; 9 &times; 6 &times; 30 = 4860 runs, and shuffles them with the recorded seed. Native, Chrome and Firefox runs are interleaved, so a slow afternoon hits all three alike.",
-      memory: [["spec.order_seed", "20261109"], ["combinations", "4860 tuples"], ["this run", "position 1801: native, hist-atomic k = 1, N = 8, repetition 0"]],
-      next: "the native executor runs position 1801." },
+      say: "<code>make campaign SPEC=harness/campaigns/campaign-v3.json</code> starts the orchestrator. It lists every (environment, workload, N, repetition) of the spec: 3 &times; 9 &times; 6 &times; 30 = 4860 runs plus the 450 sequential references, and shuffles them with the recorded seed. Native, Chrome and Firefox runs are interleaved, so a slow afternoon hits all three alike.",
+      memory: [["spec.order_seed", "2026112201"], ["combinations", "5310 tuples"], ["this run", "position 4610: native, hist-atomic k = 1, N = 8, repetition 0"]],
+      next: "the native executor runs position 4610." },
     { title: "NativeExecutor.execute", code: K.exec, highlight: /NativeRun\(|native\.run\(/,
       plain: "The orchestrator writes the run's settings as one text string, the same string a browser would receive in its web address. Native and browser runs are told what to do in the same words.",
       say: "One <code>NativeRun</code> per planned run, with the spec's CPU mask and the run scope user. <code>self.spec.query(run)</code> turns the planned run into the same query string a browser would get in its URL.",

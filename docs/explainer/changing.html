@@ -66,7 +66,7 @@
       the same (<span data-term="codegen-neutral">codegen-neutral</span>) or it makes a new build. See
       <a href="#hotpath">Touching the measured code</a>.</div>
     <div class="why"><b><code>mypy --strict</code>, and types for domain things.</b> The harness and the
-      analysis are Python that runs unattended for 13 hours. A typo in a key name found at run 3000 of 4860
+      analysis are Python that runs unattended for 14 hours. A typo in a key name found at run 3000 of 5310
       costs an afternoon; the type checker finds it before the campaign starts. Enums and dataclasses
       (<code>Workload</code>, <code>PlannedRun</code>, <code>Interval</code>) instead of strings and tuples
       mean a wrong value cannot even be built.</div>
@@ -162,8 +162,7 @@
       <li><b>Neutral?</b> If no hot function changed, it is a readability refactor and the build stays the
         same (ADR 0062).</li>
       <li><b>Not neutral?</b> It is a new build: tag it (<code>measured/v3</code>), and every campaign to be
-        compared with another must be re-run on it. The v2 build re-ran 8100 exploratory runs and the main
-        4860 for this reason (ADR 0069).</li>
+        compared with another must be re-run on it. The v2 build re-ran every campaign for this reason (ADR 0069), and so did <code>measured/v3</code>: 27,150 runs (ADR 0084, <a href="session.html">The session of a build</a>).</li>
     </ol>
     <div class="why"><b>Why so careful about a few instructions?</b> Because the study's differences are a
       few percent, and the layout of the code in memory alone moves times by that much. Mytkowicz and
