@@ -14,9 +14,10 @@ test-python: #: Harness, analysis and scripts tests
 	python3 -m unittest discover -s harness/tests -t .
 	python3 -m unittest discover -s analysis/tests -t .
 
-lint: ## fmt, clippy, ADRs, shellcheck, mypy strict
+lint: ## fmt, clippy, ADRs, explainer data up to date, shellcheck, mypy strict
 	$(CARGO) fmt --check
 	$(CARGO) clippy --locked --release --all-targets -- -D warnings
 	python3 scripts/check_adrs.py docs/adr
+	python3 -m scripts.explainer_data --check
 	shellcheck bench/build-wasm.sh harness/env/*.sh scripts/*.sh scripts/lib/*.sh
 	$(MYPY) harness analysis scripts
