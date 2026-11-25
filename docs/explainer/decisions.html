@@ -53,7 +53,7 @@
 
     <h2 id="how">How decisions are kept</h2>
     <p>An <span data-term="adr">ADR</span> (Architecture Decision Record) is a short Markdown file named
-      <code>NNNN-short-title.md</code>, with a date, the ticket or approval it came from, and four sections.
+      <code>NNNN-short-title.md</code>, with a date and four sections.
       A check in CI (<code>scripts/check_adrs.py</code>, run by <code>make lint</code>) refuses a file whose
       title, number or sections do not match.</p>
     <div class="steps-list">
@@ -101,19 +101,13 @@
       <h4>From a hypothesis to machine code and counters (ADR 0049, 0068, 0072)</h4>
       <p>ADR 0049 kept the 128-byte padding and recorded Chrome's odd counter pattern as a hypothesis: "the
         code was not inspected". The v2 audit then read the JIT code from each browser's memory: V8 compiles
-        the atomic add as a load plus a <code>lock cmpxchg</code> loop. ADR 0068 made the hardware counters
-        readable, and ADR 0072 re-counted on <code>measured/v3</code> with 30 runs per cell: the loop
-        retries once every four adds at k = 1, N = 8, and Chrome reads the line before it writes it.</p>
-      <p><b>The lesson:</b> a hypothesis is allowed in an ADR as long as it is labelled one; it took two more
-        ADRs to turn it into a measurement. <a href="why.html">Why Chrome: code and counters</a>.</p>
+        the atomic add as a load plus a <code>lock cmpxchg</code> loop. ADR 0068 made the hardware counters readable, and ADR 0072 counted with 30 runs per cell: the loop retries once every four adds at k = 1, N = 8, and Chrome reads the line before it writes it. That was still an observation. ADR 0088 wrote down what a test would show, and ADR 0089 ran it on <code>measured/v3</code>: a native program in which only the instructions of the add change gets Chrome's times.</p> <p><b>The lesson:</b> a hypothesis is allowed in an ADR as long as it is labelled one; it took four more ADRs to turn it first into a measurement and then into a tested cause. <a href="why.html">Why Chrome: code and counters</a>.</p>
     </div>
     <div class="story">
       <h4>The v2 build: asymmetries of our own (ADR 0069)</h4>
       <p>A review against the textbook and the cited papers found that the shared-counter histograms paid a
         per-pixel bounds check the local control did not, and that some variants timed their final merge
-        and others did not. Both were fixed in one tagged build, <code>measured/v3</code>, and every
-        reported campaign was run again on it. Earlier campaigns stay valid for their own build but are
-        never mixed with v2 in one comparison (ADR 0062).</p>
+        and others did not. Both were fixed in one tagged build, <code>measured/v2</code>, and every campaign was run again on it. Earlier campaigns stay valid for their own build but are never mixed with v2 in one comparison (ADR 0062).</p>
       <p><b>The lesson:</b> the control and the thing it controls for must differ in exactly one way; two
         hidden differences meant every earlier RQ2 number had to be remeasured.
         <a href="pitfalls.html#v2">Our own asymmetries: the v2 build</a>.</p>
@@ -121,24 +115,20 @@
     <div class="story">
       <h4>A pinned browser that updated itself (ADR 0071)</h4>
       <p>The pinned Firefox 158.0 updated itself to 160.0 during a campaign, although the profile disabled
-        updates. The affected runs were repeated on 158.0, Firefox now gets an enterprise policy that turns
+        updates. The affected runs of that build were repeated on 158.0, Firefox now gets an enterprise policy that turns
         updates off, and a campaign refuses to start with an unpinned browser.</p>
       <p><b>The lesson:</b> "pinned" is a claim until something checks it on every start.
         <a href="pitfalls.html#update">A pinned Firefox updates itself</a>.</p>
     </div>
     <div class="story">
-      <h4>Notion out, Markdown in (ADR 0063)</h4>
-      <p>ADR 0010 mirrored every ADR to Notion. Keeping two copies in sync by hand, with the paper material
-        outside review, was dropped: the files in <code>docs/adr/</code> and
-        <code>docs/paper-material/</code> are the only copy.</p>
-      <p><b>The lesson:</b> a record that lives in two places is soon two records.</p>
-    </div>
+      <h4>Notion out, Markdown in (ADR 0063)</h4> <p>ADR 0010 mirrored every ADR to Notion. Keeping two copies in sync by hand was dropped: the files in <code>docs/adr/</code> are the only copy.</p>
+      <p><b>The lesson:</b> a record that lives in two places is soon two records.</p> </div> <div class="story"> <h4>Measured again, with the rules written first (ADR 0084, 0095)</h4> <p>The v2 results were valid, and what they could not establish was declared (ADR 0080). Some of those items a new build could answer instead of declare, so <code>measured/v3</code> was built and every campaign run again. Because the v2 numbers were known, ADR 0084 fixed in advance when v3 would be the reported build, in terms that read counts of runs and never a result. ADR 0095 records that the criteria were met and that all ten primary decisions came out as before.</p> <p><b>The lesson:</b> a second measurement is worth the most when nothing about it could have been chosen after seeing the first. <a href="session.html">The session of a build</a>.</p> </div> <div class="story"> <h4>A gate that failed, and was not turned into a pass (ADR 0087)</h4> <p>The rehearsal before the v3 campaigns failed one criterion on one cell, twice. The cell was looked at, the behaviour turned out to exist in v2 as well, its effect on the analysed value was measured at 0.1%, and the campaign went ahead with the parameters unchanged and the failure recorded as a failure.</p> <p><b>The lesson:</b> a check that fails is information; changing the measurement to make it pass would have been choosing the method by the data. <a href="session.html#gate">The gate</a>.</p> </div> <div class="story"> <h4>An explanation that lost its support (ADR 0077, 0085)</h4> <p>Five slow runs of v2 fitted a degraded core running below its clock, and ADR 0077 said so as a likely reading. The per-core check then timed every core alone: the degraded one was as fast as the others. The explanation was withdrawn, and in v3 the slow runs did not come back.</p> <p><b>The lesson:</b> "it fits" is not "it was tested"; the record keeps both the guess and the test that undid it. <a href="session.html#cores">The per-core check</a>.</p> </div>
 
     <h2 id="map">The ADRs by topic</h2>
-    <p>All 73, each in one topic. Rows in colour were later amended or partly superseded; the last column
+    <p>All 95, each in one topic. Rows in colour were later amended or partly superseded; the last column
       says by which ADR. Click a number to open the file. Open the block to see them all, or type in the box
       to find one.</p>
-    <details class="deeper"><summary>All 74 ADRs, by topic</summary>
+    <details class="deeper"><summary>All 95 ADRs, by topic</summary>
     <div class="filter-row">
       <label for="adr-filter" class="sr">Filter ADRs</label>
       <input id="adr-filter" type="search" placeholder="Filter by number or word">
@@ -150,15 +140,15 @@
     <div class="scroll-x"><table class="t adr">
       <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
       <tbody>
-        <tr class="changed"><td><a data-repo="docs/adr/0001-p-cores-only.md" href="../adr/0001-p-cores-only.md">0001</a></td><td>Measure on P-cores only, with a process-level affinity mask</td><td>Accepted, amended by 0045</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0001-p-cores-only.md" href="../adr/0001-p-cores-only.md">0001</a></td><td>Measure on P-cores only, with a process-level affinity mask</td><td>Accepted; amended by ADR 0045 (confirmed with pilot data)</td></tr>
         <tr><td><a data-repo="docs/adr/0002-turbo-off-performance-governor.md" href="../adr/0002-turbo-off-performance-governor.md">0002</a></td><td>Turbo boost off and governor performance</td><td>Accepted</td></tr>
         <tr><td><a data-repo="docs/adr/0025-smt-off.md" href="../adr/0025-smt-off.md">0025</a></td><td>SMT off, one CPU per physical P-core, checked on every result</td><td>Accepted</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0028-shield-the-measured-cpus.md" href="../adr/0028-shield-the-measured-cpus.md">0028</a></td><td>Shield the measured CPUs and record foreign CPU time</td><td>Accepted, amended by 0045</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0035-environment-setup-and-check.md" href="../adr/0035-environment-setup-and-check.md">0035</a></td><td>Environment setup and check before every session</td><td>Accepted, amended by 0040</td></tr>
-        <tr><td><a data-repo="docs/adr/0040-campaign-enforces-the-environment.md" href="../adr/0040-campaign-enforces-the-environment.md">0040</a></td><td>The campaign enforces the environment check on every start</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0028-shield-the-measured-cpus.md" href="../adr/0028-shield-the-measured-cpus.md">0028</a></td><td>Shield the measured CPUs and record foreign CPU time</td><td>Accepted; amends ADR 0023 (context keys)</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0035-environment-setup-and-check.md" href="../adr/0035-environment-setup-and-check.md">0035</a></td><td>Environment setup and check before every session</td><td>Accepted; amended by ADR 0040 (environment check enforced on every start)</td></tr>
+        <tr><td><a data-repo="docs/adr/0040-campaign-enforces-the-environment.md" href="../adr/0040-campaign-enforces-the-environment.md">0040</a></td><td>The campaign enforces the environment check on every start</td><td>Accepted; amends ADR 0034 (orchestrator) and ADR 0035 (environment check)</td></tr>
         <tr><td><a data-repo="docs/adr/0042-quiet-mode-before-measuring.md" href="../adr/0042-quiet-mode-before-measuring.md">0042</a></td><td>Quiet mode before measuring and no sleep during a campaign</td><td>Accepted</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0045-p-cores-confirmed-and-browser-scope.md" href="../adr/0045-p-cores-confirmed-and-browser-scope.md">0045</a></td><td>P-cores only, confirmed, and every browser process in the run scope</td><td>Accepted, amended by 0048</td></tr>
-        <tr><td><a data-repo="docs/adr/0070-quiet-campaigns.md" href="../adr/0070-quiet-campaigns.md">0070</a></td><td>Campaigns run in quiet mode, with Claude Code stopped</td><td>Accepted</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0045-p-cores-confirmed-and-browser-scope.md" href="../adr/0045-p-cores-confirmed-and-browser-scope.md">0045</a></td><td>P-cores only, confirmed by a pilot, and every browser process in the run scope</td><td>Accepted; amends ADR 0001 (confirms it with pilot data) and ADR 0028; amended by ADR 0048 (the Firefox hist-local k16 gain under P+E at N = 8 is most likely browser start-up work, which then had more cores)</td></tr>
+        <tr><td><a data-repo="docs/adr/0070-quiet-campaigns.md" href="../adr/0070-quiet-campaigns.md">0070</a></td><td>Campaigns run in quiet mode, with the coding assistant stopped</td><td>Accepted</td></tr>
       </tbody>
     </table></div>
     <h3>Builds and toolchain</h3>
@@ -167,9 +157,9 @@
       <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
       <tbody>
         <tr><td><a data-repo="docs/adr/0004-simd-128-both-sides.md" href="../adr/0004-simd-128-both-sides.md">0004</a></td><td>128-bit SIMD on both sides</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0009-pinned-nightly-toolchain.md" href="../adr/0009-pinned-nightly-toolchain.md">0009</a></td><td>Pinned nightly Rust toolchain with -Z build-std for WASM threads</td><td>Accepted</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0009-pinned-nightly-toolchain.md" href="../adr/0009-pinned-nightly-toolchain.md">0009</a></td><td>Pinned nightly Rust toolchain with -Z build-std for WASM threads</td><td>Accepted; amended by ADR 0076 (what differs below the shared source)</td></tr>
         <tr><td><a data-repo="docs/adr/0017-simd-parity-verification.md" href="../adr/0017-simd-parity-verification.md">0017</a></td><td>SIMD parity verified on the built artifacts</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0062-bench-refactor-codegen-neutral.md" href="../adr/0062-bench-refactor-codegen-neutral.md">0062</a></td><td>Bench readability refactor, codegen-neutral only</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0062-bench-refactor-codegen-neutral.md" href="../adr/0062-bench-refactor-codegen-neutral.md">0062</a></td><td>A readability refactor of the bench, limited to codegen-neutral changes</td><td>Accepted</td></tr>
         <tr><td><a data-repo="docs/adr/0069-v2-build.md" href="../adr/0069-v2-build.md">0069</a></td><td>The v2 build: measurement corrections, refactor and new settings</td><td>Accepted</td></tr>
       </tbody>
     </table></div>
@@ -178,12 +168,12 @@
     <div class="scroll-x"><table class="t adr">
       <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
       <tbody>
-        <tr class="changed"><td><a data-repo="docs/adr/0008-padded-shared-atomics.md" href="../adr/0008-padded-shared-atomics.md">0008</a></td><td>Padded shared atomic counters, allocation outside the timed region</td><td>Accepted, amended by 0049</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0011-deterministic-grayscale-inputs.md" href="../adr/0011-deterministic-grayscale-inputs.md">0011</a></td><td>Deterministic grayscale inputs with a fixed seed</td><td>Accepted, amended by 0026, 0027 and 0032</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0012-gaussian-integer-kernel.md" href="../adr/0012-gaussian-integer-kernel.md">0012</a></td><td>Gaussian 3x3 filter with an integer kernel, row-parallel</td><td>Accepted, amended by 0017</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0008-padded-shared-atomics.md" href="../adr/0008-padded-shared-atomics.md">0008</a></td><td>Padded shared atomic counters, allocation outside the timed region</td><td>Accepted; amended by ADR 0049 and ADR 0075 (pad64 removed)</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0011-deterministic-grayscale-inputs.md" href="../adr/0011-deterministic-grayscale-inputs.md">0011</a></td><td>Deterministic grayscale inputs with a fixed seed</td><td>Accepted; amended by ADR 0026 (inputs described by k, not as low/high contention; histograms sweep k in {1, 4, 16, 256}), ADR 0027 and ADR 0032 (input fingerprint recorded and compared in the browser CI job)</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0012-gaussian-integer-kernel.md" href="../adr/0012-gaussian-integer-kernel.md">0012</a></td><td>Gaussian 3x3 filter with an integer kernel, row-parallel</td><td>Accepted; amended by ADR 0017 (interior loop in u16, shared kernel table)</td></tr>
         <tr><td><a data-repo="docs/adr/0013-histogram-privatized-control.md" href="../adr/0013-histogram-privatized-control.md">0013</a></td><td>Histogram control with per-task privatization over 64 KiB chunks</td><td>Accepted</td></tr>
         <tr><td><a data-repo="docs/adr/0014-atomic-histogram-prepare-relaxed.md" href="../adr/0014-atomic-histogram-prepare-relaxed.md">0014</a></td><td>Atomic histogram with a prepare step and Relaxed ordering</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0026-rq2-metric-and-contention-sweep.md" href="../adr/0026-rq2-metric-and-contention-sweep.md">0026</a></td><td>RQ2 metric and contention sweep, fixed before the pilot</td><td>Accepted</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0026-rq2-metric-and-contention-sweep.md" href="../adr/0026-rq2-metric-and-contention-sweep.md">0026</a></td><td>RQ2 metric and contention sweep, fixed before the pilot</td><td>Accepted; amended by ADR 0078 (the ratio is shown with its two factors)</td></tr>
         <tr><td><a data-repo="docs/adr/0060-local-histogram-k1-instruction-choice.md" href="../adr/0060-local-histogram-k1-instruction-choice.md">0060</a></td><td>Why Chrome beats native on the local histogram at k = 1</td><td>Accepted</td></tr>
       </tbody>
     </table></div>
@@ -192,10 +182,10 @@
     <div class="scroll-x"><table class="t adr">
       <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
       <tbody>
-        <tr class="changed"><td><a data-repo="docs/adr/0015-shared-measurement-loop.md" href="../adr/0015-shared-measurement-loop.md">0015</a></td><td>Shared measurement loop with an injected clock</td><td>Accepted, amended by 0018, 0030 and 0032</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0016-native-runner-csv-schema.md" href="../adr/0016-native-runner-csv-schema.md">0016</a></td><td>Native runner and the shared CSV result schema</td><td>Accepted, amended by 0018, 0027, 0030 and 0032</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0015-shared-measurement-loop.md" href="../adr/0015-shared-measurement-loop.md">0015</a></td><td>Shared measurement loop with an injected clock</td><td>Accepted; amended by ADR 0018 and ADR 0032 (global pool, no install) and ADR 0030 (fork-join calibration before the warm-up)</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0016-native-runner-csv-schema.md" href="../adr/0016-native-runner-csv-schema.md">0016</a></td><td>Native runner and the shared CSV result schema</td><td>Accepted; amended by ADR 0018 and ADR 0032 (global pool, no install), ADR 0027 (input fingerprint column) and ADR 0030 (calibration phases)</td></tr>
         <tr><td><a data-repo="docs/adr/0018-wasm-entry.md" href="../adr/0018-wasm-entry.md">0018</a></td><td>WASM entry configured by the URL query, with a shared config parser</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0030-fork-join-calibration.md" href="../adr/0030-fork-join-calibration.md">0030</a></td><td>Warm and cold fork-join calibration inside every run</td><td>Accepted</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0030-fork-join-calibration.md" href="../adr/0030-fork-join-calibration.md">0030</a></td><td>Warm and cold fork-join calibration inside every run</td><td>Accepted; amends ADR 0015 (run layout) and ADR 0016 (phases in the CSV); amended by ADR 0076 (20 samples in the v2 campaigns)</td></tr>
       </tbody>
     </table></div>
     <h3>Harness and browsers</h3>
@@ -204,18 +194,18 @@
       <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
       <tbody>
         <tr><td><a data-repo="docs/adr/0006-harness-without-automation.md" href="../adr/0006-harness-without-automation.md">0006</a></td><td>Harness without a browser automation framework</td><td>Accepted</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0007-pinned-browser-builds.md" href="../adr/0007-pinned-browser-builds.md">0007</a></td><td>Pinned browser builds</td><td>Accepted, versions in 0021</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0019-local-results-server.md" href="../adr/0019-local-results-server.md">0019</a></td><td>Local results server with cross-origin isolation</td><td>Accepted, amended by 0027, 0028, 0031 and 0032</td></tr>
+        <tr><td><a data-repo="docs/adr/0007-pinned-browser-builds.md" href="../adr/0007-pinned-browser-builds.md">0007</a></td><td>Pinned browser builds</td><td>Accepted; versions set by ADR 0021</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0019-local-results-server.md" href="../adr/0019-local-results-server.md">0019</a></td><td>Local results server with cross-origin isolation</td><td>Accepted; amended by ADR 0027, ADR 0028 (server on the E-cores), ADR 0031 and ADR 0032</td></tr>
         <tr><td><a data-repo="docs/adr/0020-benchmark-page-protocol.md" href="../adr/0020-benchmark-page-protocol.md">0020</a></td><td>Benchmark page protocol</td><td>Accepted</td></tr>
         <tr><td><a data-repo="docs/adr/0021-browser-versions.md" href="../adr/0021-browser-versions.md">0021</a></td><td>Browser versions pinned to Chrome for Testing 155.0.8059.84 and Firefox 158.0</td><td>Accepted</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0022-browser-launcher.md" href="../adr/0022-browser-launcher.md">0022</a></td><td>Browser launcher with a fresh profile, taskset and no automation</td><td>Accepted, amended by 0029 and 0031</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0023-result-context.md" href="../adr/0023-result-context.md">0023</a></td><td>Context recorded with every result</td><td>Accepted, amended by 0025, 0027, 0028, 0029 and 0031</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0024-browser-correctness-ci.md" href="../adr/0024-browser-correctness-ci.md">0024</a></td><td>Browser correctness checked in CI against native</td><td>Accepted, amended by 0032</td></tr>
-        <tr><td><a data-repo="docs/adr/0027-provenance-and-failed-runs.md" href="../adr/0027-provenance-and-failed-runs.md">0027</a></td><td>Provenance, drift context and failed-run records</td><td>Accepted</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0029-quiet-browsers-and-start-delay.md" href="../adr/0029-quiet-browsers-and-start-delay.md">0029</a></td><td>Symmetric quiet browser settings and a recorded start delay</td><td>Accepted, amended by 0048</td></tr>
-        <tr><td><a data-repo="docs/adr/0031-harness-robustness.md" href="../adr/0031-harness-robustness.md">0031</a></td><td>Harness robustness: run ids, exact versions, loopback address, leftovers</td><td>Accepted</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0022-browser-launcher.md" href="../adr/0022-browser-launcher.md">0022</a></td><td>Browser launcher with a fresh profile, taskset and no automation</td><td>Accepted; amended by ADR 0029 (quiet browser settings, start delay) and ADR 0031 (page URL, leftover check)</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0023-result-context.md" href="../adr/0023-result-context.md">0023</a></td><td>Context recorded with every result</td><td>Accepted; amended by ADR 0025 (SMT and mask topology keys), ADR 0027 (provenance and drift keys, failed-run records), ADR 0028 (shield and foreign CPU time), ADR 0029 (start delay) and ADR 0031 (exact version, leftover processes)</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0024-browser-correctness-ci.md" href="../adr/0024-browser-correctness-ci.md">0024</a></td><td>Browser correctness checked in CI against native</td><td>Accepted; amended by ADR 0032 (input fingerprints compared too)</td></tr>
+        <tr><td><a data-repo="docs/adr/0027-provenance-and-failed-runs.md" href="../adr/0027-provenance-and-failed-runs.md">0027</a></td><td>Provenance, drift context and failed-run records</td><td>Accepted; amends ADR 0016 (CSV header), ADR 0019 (POST /errors) and ADR 0023 (context keys)</td></tr>
+        <tr><td><a data-repo="docs/adr/0029-quiet-browsers-and-start-delay.md" href="../adr/0029-quiet-browsers-and-start-delay.md">0029</a></td><td>Symmetric quiet browser settings and a recorded start delay</td><td>Accepted; amends ADR 0022 (launcher settings) and ADR 0023 (context keys)</td></tr>
+        <tr><td><a data-repo="docs/adr/0031-harness-robustness.md" href="../adr/0031-harness-robustness.md">0031</a></td><td>Harness robustness: unique run ids, exact versions, loopback address, leftover processes</td><td>Accepted; amends ADR 0019 (exclusive metadata), ADR 0022 (page URL, leftover check) and ADR 0023 (exact version check, leftoverProcesses)</td></tr>
         <tr><td><a data-repo="docs/adr/0033-run-id-joined-by-the-analysis.md" href="../adr/0033-run-id-joined-by-the-analysis.md">0033</a></td><td>The run id is joined by the analysis, not stored in the CSV</td><td>Accepted</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0034-campaign-orchestrator.md" href="../adr/0034-campaign-orchestrator.md">0034</a></td><td>Campaign orchestrator with a seeded interleaved order and resume</td><td>Accepted, amended by 0040</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0034-campaign-orchestrator.md" href="../adr/0034-campaign-orchestrator.md">0034</a></td><td>Campaign orchestrator with a seeded interleaved order and resume</td><td>Accepted; amended by ADR 0040 (environment check enforced on every start)</td></tr>
         <tr><td><a data-repo="docs/adr/0071-firefox-pin-guard.md" href="../adr/0071-firefox-pin-guard.md">0071</a></td><td>Firefox cannot update itself, and a campaign checks the pinned browser versions first</td><td>Accepted</td></tr>
       </tbody>
     </table></div>
@@ -225,12 +215,12 @@
       <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
       <tbody>
         <tr><td><a data-repo="docs/adr/0005-fresh-process-per-run.md" href="../adr/0005-fresh-process-per-run.md">0005</a></td><td>One fresh process per run, warm-up inside the run, run as unit of analysis</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0041-image-size-and-clock-factor.md" href="../adr/0041-image-size-and-clock-factor.md">0041</a></td><td>Image size 8192x8192 and a clock factor of 100</td><td>Accepted</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0043-warm-up-per-workload.md" href="../adr/0043-warm-up-per-workload.md">0043</a></td><td>Warm-up W per workload, the same in every environment</td><td>Accepted, amended by 0048</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0044-thread-counts.md" href="../adr/0044-thread-counts.md">0044</a></td><td>Thread counts N = 1, 2, 4, 6, 7, 8</td><td>Accepted, amended by 0048</td></tr>
-        <tr><td><a data-repo="docs/adr/0046-headless.md" href="../adr/0046-headless.md">0046</a></td><td>Headless browsers, with the difference measured</td><td>Accepted</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0047-runs-and-iterations.md" href="../adr/0047-runs-and-iterations.md">0047</a></td><td>30 runs per configuration and 10 measured iterations per run</td><td>Accepted, amended by 0048</td></tr>
-        <tr><td><a data-repo="docs/adr/0048-start-delay.md" href="../adr/0048-start-delay.md">0048</a></td><td>A 3 s start delay for every browser run</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0041-image-size-and-clock-factor.md" href="../adr/0041-image-size-and-clock-factor.md">0041</a></td><td>Image size 8192x8192 and a clock factor of 100</td><td>Accepted; amends ADR 0037 and ADR 0039</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0043-warm-up-per-workload.md" href="../adr/0043-warm-up-per-workload.md">0043</a></td><td>Warm-up W per workload, the same in every environment</td><td>Accepted; amended by ADR 0048 (the slow first iterations of Firefox hist-local k = 1 at N = 8 may be browser start-up work rather than tier-up; W stays)</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0044-thread-counts.md" href="../adr/0044-thread-counts.md">0044</a></td><td>Thread counts N = 1, 2, 4, 6, 7, 8</td><td>Accepted; amended by ADR 0048 (with a 3 s start delay no browser shows a knee; the knee most likely came from Firefox start-up work, and oversubscription stays a smaller possible threat)</td></tr>
+        <tr><td><a data-repo="docs/adr/0046-headless.md" href="../adr/0046-headless.md">0046</a></td><td>Headless browsers, with the difference to headful measured</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0047-runs-and-iterations.md" href="../adr/0047-runs-and-iterations.md">0047</a></td><td>30 runs per configuration and 10 measured iterations per run</td><td>Accepted; sets the value left open by ADR 0037. Amended by ADR 0048.</td></tr>
+        <tr><td><a data-repo="docs/adr/0048-start-delay.md" href="../adr/0048-start-delay.md">0048</a></td><td>A 3 s start delay for every browser run</td><td>Accepted; amends ADR 0029, ADR 0043, ADR 0044, ADR 0045 and ADR 0047</td></tr>
         <tr><td><a data-repo="docs/adr/0050-chrome-for-testing-matches-stable.md" href="../adr/0050-chrome-for-testing-matches-stable.md">0050</a></td><td>Chrome for Testing gives the same numbers as Chrome stable</td><td>Accepted</td></tr>
       </tbody>
     </table></div>
@@ -240,11 +230,11 @@
       <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
       <tbody>
         <tr><td><a data-repo="docs/adr/0003-strong-scaling.md" href="../adr/0003-strong-scaling.md">0003</a></td><td>Strong scaling with speedup T1/TN per environment</td><td>Accepted</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0036-analysis-v0.md" href="../adr/0036-analysis-v0.md">0036</a></td><td>Analysis v0, one value per run and relative speedup with bootstrap intervals</td><td>Accepted, amended by 0037</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0037-analysis-plan.md" href="../adr/0037-analysis-plan.md">0037</a></td><td>Analysis plan fixed before the campaign</td><td>Accepted, amended by 0039 and 0041</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0038-inference-from-the-analysis-plan.md" href="../adr/0038-inference-from-the-analysis-plan.md">0038</a></td><td>Inference implemented from the analysis plan</td><td>Accepted, amended by 0039</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0039-absolute-times-and-clock-check.md" href="../adr/0039-absolute-times-and-clock-check.md">0039</a></td><td>Absolute time ratios and a clock resolution warning</td><td>Accepted, amended by 0041</td></tr>
-        <tr><td><a data-repo="docs/adr/0051-foreign-cpu-threshold-and-data-check.md" href="../adr/0051-foreign-cpu-threshold-and-data-check.md">0051</a></td><td>Foreign CPU threshold of 0.25 s and the data check before analysis</td><td>Accepted</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0036-analysis-v0.md" href="../adr/0036-analysis-v0.md">0036</a></td><td>Analysis v0: one value per run, relative speedup with bootstrap intervals</td><td>Accepted; amended by ADR 0037 (defaults fixed by the analysis plan)</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0037-analysis-plan.md" href="../adr/0037-analysis-plan.md">0037</a></td><td>Analysis plan fixed before the campaign</td><td>Accepted; amends ADR 0036 (analysis defaults); amended by ADR 0039 (absolute time ratios, clock check) and ADR 0041 (clock factor, image size); amended by ADR 0077 (sensitivity checks run, RQ1 for Chrome not robust)</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0038-inference-from-the-analysis-plan.md" href="../adr/0038-inference-from-the-analysis-plan.md">0038</a></td><td>Inference implemented from the analysis plan</td><td>Accepted; amended by ADR 0039 (absolute time ratios, clock check); amended by ADR 0077 (sensitivity checks run, RQ1 for Chrome not robust)</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0039-absolute-times-and-clock-check.md" href="../adr/0039-absolute-times-and-clock-check.md">0039</a></td><td>Absolute time ratios and a clock resolution warning</td><td>Accepted; amends ADR 0037 and ADR 0038; amended by ADR 0041 (image size, clock factor of 100)</td></tr>
+        <tr><td><a data-repo="docs/adr/0051-foreign-cpu-threshold-and-data-check.md" href="../adr/0051-foreign-cpu-threshold-and-data-check.md">0051</a></td><td>Foreign CPU threshold of 0.25 s and the data check before analysis</td><td>Accepted; sets the value left open by ADR 0037 (D7)</td></tr>
       </tbody>
     </table></div>
     <h3>Exploratory campaigns</h3>
@@ -252,19 +242,19 @@
     <div class="scroll-x"><table class="t adr">
       <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
       <tbody>
-        <tr><td><a data-repo="docs/adr/0052-extras-design.md" href="../adr/0052-extras-design.md">0052</a></td><td>Design of the extra experiments</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0053-extras-campaign-parameters.md" href="../adr/0053-extras-campaign-parameters.md">0053</a></td><td>Parameters of the extras campaign</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0054-extras-results.md" href="../adr/0054-extras-results.md">0054</a></td><td>Results of the extras campaign</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0055-weak-scaling-campaign.md" href="../adr/0055-weak-scaling-campaign.md">0055</a></td><td>Weak scaling campaign</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0056-weak-scaling-results.md" href="../adr/0056-weak-scaling-results.md">0056</a></td><td>Weak scaling results</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0057-simd-campaigns.md" href="../adr/0057-simd-campaigns.md">0057</a></td><td>SIMD campaigns</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0058-simd-results.md" href="../adr/0058-simd-results.md">0058</a></td><td>SIMD results</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0059-hybrid-campaign.md" href="../adr/0059-hybrid-campaign.md">0059</a></td><td>Hybrid P+E campaign</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0061-hybrid-results.md" href="../adr/0061-hybrid-results.md">0061</a></td><td>Hybrid P+E results</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0064-cutoff-campaign.md" href="../adr/0064-cutoff-campaign.md">0064</a></td><td>Cutoff campaign, K passes per timed sample</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0065-cutoff-results.md" href="../adr/0065-cutoff-results.md">0065</a></td><td>Cutoff campaign results</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/extras/0052-extras-design.md" href="../adr/extras/0052-extras-design.md">0052</a></td><td>Design of the extra experiments</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/extras/0053-extras-campaign-parameters.md" href="../adr/extras/0053-extras-campaign-parameters.md">0053</a></td><td>Parameters of the extras campaign</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/extras/0054-extras-results.md" href="../adr/extras/0054-extras-results.md">0054</a></td><td>Results of the extras campaign</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/extras/0055-weak-scaling-campaign.md" href="../adr/extras/0055-weak-scaling-campaign.md">0055</a></td><td>Weak scaling campaign</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/extras/0056-weak-scaling-results.md" href="../adr/extras/0056-weak-scaling-results.md">0056</a></td><td>Weak scaling results</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/extras/0057-simd-campaigns.md" href="../adr/extras/0057-simd-campaigns.md">0057</a></td><td>SIMD campaigns</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/extras/0058-simd-results.md" href="../adr/extras/0058-simd-results.md">0058</a></td><td>SIMD results</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/extras/0059-hybrid-campaign.md" href="../adr/extras/0059-hybrid-campaign.md">0059</a></td><td>Hybrid P+E campaign</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/extras/0061-hybrid-results.md" href="../adr/extras/0061-hybrid-results.md">0061</a></td><td>Results of the hybrid P+E campaign</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0064-cutoff-campaign.md" href="../adr/0064-cutoff-campaign.md">0064</a></td><td>Cutoff campaign, with K passes per timed sample</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0065-cutoff-results.md" href="../adr/0065-cutoff-results.md">0065</a></td><td>Results of the cutoff campaign</td><td>Accepted</td></tr>
         <tr><td><a data-repo="docs/adr/0066-cutoff-phase2-grain-sweep.md" href="../adr/0066-cutoff-phase2-grain-sweep.md">0066</a></td><td>Cutoff phase 2, a grain-size sweep (U-curve)</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0067-grain-sweep-results.md" href="../adr/0067-grain-sweep-results.md">0067</a></td><td>Grain sweep results (U-curve)</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0067-grain-sweep-results.md" href="../adr/0067-grain-sweep-results.md">0067</a></td><td>Results of the grain sweep (U-curve)</td><td>Accepted</td></tr>
       </tbody>
     </table></div>
     <h3>Diagnostics: padding, machine code, counters</h3>
@@ -272,21 +262,56 @@
     <div class="scroll-x"><table class="t adr">
       <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
       <tbody>
-        <tr><td><a data-repo="docs/adr/0049-padding-and-atomic-code.md" href="../adr/0049-padding-and-atomic-code.md">0049</a></td><td>128-byte padding kept, and why Chrome&#x27;s atomics behave differently</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0068-perf-counters-for-diagnostics.md" href="../adr/0068-perf-counters-for-diagnostics.md">0068</a></td><td>Hardware counters readable for the diagnostics</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0072-perf-counters-v2.md" href="../adr/0072-perf-counters-v2.md">0072</a></td><td>Hardware counters of the atomic histogram on measured/v3</td><td>Accepted</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0049-padding-and-atomic-code.md" href="../adr/0049-padding-and-atomic-code.md">0049</a></td><td>128-byte padding kept, and why Chrome's atomics behave differently</td><td>Accepted; amends ADR 0008; the pad64 feature was removed by ADR 0075</td></tr>
+        <tr><td><a data-repo="docs/adr/0068-perf-counters-for-diagnostics.md" href="../adr/0068-perf-counters-for-diagnostics.md">0068</a></td><td>Hardware counters made readable for the diagnostics</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0072-perf-counters-v2.md" href="../adr/0072-perf-counters-v2.md">0072</a></td><td>Hardware counters of the atomic histogram on measured/v2</td><td>Accepted</td></tr>
       </tbody>
     </table></div>
-    <h3>Workflow</h3>
-    <p class="muted">How the project is run: tickets, PRs, review, where decisions and paper material live.</p>
+    <h3>Results, threats and audits on measured/v2</h3>
+    <p class="muted">The first full measurement in one place: what differs below the shared source, the sensitivity checks, how the RQ2 ratio is read, the results, the declared threats, and what the audits made the tools record.</p>
     <div class="scroll-x"><table class="t adr">
       <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
       <tbody>
-        <tr class="changed"><td><a data-repo="docs/adr/0010-workflow-adrs-notion.md" href="../adr/0010-workflow-adrs-notion.md">0010</a></td><td>Development workflow: PRs with CI and AI review, ADRs mirrored to Notion</td><td>Accepted, Notion part superseded by 0063</td></tr>
-        <tr><td><a data-repo="docs/adr/0032-adr-consistency.md" href="../adr/0032-adr-consistency.md">0032</a></td><td>ADRs brought in line with the code</td><td>Accepted</td></tr>
-        <tr class="changed"><td><a data-repo="docs/adr/0063-notion-replaced-by-markdown.md" href="../adr/0063-notion-replaced-by-markdown.md">0063</a></td><td>Notion replaced by Markdown files in the repo</td><td>Accepted, supersedes the Notion part of 0010</td></tr>
-        <tr><td><a data-repo="docs/adr/0073-explainer-documentation.md" href="../adr/0073-explainer-documentation.md">0073</a></td><td>Documentation as a multi-page explainer</td><td>Accepted</td></tr>
-        <tr><td><a data-repo="docs/adr/0074-explainer-for-juniors.md" href="../adr/0074-explainer-for-juniors.md">0074</a></td><td>The explainer is written for juniors first, in two layers</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0075-pad64-feature-removed.md" href="../adr/0075-pad64-feature-removed.md">0075</a></td><td>The pad64 feature is removed from the bench, codegen-neutral</td><td>Accepted; amends ADR 0008 and ADR 0049</td></tr>
+        <tr><td><a data-repo="docs/adr/0076-below-the-shared-source.md" href="../adr/0076-below-the-shared-source.md">0076</a></td><td>What differs below the shared source, and what the v2 calibration measured</td><td>Accepted; amends ADR 0009 and ADR 0030</td></tr>
+        <tr><td><a data-repo="docs/adr/0077-sensitivity-checks-on-campaign-v2.md" href="../adr/0077-sensitivity-checks-on-campaign-v2.md">0077</a></td><td>The plan's sensitivity checks, run on the main campaign of measured/v2</td><td>Accepted; amends ADR 0037 and ADR 0038</td></tr>
+        <tr><td><a data-repo="docs/adr/0078-reading-the-rq2-ratio.md" href="../adr/0078-reading-the-rq2-ratio.md">0078</a></td><td>How the RQ2 ratio is read: its two factors, and what moves it</td><td>Accepted; amends ADR 0026</td></tr>
+        <tr><td><a data-repo="docs/adr/0079-results-on-measured-v2.md" href="../adr/0079-results-on-measured-v2.md">0079</a></td><td>The results on measured/v2, in one place</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0080-threats-to-validity.md" href="../adr/0080-threats-to-validity.md">0080</a></td><td>The threats to validity that are declared with the results</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0081-one-loader-for-every-analysis-command.md" href="../adr/0081-one-loader-for-every-analysis-command.md">0081</a></td><td>Every analysis command reads a campaign through one loader, with the plan's exclusions</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0082-throughput-and-absolute-speedup.md" href="../adr/0082-throughput-and-absolute-speedup.md">0082</a></td><td>Throughput and the absolute speedup are tabulated next to the relative speedup</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0083-recorded-host-state-and-build-inputs.md" href="../adr/0083-recorded-host-state-and-build-inputs.md">0083</a></td><td>The host state and the build inputs that were not recorded are recorded from now on</td><td>Accepted</td></tr>
+      </tbody>
+    </table></div>
+    <h3>The final build, measured/v3</h3>
+    <p class="muted">Measured again with corrections: the design fixed before the data, the per-core check, the build, the gate, the questions behind the results and what each test showed, and the rule that makes v3 the reported build.</p>
+    <div class="scroll-x"><table class="t adr">
+      <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr class="changed"><td><a data-repo="docs/adr/0084-v3-design.md" href="../adr/0084-v3-design.md">0084</a></td><td>The v3 build and its campaigns: what changes, what is asked and how the session runs</td><td>Accepted; amended by ADR 0085</td></tr>
+        <tr><td><a data-repo="docs/adr/0085-per-core-check.md" href="../adr/0085-per-core-check.md">0085</a></td><td>The per-core check: the degraded core is sound on the prepared PC, and what follows</td><td>Accepted; amends ADR 0084, ADR 0077 and ADR 0080</td></tr>
+        <tr><td><a data-repo="docs/adr/0086-v3-build.md" href="../adr/0086-v3-build.md">0086</a></td><td>The v3 build: what changed in the measured code and what the compiler made of it</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0087-gate-of-the-v3-build.md" href="../adr/0087-gate-of-the-v3-build.md">0087</a></td><td>The gate of the v3 build: one cell fails the drift criterion twice, and what it is</td><td>Accepted; amends ADR 0070</td></tr>
+        <tr><td><a data-repo="docs/adr/0088-what-explains-the-results.md" href="../adr/0088-what-explains-the-results.md">0088</a></td><td>What explains the results: the open questions, what tests each, and what it would show</td><td>Accepted; amends ADR 0084</td></tr>
+        <tr><td><a data-repo="docs/adr/0089-tier-and-atomic-increment-results.md" href="../adr/0089-tier-and-atomic-increment-results.md">0089</a></td><td>What the tier campaign and the atomic increment probe show (questions 6 and 7)</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0090-counters-of-the-loop-alone.md" href="../adr/0090-counters-of-the-loop-alone.md">0090</a></td><td>Counters of the loop alone, by the difference of two pass counts</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0091-what-explains-the-scaling.md" href="../adr/0091-what-explains-the-scaling.md">0091</a></td><td>What the counters of the loop, the SIMD builds, the cutoff and the grain by threads show (questions 1 to 5 and 9)</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0092-grain-sweeps-and-weak-scaling-on-v3.md" href="../adr/0092-grain-sweeps-and-weak-scaling-on-v3.md">0092</a></td><td>The grain sweeps and the weak scaling on measured/v3</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0093-extras-on-v3.md" href="../adr/0093-extras-on-v3.md">0093</a></td><td>The extras campaign on measured/v3</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0094-hybrid-on-v3.md" href="../adr/0094-hybrid-on-v3.md">0094</a></td><td>The hybrid campaign on measured/v3, and analysis on this PC after the measurements</td><td>Accepted</td></tr>
+        <tr><td><a data-repo="docs/adr/0095-v3-is-the-reported-build.md" href="../adr/0095-v3-is-the-reported-build.md">0095</a></td><td>measured/v3 is the reported build</td><td>Accepted</td></tr>
+      </tbody>
+    </table></div>
+    <h3>Workflow</h3>
+    <p class="muted">How the project is run: PRs, review, and where the decisions and the documentation live.</p>
+    <div class="scroll-x"><table class="t adr">
+      <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr class="changed"><td><a data-repo="docs/adr/0010-workflow-adrs-notion.md" href="../adr/0010-workflow-adrs-notion.md">0010</a></td><td>Development workflow: PRs with CI and AI review, ADRs mirrored to Notion</td><td>Accepted; Notion part superseded by ADR 0063</td></tr>
+        <tr><td><a data-repo="docs/adr/0032-adr-consistency.md" href="../adr/0032-adr-consistency.md">0032</a></td><td>ADRs brought in line with the code</td><td>Accepted; amends ADR 0011, ADR 0015, ADR 0016, ADR 0019 and ADR 0024</td></tr>
+        <tr><td><a data-repo="docs/adr/0063-notion-replaced-by-markdown.md" href="../adr/0063-notion-replaced-by-markdown.md">0063</a></td><td>Notion replaced by Markdown files in the repository</td><td>Accepted; supersedes the Notion part of ADR 0010</td></tr>
+        <tr><td><a data-repo="docs/adr/0073-explainer-documentation.md" href="../adr/0073-explainer-documentation.md">0073</a></td><td>Documentation as a multi-page explainer</td><td>Accepted. The explainer is not part of this repository.</td></tr>
+        <tr><td><a data-repo="docs/adr/0074-explainer-for-juniors.md" href="../adr/0074-explainer-for-juniors.md">0074</a></td><td>The explainer is written for juniors first, in two layers</td><td>Accepted. The explainer is not part of this repository.</td></tr>
       </tbody>
     </table></div>
     </div>
