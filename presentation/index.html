@@ -115,23 +115,66 @@ svg .val { font-size: 23px; font-weight: 600; }
 .funnel { display: grid; grid-template-columns: auto 1fr; gap: 6px 22px; align-items: baseline; }
 .funnel .n { font-family: var(--display); font-weight: 600; font-size: 54px; line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
 
+/* Demo controls */
+.ctl { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+.ctl .lab { font-size: 24px; color: var(--graphite); white-space: nowrap; }
+kbd { font: 600 17px var(--mono); border: 2px solid var(--graphite); padding: 0 6px; color: var(--graphite); margin-left: 5px; }
+.seg { display: inline-flex; }
+.seg button { font: 600 24px var(--body); padding: 7px 16px; border: 2px solid var(--ink); border-right: none; background: var(--panel); color: var(--ink); cursor: pointer; }
+.seg button:last-child { border-right: 2px solid var(--ink); }
+.seg button.sel { background: var(--ink); color: #fff; }
+.seg button:focus-visible, .replay:focus-visible { outline: 4px solid var(--line); outline-offset: 2px; }
+.seg.small button { font-size: 21px; padding: 5px 11px; }
+.replay { font: 600 20px var(--body); padding: 2px 12px; margin-left: 12px; border: 2px solid var(--ink); background: var(--panel); color: var(--ink); cursor: pointer; }
+.cores i.off { background: var(--panel); }
+#sc-cores i { transition: background .2s; }
+
+/* Anatomy of a run */
+.runline { display: flex; align-items: stretch; }
+.runline .ph { border: 2px solid var(--ink); border-right: none; padding: 10px 12px; font-size: 21px; line-height: 1.2; background: var(--panel); opacity: .28; transition: opacity .25s; }
+.runline .ph:last-child { border-right: 2px solid var(--ink); }
+.runline .ph.on { opacity: 1; }
+.runline .ph span { font-size: 17px; color: var(--graphite); }
+.runline .ph.wide { flex: 1; }
+.runline .ph.value { background: var(--ink); color: #fff; }
+.runline .ph.value span { color: #c9d2dc; }
+.runline .bars { display: flex; align-items: flex-end; gap: 3px; height: 68px; margin-top: 6px; }
+.runline .bars i { flex: 1; background: var(--rule); opacity: 0; }
+.runline .bars i.on { opacity: 1; }
+.runline .bars.meas i { background: var(--chrome); }
+.runline .bars.meas i.mid { outline: 3px solid var(--ink); outline-offset: 1px; }
+.gridhead { display: flex; align-items: baseline; gap: 26px; font-size: 27px; margin-bottom: 4px; }
+.gridhead b { font-family: var(--display); font-size: 40px; display: inline-block; min-width: 96px; text-align: right; }
+.gridnames { display: grid; grid-template-columns: 531px 531px 531px; column-gap: 39px; font-size: 21px; margin-bottom: 4px; }
+#grid { display: block; width: 1671px; height: 180px; }
+.planrow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 22px; margin-top: 18px; }
+.planrow p { font-size: 23px; line-height: 1.28; border-top: 4px solid var(--ink); padding-top: 8px; }
+
+/* Fork-join and region size */
+.fjrow { display: grid; grid-template-columns: 96px 1fr 62px; column-gap: 12px; align-items: center; margin-bottom: 12px; font-size: 23px; }
+.fjrow .track { height: 30px; background: var(--soft); border: 2px solid var(--ink); display: block; }
+.fjrow .track i { display: block; height: 100%; transition: width .35s ease; }
+.fjrow .sub { grid-column: 1 / -1; font-size: 20px; color: var(--graphite); line-height: 1.25; margin-top: 2px; }
+
+/* Cache lines and the atomic add */
+.casrow { display: grid; grid-template-columns: 1106px minmax(0, 1fr); column-gap: 30px; }
+.arena8 { position: relative; height: 306px; background: var(--panel); border: 2px solid var(--ink); }
+.arena8 .core { position: absolute; top: 10px; width: 124px; height: 62px; border: 3px solid var(--ink); background: var(--paper);
+  display: flex; align-items: center; justify-content: center; font-size: 19px; line-height: 1.1; text-align: center; }
+.arena8 .core.ok { background: #d9ecd9; } .arena8 .core.fail { background: #f6c9c6; } .arena8 .core.wait { color: var(--graphite); }
+.arena8 .chip { position: absolute; left: 0; top: 0; background: var(--line); border: 2px solid var(--ink); transition: transform .24s cubic-bezier(.5,0,.3,1);
+  font-size: 19px; font-weight: 600; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
+.tallies { display: flex; align-items: baseline; gap: 22px; font-size: 23px; margin-top: 8px; }
+.tallies .tiny { flex: 1; }
+.tallies b { display: inline-block; min-width: 54px; text-align: right; }
+table.data td.none { text-align: center; color: var(--graphite); font-style: italic; }
+
 /* Instruction sequences */
 .seq { font-family: var(--mono); font-size: 24px; line-height: 1.4; background: var(--ink); color: #e9eef3; padding: 14px 18px; white-space: pre; }
 .seq .hl { color: var(--line); }
 .seq .rt { color: #ff9a94; }
 .seqgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 .seqgrid h4 { font-size: 23px; font-weight: 600; margin-bottom: 6px; }
-
-/* Cache line animation */
-.arena { position: relative; height: 196px; background: var(--panel); border: 2px solid var(--ink); }
-.arena .core { position: absolute; top: 92px; width: 104px; height: 92px; border: 3px solid var(--ink); background: var(--paper);
-  display: flex; align-items: center; justify-content: center; font-size: 22px; text-align: center; line-height: 1.15; transition: background .2s; }
-.arena .core.fail { background: #f6c9c6; }
-.arena .core.ok { background: #d9ecd9; }
-.arena .tok { position: absolute; top: 44px; left: 0; width: 104px; height: 40px; background: var(--line); border: 3px solid var(--ink);
-  font-size: 22px; font-weight: 600; display: flex; align-items: center; justify-content: center; transition: transform .45s cubic-bezier(.5,0,.3,1); font-variant-numeric: tabular-nums; }
-.arena .cap { position: absolute; left: 18px; top: 8px; font-size: 22px; color: var(--graphite); }
-.arena .tally { position: absolute; right: 18px; top: 8px; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
 
 /* k illustration */
 .krow { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; font-size: 23px; }
@@ -165,11 +208,12 @@ svg .val { font-size: 23px; font-weight: 600; }
 body.static [data-step] { opacity: 1; transform: none; transition: none; }
 body.static .draw path.series { stroke-dashoffset: 0; animation: none !important; }
 body.static .lane b { animation: none; left: 30%; }
+body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph { transition: none; }
 @media (prefers-reduced-motion: reduce) {
   [data-step] { transition: none; transform: none; }
   .draw path.series { stroke-dashoffset: 0; animation: none !important; }
   .lane b { animation: none; left: 30%; }
-  .arena .tok { transition: none; }
+  .arena8 .chip, .fjrow .track i { transition: none; }
 }
 @media print {
   @page { size: 1920px 1080px; margin: 0; }
@@ -178,7 +222,7 @@ body.static .lane b { animation: none; left: 30%; }
   .slide { display: flex !important; position: relative; height: 1080px; page-break-after: always; break-after: page; }
   [data-step] { opacity: 1 !important; transform: none !important; }
   .draw path.series { stroke-dashoffset: 0 !important; animation: none !important; }
-  #foot, #notes, #help, #overview { display: none !important; }
+  #foot, #notes, #help, #overview, kbd, .replay { display: none !important; }
 }
 </style>
 </head>
@@ -186,7 +230,7 @@ body.static .lane b { animation: none; left: 30%; }
 <div id="stage">
 
 <!-- 1 -->
-<section class="slide" data-title="Title" data-time="20">
+<section class="slide" data-title="Title" data-time="15">
   <p class="small" style="margin-bottom:40px">Programação Paralela e Concorrente 2026/27, MSc in Informatics Engineering, FCUL</p>
   <h1>Scalability of parallel code<br>in WebAssembly in the browser<br>vs. native</h1>
   <p style="margin-top:34px">David Coimbra, fc68024</p>
@@ -261,74 +305,71 @@ body.static .lane b { animation: none; left: 30%; }
 </section>
 
 <!-- 4 -->
-<section class="slide" data-title="Method and rigor" data-time="70">
+<section class="slide" data-demo="run" data-title="Method: the anatomy of a run" data-time="75">
   <h2>The run is the unit of analysis, and the plan was fixed before the data</h2>
-  <div class="cols c64">
+  <div class="cols c64" style="flex:none;gap:40px">
     <div>
-      <p class="small" style="margin-bottom:8px"><b style="color:var(--ink)">One run = one fresh process or browser launch</b> (fresh profile, no automation framework)</p>
-      <div class="timeline">
-        <div>launch<br><span class="tiny">browsers wait 3 s</span></div>
-        <div>thread pool,<br>calibration</div>
-        <div class="warm">warm-up, W iterations<br><span class="tiny">5 to 71, per workload</span></div>
-        <div class="meas">10 measured iterations<br><span style="font-size:20px;opacity:.85">their median is the run's value</span></div>
+      <p class="small" style="margin-bottom:8px"><b style="color:var(--ink)">One run = one fresh process or browser launch</b>, fresh profile, no automation framework <button type="button" class="replay" id="run-replay">replay <kbd>R</kbd></button></p>
+      <div class="runline" id="runline">
+        <div class="ph">launch</div>
+        <div class="ph">wait 3 s<br><span>browsers only</span></div>
+        <div class="ph">thread<br>pool</div>
+        <div class="ph">fork-join<br>calibration</div>
+        <div class="ph wide">warm-up, W = 15<div class="bars warm"></div></div>
+        <div class="ph wide">10 measured iterations<div class="bars meas"></div></div>
+        <div class="ph value">median<br><b id="run-value"></b><br><span>the run's value</span></div>
       </div>
-      <div class="funnel" style="margin-top:30px" data-step="1">
-        <div class="n">30</div><p>runs per configuration, each with its own start-up, JIT and memory layout</p>
-        <div class="n">177</div><p class="small" style="font-size:28px;color:var(--ink)">configurations: 3 environments x (9 workload cells x N in {1, 2, 4, 6, 7, 8} + 5 sequential references)</p>
-        <div class="n">5310</div><p>runs, interleaved in one random order with a recorded seed</p>
-      </div>
-      <p class="small" data-step="3" style="margin-top:22px"><b style="color:var(--ink)">0</b> failed, <b style="color:var(--ink)">0</b> excluded, <b style="color:var(--ink)">0</b> checksum conflicts; every timed sample at least 100 times the clock resolution.</p>
+      <p class="tiny" style="margin-top:8px">The bars are the iterations of one real run: Chrome, filter, N = 8, the 189th run of the campaign. W is 5 to 71, fixed per workload from pilot data.</p>
     </div>
-    <div>
-      <div class="box quiet" style="margin-bottom:22px">
-        <h3>The machine, prepared</h3>
-        <div class="cores" id="coremap" style="margin:8px 0 10px"></div>
-        <p class="tiny">i9-14900KF. <b style="color:var(--ink)">8 P-cores</b> measured through a CPU mask; system and harness confined to the E-cores. Turbo off, SMT off, governor performance.</p>
-      </div>
-      <div class="box" data-step="2">
-        <h3>Analysis plan, before any run</h3>
-        <ul class="plain" style="margin-top:6px">
-          <li style="font-size:26px;margin-bottom:9px">10 primary contrasts at N = 8: 2 for RQ1, 8 for RQ2</li>
-          <li style="font-size:26px;margin-bottom:9px">geometric means, bootstrap intervals over runs (10 000 resamples)</li>
-          <li style="font-size:26px;margin-bottom:9px">Holm at 0.05, shown with 99.5 % intervals</li>
-          <li style="font-size:26px;margin-bottom:0">checked with Mann-Whitney and Cliff's delta: same 10 decisions</li>
-        </ul>
-      </div>
+    <div class="box quiet" style="padding:18px 24px">
+      <h3>The machine, prepared</h3>
+      <div class="cores" id="coremap" style="margin:8px 0 10px"></div>
+      <p class="tiny">i9-14900KF. <b style="color:var(--ink)">8 P-cores</b> measured through a CPU mask; system and harness on the E-cores. Turbo off, SMT off, governor performance.</p>
     </div>
   </div>
-  <aside class="notes">Method. The machine is an i9-14900KF: I measure only on the 8 P-cores through a process-level mask, with turbo and SMT off and the performance governor; the rest of the system lives on the E-cores. One run is one fresh process, or one fresh browser launch with a fresh profile and no automation framework. Inside the run: the pool, a fork-join calibration, a warm-up sized per workload from pilot data, then 10 measured iterations whose median is the run's single value. That follows Georges et al.: iterations inside one process are not independent, so the unit of analysis is the run. 30 runs per configuration, 177 configurations, 5310 runs interleaved in one seeded random order, so drift over the 14 hours hits every environment alike. The analysis plan was fixed before the campaign: ten primary contrasts at eight threads, bootstrap intervals, Holm correction. Nothing failed, nothing was excluded, no checksum differed. This build is a replication: the first build gave the same ten decisions.</aside>
+  <div data-step="1" style="margin-top:20px">
+    <div class="gridhead"><span><b class="num" id="grid-count">0</b> of 5310 runs, in the order they ran</span><span class="tiny">one cell = one run; 59 configurations across, 30 repetitions down; native, Chrome and Firefox interleaved by a seeded shuffle</span></div>
+    <div class="gridnames"><b class="native">native, 1770 runs</b><b class="chrome">Chrome, 1770 runs</b><b class="firefox">Firefox, 1770 runs</b></div>
+    <canvas id="grid" width="3342" height="360"></canvas>
+  </div>
+  <div class="planrow" data-step="2">
+    <p><b>10 primary contrasts</b> at N = 8, fixed before any run: 2 for RQ1, 8 for RQ2</p>
+    <p><b>Geometric means</b>, bootstrap intervals over runs, 10 000 resamples</p>
+    <p><b>Holm</b> at 0.05, 99.5 % intervals; Mann-Whitney check: same 10 decisions</p>
+    <p><b>0</b> failed, <b>0</b> excluded, <b>0</b> checksum conflicts in 5310 runs</p>
+  </div>
+  <aside class="notes">Method. The machine is an i9-14900KF: I measure only on the 8 P-cores through a process-level mask, with turbo and SMT off and the performance governor; the rest of the system lives on the E-cores. The timeline is one real run. One run is one fresh process, or one fresh browser launch with a fresh profile and no automation framework; a browser waits three seconds so its start-up work is over. Then the thread pool, a fork-join calibration, a warm-up sized per workload from pilot data, and 10 measured iterations whose median is the run's single value. That follows Georges et al.: iterations inside one process are not independent, so the unit of analysis is the run. [next] 30 runs per configuration, 177 configurations, 5310 runs. They are interleaved in one seeded random order: this is the order the campaign really ran in, about 14 hours, so any drift hits every environment alike. [next] The analysis plan was fixed before the campaign: ten primary contrasts at eight threads, bootstrap intervals, Holm correction. Nothing failed, nothing was excluded, no checksum differed. This build is a replication: the first build gave the same ten decisions. Keys: R replays the animation.</aside>
 </section>
 
 <!-- 5 -->
-<section class="slide" data-title="RQ1 result" data-time="60">
-  <h2>RQ1: without synchronization, WASM threads scale like native code</h2>
-  <div class="cols c64" style="gap:44px">
+<section class="slide" data-demo="scale" data-title="RQ1 result" data-time="65">
+  <h2 style="margin-bottom:20px">RQ1: without synchronization, WASM scales like native</h2>
+  <div class="ctl">
+    <span class="lab">Workload <kbd>1</kbd>-<kbd>4</kbd></span><div class="seg" id="sc-work"></div>
+    <span class="lab">Threads N <kbd>&uarr;</kbd><kbd>&darr;</kbd></span><div class="seg" id="sc-n"></div>
+    <div class="cores" id="sc-cores" aria-hidden="true"></div>
+  </div>
+  <div class="cols c64" style="gap:40px">
     <div>
-      <div class="legend" style="margin-bottom:6px"><span><i class="sw-n"></i>native</span><span><i class="sw-c"></i>Chrome</span><span><i class="sw-f"></i>Firefox</span><span class="tiny">dashed: ideal; 30 runs per point</span></div>
-      <div id="ch-speedup" class="draw"></div>
+      <div class="legend" style="margin-bottom:2px"><span><i class="sw-n"></i>native</span><span><i class="sw-c"></i>Chrome</span><span><i class="sw-f"></i>Firefox</span><span class="tiny">dashed: ideal; bars at N: 95 % intervals</span></div>
+      <div id="sc-charts"></div>
     </div>
     <div>
+      <h3 id="sc-title"></h3>
+      <table class="data compact" id="sc-table"></table>
+      <p class="tiny" style="margin:8px 0 18px">Geometric means of 30 runs. Time / native at the same N: what WASM costs is a constant factor in time, not scalability.</p>
       <div data-step="1">
-        <h3>Primary contrast: speedup at N = 8, browser over native</h3>
+        <h3>Primary contrast: filter speedup at N = 8, browser over native</h3>
         <div id="ch-rq1"></div>
-        <p class="tiny" style="margin-bottom:20px">99.5 % intervals. Chrome: not rejected, bounded within about 1 %. Firefox: 5.5 % higher, rejected by Holm.</p>
-      </div>
-      <div data-step="2">
-        <h3>What WASM costs is a constant factor in time</h3>
-        <table class="data">
-          <tr><th>Filter time over native</th><th>N = 1</th><th>N = 8</th></tr>
-          <tr><td class="chrome"><b>Chrome</b></td><td>1.17</td><td>1.18</td></tr>
-          <tr><td class="firefox"><b>Firefox</b></td><td>1.36</td><td>1.29</td></tr>
-        </table>
-        <p class="tiny" style="margin-top:12px">Speedup is not inflated by the baseline: a pool of one thread is within -7 % to +5 % of code with no Rayon at all.</p>
+        <p class="tiny">99.5 % intervals. Chrome: not rejected, bounded within about 1 %. Firefox: 5.5 % higher, rejected by Holm.</p>
       </div>
     </div>
   </div>
-  <aside class="notes">RQ1. The filter reaches a speedup of 6.96 natively, 6.92 in Chrome and 7.34 in Firefox at eight threads; the local histogram reaches 7.8 to 8.5 everywhere. The curves lie on each other. The primary contrast: Chrome's speedup over native's is 0.996, interval 0.987 to 1.004, not rejected, and the interval bounds any difference to about one percent. Firefox is 1.055, rejected: it scales 5.5 percent better, but from a slower baseline. In absolute time WASM costs a constant factor: 1.17 in Chrome and 1.36 in Firefox with one thread, and about the same with eight. So WASM threads cost per-thread speed, not scalability. And the relative speedup is honest: I measured sequential versions with no Rayon call, and the pool of one thread is within minus 7 to plus 5 percent of them.</aside>
+  <aside class="notes">RQ1. The cores light up to eight and the three curves lie on each other. The filter reaches a speedup of 6.96 natively, 6.92 in Chrome and 7.34 in Firefox at eight threads. Look at the last column of the table: in absolute time WASM costs a constant factor, 1.17 in Chrome and 1.36 in Firefox with one thread and about the same with eight (press down to walk N back to 1). So WASM threads cost per-thread speed, not scalability. Key 2: the local histogram reaches 7.8 to 8.5 everywhere. Keys 3 and 4 are the shared atomics, for the next slides. [next] The primary contrast: Chrome's speedup over native's is 0.996, interval 0.987 to 1.004, not rejected, which bounds any difference to about one percent. Firefox is 1.055, rejected: it scales 5.5 percent better, but from a slower baseline. And the relative speedup is honest: I measured sequential versions with no Rayon call, and the pool of one thread is within minus 7 to plus 5 percent of them. Keys: up and down change N, 1 to 4 change the workload.</aside>
 </section>
 
 <!-- 6 -->
-<section class="slide" data-title="RQ1 explanation" data-time="65">
+<section class="slide" data-demo="forkjoin" data-title="RQ1 explanation" data-time="65">
   <h2>Why: longer code per pixel, and eight threads that run into memory, not into the runtime</h2>
   <div class="cols c3" style="gap:36px">
     <div>
@@ -342,13 +383,14 @@ body.static .lane b { animation: none; left: 30%; }
       <p class="tiny">Efficiency at N = 8 against what one thread reads per second, for scalar, baseline and AVX2 builds. One curve for three builds and three environments.</p>
     </div>
     <div data-step="2">
-      <h3>3. Fork-join is slower, and it only matters for small regions</h3>
-      <div id="ch-fj"></div>
-      <p class="tiny">Empty parallel region at N = 8, median. Against 3 to 4 ms of filter work it is noise; under about 0.4 to 0.5 ms of work per region the browsers lose half the efficiency.</p>
+      <h3>3. Small regions pay for the fork-join</h3>
+      <div class="ctl" style="margin-bottom:8px"><span class="lab" style="font-size:21px">Image side <kbd>&uarr;</kbd><kbd>&darr;</kbd></span><div class="seg small" id="fj-side"></div></div>
+      <div id="fj-rows"></div>
+      <p class="tiny" id="fj-cap"></p>
     </div>
   </div>
   <p data-step="3" class="key f" style="margin-top:20px">Firefox scales better because its loop is slower and asks less of the shared memory. It is not evidence that a browser runs threads better: Firefox is the slowest at every N.</p>
-  <aside class="notes">Why. Three pieces of evidence, all exploratory. First, hardware counters of the loop alone: both engines execute about a third more instructions per pixel than native code for the same WASM, 5.5 and 5.4 against 4.1. Second, why nobody reaches 8: from one to eight threads the instructions per pixel do not change, but cycles and cache misses rise. And across scalar, baseline and AVX2 builds, the faster one thread goes through memory, the less eight threads gain: scalar builds keep 0.97 to 0.98, the native AVX2 build drops to 0.72. Firefox's baseline filter sits exactly where its one-thread throughput puts it on that curve. So Firefox scales better because its loop is slower. Third, the runtime itself: an empty fork-join costs 7.9 microseconds natively, 110 in Chrome and 60 in Firefox. With millisecond regions that is amortized; the cutoff campaign shows that below roughly 0.4 to 0.5 milliseconds of work per region the browsers lose half the efficiency, against 0.12 natively.</aside>
+  <aside class="notes">Why. Three pieces of evidence, all exploratory. First, hardware counters of the loop alone: both engines execute about a third more instructions per pixel than native code for the same WASM, 5.5 and 5.4 against 4.1. Second, why nobody reaches 8: from one to eight threads the instructions per pixel do not change, but cycles and cache misses rise. And across scalar, baseline and AVX2 builds, the faster one thread goes through memory, the less eight threads gain: scalar builds keep 0.97 to 0.98, the native AVX2 build drops to 0.72. Firefox's baseline filter sits exactly where its one-thread throughput puts it on that curve. So Firefox scales better because its loop is slower. [next] Third, the runtime itself. This walks down the five image sizes of the cutoff campaign. At 8192 squared a parallel region takes 3 to 4 milliseconds and one empty fork-join, about 11 microseconds natively, 105 in Chrome and 60 in Firefox, is a fraction of a percent to a few percent of it. At 1024 squared the browsers have lost half their efficiency; at 512 squared a whole region in Chrome takes less time than one calibrated fork-join, and the efficiency is 0.24 against 0.43 natively. The fork-join here is a yardstick measured separately in each run, not a component I subtracted. Keys: up and down change the image side.</aside>
 </section>
 
 <!-- 7 -->
@@ -372,42 +414,39 @@ body.static .lane b { animation: none; left: 30%; }
 </section>
 
 <!-- 8 -->
-<section class="slide" data-title="RQ2 explanation" data-time="80">
-  <h2 style="margin-bottom:22px">Why: one WASM instruction, four machine sequences</h2>
-  <div class="seqgrid" style="margin-bottom:16px">
+<section class="slide" data-demo="cas" data-title="RQ2 explanation" data-time="85">
+  <h2 style="margin-bottom:16px">Why: one WASM instruction, four machine sequences</h2>
+  <div class="seqgrid">
     <div><h4 class="native">LLVM, native</h4><div class="seq"><span class="hl">lock inc</span> [counter]</div></div>
     <div><h4 class="firefox">SpiderMonkey, optimizing</h4><div class="seq"><span class="hl">lock add</span> [counter], 1</div></div>
     <div><h4 class="chrome">V8, optimizing (what runs)</h4><div class="seq">old = <span class="hl">load</span> [counter]
-new = old + 1
-<span class="hl">lock cmpxchg</span> [counter]
-<span class="rt">changed? retry</span></div></div>
+<span class="hl">lock cmpxchg</span> [counter], old + 1
+<span class="rt">changed? back to the load</span></div></div>
     <div><h4 class="chrome">V8, baseline</h4><div class="seq"><span class="hl">lock xadd</span> [counter]</div></div>
   </div>
-  <div class="cols c2" style="gap:30px;flex:none" data-step="1">
-    <div class="arena" id="arenaA"><span class="cap">locked add: take the line, add, done</span><span class="tally" id="tallyA"></span></div>
-    <div class="arena" id="arenaB"><span class="cap">compare-and-swap: read, add, write only if unchanged</span><span class="tally" id="tallyB"></span></div>
+  <div class="ctl" style="margin:16px 0 10px">
+    <span class="lab">Sequence <kbd>1</kbd>-<kbd>3</kbd></span><div class="seg" id="cas-seq"></div>
+    <span class="lab">Counters hit, k <kbd>&uarr;</kbd><kbd>&darr;</kbd></span><div class="seg" id="cas-k"></div>
   </div>
-  <div class="cols c2" style="gap:30px;margin-top:14px">
-    <div data-step="2">
-      <table class="data compact">
-        <tr><th>Atomic histogram, one thread, ms</th><th>k = 1</th><th>k = 256</th></tr>
-        <tr><td>native</td><td>379.6</td><td>379.6</td></tr>
-        <tr class="hot"><td>Chrome, optimizing compiler</td><td>698.0</td><td>411.9</td></tr>
-        <tr><td>Chrome, baseline compiler only</td><td>419.1</td><td>402.7</td></tr>
-        <tr class="sep"><td>native probe, lock inc</td><td>379.9</td><td>379.8</td></tr>
-        <tr class="hot"><td>native probe, compare-and-swap</td><td>677.1</td><td>408.2</td></tr>
-      </table>
+  <div class="casrow">
+    <div>
+      <div class="arena8" id="arena"></div>
+      <div class="tallies">
+        <span class="tiny">A model of 8 cores, not a measurement: a yellow cache line is where its counter can be written.</span>
+        <span>adds <b class="num" id="cas-adds">0</b></span><span>retries <b class="num" id="cas-retries">0</b></span><span>retries per add <b class="num" id="cas-rate">0.00</b></span><span>line moves per add <b class="num" id="cas-transfers">0.00</b></span>
+      </div>
     </div>
-    <div data-step="3">
-      <p class="key c" style="margin-bottom:14px;font-size:28px">Changing <b>only</b> the increment in a native program reproduces Chrome. With eight threads at k = 1 Chrome retries one add in four (0.24 per add; native 0.001, Firefox 0.002).</p>
-      <p class="key" style="font-size:28px">At k = 256 the same sequence is the faster one: 210 ms in Chrome and 240 ms in the probe against 415 ms natively. Why is a proposed mechanism, not a shown one.</p>
+    <div>
+      <table class="data compact" id="cas-table"></table>
+      <p class="tiny" id="cas-note" style="margin-top:8px"></p>
     </div>
   </div>
-  <aside class="notes">Why. I read the machine code each engine produces for the same WASM instruction, i64 atomic add. LLVM natively emits one lock inc. SpiderMonkey emits one lock add. V8's optimizing compiler, which is what the campaign measures, emits a load, an add and a lock compare-and-swap that retries if another core changed the counter in between. V8's baseline compiler emits a lock xadd. The animation shows the difference: with a locked add each core takes the cache line and is done; with compare-and-swap a core can read, lose the line to a neighbour, and find its value stale: it retries. Then I tested it twice. Inside the engine: with only the baseline compiler, Chrome's penalty at k 1 disappears, the effect goes from 2.17 to 1.04. And outside the engine, the test that isolates the cause: a native program where I change only the increment to a compare-and-swap loop gives Chrome's times, 677 and 408 milliseconds against Chrome's 698 and 412. Counters confirm the retries: one add in four in Chrome at k 1, practically none elsewhere. At k 256 the same sequence is faster, in Chrome and in the native probe; the mechanism I can only propose: reading the line first asks for exclusive ownership less often. So the RQ2 finding is about a compiler's choice of instructions for an atomic add, not about WebAssembly threads as such.</aside>
+  <p class="key c" data-step="3" style="margin-top:14px;font-size:27px">Changing <b>only</b> the increment in a native program reproduces Chrome in both directions, and with V8's baseline compiler the penalty at k = 1 is gone (effect 2.17 to 1.04). At k = 256 the mechanism is proposed, not shown.</p>
+  <aside class="notes">Why. I read the machine code each engine produces for the same WASM instruction, i64 atomic add. LLVM natively emits one lock inc; SpiderMonkey one lock add; V8's optimizing compiler, which is what the campaign measures, a load and a lock compare-and-swap that goes back to the load if another core changed the counter in between; V8's baseline compiler a lock xadd. The picture is a model of eight cores, and the table next to it is what was measured. Now: the locked add at k equal to 1. One cache line, eight cores, it bounces; no retries. Native takes 380 milliseconds with one thread and 857 with eight: shared atomics do not scale. [next] The same with compare-and-swap: a core reads, loses the line to a neighbour, finds its value stale and retries. Chrome takes 698 and 1823 milliseconds. The native probe, where I changed only the increment, gives 677 and 2132. Counters: Chrome retries one add in four, native and Firefox practically none. [next] Now 256 counters: the lines spread over the cores, retries almost vanish, and the same sequence is the faster one: 210 milliseconds in Chrome and 240 in the probe against 414 natively. Why, I can only propose: reading the line first asks for exclusive ownership less often. [next] So the RQ2 finding is about a compiler's choice of instructions for an atomic add, not about WebAssembly threads as such: with only its baseline compiler Chrome's effect at k 1 goes from 2.17 to 1.04. Keys: 1 to 3 choose the sequence, up and down change k, R restarts the model.</aside>
 </section>
 
 <!-- 9 -->
-<section class="slide" data-title="Pitfalls of browser benchmarking" data-time="45">
+<section class="slide" data-title="Pitfalls of browser benchmarking" data-time="40">
   <h2>A mask, a fresh profile and a pinned version do not confine, quiet and freeze a browser</h2>
   <table class="data" style="margin-top:6px">
     <tr><th style="width:27%">What went wrong</th><th style="text-align:left;width:36%">How it showed</th><th style="text-align:left">Control</th></tr>
@@ -450,7 +489,7 @@ new = old + 1
 </section>
 
 <!-- 11 -->
-<section class="slide" data-title="Takeaways" data-time="45">
+<section class="slide" data-title="Takeaways" data-time="40">
   <h2>Answers, and what to do with them</h2>
   <div class="cols c2" style="gap:44px">
     <div>
@@ -493,8 +532,8 @@ new = old + 1
     <p class="key c small">RQ2: Chrome 2.26 to 0.42 of the native cost of synchronization, by contention</p>
     <p class="key f small">Firefox: never worse than native on synchronization</p>
   </div>
-  <p class="tiny" style="margin-top:60px">Backup slides: press B (extras, weak scaling and SIMD, cutoff and grain, E-cores, robustness).</p>
-  <aside class="notes">Thank you. Questions? Backup slides with B: B1 private and packed atomics and the sorts; B2 weak scaling and the SIMD builds; B3 cutoff and grain; B4 the E-cores; B5 robustness and sensitivity checks.</aside>
+  <p class="tiny" style="margin-top:60px">Backup slides: press B (extras, weak scaling and SIMD, cutoff and grain, E-cores, robustness, engine arms and probe).</p>
+  <aside class="notes">Thank you. Questions? Backup slides with B: B1 private and packed atomics and the sorts; B2 weak scaling and the SIMD builds; B3 cutoff and grain; B4 the E-cores; B5 robustness and sensitivity checks; B6 the engine arms and the native probe.</aside>
 </section>
 
 <!-- Backup slides -->
@@ -606,11 +645,48 @@ new = old + 1
   <aside class="notes">The plan's sensitivity checks: per-run mean instead of median, median centre instead of geometric mean, no foreign-CPU exclusion (which excluded nothing). And a rank test, Mann-Whitney with Cliff's delta, Holm-adjusted. All ten decisions are the same under every check.</aside>
 </section>
 
+<section class="slide backup" data-title="Backup: the engine arms and the native probe" data-time="0">
+  <h2>Backup 6 - the atomic increment: engine arms and native probe (ms)</h2>
+  <div class="cols c2">
+    <div>
+      <h3>Tier campaign, atomic histogram (2100 runs)</h3>
+      <table class="data compact">
+        <tr><th>One thread</th><th>k = 1</th><th>k = 256</th></tr>
+        <tr><td>native</td><td>379.6</td><td>379.6</td></tr>
+        <tr class="hot"><td>Chrome, optimizing compiler</td><td>698.0</td><td>411.9</td></tr>
+        <tr><td>Chrome, baseline compiler only</td><td>419.0</td><td>402.7</td></tr>
+        <tr><td>Firefox, optimizing compiler</td><td>379.7</td><td>379.8</td></tr>
+        <tr><td>Firefox, baseline compiler only</td><td>411.3</td><td>384.0</td></tr>
+        <tr class="sep"><th>Eight threads</th><th>k = 1</th><th>k = 256</th></tr>
+        <tr><td>native</td><td>857.2</td><td>414.0</td></tr>
+        <tr class="hot"><td>Chrome, optimizing compiler</td><td>1823.2</td><td>210.3</td></tr>
+        <tr><td>Chrome, baseline compiler only</td><td>898.4</td><td>270.1</td></tr>
+        <tr><td>Firefox, optimizing compiler</td><td>874.2</td><td>393.1</td></tr>
+        <tr><td>Firefox, baseline compiler only</td><td>896.7</td><td>326.5</td></tr>
+      </table>
+      <p class="tiny" style="margin-top:10px">The arm as shipped equals the optimizing-only arm in every cell: the campaigns measure the optimizing compilers.</p>
+    </div>
+    <div>
+      <h3>Native probe: only the increment changes</h3>
+      <table class="data compact">
+        <tr><th>Sequence</th><th>k = 1, N = 1</th><th>k = 1, N = 8</th><th>k = 256, N = 1</th><th>k = 256, N = 8</th></tr>
+        <tr><td>lock inc</td><td>379.9</td><td>976.2</td><td>379.8</td><td>415.0</td></tr>
+        <tr class="hot"><td>compare-and-swap</td><td>677.1</td><td>2131.8</td><td>408.2</td><td>239.5</td></tr>
+        <tr><td>lock xadd</td><td>382.6</td><td>975.3</td><td>380.3</td><td>437.2</td></tr>
+        <tr><td>lock inc + checks</td><td>381.6</td><td>972.9</td><td>380.0</td><td>401.6</td></tr>
+        <tr><td>lock xadd + checks</td><td>392.4</td><td>983.9</td><td>380.2</td><td>348.8</td></tr>
+      </table>
+      <p class="tiny" style="margin-top:10px">Median of 10 passes, threads pinned, fixed slices: its eight-thread times at k = 1 are not the bench's (976 against 857 ms). The prediction that the baseline arm would lose the advantage at k = 256 failed in part: it keeps most of it (270 ms).</p>
+    </div>
+  </div>
+  <aside class="notes">The tier campaign runs each browser as shipped, with its baseline compiler only and with its optimizing compiler only. The probe is a native C program with the bench's table and input in which only the instructions of one increment change. Prediction written before the run: compare-and-swap slower at k 1, faster at k 256 with eight threads. It held. The tier prediction that the baseline arm loses the k 256 advantage held only in part, and is reported as such.</aside>
+</section>
+
 <div id="foot"><span>PPC 2026/27 - Scalability of parallel code in WASM vs. native</span><div id="slots"></div><span id="count"></span></div>
 </div>
 
 <div id="notes"><div class="bar"><span id="notes-slide"></span><span id="notes-time"></span></div><div id="notes-text"></div></div>
-<div id="help">right / space  next step<br>left           previous step<br>Home / End     first / last slide<br>N  notes and timer   T  reset timer<br>O  overview          B  backup slides<br>F  fullscreen        ?  this help</div>
+<div id="help">right / space  next step<br>left           previous step<br>Home / End     first / last slide<br>N  notes and timer   T  reset timer<br>O  overview          B  backup slides<br>F  fullscreen        ?  this help<br>on a demo slide:<br>up / down     its main control (N, k, size)<br>1 2 3 4       its second control<br>R             replay</div>
 <div id="overview"></div>
 
 <script>
@@ -618,18 +694,6 @@ new = old + 1
 // Every number below is from the tables of measured/v3; presentation/README.md names the file of each.
 const DATA = {
   threads: [1, 2, 4, 6, 7, 8],
-  speedup: {
-    filter: {
-      native: [1, 1.965, 3.780, 5.459, 6.179, 6.955],
-      chrome: [1, 1.961, 3.725, 5.396, 6.088, 6.924],
-      firefox: [1, 1.970, 3.782, 5.566, 6.400, 7.336],
-    },
-    local256: {
-      native: [1, 1.993, 3.907, 5.701, 6.800, 7.931],
-      chrome: [1, 1.993, 3.868, 5.627, 6.677, 8.006],
-      firefox: [1, 1.997, 3.890, 5.771, 6.808, 8.484],
-    },
-  },
   rq1: [
     { env: "chrome", effect: 0.9955, low: 0.9868, high: 1.004, rejected: false },
     { env: "firefox", effect: 1.055, low: 1.034, high: 1.072, rejected: true },
@@ -640,7 +704,6 @@ const DATA = {
     firefox: [[1.010, 0.9573, 1.067, false], [0.9691, 0.9555, 0.9827, true], [0.8311, 0.8208, 0.8417, true], [0.7965, 0.7820, 0.8089, true]],
   },
   instructionsPerPixel: { native: 4.10, chrome: 5.52, firefox: 5.41 },
-  forkJoinUs: { native: 7.9, chrome: 110, firefox: 60 },
   memory: [
     { build: "scalar", env: "firefox", mbs: 476, eff: 0.982 },
     { build: "scalar", env: "chrome", mbs: 515, eff: 0.966 },
@@ -664,6 +727,9 @@ const DATA = {
     ["RQ2 Firefox, k = 256", "0.797 [0.782, 0.809]", "0.799", "0.805", "-1", "3.0e-10", "rejected"],
   ],
 };
+// <demo-data> written by presentation/build_data.py, do not edit
+const DEMO = {"scaling":{"filter":{"native":[{"ms":22.6005,"s":1.0,"sl":1.0,"sh":1.0,"e":1.0,"el":1.0,"eh":1.0},{"ms":11.5025,"s":1.965,"sl":1.963,"sh":1.967,"e":0.982,"el":0.982,"eh":0.983},{"ms":5.9794,"s":3.78,"sl":3.774,"sh":3.786,"e":0.945,"el":0.943,"eh":0.946},{"ms":4.1399,"s":5.459,"sl":5.44,"sh":5.475,"e":0.91,"el":0.907,"eh":0.913},{"ms":3.6579,"s":6.179,"sl":6.166,"sh":6.19,"e":0.883,"el":0.881,"eh":0.884},{"ms":3.2493,"s":6.955,"sl":6.942,"sh":6.969,"e":0.869,"el":0.868,"eh":0.871}],"chrome":[{"ms":26.4864,"s":1.0,"sl":1.0,"sh":1.0,"e":1.0,"el":1.0,"eh":1.0},{"ms":13.5052,"s":1.961,"sl":1.944,"sh":1.977,"e":0.981,"el":0.972,"eh":0.989},{"ms":7.111,"s":3.725,"sl":3.702,"sh":3.747,"e":0.931,"el":0.926,"eh":0.937},{"ms":4.9087,"s":5.396,"sl":5.367,"sh":5.424,"e":0.899,"el":0.895,"eh":0.904},{"ms":4.3504,"s":6.088,"sl":6.055,"sh":6.121,"e":0.87,"el":0.865,"eh":0.874},{"ms":3.8253,"s":6.924,"sl":6.885,"sh":6.964,"e":0.865,"el":0.861,"eh":0.87}],"firefox":[{"ms":30.8082,"s":1.0,"sl":1.0,"sh":1.0,"e":1.0,"el":1.0,"eh":1.0},{"ms":15.6412,"s":1.97,"sl":1.947,"sh":1.991,"e":0.985,"el":0.974,"eh":0.995},{"ms":8.146,"s":3.782,"sl":3.727,"sh":3.83,"e":0.945,"el":0.932,"eh":0.958},{"ms":5.5347,"s":5.566,"sl":5.511,"sh":5.619,"e":0.928,"el":0.919,"eh":0.937},{"ms":4.8141,"s":6.4,"sl":6.341,"sh":6.457,"e":0.914,"el":0.906,"eh":0.922},{"ms":4.1995,"s":7.336,"sl":7.235,"sh":7.422,"e":0.917,"el":0.904,"eh":0.928}]},"local256":{"native":[{"ms":27.0916,"s":1.0,"sl":1.0,"sh":1.0,"e":1.0,"el":1.0,"eh":1.0},{"ms":13.5966,"s":1.993,"sl":1.988,"sh":1.997,"e":0.996,"el":0.994,"eh":0.999},{"ms":6.9344,"s":3.907,"sl":3.897,"sh":3.917,"e":0.977,"el":0.974,"eh":0.979},{"ms":4.7518,"s":5.701,"sl":5.654,"sh":5.741,"e":0.95,"el":0.942,"eh":0.957},{"ms":3.9842,"s":6.8,"sl":6.772,"sh":6.828,"e":0.971,"el":0.967,"eh":0.975},{"ms":3.4159,"s":7.931,"sl":7.912,"sh":7.949,"e":0.991,"el":0.989,"eh":0.994}],"chrome":[{"ms":33.3672,"s":1.0,"sl":1.0,"sh":1.0,"e":1.0,"el":1.0,"eh":1.0},{"ms":16.7423,"s":1.993,"sl":1.97,"sh":2.016,"e":0.996,"el":0.985,"eh":1.008},{"ms":8.6263,"s":3.868,"sl":3.836,"sh":3.909,"e":0.967,"el":0.959,"eh":0.977},{"ms":5.9303,"s":5.627,"sl":5.567,"sh":5.699,"e":0.938,"el":0.928,"eh":0.95},{"ms":4.9973,"s":6.677,"sl":6.621,"sh":6.748,"e":0.954,"el":0.946,"eh":0.964},{"ms":4.1679,"s":8.006,"sl":7.874,"sh":8.147,"e":1.001,"el":0.984,"eh":1.018}],"firefox":[{"ms":34.4911,"s":1.0,"sl":1.0,"sh":1.0,"e":1.0,"el":1.0,"eh":1.0},{"ms":17.2678,"s":1.997,"sl":1.959,"sh":2.043,"e":0.999,"el":0.98,"eh":1.021},{"ms":8.866,"s":3.89,"sl":3.824,"sh":3.974,"e":0.973,"el":0.956,"eh":0.994},{"ms":5.9762,"s":5.771,"sl":5.683,"sh":5.89,"e":0.962,"el":0.947,"eh":0.982},{"ms":5.0662,"s":6.808,"sl":6.703,"sh":6.949,"e":0.973,"el":0.958,"eh":0.993},{"ms":4.0654,"s":8.484,"sl":8.325,"sh":8.677,"e":1.061,"el":1.041,"eh":1.085}]},"atomic1":{"native":[{"ms":379.6155,"s":1.0,"sl":1.0,"sh":1.0,"e":1.0,"el":1.0,"eh":1.0},{"ms":900.9592,"s":0.421,"sl":0.412,"sh":0.43,"e":0.211,"el":0.206,"eh":0.215},{"ms":841.9518,"s":0.451,"sl":0.434,"sh":0.468,"e":0.113,"el":0.108,"eh":0.117},{"ms":838.0031,"s":0.453,"sl":0.437,"sh":0.469,"e":0.076,"el":0.073,"eh":0.078},{"ms":885.374,"s":0.429,"sl":0.416,"sh":0.444,"e":0.061,"el":0.059,"eh":0.063},{"ms":856.3456,"s":0.443,"sl":0.431,"sh":0.455,"e":0.055,"el":0.054,"eh":0.057}],"chrome":[{"ms":697.9738,"s":1.0,"sl":1.0,"sh":1.0,"e":1.0,"el":1.0,"eh":1.0},{"ms":2028.0716,"s":0.344,"sl":0.338,"sh":0.351,"e":0.172,"el":0.169,"eh":0.175},{"ms":1905.7714,"s":0.366,"sl":0.351,"sh":0.382,"e":0.092,"el":0.088,"eh":0.096},{"ms":1868.5152,"s":0.374,"sl":0.36,"sh":0.388,"e":0.062,"el":0.06,"eh":0.065},{"ms":1876.5822,"s":0.372,"sl":0.359,"sh":0.386,"e":0.053,"el":0.051,"eh":0.055},{"ms":1888.8404,"s":0.37,"sl":0.357,"sh":0.384,"e":0.046,"el":0.045,"eh":0.048}],"firefox":[{"ms":379.7197,"s":1.0,"sl":1.0,"sh":1.0,"e":1.0,"el":1.0,"eh":1.0},{"ms":932.4418,"s":0.407,"sl":0.394,"sh":0.42,"e":0.204,"el":0.197,"eh":0.21},{"ms":849.158,"s":0.447,"sl":0.434,"sh":0.461,"e":0.112,"el":0.109,"eh":0.115},{"ms":869.0029,"s":0.437,"sl":0.423,"sh":0.452,"e":0.073,"el":0.07,"eh":0.075},{"ms":900.295,"s":0.422,"sl":0.411,"sh":0.435,"e":0.06,"el":0.059,"eh":0.062},{"ms":878.5052,"s":0.432,"sl":0.421,"sh":0.444,"e":0.054,"el":0.053,"eh":0.056}]},"atomic256":{"native":[{"ms":379.5695,"s":1.0,"sl":1.0,"sh":1.0,"e":1.0,"el":1.0,"eh":1.0},{"ms":401.4742,"s":0.945,"sl":0.945,"sh":0.946,"e":0.473,"el":0.473,"eh":0.473},{"ms":639.7169,"s":0.593,"sl":0.589,"sh":0.597,"e":0.148,"el":0.147,"eh":0.149},{"ms":515.8345,"s":0.736,"sl":0.734,"sh":0.738,"e":0.123,"el":0.122,"eh":0.123},{"ms":458.0803,"s":0.829,"sl":0.827,"sh":0.831,"e":0.118,"el":0.118,"eh":0.119},{"ms":414.5922,"s":0.916,"sl":0.915,"sh":0.916,"e":0.114,"el":0.114,"eh":0.115}],"chrome":[{"ms":411.8633,"s":1.0,"sl":1.0,"sh":1.0,"e":1.0,"el":1.0,"eh":1.0},{"ms":349.0499,"s":1.18,"sl":1.179,"sh":1.18,"e":0.59,"el":0.59,"eh":0.59},{"ms":273.906,"s":1.504,"sl":1.499,"sh":1.509,"e":0.376,"el":0.375,"eh":0.377},{"ms":235.2438,"s":1.751,"sl":1.747,"sh":1.755,"e":0.292,"el":0.291,"eh":0.292},{"ms":221.3046,"s":1.861,"sl":1.859,"sh":1.863,"e":0.266,"el":0.266,"eh":0.266},{"ms":210.3694,"s":1.958,"sl":1.957,"sh":1.959,"e":0.245,"el":0.245,"eh":0.245}],"firefox":[{"ms":379.8207,"s":1.0,"sl":1.0,"sh":1.0,"e":1.0,"el":1.0,"eh":1.0},{"ms":375.196,"s":1.012,"sl":1.012,"sh":1.012,"e":0.506,"el":0.506,"eh":0.506},{"ms":368.226,"s":1.031,"sl":1.03,"sh":1.033,"e":0.258,"el":0.257,"eh":0.258},{"ms":383.942,"s":0.989,"sl":0.988,"sh":0.991,"e":0.165,"el":0.165,"eh":0.165},{"ms":396.6808,"s":0.957,"sl":0.956,"sh":0.959,"e":0.137,"el":0.137,"eh":0.137},{"ms":392.9983,"s":0.966,"sl":0.966,"sh":0.967,"e":0.121,"el":0.121,"eh":0.121}]}},"cutoff":{"sides":[512,1024,2048,4096,8192],"cells":{"filter":{"native":[{"e":0.429,"t8us":25.8,"workus":88.4},{"e":0.703,"t8us":59.3,"workus":333.3},{"e":0.857,"t8us":192.3,"workus":1319.1},{"e":0.94,"t8us":728.8,"workus":5480.0},{"e":0.866,"t8us":3264.2,"workus":22608.6}],"chrome":[{"e":0.242,"t8us":60.1,"workus":116.3},{"e":0.511,"t8us":101.9,"workus":416.3},{"e":0.816,"t8us":254.3,"workus":1660.3},{"e":0.758,"t8us":1068.7,"workus":6483.4},{"e":0.863,"t8us":3834.6,"workus":26476.3}],"firefox":[{"e":0.238,"t8us":69.9,"workus":133.3},{"e":0.512,"t8us":118.7,"workus":485.9},{"e":0.804,"t8us":300.2,"workus":1930.7},{"e":0.885,"t8us":1065.9,"workus":7543.1},{"e":0.928,"t8us":4168.7,"workus":30946.9}]}},"forkJoinUs":{"native":10.8,"chrome":105.0,"firefox":60.0}},"atomic":{"engine":{"inc":{"1":{"n1":379.6,"n8":857.2,"src":"tier campaign"},"4":{"n1":379.6,"n8":863.6,"src":"main campaign"},"16":{"n1":379.5,"n8":544.0,"src":"main campaign"},"256":{"n1":379.6,"n8":414.0,"src":"tier campaign"}},"add":{"1":{"n1":379.7,"n8":874.2,"src":"tier campaign"},"4":{"n1":379.7,"n8":849.6,"src":"main campaign"},"16":{"n1":379.8,"n8":548.0,"src":"main campaign"},"256":{"n1":379.8,"n8":393.1,"src":"tier campaign"}},"cas":{"1":{"n1":698.0,"n8":1823.2,"src":"tier campaign"},"4":{"n1":588.7,"n8":1648.4,"src":"main campaign"},"16":{"n1":488.5,"n8":968.4,"src":"main campaign"},"256":{"n1":411.9,"n8":210.3,"src":"tier campaign"}},"xadd":{"1":{"n1":419.0,"n8":898.4,"src":"tier campaign"},"4":null,"16":null,"256":{"n1":402.7,"n8":270.1,"src":"tier campaign"}}},"probe":{"inc":{"1":{"n1":379.9,"n8":976.2},"4":null,"16":{"n1":379.8,"n8":550.1},"256":{"n1":379.8,"n8":415.0}},"cas":{"1":{"n1":677.1,"n8":2131.8},"4":null,"16":{"n1":484.9,"n8":1018.9},"256":{"n1":408.2,"n8":239.5}},"xadd":{"1":{"n1":392.4,"n8":983.9},"4":null,"16":{"n1":383.5,"n8":556.4},"256":{"n1":380.2,"n8":348.8}}},"retries":{"chrome-1":0.2422,"chrome-256":0.0146,"firefox-1":0.0021,"firefox-256":0.0008,"native-1":0.001,"native-256":0.0004}},"campaign":{"runs":5310,"configurations":59,"order":"0zj1yl3ur0g10xo1gd0dw17h2sv2ri3p33go1kw0tn3rm1j73fa3gw03e2rg2gn1d641g20j2f53qh1sh1803o12g814v34d34e2jq40u20z1kq37c2l91lq3dz25y3803q442m13w3nw04h0bf38x0b43n72543h91cw1ug0tp1vd2hr0e52gj0ub31z2gr1zi0iw09z25r3zq1pa0ws0y61e63y50bu0md06j1ue20b39l2ke2cn1g73qj20k0tz0cy1tr2vu2mj1ew0qz31v3ej0nz2pm0gh1rf24o35d27r0p51wg07935v02t09v0ij0e41q21ba3qr3xc2r211z3z61l01lw1mk27j3s82xh3ht2721iu1s03011op0cs30q29a2ok0yo33h0803vt3h11a91mz08a2wu33i2m82xl1i60c83ma3ne17b2463a92oi2fu3qb08s1p31wl2c03mo1f02vf0dq1952ox1730zo0p02t333v32f24p18h3je1qn2dp2rj1za31538g14b39a07n3rr3vd3im1iw38z0ar1hd3aw1du0wx1hb2hu2g91dn25x0gc3m521y13e34r0p90oy0v33xi1a33lj2vz3ef2432wz0en1292dx0yj2pk1m90ej3g604729u2rz3hv11w31x1cf0672ce3zi0kz2me28a24a0143s91832dq1yk3t325l0500bi0if29c07m2mr23k1wq20o0lh2yv31m0ks3qt2c639s1152yf0ps0hz11813p0p417y30k08f2h73pb2u11dk16806i03p2oj3di2dv2z22hs39j0di2bq15g1ux0d424s17n1hi1uj3m71xz0h635b2ku2si1rl2d83tk2zl0re39h1st3h83in3e70ts0o91i000t27p2hl2273hp14s38a2pv2dh01v3x10su2t939624r2fw0du1wh2cd36z0153ez2220281pn40e3ix0hj0uy3121er11r3dh2kr2lm1k20y90tk3xe04l1ly11l3n31sb13d32v0jf1642x70xu2fa3j10rd0xn0gm0np03c29635q2iq2lu0j10tj1h42zx2yu3lb41s3dv23x2j01tj1p00g33vo0183nt1m02fe21k2s72xd1sv0nl34z0ik3rk0pu0pr0oz11q1ga0q23cp0xr22l13y1n840f1jm0s52iv23p2ye13a40l26d1ry1cs0n418n1f82ym2e528u2w12870ke1880c61wb0m10dc1wf2u61ds3rw09r0q63v205b1rk0s02nj2k00e707s2fv05c21u2ul2to10z11226p1q32732vo2553dm21s2r419t1mm1g80hk0oi2o219b27o3ic03h3sn3hl2cg06n3873o40ov1790q912t3w121c2t743a1502o52il2sn00a3gl1bi0te12j1y32q42kq3yq0d900o3ct1jy1n30u01vq0jx2df1o02cq18t3mv3q11gn2zm3og0s23a322v0f400h2863uh3d71zc24123r2dt0pn25s0lo3bd0d32cl18j2pz0wk15m1221ao3nf16g1vi0mb0qa3881bl0og2ww1ad3110cp0rh37j3ba3zy3fu1m30k837e0e225m2q10fh1w83cd2gb1j00w83q60qb1r43g71t63up2aa1jv0x418l1zp1ji3s03b41r21dx0z83kr1t725u29o0u705i1gg1fy3wq0713ov1wa0ok3q911318e1na3mw2u30zu2s61n50xz0wr1pv2n94203mu3de0nc0zr16k1o22zw19e0cj3vc2w618a3xl21a1z130m30b2z00ff2te0wa06k0da3ar3jy08i2ap3tx2dd0a116n2ll3oc1ip1ib0eo0100v92i200v1hp19v3qp32d00u2tf1nc0360f70ug38j29e3n41e32h03vz1of1uz25h0df2uy3x60v82cz2na07a0c22wb0fa2jt3ps25j16o3rc3tv2i31kr29q15n3jt4070ah3kl0f805113m41l3g50rb3vb2n242v0on17q2812a51os1ij1gh02l2px3ve2mz32a1ch1fk27z3wp0bv0q11p719x2i80113e31fe26m3xs09m25c0rx24c3xd3ka0ag3wi2lt02i2qk3ut2km07d1ta0dl3283561pg3v30pk1243nm1o53fh0ly28z27k0bc3ai3iq2jw0mc3bg05z1112i728e2zz0qy0i21yy2ug2m53ae1c91km18d33w1at1013lz22f42d2k60jo3ao0h20840yb34a22x1pq02w0jd30z27w3vw1pi3fg1io1zk0bl02f24x1q54382jn32j08j2n808b43926x2j62r304d3jg1hk2gz3xr02222m2jm1kh1ej2o43i43du3f10js2ot2hq3kn25b12f1ml3bl0b208510i1q80ia1jb2z40kx03n13s0fn0uh2oe2031ol2x623z1yu3uz0fu0wg26g08o0321bw30u0av1uo14y1tp10l25a19h3z93ss2a20el3n210u05t2352fl0kk3ch42i2lg1k02ic3ih2ry2je0d23dw3mn0tc05u0ya1a11rp3a719630l1ym3o53uy35w28q2822rp0bh3m12dl1yh3rt24u24q0683xm18y3x83250r51vx3ft2be1vf0732nm2vq24m0yg3fe2y52ai1en0fc1vm1j52kh22y1z02cu1j62zk1zr1cc41x3hd1hl3u10yc18m3p500902v4272bw20f43g19f0292ag1c63i21rb31b1ro1xp2ff39g10c3jp0le30t06d2ji0f90gd2mk0s80iu0fb27l2fj18u37815k0vi1cr09c1k52y040t3fw23f0k40762r820v3e22wi12m1eu1nz0wj1hr26740y1mo0rq2sm25204442t2gs3j72ur2qq2pe0t51xh3ug1qd2gm3s41rm0bb3v73q32eh0m00ir0ct2tk3ds24041w24417v4183ua1yg0z92102mn1201b92kp42j2080ac42h0gx04g1bv2su3jl3j61oj1pl2750od38u0ny0f22gp03x3qv2r52o82020iv02p1fj1462gw2vh2yl32z0ht2ts2ko0582em3bc3g028w1n111f2lh3os27f3382pd3aj1rq1kt2p02zi1n42m42gy42n0bq3wz1ft1tl02u38d2da3ts3kz2ui07p0x53bm1xb0yw2zn0q82i004m3wh2ny3hg2y613o28f02j0ec0sx26a1vl0ul3iv1dy30g2ph0o842x2i13ci3c20xk30c0mg38o3ij33m03v14w0fl3zj0fq0ll1fa3wj4210l02vt1mi3vf2at19w0be1x61ct3i11zu0g61rc1k92qf0xd20q1in0a32wn0ra0qv1fr2x12d30aw1qc1x70rj3xt2h90hg18o1ge35n1ns0co3eg3760l11vo1fi0x01mr07q1d83yt09f0ux3mt0ze0cc3ky32l3dp3cl3kd36o10a1sp17o27i37k3ec3gu0yk32h3bw1l533j1dl3vs0qt2gu2fc34x2173421eh2e62rl1he1to0hw2tx3ie1qe0tq1b82p30t40ua02o3c41px37d3jr22e1hh2xb00317u2bk3d83if3ot0t20ei2lz2yo3z83jm1e00mk2w50353w20zw2kn0ft3ms3ia3o80q541e3lx0il0t722h2kz16q0i52ue37v3oj0fj3430i61j80us3893580n72p10kj1y00i81360pz3z427e2wd2sy0a40vg3bi1ar1300py0pl12u2az2v21lm3nb2rw42a41d1hx3k80dx2mb09j1s507c2000451nl3yo0lg2ij37b3fb0sp2nr2gk3l63qo1xm1nu1zq1qb3bz2mc0lp1x80783yk2nz2v13ea1cq1m13oq3op0a72io0rg1ic1yc09x3cx3ek2l82og17j2fn1mp25301l17s2rh3bv19d1mf3kg3q22o31ln1m50y12z93v93sh1090yn1tn3lk12c0s92932ux3460sa15h2h31pb3rh2hi1sk0qi0ae3sz0rt11n2801yf0m32ly34p33u1va0wc3kw3oy18s3yf3jf3ak1xr2m11us31f2s140j1fz15l3lv05f0x90k70f11qp1eo0r12p51xs3r53ys3lp1ke2qg2fq01z05p1if0kd1or0o41gu06x3pt3y72wc3lm2lo0n23yc1ph2if09g2k33f904s0dk0lz2a91fp3cs34h2r72ht43f0tb3fp28m3o21dz2nf0e90e01xy28r0ym00l0de0ji2ix0ib0880c30b02h10vm3qq04i05j36y27h0tm0yp0ex30w2ou1w316h3c508l2w22b62hf0sj2wt2a73lf2ml2sh1o32nh2zb2fy0sz2aj1go3x928k1fx40p43e43c4343c31we25n15t20i19127a2pi1cb1192id1it1mb0an3h30ey3jv1rd1sn22s30r1072r92un10d22r4353vj0d52wa3hm2ea1w125p2eg1lf3u516w3h43ib0bj3pq0j40932710k51hv3qu2db3wt0uq1aa29t31r30f26s2js0mw2m02w71cz3h620h1lr2b43ig2ru2o71ka1e534t2qo2jv33s0fx13v2i62g52xe1lp2d20un2763lr2303w63a61cj1d40243510hb1uk2z80ud21z1ri2gf2za3ub3k91jr3r31oe2xm1zn2bh06l13h1c10ot1lc1tz3bk2os1720dy27q3xu3yr0lx15335u1lz2l61b23ol09e3bt23c0i913n1002ps1yv1by40k0zv2902e02ib05727v3sy35g3vm1o834n0ck3th28d2122c80yt20s0kn0c91zs2md1jg37n2vx19q2f204v2hx1w43zz28i20u0rz43306204b1od3sx3dx2en0e12s01pp0qc0zf2sp08g1xw1wt3er2h53el42e2u81ff1sl14a3id3ga06g2bf37m08q21m1wi0h10tx2mh0ky3lt2j22s214g3ip0lj42u1ku3uf3ki0kh3tu42c1hf2z52bd06m16j0nq0d630e39r2v742w3r60fe3ay0cv3ui40404t37p2fp1kz1t80c10eg1u63s11ck1c80w11zo0f624h0k91an1u511i15v1js0h31m609804y3np10o3ox16936r31u0ns1o12010912390kb0dr13f3ra0gw1ex3nh3d42po3c62hn1ng3be2361f52jk3db1ix1v53r02al2wv2dj0mz3zg06p07z08r3ta1ot3pw16x0af3y200b22d1k82mi2e704j2bj2mu3xq2z72ec3k40sy1zf1av1ou0xh0kc3um16r1dr0v414d27y0lr3as2ft0y03mr1x41im2uo3x53xv2q50300g20o30by11h0cf0zn2980mf0rv2mo1h32u422605v1py0ox2b90ch0sc3ev32p1102lq1yr0g80qg1ys2b82bo1q727u07h2p41rt0lu2ez1vw3gf3kf18b2pw3x01t93ln1tx1711tu1480lt3io3dd2ky3f30u62dz1f72e42yt01p1qj0zh04e39p3cm26v0xx2wy1sw04a2lv0ty2du1vc3u83b61gb0yr1u71mq0o608k3ng37g1ki1f63qa2s811a3k119m2jl1a40hu31g2s411o3570lw27c1oq1es0hr0or0aj0nv1no2xr1qh0om3tg3sb0r722325f10h1w63lu1ra0dp0sg2843v542908e0so2h60jn3tp2hm0jr0pd3e61wy3m93qk1bx1gs2x026z2g12m33d006s2923472qz0p124e39o3zb2ep0gk3982dy3t21bs0j50t91q418q36m3fj08u1v73xg0f31qt40s1qz26c1h005h36k0701bg3pa2zg42r3042qs1ac3943h23rp0lf3501dp2va40o2mm2sz1ax00c3kc2dm3o31y61c715i3pd1s807b3w83yg1az07f1bz3at1a63gc05k40x3pr0r30vx0vw3x21h62654112f32yw3mm1f420t1i710k3aq0fm2xk1de0n639t3vp1661p11931ia3o72ld2xu1m401s0t31wv2rb3822l424f2423z02nx0460we1gl1lk1dt2ci1e118v15u05a1g23va2uk3sc1kc1ev1jc35f2lx2jg3gp0jv0gu3vg2pl4091pe0gp3c941506q1hq1fv2hy0wl1s722p3bb3ep3ii1yd1w90ef36w0mi17p1fs0193tl2tj43619038s0li2833qc0uf1kx2pq13126k37y26y1xl20y3ze27m0w721d2c53gm2l12ng2le13g0up0h72hp33e1ui21q1ir1331qm07e03o0g90u31vu0uw29x3362jx3k20pi3pf1dc1l80xg1xk2ct0oh32o3ok11g1081740j33jd33r2181ua3l32wl40m17x28v39d0vn28y3zh2ov25t0951id3ge1p941t2sq3532ii1x10v615z2iy2t034k1hy0q31z93i30311fn37w03u1ab2u21k71kv04o01f2fr0za2vk2a61my0ti1nq3080r233b2ed3wa0it0r82sg0ix0k01sg1dq0xb2kw1dj2uc1bc35z33f3pv21942s0qp31y2vw10q0mr14m0ee39k23u15a3la2bp35a3vy2v52xj0551c20j21uy0ou1am0sv3xz1yb00i1bu1v22xc2p83aa17m2th0es31n0iz3nn32r1p20n03fq0052om2qv1al36t1z40pv3nc3te32y3v41630b509i0ss2pg39u2vd2c116u0vs1uw0dj3vq1c32k22fh3mi10f1s32jf1zy2kt42k1sx2b03yz1q029f3w73k015939q14i3oe14e06h3co1450g42de1uh1r131p1z82ig0r03341l40d12pu0f026l0wv0of29g3od3wc0pp0ta0hq23n3ap1so3kt0tv22k1ig1l72ds15p0s30wn1x20fp2q60db1jt06r0873q51d114t0oc1xu0ka2yy1sc3t60w223832k2sx2cp3zr3100ay3xn0z12e13332e93zv1fm1wk2et42229b1hg2xo38y20c0in31o20a3f74013kq1mu0nk1jo03a3n13mh3tb2dc0hc3z33or0c42tt2um2c323d24y0ao19i1p53qf3f615y24n2cb2tv11k26229919a3si05g09200r1gf43222b35i2zo3911ay3a80ic32301n1u01ne1z33cg2fg0nn38k3hz32c0fk1jx21t32q2g735s17c0j725e3hj1uf1a23hs1r040z1bh3ly3952rr3qm0em3702q02o115j0ba39z0vo3h70xw2l50q73622x81hu2m91vg35m1ok2090se1e42di1xx1o40ek2bz36j2v83rz1ub19p30s10x0ak32t2wm3iu22i23e1872xs2ax3jw3td3303py2lp27818i2xy3ac3l821l0qf3jz0l73eh3gs1cn34929n3y93eu3f03nu19r2ya2mp2p22ey1tc0h50ma3m23cq0tl2oz3fn0dn1970wo2ms14q4372u01l238319j3pj3vh1w52b136v3jh3gj3p92zh40i0mx10w05q1t51ls0os0jg2ta0ii0aa1k62qp1r71i31jp1qq2qh2hd21542o0i11v33mx31q1jq3b315c3bj06y03k3yh0jq06a42q3pg3fy07g1i92w926f15d2kv3an14f0vd1523mc3o61ii0963eb2a01yt1mn1sd3dn01e0g71ah1cg2sw39b16t1ty1au19z2on28l34l1zl2kd2c93lo37u0uv3hr15x2bc1zm0s60me3uw14o2y214731t2sk2j50820ql1ye0na0zb1se2l30ue0j60391vy31i2ua15e30h33k2n426926o1fb0vk1qg3hb0hn34y1fg3sd1lv0qm16i1t217g1r806416b3gr2ew41a2c71og3oa0h40cx22104w3mf08w4051t10f50op0y81tq3kk2ha10r2ip1fh1ei2163u22fk2ge0w42cr1yi1ca31410p3c00pf3n91wp2yn1ak1re28g32n3j83fo3eo2282j70gz3nx2482ca40v0oa09k1ox01o3so39y2xw10j2792e83091ha0b832139323s3sq0ga01m2nb2ns3kv18k2hc21f30i2iu2yk1j23p81e21jz0542eu0rk3uv05o42f00s3wu3w01ee11x3bf2jj0h91230ge0e80j03hc1lt0qh2cx15b3tz3rn2d40wd2cs41n3480383d22mv1yq20738f0611sf2go21g4282ys2ac1iv0263nz2hz2ek2up2493l52s53dl2b216f1u92zr2qx1sq29y20e3921x335t3om2lw39m04q3hn0io3m60gv3se0jk3m30fo1823pu13u3su2wx42634s37900z40n0hl2340ng3ja2xi11j1a03v80jy3902is20p1me17z0k60z50sr0ui3pp0kq2k711s0zt07l3tt3r800f3fd19n28834f3tc0h02oh1qu14032216042p01x1i13q83gv0x33zm2771sr4253f23kx1ul2ni02s0vy1w73qx1wn3g22uw10n0am1uu2hk3iw08v0xf26u1on3ws10y3v60w52he3pl0uj1wc1fd31w1a511d0252cy0pg3n00i30bo30p1zz41r1hm08n1lh0tt06f33g2452h84122rm01209a1ko0082dg0063hy2n521e2do1wm3by1423xw1773bu1e71gr0d80cq2x400721n2t21sy3a23ux40h31d1ci3ro22c16y1ze3dq3pi2eq1uq0m42j807t0j825q0rp1iq37f2tw2ol0041qv1gp2p91v93gn0fy0ho0jl2eo3tn0ha0bt3t44141z70nh01u2zu2m73fm3wb3xp3mz2ik0um2kg41z23m0ev1td29r1ho3060ve0go2tu0va2ae1274313s60gi17w1ut2ze35e03y2251jh0xp0860zq1c51ey3b92203sa0m533y3971b42rc2wg27b1t326t2m62kb2bs16e37o0631w01wx2k51k10nm2ia2hw3na1is0t81mt3612f00ww0yy33d04114u0dg0lm2we02g18f12w30d0zy1kn11u3st1kf1y51zh3ah1ya38e3wg1kp3ni23g2yp3c70n82mq3oo0dz2bi1yj21w1rw3we21v0nw0903rs1u828n0gf3yw3re0mv0zd0eu0ci1uv0p23tw3691bq2r60l23n82bg1wr0au0w30vv2891rh36l35x1d51xe3un0dh3uu3b103f1gt1i80pm0gt0zi1lo0jw1y81h83wy0qn3b51pm05d1dm03b03q14k0yi13c05s3g90wq3sf0bs1kk07w0y41nr19834w2ln2p63dr0yq3352312e31ru12x2yx0jb1ov3is00w1380t138110m2sf0gg3da1aw0id3t53no2sj38i2o63sw2y42gt11c2np3f51tk1kj3au3jo0h823w0oj0fd09w3mp0bd0n920x1511f123t2lr2cf3br2iz03s38r0u541900x0yv1t02yd00236e04p1zj31s0x238b3p03u62im0mn3ho3xb2i50r90y70z22gq3cf2qc3cr0ju1x51z61th1qi0i40c51ce11p24i3nr3tj20g3yl1xc3pe17r2n03g80p71y232i3z71ts2t81pt0hx1xt12l3ll2xn2uj22a40a04u2xq1vt3e82tg20m31h1y93e52nq1bk0o501y02r3u03sv2242wq29p0230w02501432d73oh1qw0nr0az3sr05n1li0vq1oh1fc38n1rn1g132w3dc3r419s3jj2av3df1fw0as3b71ws0je3z21yo3a401k1h90ol0ad1pd2ex1tb0sw3xx21x02m05r1sz3wv3x31gm1h71n93673uq0xy1ss0wu2gd3sj3bx3zn3e92n13gz3uk3ty4081042td11e1x01ep1eq0ml1xd2od22z2x31pr3e01ju2ir2bl3cz3wn2mf0nt2ud08z2qd01r13k1ny33q1bf3dj1qy3l93j33lh1uc1nj0wb3r20bm3jq0u92qb1jw0ko0i04020pw0xq2042g33h036i0kv0cr2i43zw15s3522ay0qr41f3e41un29w00j03i2yj2f410g2so1b70ur07i02727n0nj2qi3ou3i023q18c3pn1oz2g42zf1aj2oa1et0yf2tz0xa3m83za3nq2b51o741h2vn2vy3k63p61o61g505m0cl2oo24w1893j00ce2l71v61vj43h06e2gc3y818p0bw2ie12810v21p1141vb0w636x1ed0mp1ow1mw3sg1hz0dv1xa07u3641583ca28t3q03sp41p0a20kw2qu1l12nw2wo30301b2ee41o2hh1ks2y71ap2d641y2bn38h22j0cd20d31l37x2o93172pb3gb1qr3gg2mt2u512d2vp08y30v2ve3451hc2vg3ji24d1fo0ye2s32gx13i2t526j3xo37742l2hg0ob1g63xy33o1620k239x2bv43b35h2jo0ph0sk1kl0ln2ar35y0601si29l3cv23a1gw19u1mh32734b1c41dh1iz23v2ch12k3hf0e63wm1be2qw0ki3me13b3dg1s10tf30y0kp2bx00d32u0kt3eq2tq3yj1zv3601m809o3en1e933c3ag2ab09b0u12h22yz1703u91372l02ut2ei29z0a60bx3p20cw3cj2ty3rv2ne0fs1ef1gv1rv2mg2w83lq08x40g3d13rd2zv41m2nv22u2j90kr1br00y3oi3tm06c1942xv1la2ba3ri0q00im0st3kh1xf3cn3w50rw3b234o0zm2ih1922t40u22hj0qd2rx3j93pm1d73ul2yc01c12o3my0202se08p05y2gh0vt14r1yp1qs14z41k2tb1mg2q81l32xx31a3r901t2f11ai1le2l21d21qf2140l31lg26q13j2q72371cd41c37z37t04n3et3ff1i22fm21i08h1nv11712v0mt2qr1rs07224t05w35l2971a70cb3y400p0d00ed1pc28j0g51xn36317e02n2z11te3ud1h52fi2053zl0do3wo0sm2am1bo1413wl1vp0wz0ru1rz0z33b01xj2f81o91qk2nc1j434c10s1ma2qm1v003z3k73402kj0vr2pa14n03w3hq3ad0660s107v09q0km1kd2nt3t13ee2ev3vk1rg2f601d34v06u3to2rk41b1030la2wj0ab39n3yd0cz2yr2y331e2573i53w42st16m2vb3fl4173am37s2ho33t3uj3ob0ai2631550sh02b1ps0zl1md2ad0x71cl2zd2tm3q73es3i60893j51vr2gl0px2953w92850lb2vv0wy3yn1kg0ne3kp02a2v917i17d0u80sb0v00he2w42k90cu0gy2o01b02323gx3iz1po0hv2yh0ow39c38v0hs2913ym0vc0lc2v42dw0420zs2qn0n33mg38w3d329i1671z501w25922n3ld1d93r124g1n026436p25g12a37l3s72no22o1322pc09h27t3mq3cc23l0g02xp3wx0w93ed2by14j2py27x37q3xa2as26611b42z3sl0hm40q3l13261v11f91vs2er3hu2ob2b719g2602tr41q2k42j43do1g906v12n0kf1z22ka1k43d93wr3e101g1v835p3rg1xq0cg0p331c0zk06o3js1ea3cb0l90r62vj2kk3c10al3li0mm3242ja3rq1lu1da2jz2yq1om3pk3zs3jk32x01q2yi20w31j3001pz12z3az2lj33n3ke1991781nb1dw2ql0430vf1442li1b60a83bn0gl07y2kf3b83ko3mb42y0bp0523zk3vr29d3851tg2nu23h1jn2d92rn0sl0jj1em3ns0nd0ig3441nf2n61gj33z1mv1mx0jm2vs0qo33x2ak0yu06t2rq2tp3av33732g0vl2aw3nl2jb2a82pf0l62d51ld3gy2g01as2dn3f402z2sr2nd1n62dk2zy2ck3413zo1fl09t16d24v4302q904932e1jf1eb26h3180tg3dk3hh3160n53hw15640b3le0m937r0mq18x23b17l1qa1y141325w3m00372jy0ni1ag2pj3fz22q3n51lj24k2d10ku25d0yz1jk3qd0yh20r1nw1gq3oz1db0p81cx3680fi2f734m18w3ye1zd2x20pt16v0ax1um2bt2xa1y730j0lk0qj1v42jp2ow00q3qi2uu0et0160hh3gd3ew0210cm0fv2a11m705x3fs3it2u70wt0vz2t63of0t62cw05l0jt1q10ry0no1mc2q32fx23o3d63k500n3lg1b51y42e22eb0133l00l53ab26e3il2sd3751xg1163390td0m20xs2v03ww07j1co1g042g1mj34g1ja21b06b1aq3ex3a53l42bb2y92la0gj1pj1qx2xz3ls3rb1ve3kb1613qy0xv2rf1p428x2940l40lq2f92rd1s42061tw2ef2740oe25k04k1s93fx1l602x1nm1342293nv1r63vi3hk0653lw3vn2or1h10iq29h0v12w00oq1p82ub3ck3ph07x1ob0pa14x10e0qq1cm0ea2hb2b32sb11t33a40w36637h2us2bm40r3p414l1i40aq3g40zx3nk01a0941gk19c2gi19k0nf0to0rl0v22jc0fr0b30xj3xk3yy0cn0t00u440d3rj29v3723y03021zg0d735j0ds3sm3x44061sm0lv0vu3qw0fw1261ll0xm1iy3zc0hy3cy3ax2701wd3n61vz1ur0wf12y03r04r2x50y30dt1nh1vk2oc0eq28o3fc0eh3yv3551j11gi1bt0970zz26r06w2in2rs03416c3rx3px3m40z63ql0bn1ek1cy0mh3h53l20is1653ks2562t13yb0xi41i2xg0z41840th2pp3v13gk3qs2ej1ih1nx0000rn04z07r0vh3rf0ld0z01ti16l02d3fk3k328p37302h1rr3a13yp25i0kl0tu30a1xi17a1cp1062qt0iy1bd08d0wm3fv3o02d02j32ah0o10uz2sa2wk0uc3nj0qu3hx3t92mw3tq3lc0a02xt08m0hp0gb31323y26b2aq0i71m20wp0v73gq1ae2ga3pz3u41ec14h21r02c0a523i3t02zj1oa0o008302q3g33x70uu2kl1n23843gt35k0er3md1up3u71u40zc3yu1cu1r90rc0e30bz2z61g42pr1571il2vc1w20nu0691sj3743ue18616p3o93xh0my2tl1dv3j40nx2510rs2130sq2an2yg3dy12h38l3i901i1df1gy12g1yz2ao19o42b3zt3uo2uh3jb35r12r0sf1a80pb0ew1750r43bo2ws3kj13r0jc19l0591d00pq1fq2cj3bp1zx3710ja10t2ro2qa17610536c11m0dm34u1oy0772v33ru0qx27g3zu2re21h18109d0zg00m34i0012iw0bk3yx0s731k37i39v1sa16s2nn2a30x83ju3p738q12p3c81el2g203t1eg3s526w3sk0wi3xj1oi1491vn1af36n0mo1wz3u31wo32930n0rm1vh0bg2qy0m83ku1hn1fu3ik18z2zq2fo3ir0ys24l1bb3fi24b2472yb4243g11bn09n1rj2el36g28b3gi36q3d53ry10236d28h0qk3pc0y52333yi1zw3iy3071bp1850c73ml1j92fz09y0si12s3ce3xf2af1wj3y636b0q429j0k13hi0x12uv12q3jn2lb2w30o23qz2p72oy1jl3t72au2sl37a3051u31q93203mk1q60hf0ms2a441u1gc2gg0533on0gs3gh32m1di3rl1g30hd2tn2uf3ey0ri2rt03l20n3f82ra3322v63a00b90b63zp2j112b0k32it2ju36u43d21o1jd0xc2lc0rf01j2uq0yl3qn3qg0jh3s21lx1bm1cv2oq2ss2wr0pj1213ya3dt2wf28s1bj3he3bs1lb3s32m21nk3992pt17f2112wp1hw1tt3t814c2bu14p0mj1pw0c02n32lf0m729m30x3v00yd3ei2y809u27d2i90743cu3al03g04x1pf1ie0ro3uc35o2ls20l41v13q0vb2q217t0560vp34q1rx2ti2n72ki2zc38p3310b702y1ky0pe1hj0s43y126n3mj4163us15o02k40336h0gn32b3i704f0kg3wf24z06z19y1zb2hv2qj1je3nd18g0170gr1s22582c215f1d30ca1pu3652u92gv0sn3p11ni1u204c2mx2wh2h41nt07k26i0331qo10b2jd1ms1pk00e0fz3em03m2fs3bq1i532s2s91nn24j0xe15q2vr1h22uz0v52ma1ik16a28c0hi18r2fb0pc12e2lk1zt1gx0br03d03j36f0j93fr1351oo1hs0gq1r50tr1dg3jx3cw0o72vl1t40ez0at23j2br11v2zt0xl21j30o3ha1ht0mu2610eb0m61u138613x22t2fd2cc3jc2of0x61xo3w31np3vv08c4001ez2nk2k82es1f20ut1b31ud2kc3bh33l1c036a2x901h25v41015r17k12i09l1tv41j0qw3wk1jj1gz04039i22g3z509s1yn2nl0b140c0zp1tm1s627s1p61kb39w39e1ww3zf0vj1r30480yx2jr3z13592my38t07522w3l713z1x93i81yw1394232r11l91f309925o3ny29s09p25z11y02e1xv3j22cm1nd13t2op0jp1wu39f2680ip2tc0l83vu05e38m0uo0p62y13tr2pn0ie1vv0po0wh3zd3ti2co3vx0tw2r00ep2z334j2vm1yx35c0a93193y313l1do0qe2rv36s0nb0qs1e83zx3vl0810xt0sd0ih1k30rr0fg1b11dd0y22zs1n71tf1ql3po0oo3wd3r72g62cv2jh1oc2vi38c2xf1541su0ap07o15w0z72kx2c43af29k2k13qe00k0ls3km00g2dr2zp2sc1j32ks08t33p16z3ow0n10dd1253540uk2qe0jz3tf"},"run":{"id":"campaign-v3-0188-chrome-filter-noise-n8-r1","warmupMs":[9.43,3.825,3.785,3.87,5.6,3.84,4.745,3.82,3.8,3.945,3.825,3.83,3.805,3.855,3.86],"measuredMs":[3.81,3.845,3.785,3.72,3.735,3.735,3.735,3.815,3.835,3.8]}};
+// </demo-data>
 const COLOR = { native: "var(--native)", chrome: "var(--chrome)", firefox: "var(--firefox)" };
 const ENVS = ["native", "chrome", "firefox"];
 const NAME = { native: "native", chrome: "Chrome", firefox: "Firefox" };
@@ -684,37 +750,6 @@ function add(parent, tag, attributes, text) {
   if (text !== undefined) node.textContent = text;
   parent.appendChild(node);
   return node;
-}
-
-// Two speedup panels side by side, sharing the y axis 0 to 9.
-function speedupChart(target) {
-  const width = 1050, height = 610, top = 50, bottom = 70, panelWidth = 440, gap = 80, left = 70;
-  const root = svg(width, height);
-  const panels = [["Gaussian filter", DATA.speedup.filter], ["Local histogram, k = 256", DATA.speedup.local256]];
-  const y = (value) => top + (height - top - bottom) * (1 - value / 9);
-  panels.forEach(([title, series], index) => {
-    const x0 = left + index * (panelWidth + gap);
-    const x = (threads) => x0 + (panelWidth * (threads - 1)) / 7;
-    add(root, "text", { x: x0, y: 30, class: "ttl" }, title);
-    for (let tick = 0; tick <= 8; tick += 2) {
-      add(root, "line", { x1: x0, x2: x0 + panelWidth, y1: y(tick), y2: y(tick), class: "grid" });
-      add(root, "text", { x: x0 - 12, y: y(tick) + 8, class: "lbl", "text-anchor": "end" }, tick);
-    }
-    DATA.threads.forEach((threads) => add(root, "text", { x: x(threads), y: height - bottom + 32, class: "lbl", "text-anchor": "middle" }, threads));
-    add(root, "path", { d: `M${x0},${y(0)} V${top - 6} M${x0},${y(0)} H${x0 + panelWidth}`, class: "axis" });
-    add(root, "line", { x1: x(1), y1: y(1), x2: x(8), y2: y(8), stroke: "var(--graphite)", "stroke-width": 2, "stroke-dasharray": "8 7" });
-    ENVS.forEach((env) => {
-      const points = series[env].map((value, i) => `${x(DATA.threads[i])},${y(value)}`);
-      add(root, "path", { d: "M" + points.join(" L"), class: "series", fill: "none", stroke: COLOR[env], "stroke-width": 4.5, "stroke-linejoin": "round" });
-      series[env].forEach((value, i) => add(root, "circle", { cx: x(DATA.threads[i]), cy: y(value), r: 6, fill: COLOR[env] }));
-    });
-    // End labels at N = 8, spread so they never overlap.
-    const ends = ENVS.map((env) => ({ env, value: series[env][5] })).sort((a, b) => b.value - a.value);
-    ends.forEach((end, rank) => add(root, "text", { x: x(8), y: y(2.9) + rank * 32, class: "val", "text-anchor": "end", style: `fill:${COLOR[end.env]}` },
-      `${NAME[end.env]} ${end.value.toFixed(2)}`));
-    add(root, "text", { x: x0 + panelWidth / 2, y: height - 4, class: "lbl", "text-anchor": "middle" }, "threads N");
-  });
-  target.appendChild(root);
 }
 
 // Horizontal interval plot around a reference of 1.
@@ -814,11 +849,10 @@ function build() {
   const cores = document.getElementById("coremap");
   cores.innerHTML = "<i></i>".repeat(8) + '<span style="width:18px"></span>' + '<i class="e"></i>'.repeat(16);
 
-  speedupChart(document.getElementById("ch-speedup"));
   intervalChart(document.getElementById("ch-rq1"), DATA.rq1.map((row) => ({
     env: row.env, label: NAME[row.env], effect: row.effect, low: row.low, high: row.high, rejected: row.rejected,
     text: row.effect.toFixed(3),
-  })), { width: 700, rowHeight: 62, min: 0.96, max: 1.09, log: false, ticks: [0.98, 1, 1.02, 1.04, 1.06, 1.08], labelWidth: 170 });
+  })), { width: 700, rowHeight: 62, min: 0.96, max: 1.09, log: false, ticks: [0.98, 1, 1.02, 1.04, 1.06, 1.08], labelWidth: 150 });
 
   const rq2Rows = [];
   ["chrome", "firefox"].forEach((env) => DATA.rq2.k.forEach((k, index) => {
@@ -828,98 +862,409 @@ function build() {
   intervalChart(document.getElementById("ch-rq2"), rq2Rows, { width: 1040, rowHeight: 74, min: 0.35, max: 2.8, log: true, ticks: [0.4, 0.5, 0.7, 1, 1.5, 2, 2.5], labelWidth: 260 });
 
   barChart(document.getElementById("ch-instr"), DATA.instructionsPerPixel, { width: 540, height: 250, max: 6, unit: " instr/px", digits: 2 });
-  barChart(document.getElementById("ch-fj"), DATA.forkJoinUs, { width: 540, height: 250, max: 130, unit: " \u00b5s", digits: 1 });
   memoryChart(document.getElementById("ch-mem"));
 
   const robust = document.getElementById("tbl-robust");
   robust.innerHTML = '<table class="data"><tr><th>Primary contrast</th><th>Effect [99.5 % CI]</th><th>Per-run mean</th><th>Median centre</th><th>Cliff\'s delta</th><th>Mann-Whitney p (Holm)</th><th>Decision, all checks</th></tr>' +
     DATA.robustness.map((row) => "<tr>" + row.map((cell) => `<td>${cell}</td>`).join("") + "</tr>").join("") + "</table>";
 
-  buildArena("arenaA");
-  buildArena("arenaB");
 }
 
-// Cache line animation -----------------------------------------------------------------------
-const CORE_X = [60, 250, 440, 630];
-function buildArena(id) {
-  const arena = document.getElementById(id);
-  CORE_X.forEach((x, index) => {
-    const core = document.createElement("div");
-    core.className = "core";
-    core.style.left = x + "px";
-    core.dataset.index = index;
-    core.textContent = "core " + index;
-    arena.appendChild(core);
-  });
-  const token = document.createElement("div");
-  token.className = "tok";
-  token.textContent = "41";
-  token.style.transform = `translateX(${CORE_X[0]}px)`;
-  arena.appendChild(token);
-}
-let arenaRun = 0;
+// Interactive demos ---------------------------------------------------------------------------
+// Each demo owns the picture of one slide. The deck calls enter(step) when the slide or its step
+// changes, key(name) for the keys that do not change slides, and leave() when the slide is left.
+const motionless = () => isStatic || reducedMotion;
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-async function playArenas(run) {
-  const a = document.getElementById("arenaA"), b = document.getElementById("arenaB");
-  const coresA = a.querySelectorAll(".core"), coresB = b.querySelectorAll(".core");
-  const tokenA = a.querySelector(".tok"), tokenB = b.querySelector(".tok");
-  const move = (token, index) => { token.style.transform = `translateX(${CORE_X[index]}px)`; };
-  const label = (core, text, state) => { core.textContent = text; core.className = "core" + (state ? " " + state : ""); };
-  const alive = () => run === arenaRun;
-  let valueA = 41, valueB = 41, retries = 0, addsA = 0, addsB = 0;
-  const tally = () => {
-    document.getElementById("tallyA").textContent = `adds ${addsA}, retries 0`;
-    document.getElementById("tallyB").textContent = `adds ${addsB}, retries ${retries}`;
+function mulberry32(seed) {
+  return () => {
+    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
-  const reset = () => { coresA.forEach((core, i) => label(core, "core " + i)); coresB.forEach((core, i) => label(core, "core " + i)); };
-  tally();
-  // Each round: in A, two cores add in turn. In B, core 0 reads, core 1 gets the line in between and
-  // writes first, so core 0's compare-and-swap finds another value and has to go round again.
-  for (let round = 0; alive(); round++) {
-    const first = (round * 2) % 4, second = (first + 1) % 4;
-    reset();
-    move(tokenA, first); move(tokenB, first);
-    await wait(650); if (!alive()) return;
-    label(coresA[first], "lock add", "ok"); valueA++; addsA++; tokenA.textContent = valueA;
-    label(coresB[first], `load ${valueB}`);
-    tally();
-    await wait(800); if (!alive()) return;
-    move(tokenA, second); move(tokenB, second);
-    await wait(650); if (!alive()) return;
-    label(coresA[second], "lock add", "ok"); valueA++; addsA++; tokenA.textContent = valueA;
-    const stale = valueB;
-    label(coresB[second], "cmpxchg ok", "ok"); valueB++; addsB++; tokenB.textContent = valueB;
-    tally();
-    await wait(800); if (!alive()) return;
-    move(tokenB, first);
-    await wait(650); if (!alive()) return;
-    label(coresB[first], `${stale} != ${valueB} retry`, "fail"); retries++;
-    tally();
-    await wait(1000); if (!alive()) return;
-    label(coresB[first], `load ${valueB}`);
-    await wait(650); if (!alive()) return;
-    label(coresB[first], "cmpxchg ok", "ok"); valueB++; addsB++; tokenB.textContent = valueB;
-    tally();
-    await wait(1100);
+}
+function segmented(container, options, onPick) {
+  container.innerHTML = "";
+  options.forEach((option, index) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = option;
+    // The focus goes back to the deck, so the keys keep driving the slides after a click.
+    button.addEventListener("click", () => { onPick(index); button.blur(); });
+    container.appendChild(button);
+  });
+  return (selected) => [...container.children].forEach((button, index) => button.classList.toggle("sel", index === selected));
+}
+const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
+const fixed = (value, digits) => value.toFixed(digits);
+
+// Slide 4: the anatomy of one run, then the 5310 runs in the order they ran.
+const runDemo = (() => {
+  const run = DEMO.run, campaign = DEMO.campaign;
+  const PANEL_COLUMNS = campaign.configurations, PANEL_ROWS = 30, PER_ENVIRONMENT = PANEL_COLUMNS * PANEL_ROWS;
+  const CELL_W = 18, CELL_H = 12, PANEL_GAP = 78, PIXEL = 2;
+  const GRID_MS = 5200;
+  let token = 0, filled = 0, order = null;
+  const phases = () => [...document.querySelectorAll("#runline .ph")];
+  const bars = (kind) => [...document.querySelectorAll(`#runline .bars.${kind} i`)];
+
+  function init() {
+    const tallest = Math.max(...run.warmupMs, ...run.measuredMs);
+    const fill = (kind, values) => {
+      document.querySelector(`#runline .bars.${kind}`).innerHTML = values.map((ms) => `<i style="height:${Math.round((ms / tallest) * 64)}px"></i>`).join("");
+    };
+    fill("warm", run.warmupMs);
+    fill("meas", run.measuredMs);
+    const sorted = [...run.measuredMs].sort((a, b) => a - b);
+    const median = (sorted[4] + sorted[5]) / 2;
+    document.getElementById("run-value").textContent = fixed(median, 2) + " ms";
+    // The two iterations the median of ten lies between.
+    run.measuredMs.forEach((ms, index) => { if (ms === sorted[4] || ms === sorted[5]) bars("meas")[index].classList.add("mid"); });
+    order = new Uint16Array(campaign.runs);
+    for (let i = 0; i < campaign.runs; i++) order[i] = parseInt(campaign.order.substr(i * 3, 3), 36);
+    document.getElementById("run-replay").addEventListener("click", (event) => { replay(); event.currentTarget.blur(); });
   }
-}
-function staticArenas() {
-  document.getElementById("tallyA").textContent = "adds 2, retries 0";
-  document.getElementById("tallyB").textContent = "adds 2, retries 1";
-  const b = document.getElementById("arenaB").querySelectorAll(".core");
-  b[0].textContent = "41 != 42 retry"; b[0].classList.add("fail");
-  b[1].textContent = "cmpxchg ok"; b[1].classList.add("ok");
-  document.getElementById("arenaB").querySelector(".tok").textContent = "42";
-  document.getElementById("arenaA").querySelectorAll(".core").forEach((core, i) => { if (i < 2) { core.textContent = "lock add"; core.classList.add("ok"); } });
-  document.getElementById("arenaA").querySelector(".tok").textContent = "43";
-}
+  function lightTimeline(upTo, barCount) {
+    phases().forEach((phase, index) => phase.classList.toggle("on", index <= upTo));
+    bars("warm").forEach((bar, index) => bar.classList.toggle("on", upTo > 4 || (upTo === 4 && index < barCount)));
+    bars("meas").forEach((bar, index) => bar.classList.toggle("on", upTo > 5 || (upTo === 5 && index < barCount)));
+  }
+  async function playTimeline(mine) {
+    const alive = () => mine === token;
+    lightTimeline(-1, 0);
+    const pause = [500, 700, 400, 500];
+    for (let phase = 0; phase < 4; phase++) { lightTimeline(phase, 0); await wait(pause[phase]); if (!alive()) return; }
+    for (let bar = 1; bar <= run.warmupMs.length; bar++) { lightTimeline(4, bar); await wait(70); if (!alive()) return; }
+    for (let bar = 1; bar <= run.measuredMs.length; bar++) { lightTimeline(5, bar); await wait(140); if (!alive()) return; }
+    await wait(300); if (!alive()) return;
+    lightTimeline(6, 0);
+  }
+  function drawGrid(count) {
+    const canvas = document.getElementById("grid"), context = canvas.getContext("2d");
+    const colors = ENVS.map((env) => getComputedStyle(document.documentElement).getPropertyValue("--" + env).trim());
+    if (count < filled) { context.clearRect(0, 0, canvas.width, canvas.height); filled = 0; }
+    if (filled === 0) {
+      context.fillStyle = "#dfe5eb";
+      for (let panel = 0; panel < 3; panel++) {
+        for (let cell = 0; cell < PER_ENVIRONMENT; cell++) {
+          const x = panel * (PANEL_COLUMNS * CELL_W + PANEL_GAP) + Math.floor(cell / PANEL_ROWS) * CELL_W;
+          context.fillRect(x, (cell % PANEL_ROWS) * CELL_H, CELL_W - PIXEL, CELL_H - PIXEL);
+        }
+      }
+    }
+    for (; filled < count; filled++) {
+      const index = order[filled], panel = Math.floor(index / PER_ENVIRONMENT), cell = index % PER_ENVIRONMENT;
+      context.fillStyle = colors[panel];
+      const x = panel * (PANEL_COLUMNS * CELL_W + PANEL_GAP) + Math.floor(cell / PANEL_ROWS) * CELL_W;
+      context.fillRect(x, (cell % PANEL_ROWS) * CELL_H, CELL_W - PIXEL, CELL_H - PIXEL);
+    }
+    document.getElementById("grid-count").textContent = count;
+  }
+  function playGrid(mine) {
+    const started = performance.now();
+    const frame = (now) => {
+      if (mine !== token) return;
+      const share = clamp((now - started) / GRID_MS, 0, 1);
+      drawGrid(Math.round(share * campaign.runs));
+      if (share < 1) requestAnimationFrame(frame);
+    };
+    drawGrid(0);
+    requestAnimationFrame(frame);
+  }
+  let lastStep = -1;
+  function enter(step, slideChanged) {
+    if (motionless()) { token++; lightTimeline(6, 0); drawGrid(campaign.runs); return; }
+    if (slideChanged) { lastStep = -1; drawGrid(0); }
+    if (slideChanged && step === 0) playTimeline(++token);
+    else if (step === 1 && lastStep < 1) { lightTimeline(6, 0); playGrid(++token); }
+    else if (step >= 1) { token++; lightTimeline(6, 0); drawGrid(campaign.runs); }
+    else if (step === 0 && lastStep > 0) { token++; drawGrid(0); }
+    lastStep = step;
+  }
+  function replay() {
+    if (motionless()) return;
+    if (step === 0) playTimeline(++token); else { lightTimeline(6, 0); playGrid(++token); }
+  }
+  function key(name) {
+    if (name === "r" || name === "R") { replay(); return true; }
+    return false;
+  }
+  return { init, enter, key, leave: () => { token++; } };
+})();
+
+// Slide 5: N of 8 cores, and the measured speedup and efficiency at that N.
+const scaleDemo = (() => {
+  const WORKLOADS = [["filter", "Gaussian filter"], ["local256", "Local histogram, k = 256"], ["atomic1", "Atomic, k = 1"], ["atomic256", "Atomic, k = 256"]];
+  const state = { workload: 0, n: 5 };
+  let markWorkload, markN, token = 0;
+
+  function init() {
+    markWorkload = segmented(document.getElementById("sc-work"), WORKLOADS.map((workload) => workload[1]), (index) => { token++; state.workload = index; render(); });
+    markN = segmented(document.getElementById("sc-n"), DATA.threads.map(String), (index) => { token++; state.n = index; render(); });
+    document.getElementById("sc-cores").innerHTML = "<i></i>".repeat(8);
+    render();
+  }
+  function panel(root, x0, width, top, height, title, yMax, yTicks, valueOf, ideal) {
+    const x = (threads) => x0 + (width * (threads - 1)) / 7;
+    const y = (value) => top + height * (1 - value / yMax);
+    add(root, "text", { x: x0, y: top - 18, class: "ttl" }, title);
+    yTicks.forEach((tick) => {
+      add(root, "line", { x1: x0, x2: x0 + width, y1: y(tick), y2: y(tick), class: "grid" });
+      add(root, "text", { x: x0 - 12, y: y(tick) + 8, class: "lbl", "text-anchor": "end" }, tick);
+    });
+    DATA.threads.forEach((threads) => add(root, "text", { x: x(threads), y: top + height + 32, class: "lbl", "text-anchor": "middle" }, threads));
+    add(root, "path", { d: `M${x0},${top + height} V${top - 6} M${x0},${top + height} H${x0 + width}`, class: "axis" });
+    if (ideal) {
+      const end = Math.min(8, ideal(yMax));
+      add(root, "line", { x1: x(1), y1: y(ideal.at(1)), x2: x(end), y2: y(ideal.at(end)), stroke: "var(--graphite)", "stroke-width": 2, "stroke-dasharray": "8 7" });
+    }
+    const threadsNow = DATA.threads[state.n];
+    add(root, "line", { x1: x(threadsNow), x2: x(threadsNow), y1: top - 4, y2: top + height, stroke: "var(--ink)", "stroke-width": 2, "stroke-dasharray": "3 5" });
+    const series = DEMO.scaling[WORKLOADS[state.workload][0]];
+    ENVS.forEach((env) => {
+      const points = series[env].map((cell, index) => `${x(DATA.threads[index])},${y(valueOf(cell)[0])}`);
+      add(root, "path", { d: "M" + points.join(" L"), fill: "none", stroke: COLOR[env], "stroke-width": 4, "stroke-linejoin": "round" });
+      series[env].forEach((cell, index) => add(root, "circle", { cx: x(DATA.threads[index]), cy: y(valueOf(cell)[0]), r: index === state.n ? 11 : 5, fill: COLOR[env], stroke: index === state.n ? "var(--paper)" : "none", "stroke-width": 3 }));
+      const [, low, high] = valueOf(series[env][state.n]);
+      add(root, "line", { x1: x(threadsNow), x2: x(threadsNow), y1: y(low), y2: y(high), stroke: "var(--ink)", "stroke-width": 3 });
+    });
+    add(root, "text", { x: x0 + width / 2, y: top + height + 62, class: "lbl", "text-anchor": "middle" }, "threads N");
+  }
+  function render() {
+    markWorkload(state.workload);
+    markN(state.n);
+    const threadsNow = DATA.threads[state.n];
+    [...document.getElementById("sc-cores").children].forEach((core, index) => core.classList.toggle("off", index >= threadsNow));
+    const atomic = state.workload >= 2;
+    const holder = document.getElementById("sc-charts");
+    holder.innerHTML = "";
+    const root = svg(1000, 520);
+    const ideal = Object.assign((yMax) => yMax, { at: (threads) => threads });
+    panel(root, 60, 400, 50, 380, "Speedup T1 / TN", atomic ? 2.4 : 9, atomic ? [0, 0.5, 1, 1.5, 2] : [0, 2, 4, 6, 8], (cell) => [cell.s, cell.sl, cell.sh], ideal);
+    panel(root, 570, 400, 50, 380, "Efficiency, speedup / N", 1.2, [0, 0.25, 0.5, 0.75, 1], (cell) => [cell.e, cell.el, cell.eh], null);
+    holder.appendChild(root);
+    const series = DEMO.scaling[WORKLOADS[state.workload][0]];
+    const nativeMs = series.native[state.n].ms;
+    document.getElementById("sc-title").textContent = `Measured at N = ${threadsNow}: ${WORKLOADS[state.workload][1]}`;
+    document.getElementById("sc-table").innerHTML = "<tr><th></th><th>Time, ms</th><th>Speedup [95 % CI]</th><th>Efficiency</th><th>Time / native</th></tr>" +
+      ENVS.map((env) => {
+        const cell = series[env][state.n];
+        return `<tr><td class="${env}"><b>${NAME[env]}</b></td><td>${cell.ms >= 100 ? fixed(cell.ms, 0) : fixed(cell.ms, 2)}</td><td>${fixed(cell.s, 2)} [${fixed(cell.sl, 2)}, ${fixed(cell.sh, 2)}]</td><td>${fixed(cell.e, 3)}</td><td>${fixed(cell.ms / nativeMs, 2)}</td></tr>`;
+      }).join("");
+  }
+  // Untouched, the slide tells its story: the cores light up one after another up to eight.
+  async function sweep(mine) {
+    for (let index = 0; index < DATA.threads.length; index++) {
+      if (mine !== token) return;
+      state.n = index; render();
+      await wait(420);
+    }
+  }
+  function enter(step, slideChanged) {
+    if (!slideChanged) return;
+    state.workload = 0; state.n = 5;
+    if (motionless()) render(); else sweep(++token);
+  }
+  function key(name) {
+    if (name === "ArrowUp" || name === "ArrowDown") { token++; state.n = clamp(state.n + (name === "ArrowUp" ? 1 : -1), 0, 5); render(); return true; }
+    if (/^[1-4]$/.test(name)) { token++; state.workload = Number(name) - 1; render(); return true; }
+    return false;
+  }
+  return { init, enter, key, leave: () => { token++; } };
+})();
+
+// Slide 6: the measured sizes of the cutoff campaign, efficiency at N = 8 and the fork-join yardstick.
+const forkJoinDemo = (() => {
+  const cutoff = DEMO.cutoff, last = cutoff.sides.length - 1;
+  const state = { side: last };
+  let mark, token = 0, walked = false;
+
+  function init() {
+    mark = segmented(document.getElementById("fj-side"), cutoff.sides.map(String), (index) => { token++; state.side = index; render(); });
+    render();
+  }
+  function render() {
+    mark(state.side);
+    const side = cutoff.sides[state.side];
+    document.getElementById("fj-rows").innerHTML = ENVS.map((env) => {
+      const cell = cutoff.cells.filter[env][state.side], forkJoin = cutoff.forkJoinUs[env], ratio = forkJoin / cell.t8us;
+      const yardstick = ratio < 1 ? `${fixed(ratio * 100, ratio < 0.1 ? 1 : 0)} % of T8` : `${fixed(ratio, 2)} times T8`;
+      return `<div class="fjrow"><b class="${env}">${NAME[env]}</b><span class="track"><i style="width:${cell.e * 100}%;background:${COLOR[env]}"></i></span><b class="num">${fixed(cell.e, 2)}</b>` +
+        `<span class="sub">T8 = ${cell.t8us >= 1000 ? fixed(cell.t8us / 1000, 2) + " ms" : fixed(cell.t8us, 0) + " µs"}; one empty fork-join, ${fixed(forkJoin, forkJoin < 20 ? 1 : 0)} µs, is ${yardstick}</span></div>`;
+    }).join("");
+    document.getElementById("fj-cap").textContent = `Filter on a ${side} x ${side} image, 30 runs per cell: efficiency at N = 8 (bar) and the time of one parallel region, T8. Only the five measured sizes.`;
+  }
+  // Untouched, it walks from the campaign's size down to the smallest one, where the efficiency is gone.
+  async function walk(mine) {
+    for (let index = last; index >= 0; index--) {
+      if (mine !== token) return;
+      state.side = index; render();
+      await wait(900);
+    }
+  }
+  function enter(step, slideChanged) {
+    if (slideChanged) { walked = false; state.side = last; render(); }
+    if (motionless()) { state.side = 0; render(); return; }
+    if (step >= 2 && !walked) { walked = true; walk(++token); }
+  }
+  function key(name) {
+    if (name === "ArrowUp" || name === "ArrowDown") { token++; state.side = clamp(state.side + (name === "ArrowUp" ? 1 : -1), 0, last); render(); return true; }
+    return false;
+  }
+  return { init, enter, key, leave: () => { token++; } };
+})();
+
+// Slide 8: a model of eight cores incrementing k shared counters with one of three sequences.
+const casDemo = (() => {
+  const SEQUENCES = [["inc", "lock inc / lock add"], ["cas", "load + lock cmpxchg"], ["xadd", "lock xadd"]];
+  const K = [1, 4, 16, 256];
+  const CORES = 8, COLUMN = 140, CORE_W = 124, CACHE_TOP = 84;
+  const CHIP = { 1: [112, 40, 1, 6], 4: [56, 30, 2, 6], 16: [28, 22, 4, 3], 256: [10, 10, 10, 1.5] };
+  const TICK_MS = 130, STATIC_TICKS = 600, TRANSIT_TICKS = 2;
+  // The chance that a line is taken from a core between its load and its compare-and-swap when
+  // another core is waiting for it. Set so that the model gives about the measured share of
+  // retried adds in Chrome at k = 1 with eight threads (0.24); it is not a measurement.
+  const STEAL_CHANCE = 0.2;
+  const STORY = [[0, 0], [1, 0], [1, 3], [1, 3]];
+  const state = { sequence: 1, k: 0 };
+  let markSequence, markK, timer = null, model = null;
+
+  function init() {
+    markSequence = segmented(document.getElementById("cas-seq"), SEQUENCES.map((sequence) => sequence[1]), (index) => set(index, state.k));
+    markK = segmented(document.getElementById("cas-k"), K.map(String), (index) => set(state.sequence, index));
+    const arena = document.getElementById("arena");
+    for (let core = 0; core < CORES; core++) {
+      const box = document.createElement("div");
+      box.className = "core";
+      box.style.left = core * COLUMN + "px";
+      arena.appendChild(box);
+    }
+  }
+  function reset() {
+    const arena = document.getElementById("arena"), k = K[state.k], random = mulberry32(20261122);
+    arena.querySelectorAll(".chip").forEach((chip) => chip.remove());
+    const [width, height] = CHIP[k];
+    model = {
+      random, adds: 0, retries: 0, transfers: 0,
+      cores: Array.from({ length: CORES }, (_, index) => ({ state: "think", timer: 1 + (index % 4), line: 0, seen: 0, phase: "", label: "", mood: "" })),
+      lines: Array.from({ length: k }, (_, index) => {
+        const chip = document.createElement("div");
+        chip.className = "chip";
+        chip.style.width = width + "px"; chip.style.height = height + "px";
+        if (k <= 4) chip.textContent = "0";
+        arena.appendChild(chip);
+        return { owner: index % CORES, lockedBy: -1, open: false, stealable: false, version: 0, chip };
+      }),
+    };
+    place(true);
+  }
+  function tick() {
+    const { cores, lines, random } = model, k = lines.length, cas = SEQUENCES[state.sequence][0] === "cas";
+    const first = Math.floor(random() * CORES);
+    for (let turn = 0; turn < CORES; turn++) {
+      const index = (first + turn) % CORES, core = cores[index], line = lines[core.line];
+      if (core.state === "think") {
+        if (--core.timer <= 0) { core.line = Math.floor(random() * k); core.phase = cas ? "load" : "add"; core.state = "want"; core.label = ""; core.mood = ""; }
+      } else if (core.state === "want") {
+        const target = lines[core.line];
+        const free = target.lockedBy === -1 && (!target.open || target.owner === index || target.stealable);
+        if (!free) { core.label = "waits"; core.mood = "wait"; continue; }
+        target.lockedBy = index; target.open = false;
+        if (target.owner !== index) { target.owner = index; model.transfers++; core.timer = TRANSIT_TICKS; } else core.timer = 0;
+        core.state = "arrive"; core.label = "gets the line"; core.mood = "";
+      } else if (core.state === "arrive") {
+        if (--core.timer > 0) continue;
+        if (!cas) {
+          line.version++; model.adds++; line.lockedBy = -1;
+          core.label = state.sequence === 2 ? "lock xadd" : "lock add"; core.mood = "ok";
+          core.state = "think"; core.timer = 2 + Math.floor(random() * 3);
+        } else {
+          if (core.phase === "cmp" && line.version !== core.seen) { model.retries++; core.label = "changed: retry"; core.mood = "fail"; }
+          else { core.label = "load"; core.mood = ""; }
+          // The load is done; until the compare-and-swap the line is not held.
+          core.seen = line.version; line.lockedBy = -1; line.open = true;
+          line.stealable = cores.some((other, at) => at !== index && other.state === "want" && other.line === core.line) && random() < STEAL_CHANCE;
+          core.state = "gap";
+        }
+      } else if (core.state === "gap") {
+        if (line.owner === index && line.lockedBy === -1) {
+          line.version++; model.adds++; line.open = false;
+          core.label = "cmpxchg ok"; core.mood = "ok";
+          core.state = "think"; core.timer = 2 + Math.floor(random() * 3);
+        } else { core.phase = "cmp"; core.state = "want"; core.label = "line taken"; core.mood = "wait"; }
+      }
+    }
+  }
+  function place(instant) {
+    const arena = document.getElementById("arena"), k = K[state.k], [width, height, perRow, gap] = CHIP[k];
+    const slot = new Array(CORES).fill(0);
+    model.lines.forEach((line) => {
+      const at = slot[line.owner]++;
+      const x = line.owner * COLUMN + (at % perRow) * (width + gap) + (CORE_W - perRow * width - (perRow - 1) * gap) / 2;
+      const y = CACHE_TOP + Math.floor(at / perRow) * (height + gap);
+      line.chip.style.transition = instant ? "none" : "";
+      line.chip.style.transform = `translate(${x}px, ${y}px)`;
+      if (k <= 4) line.chip.textContent = line.version;
+    });
+    [...arena.querySelectorAll(".core")].forEach((box, index) => {
+      const core = model.cores[index];
+      box.textContent = core.label || "core " + index;
+      box.className = "core" + (core.mood ? " " + core.mood : "");
+    });
+    document.getElementById("cas-adds").textContent = model.adds;
+    document.getElementById("cas-retries").textContent = model.retries;
+    document.getElementById("cas-rate").textContent = model.adds ? fixed(model.retries / model.adds, 2) : "0.00";
+    document.getElementById("cas-transfers").textContent = model.adds ? fixed(model.transfers / model.adds, 2) : "0.00";
+  }
+  function table() {
+    const sequence = SEQUENCES[state.sequence][0], k = String(K[state.k]), atomic = DEMO.atomic;
+    const cells = (entry) => entry ? `<td>${fixed(entry.n1, 1)}</td><td>${fixed(entry.n8, 1)}</td>` : '<td colspan="2" class="none">not measured</td>';
+    const engine = { inc: ["native (LLVM)", "native"], add: ["Firefox, optimizing", "firefox"], cas: ["Chrome, optimizing", "chrome"], xadd: ["Chrome, baseline only", "chrome"] };
+    const probe = { inc: "native probe, lock inc", cas: "native probe, compare-and-swap", xadd: "native probe, lock xadd + checks" };
+    const row = (name, entry, rowClass, env) => `<tr class="${rowClass}"><td class="${env || ""}">${name}</td>${cells(entry)}</tr>`;
+    let html = `<tr><th>Atomic histogram, k = ${k}, ms</th><th>1 thread</th><th>8 threads</th></tr>`;
+    const hot = sequence === "inc" ? "" : "hot";
+    html += row(engine[sequence][0], atomic.engine[sequence][k], hot, engine[sequence][1]);
+    if (sequence === "inc") html += row(engine.add[0], atomic.engine.add[k], "", engine.add[1]);
+    html += row(probe[sequence], atomic.probe[sequence][k], hot);
+    if (sequence !== "inc") html += row(engine.inc[0], atomic.engine.inc[k], "sep", "native");
+    document.getElementById("cas-table").innerHTML = html;
+    const measured = atomic.retries["chrome-" + k];
+    const sources = [atomic.engine[sequence][k], atomic.engine.inc[k]].filter(Boolean).map((entry) => entry.src);
+    document.getElementById("cas-note").textContent = `Engine rows: ${[...new Set(sources)].join(" and ")}; probe: the same native program with only the increment changed. ` +
+      (measured !== undefined ? `Counters at N = 8, k = ${k}: Chrome retries ${fixed(measured, 3)} of its adds, native ${fixed(atomic.retries["native-" + k], 3)}, Firefox ${fixed(atomic.retries["firefox-" + k], 3)}.` : `Retries were counted at k = 1 and 256 only.`);
+  }
+  function stop() { if (timer !== null) { clearInterval(timer); timer = null; } }
+  function start() {
+    stop();
+    reset();
+    markSequence(state.sequence); markK(state.k);
+    table();
+    if (motionless()) { for (let i = 0; i < STATIC_TICKS; i++) tick(); place(true); return; }
+    timer = setInterval(() => { tick(); place(false); }, TICK_MS);
+  }
+  function set(sequence, k) { state.sequence = sequence; state.k = k; start(); }
+  function enter(step, slideChanged) {
+    if (isStatic) { set(1, 0); return; }
+    if (slideChanged || STORY[step][0] !== state.sequence || STORY[step][1] !== state.k) set(STORY[step][0], STORY[step][1]);
+  }
+  function key(name) {
+    if (name === "ArrowUp" || name === "ArrowDown") { set(state.sequence, clamp(state.k + (name === "ArrowUp" ? 1 : -1), 0, K.length - 1)); return true; }
+    if (/^[1-3]$/.test(name)) { set(Number(name) - 1, state.k); return true; }
+    if (name === "r" || name === "R") { start(); return true; }
+    return false;
+  }
+  return { init, enter, key, leave: stop };
+})();
+
+const DEMOS = { run: runDemo, scale: scaleDemo, forkjoin: forkJoinDemo, cas: casDemo };
 
 // Deck -----------------------------------------------------------------------------------------
 const slides = [...document.querySelectorAll(".slide")];
 const mainCount = slides.filter((slide) => !slide.classList.contains("backup")).length;
 const isStatic = new URLSearchParams(location.search).has("static");
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
-let current = 0, step = 0, startedAt = null;
+let current = 0, step = 0, startedAt = null, activeDemo = null;
 
 function stepsOf(slide) {
   return Math.max(0, ...[...slide.querySelectorAll("[data-step]")].map((node) => Number(node.dataset.step)));
@@ -937,10 +1282,10 @@ function show(index, atStep) {
   const backup = slide.classList.contains("backup");
   document.getElementById("count").textContent = backup ? `B${current - mainCount + 1}` : `${current + 1} / ${mainCount}`;
   history.replaceState(null, "", location.pathname + location.search + "#" + (current + 1));
-  arenaRun++;
-  if (slide.querySelector("#arenaA")) {
-    if (isStatic || reducedMotion) staticArenas(); else playArenas(arenaRun);
-  }
+  const demo = DEMOS[slide.dataset.demo];
+  if (activeDemo && activeDemo !== demo) activeDemo.leave();
+  if (demo) demo.enter(step, activeDemo !== demo);
+  activeDemo = demo || null;
   renderNotes();
 }
 function next() {
@@ -977,6 +1322,7 @@ function toggleOverview(force) {
 }
 
 build();
+Object.values(DEMOS).forEach((demo) => demo.init());
 const slots = document.getElementById("slots");
 slides.forEach((slide) => {
   const slot = document.createElement("span");
@@ -998,6 +1344,8 @@ addEventListener("keydown", (event) => {
   const overviewOpen = overview.classList.contains("show");
   if (event.key === "Escape") { toggleOverview(false); document.getElementById("help").classList.remove("show"); return; }
   if (overviewOpen && event.key !== "o" && event.key !== "O") return;
+  // The keys that do not change slides belong to the demo of the current slide.
+  if (activeDemo && activeDemo.key(event.key)) { event.preventDefault(); return; }
   if (startedAt === null && ["ArrowRight", " ", "PageDown", "Enter"].includes(event.key)) startedAt = Date.now();
   switch (event.key) {
     case "ArrowRight": case " ": case "PageDown": case "Enter": event.preventDefault(); next(); break;
