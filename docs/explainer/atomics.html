@@ -110,19 +110,16 @@ Atomics.add(counters, value, 1n);</pre></figure>
     <div id="cas-table"></div>
     <p class="src" data-src="perf-v3-retries, perf-v3-counters"></p>
     <p>Read the first column as "extra attempts per add": at k = 1 with 8 threads, one Chrome add in four goes round
-      the loop a second time, while native and Firefox almost never do. The full reading of these numbers, and the
-      question they leave open at <i>k</i> = 256, is in <a href="why.html">Why Chrome: code and counters</a>.</p>
+      the loop a second time, while native and Firefox almost never do. The full reading of these numbers, the test that shows the loop is the cause, and the question left open at <i>k</i> = 256, are in <a href="why.html">Why Chrome: code and counters</a>.</p>
 
     <h2 id="code">What each engine emits</h2>
     <p>Which strategy a runtime uses is not chosen by the Rust source; it is chosen by whatever turns the code into
       machine instructions. The native compiler and Firefox's engine pick lock-and-add; Chrome's engine picks
-      try-and-retry. The study found this by sampling the hottest addresses of each browser while it ran, reading the
-      machine code out of the browser's own memory, and disassembling it (bottleneck audit A7, on
-      <code>measured/v3</code>). Per pixel, with the instruction names as in the audit and the operands simplified:</p>
+      try-and-retry. The study found this by capturing the machine code each engine runs on the measured build: V8 can write its compiled code to a file, and Firefox's was read out of the browser's own memory at the addresses where the CPU spent its time (<code>data/probes/engine-code/</code>). Per pixel, with the operands simplified:</p>
     <div class="controls" id="asm-controls"></div>
-    <figure class="code asm"><header><span id="asm-title"></span><span class="muted">mnemonics from bottleneck audit A7, operands simplified</span></header><pre class="plain" id="asm-pre"></pre></figure>
+    <figure class="code asm"><header><span id="asm-title"></span><span class="muted">mnemonics from data/probes/engine-code, operands simplified</span></header><pre class="plain" id="asm-pre"></pre></figure>
     <p id="asm-note"></p>
-    <p class="src" data-files="docs/adr/0069-v2-build.md, docs/adr/0049-padding-and-atomic-code.md"></p>
+    <p class="src" data-files="data/probes/engine-code/README.md, docs/adr/0088-what-explains-the-results.md, docs/adr/0049-padding-and-atomic-code.md"></p>
     <div class="def"><b>How to read it.</b> Each line is one machine instruction. <code>mov</code> copies a value,
       <code>add</code> adds, <code>shl</code> multiplies by a power of two, and anything starting with <code>lock</code>
       is done atomically on memory. The words in brackets are memory locations; the ones starting with % are the

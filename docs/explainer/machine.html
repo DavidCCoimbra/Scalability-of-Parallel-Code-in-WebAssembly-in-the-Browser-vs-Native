@@ -57,7 +57,7 @@
       slower than a race with a tailwind, and that is the point: the same conditions for both.</div>
     <p>This study does that to one machine (the page <a href="machines.html">Programs, processes, threads
       and cores</a> explains the words core, thread and clock, if they are new). The PC is an
-      <span data-term="i9-14900kf">Intel i9-14900KF</span> with 64 GB of RAM, running Ubuntu 26.04.1 LTS.
+      <span data-term="i9-14900kf">Intel i9-14900KF</span> with 64 GB of RAM, running Ubuntu 26.04 LTS (kernel 7.0.0-43 for every campaign of the study).
       Its chip is <b>hybrid</b>: it has 8 big, fast cores (the <span data-term="p-core">P-cores</span>) and
       16 small, slower cores (the <span data-term="e-core">E-cores</span>). The measured program gets the 8
       fast cores and nothing else. Everything else on the machine gets the 16 slow ones.</p>
@@ -137,14 +137,10 @@
       </tbody>
     </table></div>
     <span class="def"><b>Degraded core.</b> One core of this particular CPU is faulty at high frequencies.
-      With turbo off it never reaches them, so it behaves like the others, but it is a little slower. It is
-      the same core for every environment, so it does not favour one; it is listed as a threat
-      (<a href="threats.html#internal">Internal threats</a>).</span>
+      With turbo off it never reaches them: a check of every core before the build found it as fast as the others and computing correctly (<a href="session.html#cores">The per-core check</a>). It is the same core for every environment, so it does not favour one; it is listed as a threat (<a href="threats.html#internal">Internal threats</a>).</span>
     <details class="deeper"><summary>If you already know this: how env-setup does it, and what is not logged</summary>
       <div data-code="harness/env/setup.sh|smt/control|14" data-title="make env-setup: SMT off, turbo off, governor performance"></div>
-      <p>The frequency itself is not logged during a run: reading it sends an interrupt to the measured
-        cores, which is exactly the kind of disturbance the setup removes. The governor, turbo and SMT
-        settings are recorded instead, before and after each run. With turbo off, the
+      <p>The frequency is not sampled during a run: reading it sends an interrupt to the measured cores, which is exactly the kind of disturbance the setup removes. The governor, turbo and SMT settings are recorded before and after each run. Since <code>measured/v3</code> each run also records, per measured CPU, its busy time and a frequency reading before and after; the busy time says which cores worked, but the frequency reading turned out to be taken while a core is already going idle and is not used (ADR 0085). With turbo off, the
         <span data-term="degraded-core">degraded core</span> never reaches the frequencies at which it fails,
         which is also why turbo stays off for every experiment on this PC, not only the reported ones.</p>
     </details>

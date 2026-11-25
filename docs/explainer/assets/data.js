@@ -598,6 +598,21 @@ window.PPC = {
    "line": 1,
    "text": "     8c0:\tmovzx  ebx,BYTE PTR [r15+r12*1]\n     8c5:\tlea    ebx,[rax+rbx*8+0x2830]\n     8cc:\tmov    rdx,QWORD PTR [r15+rbx*1]\n     8d0:\tadd    rdx,0x1\n     8d4:\tmov    QWORD PTR [r15+rbx*1],rdx\n     8d8:\tadd    r12d,0x1\n     8dc:\tadd    r11d,0xffffffff\n     8e0:\tje     0x963"
   },
+  "data/probes/engine-code/atomic-loop/chrome-baseline-loop.s|^jae    0x7a3|2": {
+   "file": "data/probes/engine-code/atomic-loop/chrome-baseline-loop.s",
+   "line": 19,
+   "text": "jae    0x7a3\nlock xadd %rcx,(%r12,%rax,1)"
+  },
+  "data/probes/engine-code/atomic-loop/chrome-optimizing-loop.s|^movzbl (%rdi,%rsi,1),%r8d|14": {
+   "file": "data/probes/engine-code/atomic-loop/chrome-optimizing-loop.s",
+   "line": 3,
+   "text": "movzbl (%rdi,%rsi,1),%r8d\nshl    $0x7,%r8d\nadd    %r15d,%r8d\nlea    (%r8,%rdi,1),%r11\nand    $0x7,%r11d\nmov    %r11d,%r11d\ntest   %r11d,%r11d\njne    0x725\nmov    $0x1,%r11d\nmov    (%rdi,%r8,1),%rax\nmov    %rax,%rcx\nadd    %r11,%rcx\nlock cmpxchg %rcx,(%rdi,%r8,1)\njne    0x471"
+  },
+  "data/probes/engine-code/atomic-loop/native-loop.s|^movzbl (%r8),%r9d|3": {
+   "file": "data/probes/engine-code/atomic-loop/native-loop.s",
+   "line": 1,
+   "text": "movzbl (%r8),%r9d\nshl    $0x7,%r9d\nlock incq (%rsi,%r9,1)"
+  },
   "data/raw/campaign-v3/campaign-v3-0047-native-filter-noise-n8-r11.csv|8,measured,0,|1": {
    "file": "data/raw/campaign-v3/campaign-v3-0047-native-filter-noise-n8-r11.csv",
    "line": 98,

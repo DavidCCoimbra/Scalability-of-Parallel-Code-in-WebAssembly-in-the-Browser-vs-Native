@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - The workflow: tickets, PRs, ADRs</title>
+<title>PPC explainer - The workflow: branches, PRs, ADRs</title>
 <meta name="description" content="Ticket, branch, commits, the PR template, what CI checks, the bot review and the squash merge, when a decision needs an ADR, and what is off limits.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -35,32 +35,22 @@
   <main id="main">
   <article class="page">
     <p class="kicker">Working on it · 8 of 8</p>
-    <h1>The workflow: tickets, PRs, ADRs</h1>
+    <h1>The workflow: branches, PRs, ADRs</h1>
 
-    <p class="lead">Every change to this repository, from a comment to a campaign, goes the same way: a
-      ticket, a branch, a pull request that CI and a reviewer look at, a squash merge. The author must be
+    <p class="lead">Every change to this repository, from a comment to a campaign, goes the same way: a branch, a small pull request that CI and a reviewer look at, a squash merge. The author must be
       able to explain every line that lands, which is why the process is written down and why some things
       are off limits.</p>
-    <div class="oneliner"><b>In one sentence:</b> one ticket, one branch named after it, commits prefixed with
-      its id, a PR from the template, CI green, the bot's findings fixed or answered, squash-merge; a decision
-      gets an ADR, and <code>AI_USE.md</code> is written by the author alone.</div>
+    <div class="oneliner"><b>In one sentence:</b> one small change, one branch, commits and a PR title written as Conventional Commits, a PR from the template, CI green, the bot's review read, squash-merge; a decision gets an ADR, and <code>AI_USE.md</code> is written by the author alone.</div>
 
-    <h2 id="ticket">A ticket, a branch, a PR</h2>
+    <h2 id="ticket">A branch, small commits, a PR</h2>
     <ol class="steps">
-      <li><b>The ticket</b> lives in Linear (team <code>DAV</code>). It has a "done when" criterion; read it
-        first, and if it is vague, make it verifiable before writing code.</li>
-      <li><b>The branch</b> is the one Linear suggests, <code>dcoimbra/dav-NNN-short-title</code>. Never work
-        on <code>main</code>, never push to it.</li>
-      <li><b>Commits</b> start with the ticket id: <code>DAV-NNN: what changed</code>. Linear moves the ticket
-        to In Progress from the branch, to In Review from the PR, to Done from the merge.</li>
-      <li><b>The PR</b> is filled from <code>.github/pull_request_template.md</code>: the ticket, what changed
-        and why, the "done when" criterion as a checklist, how it was verified (Mac numbers are never results),
-        and the pre-merge checklist.</li>
+      <li><b>The change</b> is small and has one purpose. The soft ceiling is about 500 changed lines per PR, cut along module boundaries; tests go in the same PR as the code they test. Mechanical PRs (campaign specs, ADRs, data, the paper) have no ceiling.</li>
+      <li><b>The branch</b> starts from <code>origin/main</code> and is named <code>&lt;type&gt;/&lt;short-name&gt;</code>, for example <code>feat/bench-input</code>. Never work on <code>main</code>, never push to it. PRs go one at a time: the next is opened after the previous one is merged.</li>
+      <li><b>Commits</b> and the PR title follow <a href="https://www.conventionalcommits.org/en/v1.0.0/">Conventional Commits</a>: <code>type(scope): description</code>, in the imperative, lower case, no full stop, no ticket prefix. The types are <code>feat</code>, <code>fix</code>, <code>refactor</code>, <code>perf</code>, <code>test</code>, <code>docs</code>, <code>build</code>, <code>ci</code>, <code>data</code> and <code>chore</code>.</li>
+      <li><b>The PR</b> is filled from <code>.github/pull_request_template.md</code>: a summary, a Mermaid diagram of where the change fits, the paper figure it produces when there is one, and how it was verified (Mac numbers are never results).</li>
     </ol>
     <div data-code=".github/pull_request_template.md|## Summary|15" data-title="The PR template"></div>
-    <div class="why"><b>Why a ticket for everything, even a comment?</b> The course rule is that the author can
-      explain every line, and the way to make that true months later is a trail: this line came from this PR,
-      which answered this ticket, for this reason. A change without a ticket has no trail.</div>
+    <div class="why"><b>Why small PRs, one at a time?</b> The course rule is that the author can explain every line, and nobody can explain two thousand lines read in one evening. A PR of one module with its tests can be read whole, and it leaves a trail: this line came from this PR, for this reason. A commit title in a fixed form makes that trail searchable.</div>
 
     <h2 id="ci">What CI checks</h2>
     <p>Every push to a PR runs <code>.github/workflows/ci.yml</code>. A first job looks at which folders
@@ -69,13 +59,12 @@
       <thead><tr><th>Job</th><th>Runs when</th><th>What it does</th></tr></thead>
       <tbody>
         <tr><td><code>changes</code></td><td>always</td><td>Decides the others from the paths that changed</td></tr>
-        <tr><td><code>rust</code></td><td><code>bench/**</code> changed</td><td><code>cargo test</code> with both paddings, clippy, the SIMD parity check on the final native binary and WASM module (ADR 0017), the browser package from a clean checkout</td></tr>
+        <tr><td><code>rust</code></td><td><code>bench/**</code> changed</td><td><code>cargo fmt --check</code>, clippy for native and WASM, <code>cargo test</code>, the SIMD parity check on the final native binary and WASM module (ADR 0017), the browser package from a clean checkout</td></tr>
         <tr><td><code>browser</code></td><td><code>bench/**</code> or <code>harness/**</code> changed</td><td>Builds, then runs every workload small in headless Chrome and Firefox and checks their checksums equal native (ADR 0024)</td></tr>
-        <tr><td><code>docs</code></td><td>always</td><td>The Python tests of <code>scripts/</code>, <code>harness/</code> and <code>analysis/</code>; the ADR structure; no em dash; this guide's <code>data.js</code> up to date; <code>mypy --strict</code>; shellcheck</td></tr>
-        <tr><td><code>paper</code></td><td><code>paper/**</code> changed</td><td>Builds every PDF with LaTeX, checks the page limit, uploads the PDFs as an artifact</td></tr>
+        <tr><td><code>tables</code></td><td><code>analysis/**</code>, <code>harness/**</code>, <code>data/**</code> or the make targets changed</td><td><code>make tables-check</code>: regenerates every table from the raw runs and fails if one differs from the committed one</td></tr> <tr><td><code>python</code></td><td>always</td><td>The Python tests of <code>scripts/</code>, <code>harness/</code> and <code>analysis/</code>; the ADR structure; this guide's <code>data.js</code> up to date; <code>mypy --strict</code>; shellcheck</td></tr>
       </tbody>
     </table></div>
-    <p><code>make test</code> runs the same checks locally, minus LaTeX. Two of them only work on Linux
+    <p><code>make test</code> runs the same checks locally, minus the browser and the tables jobs. Two of them only work on Linux
       (<a href="debugging.html#common">The common failures</a>).</p>
 
     <h2 id="review">The bot review and the merge</h2>
@@ -84,17 +73,13 @@
         (<code>claude[bot]</code>) with the study's checklist (<code>.claude/agents/methodology-reviewer.md</code>):
         the timed region, warm-up, the same build in every environment, checksums, the unit of analysis. It
         posts inline comments and one ranked summary. It never pushes.</li>
-      <li>Each finding is fixed in a commit, or answered in a comment that says why not. A comment posted on
-        the author's behalf by the local assistant starts with <code>[claude]</code>; the author resolves the
-        threads.</li>
-      <li>CI green and the findings handled: <b>squash-merge</b>. One commit lands on <code>main</code> with the
+      <li>The author reviews every change; the bot is a double check. Its minor findings (style, naming, wording) are ignored. A finding that looks critical (a bug, a wrong number, a threat to the measurement) is discussed by the author before any reply or change. A comment posted on the author's behalf by the local assistant starts with <code>[claude]</code>; the author resolves the threads.</li>
+      <li>CI green and the review read: <b>squash-merge</b>, by the author. One commit lands on <code>main</code> with the
         PR's title, so <code>main</code>'s history is one line per change.</li>
-      <li>After the merge, <code>/merged DAV-NNN</code> adds the ticket's raw material (decisions, numbers,
-        problems, references) to <code>docs/paper-material/</code>, one file per paper section.</li>
+      <li>After the merge: <code>git switch main</code>, <code>git pull</code>, and the next PR starts.</li>
     </ol>
     <div class="why"><b>Why squash?</b> A branch's twenty "fix typo" commits are useful while working and
-      noise afterwards. One commit per PR means <code>git log main</code> reads as the list of changes, each
-      with its ticket, and <code>git bisect</code> lands on a whole change.</div>
+      noise afterwards. One commit per PR means <code>git log main</code> reads as the list of changes, each with its type and scope, and <code>git bisect</code> lands on a whole change.</div>
     <div class="why"><b>Why a reviewer that is not the author?</b> The author of a benchmark is the person least
       able to see its blind spots: a warm-up that is too short, a timed region that includes an allocation, a
       comparison across builds. The checklist is the list of ways this study could fool itself, run on every
@@ -130,13 +115,12 @@
         <tr><td>No tracked edits in the checkout while a campaign runs</td><td>The run's commit becomes <code>-dirty</code> and the run fails strict validation</td></tr>
         <tr><td>Never mix builds in one comparison; results only from <code>measured/v3</code></td><td><a href="changing.html#rules">The rules and why</a></td></tr>
         <tr><td>Never edit <code>data/raw/</code></td><td>Same</td></tr>
-        <tr><td>No em dash, documents in English</td><td>The author's rule, checked by CI</td></tr>
+        <tr><td>No em dash, documents in English</td><td>The author's rule</td></tr>
       </tbody>
     </table></div>
-    <div class="remember"><b>What to remember.</b> Ticket, branch, prefixed commits, PR from the template, CI,
-      bot, squash. A changed parameter or statistic is an ADR before it is code. The author owns
+    <div class="remember"><b>What to remember.</b> A small change, a branch, Conventional Commits, a PR from the template, CI, the bot as a double check, squash. A changed parameter or statistic is an ADR before it is code. The author owns
       <code>AI_USE.md</code> and <code>main</code>.</div>
-    <p class="src" data-files="CLAUDE.md, .github/pull_request_template.md, .github/workflows/ci.yml, .github/workflows/claude-review.yml, docs/adr/README.md"></p>
+    <p class="src" data-files="CLAUDE.md, .claude/skills/small-pr/SKILL.md, .claude/skills/conventional-commits/SKILL.md, .github/pull_request_template.md, .github/workflows/ci.yml, .github/workflows/claude-review.yml, docs/adr/README.md"></p>
 
     <footer class="pager" id="pager"></footer>
   </article>
