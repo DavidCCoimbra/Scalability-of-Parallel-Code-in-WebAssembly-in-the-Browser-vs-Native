@@ -44,16 +44,7 @@
   <article class="page">
     <h1>Rust for JavaScript developers</h1>
 
-    <p class="lead">The measured code is written in Rust. If you write JavaScript, most of it will look
-      familiar: functions, loops, objects with fields, arrays, callbacks. Three ideas are new, and they are
-      the reason the study could run the same code on 8 threads without a single lock. This page gives
-      those three ideas first, with tiny examples, and then every Rust construct the repository uses, each
-      next to the nearest JavaScript or TypeScript you already know.</p>
-
-    <p class="lead-more">In short: Rust is a language where every value has one owner, where
-      many parts of the program may read a value at once but only one may change it, and where the compiler
-      refuses to build a program in which two threads could write the same memory, which is exactly the
-      guarantee a parallel benchmark needs.</p>
+    <p class="lead">The measured code is Rust. If you write JavaScript, most of it reads as familiar: functions, loops, structs with fields, arrays, closures. Three ideas are new: every value has one owner, many readers or one writer, and a compiler that refuses a program in which two threads could write the same memory. This page gives those ideas with small examples and then the Rust features the codebase uses.</p>
 
     <h2 id="three">Three ideas</h2>
 
@@ -61,7 +52,7 @@
       <code>bench/src/</code> and to see why the filter and the local histogram can run on 8 threads with
       no lock at all.</p>
 
-    <p><em>An analogy.</em> A library book. One person has it checked out (the owner). Many
+    <p>A library book. One person has it checked out (the owner). Many
       people may read a photocopy at the same time, but nobody may write in the book while photocopies are
       out, and only one person at a time may hold the pen. Rust's compiler is the librarian: it refuses to
       let you leave with a plan that breaks those rules.</p>

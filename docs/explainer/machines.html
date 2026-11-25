@@ -41,17 +41,13 @@
   <article class="page">
     <h1>Threads and cores</h1>
 
-    <p class="lead">Before any number in this study makes sense, four words have to be clear: a <b>program</b>,
-      a <b>process</b>, a <b>thread</b> and a <b>core</b>. This page explains them with a kitchen. No project
-      numbers here, only the ideas the rest of the documentation leans on.</p>
-    <p class="lead-more">In short: a program is a recipe, a process is one kitchen cooking it,
-      threads are the hands working in that kitchen, and cores are how many hands the building really has.</p>
+    <p class="lead">Four words come before everything else in this documentation: program, process, thread and core. This page explains them, and three settings of a CPU that change how fast a core runs: turbo, the governor and SMT.</p>
 
     <h2 id="program">A program and a process</h2>
     <p>A <b>program</b> is a file of instructions sitting on disk. It does nothing by itself, like a recipe in a
       drawer. When you start it, the computer makes a <b>process</b>: a running copy of the program, with its own
       private <b>memory</b> (the space where it keeps its numbers, images and text while it runs).</p>
-    <p><em>An analogy.</em> The recipe is the program. A kitchen with that recipe pinned on the wall,
+    <p>The recipe is the program. A kitchen with that recipe pinned on the wall,
       ingredients on the counter and a cook at work is a process. Start the same program twice and you get two
       kitchens, each with its own counter; what one cook chops, the other cannot see.</p>
     <figure class="figure"><svg viewBox="0 0 520 130" role="img" aria-label="A program file becomes a process with its own memory"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
@@ -68,7 +64,7 @@
     <p>Inside one process, work can be done by more than one <b>thread</b>. A thread is one line of work going
       on at a time: it reads an instruction, does it, reads the next. Every thread of a process sees the
       <b>same memory</b>. That is the whole point of threads, and the whole danger.</p>
-    <p><em>An analogy.</em> One kitchen, one counter, several cooks. They do not have to pass
+    <p>One kitchen, one counter, several cooks. They do not have to pass
       bowls to each other: whatever one puts on the counter, the others can use at once. But two cooks reaching
       for the same bowl at the same moment will spill it, unless they agree on who goes first.</p>
     <p>So threads give you two things at once:</p>
@@ -79,14 +75,14 @@
         This study measures exactly that cost, in <a href="rq2.html">RQ2</a>.</li>
     </ul>
     <p class="def"><b>Shared memory.</b> Memory that several threads can read and write. In a browser it is
-      rare and needs special permission; <a href="environments.html#wasm">Three runtimes, one source</a> says how
+      rare and needs special permission; <a href="environments.html#wasm">Environments and builds</a> says how
       the project gets it.</p>
 
     <h2 id="cores">Cores: how many hands can work at once</h2>
     <p>A thread is a line of work; a <b>core</b> is the part of the chip that can actually do work. One core
       does one thing at a time. A chip with 8 cores can run 8 threads truly at once. Start 16 threads on it and
       they take turns on the 8 cores: it looks like all 16 are running, but each gets half the time.</p>
-    <p><em>An analogy.</em> Cooks are threads; stoves are cores. Eight stoves, eight cooks: all
+    <p>Cooks are threads; stoves are cores. Eight stoves, eight cooks: all
       cook at once. Eight stoves, sixteen cooks: every cook spends half the evening waiting for a stove.</p>
     <figure class="figure"><svg viewBox="0 0 520 120" role="img" aria-label="Eight cores, eight threads, one each">
       <g font-size="11">
@@ -128,12 +124,12 @@
       <li><b>SMT</b> (hyper-threading). One core pretends to be two, so two threads share it. They both run, but
         each gets less of the core.</li>
     </ul>
-    <p><em>An analogy.</em> Turbo is a cook who sprints at the start of the shift and slows as
+    <p>Turbo is a cook who sprints at the start of the shift and slows as
       the kitchen heats up. The governor is a manager who dims the stoves when the restaurant looks empty. SMT is
       two cooks sharing one stove: both are "cooking", neither at full speed.</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why turn all three off?</b> This study compares <i>how much faster 8 threads are than 1</i>.
       If the clock changed with the number of threads or with the temperature, part of that "faster" or "slower"
-      would come from the clock, not from the code, and we could not tell the two apart. With turbo off, the
+      would come from the clock, not from the code, and nothing could tell the two apart. With turbo off, the
       governor fixed and SMT off, every core runs at the same speed all the time, and 8 threads really get 8
       cores. <a href="machine.html#clock">The machine</a> shows the settings.</p></aside>
 

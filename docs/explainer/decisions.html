@@ -43,14 +43,7 @@
   <article class="page">
     <h1>ADR index</h1>
 
-    <p class="lead">Every setting of this study is a choice someone made: measure on 8 cores and not 16,
-      30 runs and not 10, wait 3 seconds before a browser run, pad each counter to 128 bytes. Each choice is
-      written down in a short file called an ADR, with what forced it, what was decided and what it costs.
-      There are 74 of them in <code>docs/adr/</code>, and they are the study's memory.</p>
-
-    <p class="lead-more">In short: a decision is never edited away; a later ADR amends or
-      supersedes it, so the reason behind every setting can be read in the order it happened, including the
-      times the data proved an earlier reason wrong.</p>
+    <p class="lead">Every setting of the study is a recorded decision: 8 cores and not 16, 30 runs and not 10, a 3 second delay before a browser run, counters padded to 128 bytes. Each one is a short file in <code>docs/adr/</code> with what forced it, what was decided and what it costs. A decision is never edited away: a later record amends or supersedes it, so you can read the reasons in the order they happened. This page explains the format, tells the decisions that changed, and lists all 95 records by topic.</p>
 
     <h2 id="how">How decisions are kept</h2>
     <p>An <span data-term="adr">ADR</span> (Architecture Decision Record) is a short Markdown file named
@@ -63,9 +56,6 @@
       <div class="card"><h4>Consequences</h4><p>What it costs, what it rules out, what has to be reported as a threat.</p></div>
       <div class="card"><h4>Status</h4><p>Accepted, amended by a later ADR, or superseded by one.</p></div>
     </div>
-    <p><em>An analogy.</em> A ship's log. You do not go back and change Tuesday's entry when
-      Thursday turns out differently; you write Thursday's entry and say "Tuesday's course was wrong,
-      because of this". Anyone reading the log later sees both the mistake and how it was found.</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why write decisions down at all?</b> Six months later, "why is the delay 3 seconds?"
       has only two possible answers: a file that says so, or a guess. A guess might lead someone to remove
       the delay, and the Firefox start-up effect it hides (below) would quietly come back into the numbers.
@@ -105,13 +95,13 @@
         the atomic add as a load plus a <code>lock cmpxchg</code> loop. ADR 0068 made the hardware counters readable, and ADR 0072 counted with 30 runs per cell: the loop retries once every four adds at k = 1, N = 8, and Chrome reads the line before it writes it. That was still an observation. ADR 0088 wrote down what a test would show, and ADR 0089 ran it on <code>measured/v3</code>: a native program in which only the instructions of the add change comes within 3% of Chrome's one-thread times, and reproduces the direction of the effect at k = 256.</p> <p><b>The lesson:</b> a hypothesis is allowed in an ADR as long as it is labelled one; it took four more ADRs to turn it first into a measurement and then into a tested cause. <a href="rq2.html#code">Why Chrome: code and counters</a>.</p>
     </div>
     <div class="story">
-      <h4>The v2 build: asymmetries of our own (ADR 0069)</h4>
+      <h4>The v2 build: asymmetries in the measured code (ADR 0069)</h4>
       <p>A review against the textbook and the cited papers found that the shared-counter histograms paid a
         per-pixel bounds check the local control did not, and that some variants timed their final merge
         and others did not. Both were fixed in one tagged build, <code>measured/v2</code>, and every campaign was run again on it. Earlier campaigns stay valid for their own build but are never mixed with v2 in one comparison (ADR 0062).</p>
       <p><b>The lesson:</b> the control and the thing it controls for must differ in exactly one way; two
         hidden differences meant every earlier RQ2 number had to be remeasured.
-        <a href="environments.html#v2">Our own asymmetries: the v2 build</a>.</p>
+        <a href="environments.html#v2">Asymmetries in the measured code: the v2 build</a>.</p>
     </div>
     <div class="story">
       <h4>A pinned browser that updated itself (ADR 0071)</h4>

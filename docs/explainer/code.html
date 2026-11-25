@@ -56,11 +56,6 @@
 
     <p class="lead">The repository holds three programs that never run inside each other. A Rust crate does the work and times itself. A Python harness starts it under controlled conditions and keeps what it wrote. A Python analysis reads what was kept and writes the tables and figures. This page shows the folders, how the three programs hand work to each other, what each one contains, and two lookup tables for finding a file.</p>
 
-    <p><em>An analogy.</em> A cooking contest. The cook (<code>bench/</code>) makes the dish and
-      stops the clock. The referee (<code>harness/</code>) sets up the kitchen the same way for every cook,
-      says "go", and writes the time on a card. The judge (<code>analysis/</code>) reads all the cards at the
-      end and decides. The referee never stands in the kitchen while the cook works, and the judge never
-      touches a pan.</p>
 
     <div class="three">
       <div class="card"><h3>bench/</h3><span class="tag">Rust, compiled to native and WASM</span>
@@ -117,9 +112,6 @@
       <i>differently</i> natively and in a browser. So the Rust code times only itself, and everything
       around it is another process on other cores (<a href="machine.html#quiet">Shield and quiet mode</a>).
       The price is that the pieces have to agree on formats, and that is what this page lists.</p></aside>
-    <p><em>An analogy.</em> A lab with a stopwatch inside the experiment, a technician who
-      sets up each trial and writes the label, and an analyst who only ever sees the labelled sheets. The
-      technician never touches the stopwatch; the analyst never enters the lab.</p>
 
     <h2 id="boundaries">What crosses each boundary</h2>
     <p>Each hand-off carries one small, fixed thing. Knowing them is most of knowing the project.</p>

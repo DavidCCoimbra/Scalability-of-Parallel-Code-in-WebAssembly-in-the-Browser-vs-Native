@@ -41,20 +41,14 @@
   <article class="page">
     <h1>From source to machine code</h1>
 
-    <p class="lead">The study says "the same code" runs natively and in two browsers. That is true of the
-      <b>source</b> the author wrote. It is not true of the instructions the chip finally runs: those are made
-      three times, by three different translators. This page explains what a translator does and why that
-      matters.</p>
-    <p class="lead-more">In short: a compiler turns readable source into the numbers a chip
-      executes; natively that happens once, before the run, while in the browser the engine does the last step
-      itself, so each browser ends up with its own machine code for the same program.</p>
+    <p class="lead">The study runs "the same code" natively and in two browsers. That is true of the source, not of the instructions the CPU executes: those are produced three times, by three compilers. This page explains what a compiler does, what WebAssembly is, and why each browser ends up with its own machine code for the same program.</p>
 
     <h2 id="source">Source code and machine code</h2>
     <p><b>Source code</b> is text written for people: <code>count = count + 1</code>. A chip cannot read text.
       It runs <b>machine code</b>: a stream of numbers where each number means one small step, such as "load
       this", "add these", "store that". Every chip family understands its own set of steps; the study's PC
       understands the x86-64 set.</p>
-    <p><em>An analogy.</em> Source code is a recipe in your language. Machine code is the same
+    <p>Source code is a recipe in your language. Machine code is the same
       recipe translated into the one language the cook on duty speaks, broken into single motions: take the egg,
       crack it, drop it.</p>
 
@@ -84,7 +78,7 @@
       portable half-way form, already compiled and optimized, but written for an imaginary simple machine that
       no chip actually is. The browser then has to translate WASM into the real chip's machine code before it can
       run it.</p>
-    <p><em>An analogy.</em> The recipe is first translated into a careful, simplified
+    <p>The recipe is first translated into a careful, simplified
       international version. Each restaurant's head cook then translates that into instructions for their own
       staff. Two restaurants, two head cooks, two versions of the final instructions.</p>
     <figure class="figure"><svg viewBox="0 0 520 170" role="img" aria-label="Rust source compiled to WASM, then translated by each browser engine">
@@ -117,7 +111,7 @@
     <p class="takeaway"><strong>In summary.</strong> Source is for people, machine code is for the chip, and a
       compiler bridges them. Natively that bridge is crossed once, in advance. In a browser the engine crosses it
       again, at run time, in its own way, so "the same code" is the same source but not the same instructions.</p>
-    <p>Used by: <a href="environments.html">Three runtimes, one source</a>, <a href="atomics.html">Atomics in
+    <p>Used by: <a href="environments.html">Environments and builds</a>, <a href="atomics.html">Atomics in
       machine code</a>, <a href="rq2.html#code">Why Chrome</a>. Next foundation: <a href="measuring.html">Measuring
       time</a>.</p>
 

@@ -43,10 +43,7 @@
   <main id="main">
   <article class="page">
     <h1>Threats to validity</h1>
-    <p class="lead">Every measurement can be wrong in ways its numbers do not show. A careful study ends by listing how
-      it could be wrong, what was done about each, and what is left. This page does that for this study, in plain
-      words first and then in full.</p>
-    <p class="lead-more">In short: the known ways to be wrong are controlled or measured; what is left is one machine, a possible crowding of the cores at N = 8, explanations that are supported to different degrees, and intervals that bound what "no difference" can mean.</p>
+    <p class="lead">A result can be wrong in ways its numbers do not show. This page lists how the study could be wrong, what controls each threat, and what is left: one machine, a possible crowding of the cores at 8 threads, explanations supported to different degrees, and intervals that bound what "no difference" can mean.</p>
     <p>The four kinds of threat below are explained with an example each in
       <a href="validity.html">Four ways a study fools itself</a>.</p>
 
@@ -202,7 +199,7 @@ window.page = function (UI) {
     ["One machine", "An i9-14900KF, Ubuntu 26.04, kernel 7.0.0-43, one compiler version.", "Other CPUs, especially other cache-coherence designs, may differ. The RQ2 pattern depends on what one CPU makes of two instruction sequences."],
     ["Far from how a user's browser runs", "P-cores only, SMT and turbo off, chosen for reproducibility (ADRs 0001, 0002, 0025).", "A real desktop has turbo, SMT and other tabs."],
     ["Two pinned browser versions, headless", "Chrome for Testing matches stable within about 1.3% (ADR 0050); headful differs by at most 0.3% (ADR 0046).", "Other versions may compile atomics differently: with another instruction sequence the same engine shows no penalty at k = 1."],
-    ["Work that lives in memory, not in cache", "128 MiB for the filter's two images and 64 MiB for the histograms, against a 36 MB last-level cache. The in-cache regime appears only in the cutoff campaigns.", "The results hold for large work per parallel region that streams from memory. A slower runtime asks less of that memory, which is part of Firefox's higher speedup."],
+    ["Work that lives in memory, not in cache", "128 MiB for the filter's two images and 64 MiB for the histograms, against a 36 MB last-level cache. The in-cache regime appears only in the cutoff campaigns.", "The results hold for large work per parallel region that streams from memory. A slower environment asks less of that memory, which is part of Firefox's higher speedup."],
     ["Two workloads, uniform random inputs", "The cutoff and grain campaigns cover smaller regions (ADRs 0064 to 0067); the extras add sorts.", "Inputs have no spatial structure. The cutoff sizes are lower bounds for a single call, and no size measured reached break-even."]
   ]);
 

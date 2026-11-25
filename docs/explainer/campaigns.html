@@ -35,22 +35,13 @@
   <article class="page">
     <h1>Run a campaign</h1>
 
-    <p class="lead">A <b>campaign</b> is one set of measurements decided in advance: which runtimes,
-      which workloads, which thread counts, how many runs. It is written down as a JSON file, the
-      <b>spec</b>, before anything runs, and the harness runs exactly that and nothing else.</p>
-
-    <p class="lead-more">In short: a spec fixes every parameter and a random seed, the
-      harness turns it into a shuffled list of runs, and stopping and restarting never changes that list:
-      it only continues it.</p>
+    <p class="lead">A campaign is one set of measurements fixed in advance: environments, workloads, thread counts and repetitions, written as a JSON spec. This guide shows you how to run one, watch it, resume it after a stop, and read the data check that decides whether it can be analysed. Stopping and restarting never changes the list of runs; it continues it.</p>
 
     <h2 id="what">What a campaign is</h2>
     <p>A <b>run</b> is one program start that measures one configuration (one runtime, one workload, one
       thread count) ten times and writes a CSV. A <b>campaign</b> is a list of runs decided before any of them
       starts: every configuration the question needs, thirty times each, in a shuffled order. The list is
       written as a small JSON file, the <b>spec</b>, and the harness runs exactly that list.</p>
-    <p><em>An analogy.</em> A clinical trial writes down, before the first patient, who gets
-      what and in which order, then follows the sheet. Deciding as you go is how you end up measuring your
-      own expectations. The spec is the sheet.</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why shuffle, and why record the seed?</b> A machine drifts over thirteen hours: it
       warms, a background job wakes, a cache fills. If every native run came first and every Firefox run
       last, the drift would look like a difference between native and Firefox. Shuffled, the drift falls on

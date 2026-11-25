@@ -58,10 +58,6 @@
       what else is running. It wakes up background jobs at random moments. None of that is a problem for a
       user. All of it is a problem for a measurement, because the same program can take a different time
       each time you run it, for reasons that have nothing to do with the program.</p>
-    <p><em>An analogy.</em> You want to know whether two runners are equally fast. You would
-      not time one on a windy day and the other on a calm day, or let one run on an empty track and the other
-      through a crowd. You pick one track, close it to the public, and wait for the wind to drop. The track is
-      slower than a race with a tailwind, and that is the point: the same conditions for both.</p>
     <p>This study does that to one machine (the page <a href="machines.html">Programs, processes, threads
       and cores</a> explains the words core, thread and clock, if they are new). The PC is an
       <span data-term="i9-14900kf">Intel i9-14900KF</span> with 64 GB of RAM, running Ubuntu 26.04 LTS (kernel 7.0.0-43 for every campaign of the study).
@@ -152,7 +148,7 @@
         which is also why turbo stays off for every experiment on this PC, not only the reported ones.</p>
     </details>
 
-    <h2 id="core">The degraded core</h2> <p>One of the PC's eight fast cores is degraded. With the desktop's usual settings (turbo on), a test pinned to it crashed in 17 of 18 tries. With turbo off, the setting of every measurement, it passed 30 of 30 and timed the filter as fast as the other cores.</p> <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> A core that crashes is easy: you see it. A core that sometimes computes a wrong value and carries on is the dangerous one, and not only for the runs. The compiler that builds the measured program is a program too, and so is the analysis. That happened once: with the PC restored after the last campaign, an analysis command stopped with an error raised from inside Python's own statistics code, on data it reads without trouble elsewhere.</p></aside> <ul> <li><b>Fix:</b> the measured build is made on the prepared PC, twice from scratch, and tagged only if both builds are byte for byte equal. Outside a prepared session, analysis on that PC runs pinned away from that core.</li> <li><b>Check:</b> every run has a checksum that must match across runtimes and thread counts, and CI regenerates every table on another machine and compares it with the committed one.</li> </ul> <p class="src" data-files="docs/adr/0085-per-core-check.md, docs/adr/0094-hybrid-on-v3.md"></p> <p>The whole story is on <a href="session.html#cores">The per-core check</a>.</p>
+    <h2 id="core">The degraded core</h2> <p>One of the PC's eight fast cores is degraded. With the desktop's usual settings (turbo on), a test pinned to it crashed in 17 of 18 tries. With turbo off, the setting of every measurement, it passed 30 of 30 and timed the filter as fast as the other cores.</p> <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> A core that crashes is easy: you see it. A core that sometimes computes a wrong value and carries on is the dangerous one, and not only for the runs. The compiler that builds the measured program is a program too, and so is the analysis. That happened once: with the PC restored after the last campaign, an analysis command stopped with an error raised from inside Python's own statistics code, on data it reads without trouble elsewhere.</p></aside> <ul> <li><b>Fix:</b> the measured build is made on the prepared PC, twice from scratch, and tagged only if both builds are byte for byte equal. Outside a prepared session, analysis on that PC runs pinned away from that core.</li> <li><b>Check:</b> every run has a checksum that must match across environments and thread counts, and CI regenerates every table on another machine and compares it with the committed one.</li> </ul> <p class="src" data-files="docs/adr/0085-per-core-check.md, docs/adr/0094-hybrid-on-v3.md"></p> <p>The whole story is on <a href="session.html#cores">The per-core check</a>.</p>
 
     <h2 id="quiet">Shield and quiet mode</h2>
     <p>The mask keeps the measured program <i>on</i> the 8 P-cores. It does not keep anything else
@@ -194,10 +190,9 @@
       <b>Chrome's main process had moved itself out of the box</b>: through the <span data-term="session-bus-d-bus">session
       bus</span> it asked the system for a box of its own, in the user's area, and ran on the slow cores, outside the
       mask. Firefox's processes stayed in (ADR 0045).</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> Chrome would have had the 8 fast cores for its workers plus
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> Chrome would have had the 8 fast cores for its workers plus
       extra cores for its own housekeeping, and Firefox would not. A difference between the two browsers would then
-      have been partly a difference in how many cores each really had, and we would have read it as a difference
-      between the engines.</p></aside>
+      have been partly a difference in how many cores each really had, and it would have been read as a difference between the engines.</p></aside>
     <ul>
       <li><b>Fix:</b> the harness launches the browsers without the session bus address. Without it, every Chrome
         process stays in the run's box.</li>
@@ -211,7 +206,7 @@
     <p>Setting all of this once is not enough. A reboot undoes it. A step can be forgotten. A background job
       can slip through. So the study does not trust the setup: it <b>checks</b> it, at two moments, and
       records what it found with every run.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why check, if we just set it?</b> Because a measurement taken with turbo back on
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why check a setting that was just set?</b> Because a measurement taken with turbo back on
       would look exactly like a normal one, only faster, and nobody would notice. The only protection is a
       check that refuses to run, and a record that lets the analysis throw the run out later.</p></aside>
     <div class="checks">

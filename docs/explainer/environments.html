@@ -45,13 +45,7 @@
   <article class="page">
     <h1>Environments and builds</h1>
 
-    <p class="lead">The comparison is only fair if the code is the same. So there is one Rust program, compiled by
-      one compiler with one set of options, into two outputs: a normal Linux program, and a WebAssembly file. Chrome
-      and Firefox each take that same WebAssembly file and turn it into machine code with their own engine. That last
-      step is part of what the study measures.</p>
-
-    <p class="lead-more">In short: same source, same compiler, same options, three places to run it;
-      the only thing that differs between environments is what runs the code.</p>
+    <p class="lead">The comparison is fair only if the code is the same. One Rust crate is compiled by one compiler with one release profile into a native Linux program and a WebAssembly module, and Chrome and Firefox each compile that module with their own engine. This page describes the three environments, what WebAssembly threads need, what still differs below the shared source, and how a build is identified.</p>
 
     <figure class="figure">
       <svg viewBox="0 0 640 170" role="img" aria-label="One Rust source compiled to a native binary and to a WASM file; the WASM file goes into Chrome and Firefox, each with its own engine">
@@ -90,7 +84,7 @@
       (<span data-term="avx2">AVX2</span>), which processes twice as many pixels per instruction, but WebAssembly can
       only ask for 128 bits. If the native build used 256 and the browser 128, part of the gap would be the width of
       the instructions, not the runtime. The study keeps both at 128, and tries the wider native build only as an
-      exploratory extra (<a href="extras.html#simd">SIMD builds</a>). A check in CI confirms the blur's inner loop
+      exploratory extra (<a href="extras.html#simd">SIMD builds</a>). A check in CI confirms the filter's inner loop
       really uses SIMD in both outputs (ADR 0017).</p></aside>
     <details class="deeper"><summary>In depth: the exact toolchain, profile and targets</summary>
       <div class="scroll-x"><table class="t">
@@ -166,7 +160,7 @@
     <p>The study pins Firefox 158.0, downloaded from Mozilla's archive, and the fresh profile turns automatic updates
       off. On 2026-11-10, between two exploratory campaigns of the earlier build, the installed Firefox <b>updated itself in place to
       160.0</b> anyway. Only the enterprise policy <code>DisableAppUpdate</code> stops it (ADR 0071).</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> Two campaigns meant to compare the same Firefox would have
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> Two campaigns meant to compare the same Firefox would have
       compared two different ones, with whatever changed in the engine between them mixed into the result.</p></aside>
     <ul>
       <li><b>Caught:</b> strict validation checks the browser version of every run, and rejected all 2640 affected exploratory runs of that build.</li>
@@ -236,13 +230,13 @@
         <li>Every run records the git commit and the SHA-256 of the native binary and of the <code>.wasm</code> file.</li>
         <li>A refactor of the measured path is checked with <code>scripts/codegen_diff.sh</code>; if any hot function's
           code changes, it is a new build, with its own tag (ADR 0062).</li>
-        <li>Two builds came before it. A review of the first one found asymmetries in the measured path, among them a per-pixel bounds check paid only by the shared counters; <code>measured/v2</code> removed them (<a href="environments.html#v2">Our own asymmetries</a>). <code>measured/v3</code> adds the sequential references and gives every histogram the same task splitting, and every campaign was run again on it (<a href="session.html">The session of a build</a>). The data of <code>measured/v2</code> is at the tag <code>data/v2</code>.</li>
+        <li>Two builds came before it. A review of the first one found asymmetries in the measured path, among them a per-pixel bounds check paid only by the shared counters; <code>measured/v2</code> removed them (<a href="environments.html#v2">The build history</a>). <code>measured/v3</code> adds the sequential references and gives every histogram the same task splitting, and every campaign was run again on it (<a href="session.html">The session of a build</a>). The data of <code>measured/v2</code> is at the tag <code>data/v2</code>.</li>
       </ul>
     </details>
     <p>One last point, and it is a finding rather than a flaw: the same WebAssembly instruction does not give the
       same machine code in both browsers. For one atomic add, SpiderMonkey emits one locked instruction and V8 emits
       a loop that may retry (<a href="atomics.html#code">What each engine emits</a>). Here is the same code with one
-      thread in the three runtimes, in milliseconds per iteration:</p>
+      thread in the three environments, in milliseconds per iteration:</p>
     <div id="t1-table"></div>
     <p class="src" data-src="campaign-v3-scaling"></p>
 
@@ -261,7 +255,7 @@
       <li><b>Final work timed in some variants only.</b> The local histogram's merge was inside the timed region; the
         private merge and the read-back of the shared counters were outside it.</li>
     </ul>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> RQ2 is a ratio of ratios, and it only cancels what is the
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> RQ2 is a ratio of ratios, and it only cancels what is the
       same on both sides. A check that ran on one side only, or a merge timed on one side only, would have been read
       as a cost of synchronization in every engine.</p></aside>
     <p>The fix: fixed-size counter tables (no per-pixel check; LLVM then unrolls the loop by 8 itself), and every

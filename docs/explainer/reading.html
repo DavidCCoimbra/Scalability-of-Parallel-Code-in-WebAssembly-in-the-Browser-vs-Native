@@ -80,7 +80,7 @@
       mean</span>, and the reason is that every answer in the study is a <b>ratio</b>: "8 threads are 7 times
       faster", "Chrome takes 1.2 times native's time". Ratios have a symmetry that the usual average
       breaks.</p>
-    <p><em>An analogy.</em> One run came out twice as slow as expected (ratio 2) and
+    <p>One run came out twice as slow as expected (ratio 2) and
       another twice as fast (ratio 0.5). Common sense says these two cancel: on average, no change. The
       usual average says (2 + 0.5) / 2 = 1.25, a 25 % slowdown. The geometric mean says 1, no change. Move
       the two ratios below and watch both averages: only the geometric one lands on "no change" when the
@@ -108,13 +108,12 @@
       efficiency</a>).</p>
 
     <h2 id="sure">How sure: the interval</h2>
-    <p>We have 30 runs. If we took 30 more, the geometric mean would come out a little different. How
+    <p>There are 30 runs. With 30 more, the geometric mean would come out a little different. How
       different? That is what the <b>interval</b> says: the range in which the time would most probably land
       if the whole thing were done again. A narrow interval means 30 runs were plenty; a wide one means the
       configuration is noisy and the one number should be held loosely.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>How can we know what 30 more runs would give, without taking them?</b> With a trick
-      called the <span data-term="bootstrap-percentile">bootstrap</span>. Pretend the 30 runs we have are the
-      whole world. Draw 30 of them at random, <i>with replacement</i> (so some get picked twice and some not
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>How do you know what 30 more runs would give, without taking them?</b> With a trick
+      called the <span data-term="bootstrap-percentile">bootstrap</span>. Pretend the 30 runs are the whole world. Draw 30 of them at random, <i>with replacement</i> (so some get picked twice and some not
       at all), and compute the geometric mean of that pretend sample. Do it again. And again, 10 000 times.
       The 10 000 pretend means spread out; throw away the lowest 2.5 % and the highest 2.5 %, and what is
       left is the 95 % interval. It assumes nothing about the shape of the data, which matters because run
@@ -155,8 +154,7 @@
       <span data-term="primary-contrast">primary contrasts</span>; everything else is
       <span data-term="exploratory">exploratory</span>, reported with its interval and no yes-or-no.</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why name them in advance?</b> Because with 162 configurations you can always find
-      something that looks like a difference, by luck alone. If we looked at everything and then picked the
-      striking ones to report as findings, we would be reporting the luck. Naming the ten before the campaign
+      something that looks like a difference, by luck alone. Looking at everything and then picking the striking ones to report as findings would report the luck. Naming the ten before the campaign
       (the <span data-term="analysis-plan-pre-registration">analysis plan</span>,
       <a href="../adr/0037-analysis-plan.md">ADR 0037</a>) means the data could not choose its own test.</p></aside>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a stricter bar for them?</b> A 95 % interval is wrong about 5 % of the time: one
@@ -175,11 +173,11 @@
 
     <h2 id="notproof">Not rejecting is not proof</h2>
     <p>Firefox's synchronization cost at k = 1 came out at 0.99 times native's, with an interval from about
-      0.94 to 1.06. The bar was not cleared: we cannot say Firefox differs from native there. It is tempting
+      0.94 to 1.06. The bar was not cleared: the study cannot say that Firefox differs from native there. It is tempting
       to read that as "Firefox equals native". It does not say that. It says "the difference, if any, is
-      somewhere between 6 % cheaper and 6 % more expensive, and we could not tell which". The same holds for
+      somewhere between 6 % cheaper and 6 % more expensive, and the measurement cannot tell which". The same holds for
       Chrome's filter speedup, 0.99 times native's with an interval from about 0.95 to 1.03.</p>
-    <p><em>An analogy.</em> You weigh two parcels on a kitchen scale that reads to the nearest
+    <p>You weigh two parcels on a kitchen scale that reads to the nearest
       50 g, and both read 1 kg. You have not shown they weigh the same; you have shown they differ by less
       than the scale can see. The interval is the scale's resolution. With more runs, the scale gets finer.</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why say it this carefully?</b> Because "no detectable difference" and "the same" lead

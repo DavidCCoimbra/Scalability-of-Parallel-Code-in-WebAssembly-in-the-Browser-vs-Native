@@ -63,7 +63,7 @@
     <p>The chip's main memory (<b>RAM</b>) is big, gigabytes, but it sits outside the core, at the end of a long
       wire. Asking it for a number and getting the answer back takes roughly a hundred steps of the core's clock.
       For a core that could have done a hundred additions in that time, that is an eternity.</p>
-    <p><em>An analogy.</em> The cook's counter is small and right in front of them. The pantry
+    <p>The cook's counter is small and right in front of them. The pantry
       is big and down the hall. If every pinch of salt meant a walk to the pantry, nothing would ever get cooked.</p>
 
     <h2 id="caches">Caches: small, near, fast</h2>
@@ -85,7 +85,7 @@
       <rect class="box" x="345" y="15" width="155" height="131" rx="8"/><text x="422" y="60" text-anchor="middle" font-weight="600">RAM</text><text x="422" y="80" text-anchor="middle" class="muted">gigabytes</text><text x="422" y="98" text-anchor="middle" class="muted">about 100 ns away</text>
       </g>
     </svg><figcaption>Near, small and fast on the left; far, big and slow on the right. The core always tries the left first.</figcaption></figure>
-    <p><em>An analogy.</em> The L1 cache is the cook's counter: a dozen things, within reach. L2
+    <p>The L1 cache is the cook's counter: a dozen things, within reach. L2
       is the shelf behind them. L3 is the walk-in fridge the whole kitchen shares. RAM is the pantry down the hall.
       A good cook brings what they need to the counter once and keeps it there.</p>
 
@@ -93,7 +93,7 @@
     <p>Caches do not move one byte at a time. They move fixed boxes of <b>64 bytes</b>, called <b>cache
       lines</b>. Ask for one byte and the whole line it sits in comes along, because fetching 64 bytes costs
       about the same as fetching 1, and the neighbours are probably wanted next.</p>
-    <p><em>An analogy.</em> Nobody walks to the pantry for one egg. You bring the carton. The
+    <p>Nobody walks to the pantry for one egg. You bring the carton. The
       carton is the cache line.</p>
     <p>This has a consequence that matters for the study: two different numbers that happen to live in the same
       64 bytes <b>travel together</b>, whether you want them to or not. Eight small counters, 8 bytes each, fit in one
@@ -114,7 +114,7 @@
       <rect class="box" x="390" y="55" width="80" height="30" rx="5" stroke-dasharray="4 3"/><text x="430" y="74" text-anchor="middle" class="muted">wants to write</text>
       </g>
     </svg><figcaption>Core B cannot write until the line arrives. If A wants it back next, it travels again.</figcaption></figure>
-    <p><em>An analogy.</em> One shared notebook. Anyone may read it. To write in it you must hold
+    <p>One shared notebook. Anyone may read it. To write in it you must hold
       it, and only one person can hold it. If eight people each want to add a line, the notebook goes round the
       table, and each person waits for it. That waiting is <b>contention</b>.</p>
     <p>The trip takes about as long as a fetch from RAM, roughly 100 steps of the clock. An addition that could
@@ -151,8 +151,7 @@
       threads are <i>slower</i> than 1), next to the control that never shares a counter:</p>
     <div id="ct-bars"></div>
     <p class="src" data-src="campaign-v3-scaling"></p>
-    <p>At <i>k</i> = 1 every add moves the one hot line, and 8 threads take more than twice as long as one, in all
-      three runtimes. At <i>k</i> = 256 two cores rarely want the same line at the same moment, but with 8 threads
+    <p>At <i>k</i> = 1 every add moves the one hot line, and 8 threads take more than twice as long as one, in all three environments. At <i>k</i> = 256 two cores rarely want the same line at the same moment, but with 8 threads
       most adds still find their line last written by another core, so natively and in Firefox the speedup stays
       near 1: no gain from 8 threads, but no loss either. Chrome is the exception, and that is the subject of
       <a href="rq2.html#code">Why Chrome</a>.</p>
@@ -166,7 +165,7 @@
       is 64, so eight counters fit in one line. Two threads adding to two <i>different</i> counters that happen to
       share a line still take turns holding the line. This is <span data-term="false-sharing">false sharing</span>:
       contention with no shared variable at all.</p>
-    <p><em>An analogy.</em> Two people editing different words of the same line of a shared document,
+    <p>Two people editing different words of the same line of a shared document,
       where the rule is that only one person may hold a line at a time. They never touch each other's words, and
       they still wait for each other.</p>
     <p>The study removes it by giving every counter its own block: each counter is followed by enough padding that

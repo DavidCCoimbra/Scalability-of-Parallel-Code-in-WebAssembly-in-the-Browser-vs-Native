@@ -43,13 +43,7 @@
   <article class="page">
     <h1>Ratios, speedup and intervals</h1>
 
-    <p class="lead">Almost every number in this study is a <b>ratio</b>: this time divided by that time.
-      "Speedup", "efficiency", "times slower than native" and the RQ2 metric are all ratios. This page shows how
-      to read them, with made-up numbers, and why ratios need a different kind of average and a different kind
-      of chart.</p>
-    <p class="lead-more">In short: a ratio says "how many times", speedup is the ratio of 1 thread
-      to N threads, efficiency is speedup per thread, 2x faster and 2x slower are the same distance from "equal"
-      only on a log scale, and a ratio of two ratios cancels out whatever both have in common.</p>
+    <p class="lead">Almost every number of the study is a ratio: one time divided by another. Speedup, efficiency, "times slower than native" and the RQ2 metric are all ratios. This page shows how to read them with made-up numbers, why they need a geometric mean and a log scale, and why a ratio of two ratios cancels what both have in common.</p>
 
     <h2 id="ratio">Times faster, times slower</h2>
     <p>Say a task takes 12 seconds one way and 4 seconds another. The second way is <b>3 times faster</b>:
@@ -77,7 +71,7 @@
       every thread count and still scale perfectly: its speedup curve would match native's exactly. The two
       questions are different, and the study answers both, always showing the time ratio next to the speedup
       (<a href="rq1.html#ratio">Browser over native</a>).</p></aside>
-    <p><em>An analogy.</em> Two cooks, one slower than the other. Give each of them seven helpers.
+    <p>Two cooks, one slower than the other. Give each of them seven helpers.
       "Who finishes first" is about raw speed. "Who gained the most from the helpers" is about scaling. The slow
       cook can win the second even while losing the first.</p>
 
@@ -106,7 +100,7 @@
       the same amount. On it, 0.5 and 2 are the same distance from 1, and 4 is one more step past 2. Averaging
       on that line gives the <b>geometric mean</b>, the average the study uses for every ratio and every run
       time. "One doubled, one halved" averages to exactly 1 there.</p>
-    <p><em>An analogy.</em> A pay rise of 10 % then a cut of 10 % does not bring you back where
+    <p>A pay rise of 10 % then a cut of 10 % does not bring you back where
       you started (you end 1 % down). Percentages compound; they live on a log scale. Ratios are the same.</p>
     <p>So when a chart in this documentation says "log scale", read distances as "times", not "plus". The exact
       definition and a slider to try it are on <a href="reading.html#geomean">Geometric mean</a>.</p>
@@ -128,7 +122,7 @@
       <div class="stat"><div class="v">12 s / 2 s = 6</div><div class="k">Chrome: shared over control</div></div>
       <div class="stat"><div class="v">6 / 4 = 1.5</div><div class="k">the RQ2 number: Chrome's extra cost of synchronization</div></div>
     </div>
-    <p><em>An analogy.</em> Two cities, two kinds of road. To ask whether city B's highways are
+    <p>Two cities, two kinds of road. To ask whether city B's highways are
       worse <i>relative to its streets</i>, you compare each city's highway-to-street ratio, not its raw highway
       times; a city where everything is slow would otherwise look like it had bad highways.</p>
     <p>With the real numbers, the ratio is above 1 for Chrome at small <i>k</i> and below 1 at large <i>k</i>,

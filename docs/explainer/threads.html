@@ -39,14 +39,7 @@
   <article class="page">
     <h1>Thread pools and fork-join</h1>
 
-    <p class="lead">One worker takes an hour; eight workers should take about eight minutes. The catch is that
-      handing out the pieces and collecting them back takes time too, and that time is the same whether the job is
-      big or tiny. This page is about that handing out and collecting: what a thread is here, how the browser gets
-      them, and how much the start and the finish of a parallel job cost in each runtime.</p>
-
-    <p class="lead-more">In short: a WASM thread is a Web Worker running the same module on the same
-      shared memory, and the fixed price of starting and joining a parallel region is what separates the runtimes
-      when the work is small.</p>
+    <p class="lead">A parallel program hands work to several threads and waits for them to finish. Handing out and collecting takes time, and that time is the same whether the work is large or small. This page explains what a thread is in WebAssembly (a Web Worker on shared memory), how Rayon splits work and steals it, what a fork-join costs, and what the size of a task changes.</p>
 
     <h2 id="threads">Threads and Web Workers</h2>
     <p>A <a href="machines.html#threads">thread</a> is one line of work inside a program; several threads of the same
@@ -55,7 +48,7 @@
     <p>A web page cannot ask for threads. What it has is the <span data-term="web-worker">Web Worker</span>: a second
       script that runs at the same time as the page, but in its own memory, talking to the page by sending messages
       (which copies the data). That is fine for small messages and useless for sharing a 67-million-byte image.</p>
-    <p><em>An analogy.</em> Native threads are eight cooks in one kitchen, all reaching into the same
+    <p>Native threads are eight cooks in one kitchen, all reaching into the same
       fridge. Plain Web Workers are eight cooks in eight kitchens who can only pass each other notes under the door.
       A WASM thread is a cook in a separate kitchen who nevertheless shares one fridge with the others, because the
       building was built with a special permit for that.</p>
@@ -87,7 +80,7 @@
 
     <h2 id="rayon">Rayon and work stealing</h2>
     <p><span data-term="rayon">Rayon</span> is the Rust library that runs loops in parallel. You write almost the same
-      loop as before, and Rayon splits the work across its threads. In the blur, the loop runs over the rows of the
+      loop as before, and Rayon splits the work across its threads. In the filter, the loop runs over the rows of the
       output; Rayon hands groups of rows to the threads, and the loop only finishes when every row is done. That final
       wait is the <b>join</b>, like <code>await Promise.all(...)</code> over a set of workers.</p>
     <details class="deeper"><summary>In depth: the filter's parallel region</summary>

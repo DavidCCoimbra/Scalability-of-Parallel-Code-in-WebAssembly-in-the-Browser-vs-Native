@@ -41,26 +41,19 @@
   <article class="page">
     <h1>Measuring time</h1>
 
-    <p class="lead">Time a program once and you get a number. Time it again and you get a different one. Neither
-      is wrong. This page explains where the difference comes from, how to turn many numbers into one honest
-      answer, and how to say how sure you are. No formulas; the formulas are on
-      <a href="reading.html#speedup">The statistics, in detail</a>.</p>
-    <p class="lead-more">In short: a timing is a sample, not the truth, so we repeat it, summarize
-      with a number that one slow run cannot drag, say how far that summary could move, and only compare things
-      that were measured the same way on the same machine.</p>
+    <p class="lead">Time a program twice and you get two different numbers. This page explains where the difference comes from, how to summarize many timings with a number that one slow run cannot move, how to say how far that summary could be off, and what makes a comparison fair. The formulas are in <a href="reading.html">Analysis plan and statistics</a>.</p>
 
     <h2 id="noise">The same program, different times</h2>
     <p>Run the same program twice on the same computer and the second time is a little different. Something
       else was using the chip. A cache held the data the first time and not the second. The chip was warmer. The
       operating system checked for updates. None of these are the program's fault; together they are called
       <b>noise</b>.</p>
-    <p><em>An analogy.</em> Your commute is "20 minutes". Some days it is 17, some days 26, once
+    <p>Your commute is "20 minutes". Some days it is 17, some days 26, once
       it was 40 because of a parade. "20 minutes" is not any one day; it is what you learned from many.</p>
 
     <h2 id="repeat">Repeat, then summarize</h2>
     <p>So the study never times anything once. Each setup is run <b>30 times</b>, each time from a fresh start,
-      and the 30 numbers are boiled down to one. The 30 are a <b>sample</b>: thirty days of commute. The number
-      we report is a <b>summary</b> of them.</p>
+      and the 30 numbers are boiled down to one. The 30 are a <b>sample</b>: thirty days of commute. The number the study reports is a <b>summary</b> of them.</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why 30 and not 3?</b> With 3 runs, one slow day changes the answer. With 30, it is one
       among many. More runs make the answer steadier, but each run costs minutes of machine time, and 30 was
       enough to make the intervals below small next to the differences the study is looking for
@@ -91,16 +84,14 @@
     <p>The <b>spread</b> is how far apart the 30 numbers are. Tight spread: the summary means a lot. Wide
       spread: be careful. The study reports the spread of every setup and looks at the ones that are wide.</p>
 
-    <h2 id="sure">How sure can we be</h2>
+    <h2 id="sure">How sure the result is</h2>
     <p>Thirty runs gave one summary. Thirty <i>other</i> runs would have given a slightly different one. The
       honest answer is not one number but a <b>range</b>: "the summary is about here, and with another thirty it
-      would land somewhere between here and here". That range is called an <b>interval</b>. The narrower it is,
-      the surer we are.</p>
-    <p><em>An analogy.</em> "My commute is 20 minutes, give or take 2" says more than "20
-      minutes". And if your commute is 20 give or take 2, and mine is 21 give or take 2, we cannot honestly say
-      yours is faster: the ranges overlap.</p>
+      would land somewhere between here and here". That range is called an <b>interval</b>. The narrower it is, the surer the result.</p>
+    <p>"My commute is 20 minutes, give or take 2" says more than "20
+      minutes". And if your commute is 20 give or take 2, and mine is 21 give or take 2, nobody can say that yours is faster: the ranges overlap.</p>
     <p>That last point is how the study decides things. Two setups are called different only when their ranges
-      do not overlap. And "we could not tell them apart" is <b>not</b> the same as "they are the same": with
+      do not overlap. And "the measurement could not tell them apart" is <b>not</b> the same as "they are the same": with
       wider ranges, a real difference can hide. <a href="reading.html#sure">Reading the numbers</a> shows the
       intervals on the real data, and <a href="measuring.html#fair">the next section</a> what else has to hold
       before a comparison means anything.</p>
@@ -119,7 +110,7 @@
         code (<a href="compilers.html#jit">Engines and JIT</a>). They are run and thrown away
         (<a href="protocol.html#warmup">Warm-up inside the run</a>).</li>
     </ul>
-    <p><em>An analogy.</em> Comparing two routes to work means driving both in the same car, on
+    <p>Comparing two routes to work means driving both in the same car, on
       the same weeks, not one in July and the other in a January snowstorm, and not counting the day you were
       still learning the way.</p>
 

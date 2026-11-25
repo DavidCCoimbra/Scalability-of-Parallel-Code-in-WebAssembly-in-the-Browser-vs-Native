@@ -35,13 +35,7 @@
   <article class="page">
     <h1>Data files, CSV schema and tables</h1>
 
-    <p class="lead">Every measurement is kept as it was produced, one pair of files per run, and every
-      number derived from it is written to a separate table. Nothing in <code>data/raw/</code> is ever
-      edited; everything in <code>data/tables/</code> can be deleted and made again.</p>
-
-    <p class="lead-more">In short: <code>data/raw/&lt;campaign&gt;/</code> holds what the
-      runs wrote (a CSV of times and a JSON of context per run), and <code>data/tables/&lt;campaign&gt;/</code>
-      holds what the analysis computed from them.</p>
+    <p class="lead">Every run leaves a pair of files in <code>data/raw/&lt;campaign&gt;/</code>: a CSV of times and a JSON of context. Every derived number is in a table in <code>data/tables/&lt;campaign&gt;/</code>. This page describes each folder, each column of the CSV, each field of the run context and each table. Nothing in <code>data/raw/</code> is ever edited; everything in <code>data/tables/</code> can be deleted and made again.</p>
 
     <h2 id="onerow">One row, read aloud</h2>
     <p>Before the folders, one line of one real file. This is a measured iteration of the main campaign's run

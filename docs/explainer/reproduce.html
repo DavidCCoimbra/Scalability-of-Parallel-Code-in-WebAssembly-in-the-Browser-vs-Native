@@ -35,12 +35,7 @@
   <article class="page">
     <h1>Reproduce the tables and figures</h1>
 
-    <p class="lead">No number in the paper is typed from memory or copied from a terminal. Each one is
-      in a table that a command wrote from the raw runs, and that command is in a make target. Anyone with
-      the repository can delete the tables and make them again.</p>
-
-    <p class="lead-more">In short: <code>make all-results</code> turns
-      <code>data/raw/*-v3</code> into <code>data/tables/*-v3</code> and <code>paper/figures/</code>; the paper and this documentation quote those tables, and this page checks the main numbers against them.</p>
+    <p class="lead">No number of the paper is typed from memory. Each one is in a table that a command wrote from the raw runs, and each command is a make target. This guide shows you the chain from <code>data/raw/*-v3</code> to <code>data/tables/*-v3</code> and <code>paper/figures/</code>, how to run it and check it, and a table that recomputes the main numbers from the committed data every time you open the page.</p>
 
     <h2 id="chain">The chain</h2>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why must every number be reproducible from a command?</b> Because a number typed

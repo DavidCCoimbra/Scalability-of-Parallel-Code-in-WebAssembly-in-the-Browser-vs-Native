@@ -38,13 +38,7 @@
   <main id="main">
   <article class="page">
     <h1>The session of a build</h1>
-    <p class="lead">Everything the study reports was measured in one long sitting on one machine, on one exact copy
-      of the program. This page walks through that sitting from the first check to the last campaign: what was
-      checked before a single result was taken, what went wrong, and how each problem was handled without letting
-      the numbers decide.</p>
-    <p class="lead-more">In short: check every core, build the program twice and compare, try a
-      small rehearsal, write down the rules, and only then measure; when the rehearsal failed on one cell, the reason
-      was found and recorded before the real campaign started.</p>
+    <p class="lead">Everything the study reports was measured in one session on one machine and one build. This guide walks through that session in order: check every core, build twice and compare, run a gate, fix the rules, then measure. It also records what went wrong, including a gate that failed on one cell twice, and how each problem was handled by a rule written before the data.</p>
 
     <h2 id="twice">Why the study was measured twice</h2>
     <p>The study was first measured on a copy of the program called <code>measured/v2</code>. Its results were
@@ -58,8 +52,6 @@
       or two, for reasons that have nothing to do with what is being studied. A table that mixed runs of two builds
       would show differences that are only the build. So the rule is: one build per comparison, never mixed
       (ADR 0062), and the older data is kept apart at the tag <code>data/v2</code>.</p></aside>
-    <p><em>An analogy.</em> You timed runners on one track, then resurfaced the track. You cannot
-      add new lap times to the old table: you run everybody again on the new surface and publish that table.</p>
     <p>There is one more thing to be honest about. The v2 results were already known when v3 was measured. That
       makes v3 a <b><span data-term="replication">replication</span> with known results</b>, not a blind experiment. To keep the known numbers from steering
       any choice, every rule on this page was written down before any v3 run existed (ADR 0084).</p>
@@ -136,9 +128,6 @@
     <div data-code="data/sessions/v3/build/digests.txt|two builds from scratch|5" data-title="The digests of the measured build"></div>
     <p>Every campaign then records the digests of the files it actually ran, in its <code>campaign.json</code>, so a
       table can be traced to these exact bytes.</p>
-    <p><em>An analogy.</em> Before printing ten thousand copies of an exam, two people type it out
-      independently and compare. If the two versions match letter for letter, a slip of the finger in one is very
-      unlikely to have gone unnoticed.</p>
     <details class="deeper"><summary>In depth: what changed in the measured code between v2 and v3</summary>
       <p>Four changes, none an optimization (ADR 0086). (1) Every shared-counter histogram builds its tasks through
         the same grain control as the local one; the counting loops were compared by hand in the machine code and are
@@ -162,7 +151,7 @@
       <thead><tr><th>Criterion</th><th>First gate</th><th>Second gate</th></tr></thead>
       <tbody>
         <tr><td>Runs done, failed, excluded</td><td>135, 0, 0</td><td>135, 0, 0</td></tr>
-        <tr><td>Same output in all three runtimes and both thread counts</td><td>yes</td><td>yes</td></tr>
+        <tr><td>Same output in all three environments and both thread counts</td><td>yes</td><td>yes</td></tr>
         <tr><td>Every timed sample at least 100 times the clock's resolution</td><td>yes</td><td>yes</td></tr>
         <tr><td>First three measured iterations within 5% of the last three</td><td><b>44 of 45 cells</b></td><td><b>44 of 45 cells</b></td></tr>
       </tbody></table></div>

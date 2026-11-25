@@ -43,12 +43,7 @@
   <main id="main">
   <article class="page">
     <h1>What explains the results</h1>
-    <p class="lead">A measurement tells you <i>what</i> happened: the filter gets 7 times faster with 8 threads, Chrome
-      pays twice for a shared counter. It does not tell you <i>why</i>. This page is about the why. The study listed
-      nine things it had seen and could not yet explain, wrote down a guess for each, wrote down what a test would show (a <span data-term="prediction">prediction</span>) if the guess were right and if it were wrong, and only then ran the tests. The predictions were written after the main campaign, which is what raised the questions, and before each test.</p>
-    <p class="lead-more">In short: of nine open questions, the tests answered three, supported four,
-      explained one through another, and left one open; no answer changes a result, each one says how far the
-      explanation of a result can be trusted.</p>
+    <p class="lead">A measurement says what happened; it does not say why. After the main campaign the study listed nine observations it could not yet explain, wrote a hypothesis for each, wrote what a test would show if the hypothesis held and if it did not (a <span data-term="prediction">prediction</span>), and then ran the tests. This page gives each question, its test and its outcome: three answered, four supported, one explained through another, one open. No outcome changes a result; each says how far an explanation can be trusted.</p>
 
     <h2 id="how">How an explanation is tested</h2>
     <p>It is easy to explain a number after you have seen it. Any story fits. The discipline that makes a story
@@ -75,7 +70,7 @@
       <li><b>Not supported</b>: the test showed what the "if wrong" column said. The guess is dropped and the
         question stays open.</li>
     </ul>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not just say "we think it is the memory"?</b> Because a reader cannot tell a tested
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not just say "it is probably the memory"?</b> Because a reader cannot tell a tested
       explanation from a plausible one unless the text says which is which. If every explanation were written in the
       same confident voice, the one that was only a guess would be believed as much as the one that was proven, and
       the first person to check it would stop trusting all of them.</p></aside>
@@ -116,9 +111,6 @@
       through them at a higher rate (more instructions per cycle) and ends about 1.16 times the native cycles.
       Firefox runs them at the native rate or below, and ends about 1.36 times. Those two ratios are the time ratios
       of the main campaign: the counters and the clock tell the same story.</p>
-    <p><em>An analogy.</em> Three cooks follow the same recipe. One was given it in 65 steps, the
-      other two in about 86 steps each, because their translators were wordier. Of the two with the long version,
-      one works faster with his hands and nearly catches up; the other does not.</p>
     <details class="deeper"><summary>In depth: the listings, and how the loop alone was counted</summary>
       <p>The listings agree with the counters. The filter loops in <code>data/probes/engine-code</code> handle 16
         pixels in 65 instructions natively, 87 in Chrome and 85 in Firefox: 4.06, 5.44 and 5.31 per pixel, against
@@ -180,9 +172,8 @@
       5.5% higher. It would be tempting to write "Firefox runs threads better". The data says something less
       flattering and more interesting.</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>What is the trap here?</b> Speedup is T<sub>1</sub> / T<sub>8</sub>. You can raise it by
-      making T<sub>8</sub> smaller, or by making T<sub>1</sub> <i>bigger</i>. A runtime with a slow single thread
-      gets a better speedup for free. If we reported "Firefox scales best" without looking at the seconds, we would
-      be praising the slowest runtime for being slow.</p></aside>
+      making T<sub>8</sub> smaller, or by making T<sub>1</sub> <i>bigger</i>. An environment with a slow single thread
+      gets a better speedup for free. A report that says "Firefox scales best" without the seconds praises the slowest environment for being slow.</p></aside>
     <p>Firefox's loop is the slowest of the three per thread (question 3). A slower loop asks for less memory per
       second, so eight of them run into the shared memory less (question 1). The counters agree: from 1 to 8
       threads Firefox's cycles per pixel rise less than native's, and so do its cache misses (the table above). In the SIMD chart Firefox sits where its one-thread speed puts it, on the same curve as the native builds; Chrome sits below that curve.</p>
@@ -210,7 +201,7 @@
       (<a href="#baseline">below</a>).</p>
 
     <h2 id="q4">Question 4: the dip at 6 and 7 threads</h2>
-    <p>The local histogram's efficiency dips at 6 and 7 threads and recovers at 8, in every runtime. The guess was
+    <p>The local histogram's efficiency dips at 6 and 7 threads and recovers at 8, in every environment. The guess was
       about how Rayon cuts the work: it halves it again and again, which gives pieces in powers of two, and six or
       seven threads cannot share eight pieces evenly. The test: cut the work into pieces of a fixed size instead,
       and see whether the dip goes away.</p>

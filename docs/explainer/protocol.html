@@ -64,11 +64,7 @@
         landed in memory, which cores the threads got. Each run is a <b>new</b> situation. Only runs are
         independent (<a href="../adr/0005-fresh-process-per-run.md">ADR 0005</a>).</p></div>
     </div>
-    <p><em>An analogy.</em> To know how long your commute takes, you would not time it once and
-      then look at your watch 10 times during that one trip. You would make the trip on 30 different days. The
-      10 looks at the watch are iterations; the 30 days are runs.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does it matter which one we count?</b> Because the number of measurements decides
-      how sure we claim to be. With 30 runs of 10 iterations, counting iterations would say "300 measurements,
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does it matter which one is counted?</b> Because the number of measurements decides how sure the study claims to be. With 30 runs of 10 iterations, counting iterations would say "300 measurements,
       very sure"; counting runs says "30 measurements, fairly sure". The 300 would be a lie, because the 10
       inside a run are not 10 pieces of new information. That mistake has a name,
       <span data-term="pseudo-replication">pseudo-replication</span>, and it is the most common error in
@@ -99,10 +95,6 @@
       it is the compiled program starting, measuring and exiting. For a browser, it is Chrome or Firefox
       starting with a brand-new, empty profile, loading one page that does the measuring, and being closed.
       Nothing survives from one run to the next: no process, no cache, no window.</p>
-    <p><em>An analogy.</em> A run is one lap on the stopwatch, but with the runner sent home
-      and called back for every lap. It sounds wasteful. It is the only way to be sure that lap 7 is not
-      faster because the runner was already warm from lap 6. The page
-      <a href="protocol.html#unit">The run is the unit</a> says why this matters for the statistics.</p>
     <p>One run goes through seven stages, from the command you type to the number in the paper. Step through
       them (the arrow keys work too):</p>
     <div id="pipe" class="card"></div>
@@ -138,7 +130,7 @@
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is nothing automated inside the browser?</b> Tools such as Puppeteer, Playwright
       or the DevTools protocol can drive a browser from a script, which would make the harness simpler. But
       they do it by living inside the browser process: extra threads, extra messages, extra timers, all in the
-      thing being measured. We would be timing the browser plus the puppet strings. So the harness only
+      thing being measured. The measurement would time the browser plus the automation. So the harness only
       launches the browser with a URL and waits for the result file to appear
       (<a href="../adr/0006-harness-without-automation.md">ADR 0006</a>).</p></aside>
 
@@ -159,8 +151,7 @@
     <p class="def"><b>Checksum.</b> Every iteration ends by boiling its whole output down to one number
       (a hash). The first iteration's number is the reference; a later one that differs means the program
       computed something different, and the run fails. The numbers must also match across environments and
-      thread counts, which <code>harness.collect</code> checks before any analysis. It is how we know all
-      three runtimes really did the same work.</p>
+      thread counts, which <code>harness.collect</code> checks before any analysis. It shows that all three environments did the same work.</p>
     <details class="deeper"><summary>In depth: the native runner and the shared run function</summary>
       <div data-code="bench/src/bin/native/main.rs|fn run()|8" data-title="The native runner: start the pool, run, print CSV"></div>
       <p>The pool is a global Rayon pool of N threads, built before anything is timed
@@ -312,7 +303,7 @@
       services. The warm-up pilot ran with no delay, so its short measurements ended less than a second after the page
       loaded. The delay pilot (ADR 0048) then showed <b>Firefox's local histogram at N = 8 up to 32% slower and
       erratic</b> without a delay: Firefox's own start-up work was competing with the 8 workers for the 8 cores.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> Firefox would have looked worse at scaling than it is, and
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> Firefox would have looked worse at scaling than it is, and
       the loss would have been blamed on WASM threads. The cause had nothing to do with threads: it was the browser
       still starting up during the measurement.</p></aside>
     <ul>
@@ -369,7 +360,7 @@
       them, before its warm-up: what remains is the pure price of starting and joining
       (<a href="../adr/0030-fork-join-calibration.md">ADR 0030</a>).</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why measure it at all, if the workload's time already includes it?</b> Because
-      without a separate number we could not tell a slow workload from a slow start. If the browsers scale
+      without a separate number nothing tells a slow workload from a slow start. If the browsers scale
       worse on small images, is the parallel code slower, or is the fixed cost of each region bigger? The
       calibration answers that: it is the fixed cost. Nothing is subtracted from the measured times; the
       calibration describes, it does not correct.</p></aside>

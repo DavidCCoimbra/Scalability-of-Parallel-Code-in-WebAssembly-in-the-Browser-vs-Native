@@ -56,10 +56,6 @@
       <li>Does code where the threads coordinate (shared counters, locks, atomic operations) behave differently in the
         browser than it does natively?</li>
     </ul>
-    <p><em>An analogy.</em> A kitchen with 8 cooks. Natively, the recipe takes an hour with one cook and
-      about eight minutes with eight. In the browser, each cook may be a little slower, which is fine. What would not be
-      fine is if the browser made the cooks get in each other's way more, so that eight cooks were barely faster than
-      one. RQ1 asks whether they are a little slower; RQ2 asks whether they get in each other's way more.</p>
     <p>Earlier studies measured WASM against native on one thread, or measured threads without a native baseline and
       without coordination as a factor (see <a href="#related">What others measured</a>).</p>
 
@@ -88,7 +84,7 @@
         is compared with how much slower it is natively.</li>
     </ul>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why compare the two histograms, and not just time the atomic one?</b> Because the browser
-      makes <i>everything</i> a bit slower, atomics or not. If we only timed the atomic histogram, a slow browser would
+      makes <i>everything</i> a bit slower, atomics or not. If the study timed only the atomic histogram, a slow browser would
       look like a browser with slow synchronization. Dividing by the no-sharing version first removes the general
       slowness, and what is left is the cost of sharing. The next section does it with numbers.</p></aside>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why were the questions and tests fixed before the data came in?</b> With 162 configurations,
@@ -126,12 +122,12 @@
       <thead><tr><th>Factor</th><th>Values</th><th>Why</th></tr></thead>
       <tbody>
         <tr><th colspan="3">Varied</th></tr>
-        <tr><td>Environment</td><td><span class="chip native">native</span> <span class="chip chrome">chrome</span> <span class="chip firefox">firefox</span></td><td>The thing compared: a normal Linux program, Chrome's engine (V8), Firefox's engine (SpiderMonkey). <a href="environments.html">Three runtimes, one source</a></td></tr>
+        <tr><td>Environment</td><td><span class="chip native">native</span> <span class="chip chrome">chrome</span> <span class="chip firefox">firefox</span></td><td>The thing compared: a normal Linux program, Chrome's engine (V8), Firefox's engine (SpiderMonkey). <a href="environments.html">Environments and builds</a></td></tr>
         <tr><td>Workload</td><td>filter, <code>hist-atomic</code>, <code>hist-local</code></td><td>No coordination (RQ1); shared atomics against their no-sharing control (RQ2). <a href="workloads.html">The workloads</a></td></tr>
         <tr><td><span data-term="k">k</span>, distinct grey levels</td><td>1, 4, 16, 256</td><td>How many counters the adds spread over: all on one, or over 256. <a href="workloads.html#k">k: the contention dial</a></td></tr>
         <tr><td>Threads N</td><td>1, 2, 4, 6, 7, 8</td><td>Up to one per fast core; 6 and 7 show whether a curve bends before the last core is used; the decisive comparisons are at 8 (ADR 0044)</td></tr>
         <tr><th colspan="3">Held fixed</th></tr>
-        <tr><td>Source, compiler, flags</td><td>One Rust crate, <code>nightly-2026-10-03</code>, <code>lto=fat</code>, 128-bit SIMD on both sides</td><td>So that the code is the same and only the runtime differs. <a href="environments.html#same">Same source, same flags</a></td></tr>
+        <tr><td>Source, compiler, flags</td><td>One Rust crate, <code>nightly-2026-10-03</code>, <code>lto=fat</code>, 128-bit SIMD on both sides</td><td>So that the code is the same and only the environment differs. <a href="environments.html#same">Same source, same flags</a></td></tr>
         <tr><td>Input</td><td>8192 x 8192 grey image, fixed seed</td><td>The same bytes everywhere; a checksum proves the same result. <a href="workloads.html#inputs">Inputs and checksums</a></td></tr>
         <tr><td>Machine</td><td>8 P-cores, turbo and SMT off, governor performance, the rest of the system on the E-cores</td><td>So that the same run gives the same time twice. <a href="machine.html">The machine and its controls</a></td></tr>
         <tr><td>Browsers</td><td>Chrome for Testing 155.0.8059.84, Firefox 158.0, headless, fresh profile</td><td>Pinned, so the engine cannot change halfway through the study</td></tr>
@@ -168,8 +164,8 @@
       <div class="card"><h3>Environment</h3><p>Where the code runs: <span class="chip native">native</span> (a normal Linux
         program), <span class="chip chrome">chrome</span> or <span class="chip firefox">firefox</span> (the same code as
         WebAssembly inside that browser). The three names are the values of the <code>env</code> column in the data.
-        <a href="environments.html">Three runtimes, one source</a>.</p></div>
-      <div class="card"><h3>Workload</h3><p>The job being timed: <code>filter</code> (the blur),
+        <a href="environments.html">Environments and builds</a>.</p></div>
+      <div class="card"><h3>Workload</h3><p>The job being timed: <code>filter</code> (the filter),
         <code>hist-atomic</code> (the histogram with a shared tally) or <code>hist-local</code> (private tallies, the
         control). The exploratory campaigns add <code>hist-atomic-private</code>, <code>hist-atomic-packed</code> and
         two sorts. <a href="workloads.html">The workloads</a>.</p></div>
@@ -224,7 +220,7 @@
         0.5 means the threads are half idle on average.</li>
       <li><b><span data-term="confidence-interval-ci">Interval</span></b>: the range the value would likely fall in if the
         30 runs were done again, found by the <span data-term="bootstrap-percentile">bootstrap</span>
-        (<a href="measuring.html#sure">How sure can we be</a>).</li>
+        (<a href="measuring.html#sure">How sure the result is</a>).</li>
       <li><b>Time ratio browser / native</b>: the same question in seconds, because a speedup alone can hide a slow
         start (<a href="ratios.html#speedup">Ratios</a>).</li>
     </ul>
@@ -247,13 +243,13 @@
       <thead><tr><th>Source</th><th>What it measured</th><th>How this study differs</th></tr></thead>
       <tbody>
         <tr><td>Haas et al. 2017 (PLDI)</td><td>The design of WebAssembly and its first implementations, single-threaded</td><td>Threads did not exist yet; cited for what WASM is</td></tr>
-        <tr><td>Jangda et al. 2019 (USENIX ATC)</td><td>SPEC CPU as WASM in Chrome and Firefox: 45 to 55% slower than native on average</td><td>Single-threaded; we add threads, synchronization, and read the generated code</td></tr>
-        <tr><td>Yan et al. 2021 (IMC)</td><td>How compiler, flags, input and browser change WASM results</td><td>The reason we pin all four and use the same flags on both sides</td></tr>
+        <tr><td>Jangda et al. 2019 (USENIX ATC)</td><td>SPEC CPU as WASM in Chrome and Firefox: 45 to 55% slower than native on average</td><td>Single-threaded; this study adds threads, synchronization, and reads the generated code</td></tr>
+        <tr><td>Yan et al. 2021 (IMC)</td><td>How compiler, flags, input and browser change WASM results</td><td>The reason this study pins all four and uses the same flags on both sides</td></tr>
         <tr><td>Szewczyk et al. 2022 (IISWC)</td><td><span data-term="bounds-checking">Bounds checking</span> of linear memory: under 20% in fast runtimes, up to 650% in others</td><td>Standalone runtimes, no threads; it explains part of the constant per-thread factor</td></tr>
-        <tr><td>Watt et al. 2019 (OOPSLA)</td><td>The WASM memory model: atomics are sequentially consistent</td><td>No measurements; it lets us rule out memory order as the cause (<a href="atomics.html#order">why</a>)</td></tr>
-        <tr><td>Sánchez-Artigas and Bohoyo-Bengoetxea 2025 (CCGrid)</td><td>WASM multithreading outside the browser, with allocator and atomics overheads</td><td>We measure inside two browsers, against native, with synchronization as a factor</td></tr>
+        <tr><td>Watt et al. 2019 (OOPSLA)</td><td>The WASM memory model: atomics are sequentially consistent</td><td>No measurements; it rules out memory order as the cause (<a href="atomics.html#order">why</a>)</td></tr>
+        <tr><td>Sánchez-Artigas and Bohoyo-Bengoetxea 2025 (CCGrid)</td><td>WASM multithreading outside the browser, with allocator and atomics overheads</td><td>This study measures inside two browsers, against native, with synchronization as a factor</td></tr>
         <tr><td>Schweizer et al. 2015 (PACT)</td><td>Atomics on x86 cost about the same whatever their semantics, bound by cache-line transfers</td><td>The mechanism behind the RQ2 design and its <a href="rq2.html#readfirst">counters</a></td></tr>
-        <tr><td>Kyriakou and Tselikas 2022 (Electronics)</td><td>The closest study: Rust as WASM in Chromium at 93.5% of a native Node.js addon single-threaded, 67.9% multithreaded</td><td>One workload without synchronization, 1 against 24 threads, means only; we add a thread sweep, a second engine, synchronization and intervals</td></tr>
+        <tr><td>Kyriakou and Tselikas 2022 (Electronics)</td><td>The closest study: Rust as WASM in Chromium at 93.5% of a native Node.js addon single-threaded, 67.9% multithreaded</td><td>One workload without synchronization, 1 against 24 threads, means only; this study adds a thread sweep, a second engine, synchronization and intervals</td></tr>
         <tr><td>Georges et al. 2007 (OOPSLA); Hoefler and Belli 2015 (SC)</td><td>How to measure managed runtimes and parallel systems rigorously</td><td>They shaped the run as the unit, the bootstrap intervals and the Holm correction</td></tr>
       </tbody>
     </table></div>

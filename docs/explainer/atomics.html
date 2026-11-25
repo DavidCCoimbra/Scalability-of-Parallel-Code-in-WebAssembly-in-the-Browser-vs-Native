@@ -48,14 +48,7 @@
   <article class="page">
     <h1>Atomic operations</h1>
 
-    <p class="lead">The shared histogram has one line of Rust per pixel: add one to a shared counter, atomically.
-      That one line reaches Chrome and Firefox as the same WebAssembly instruction, and the two browsers turn it into
-      <b>different</b> machine code. One of them does the add in one step; the other tries, checks, and retries. That
-      difference is where the RQ2 results come from.</p>
-
-    <p class="lead-more">In short: native code and Firefox add with one locked instruction that cannot
-      fail; Chrome reads the counter, computes, and tries to write it back only if nobody changed it in between,
-      going round again if someone did.</p>
+    <p class="lead">An atomic add makes sure no count is lost when several threads add to the same counter. A CPU offers two ways to do it: one locked instruction, or a read followed by a compare-and-swap that retries. This page explains both, shows which one each compiler emits for the same line of Rust, and explains why the memory ordering argument makes no difference on these targets.</p>
 
     <h2 id="what">What an atomic add is</h2>
     <p>A plain <code>count = count + 1</code> is three steps for the CPU: read the current value from memory, add one,
@@ -100,7 +93,7 @@ Atomics.add(counters, value, 1n);</pre></figure>
         <b>compare-and-swap</b>: "write my new value, but only if memory still holds the value I read". If another
         core changed the counter in between, the swap fails and the loop starts again with a fresh read.</li>
     </ul>
-    <p><em>An analogy.</em> Lock-and-add is taking the one shared pen and writing your tick before
+    <p>Lock-and-add is taking the one shared pen and writing your tick before
       handing it on. Try-and-retry is writing your tick on a sticky note from memory, then checking the sheet: if
       nobody wrote since you looked, you stick it on; if someone did, you tear it up and start over.</p>
     <p>Step through two cores adding to the same counter with try-and-retry, and then the same two adds with

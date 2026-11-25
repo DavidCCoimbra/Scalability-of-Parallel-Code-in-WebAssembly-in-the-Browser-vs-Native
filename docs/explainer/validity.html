@@ -41,19 +41,13 @@
   <article class="page">
     <h1>How a study can be wrong</h1>
 
-    <p class="lead">A study can do everything carefully and still be wrong, in four particular ways. Researchers
-      call them threats to <b>validity</b>; this page calls them what they are: four questions you should ask
-      of any result, including this study's. The study's own answers are on
-      <a href="threats.html">Threats to validity</a>.</p>
-    <p class="lead-more">In short: did something else cause it, did we measure the wrong thing,
-      does it only hold here, and do the numbers really support it: a result that survives all four is one you
-      can use.</p>
+    <p class="lead">A careful study can still be wrong in four ways, which researchers call threats to validity: something else caused the effect, the measure does not capture the question, the result holds only here, or the numbers do not support the conclusion. This page explains each with an example. The study's own answers are in <a href="threats.html">Threats to validity</a>.</p>
 
     <h2 id="internal">Something else caused it</h2>
     <p>You changed one thing and saw a difference. But was it the thing you changed? If anything else changed
       at the same time, the difference might be its doing. This is <b>internal validity</b>: is the cause really
       the cause.</p>
-    <p><em>An analogy.</em> A café changes its coffee recipe and sales go up. The same week, a
+    <p>A café changes its coffee recipe and sales go up. The same week, a
       new barista started and it stopped raining. Was it the recipe?</p>
     <p>In this study: if Chrome ran on different cores than native, or with turbo on, or after the machine had
       warmed up, a difference between them might be the cores, the clock or the warmth, not the browser. That is
@@ -62,10 +56,10 @@
       fooled this way and fixed them: Chrome was quietly using cores it was not supposed to
       (<a href="machine.html#mask">Problems found and fixed</a>).</p>
 
-    <h2 id="construct">We measured the wrong thing</h2>
+    <h2 id="construct">The wrong thing was measured</h2>
     <p>You wanted to know X, so you measured Y, because Y was easy to measure. Is Y really X? This is
       <b>construct validity</b>: does the number stand for the idea.</p>
-    <p><em>An analogy.</em> You want to know if a restaurant is good, so you count its online
+    <p>You want to know if a restaurant is good, so you count its online
       likes. Likes measure popularity and marketing; they may or may not measure the food.</p>
     <p>In this study: "does the browser scale like native" is measured by comparing speedup curves. A speedup can
       flatter a slow starter (a browser that is slow at 1 thread has more room to gain), so the study always
@@ -76,7 +70,7 @@
     <h2 id="external">It only holds here</h2>
     <p>The result is real, on this machine, with this program, these versions. Would it hold on another? This is
       <b>external validity</b>: how far the result travels.</p>
-    <p><em>An analogy.</em> A survey of one city's commuters says most people cycle. True there.
+    <p>A survey of one city's commuters says most people cycle. True there.
       Say nothing about the next city over, where it rains all year.</p>
     <p>In this study: one PC, one chip, two browser versions, two workloads, one image size. Everything was done
       to make the comparison exact on this machine, and exactly that makes it a single case. The study says so,
@@ -86,7 +80,7 @@
     <h2 id="conclusion">The numbers do not support it</h2>
     <p>Everything was fair and the right thing was measured, but the difference is small and the measurements
       are few. Could it be chance? This is <b>conclusion validity</b>: do the numbers actually back the claim.</p>
-    <p><em>An analogy.</em> Three customers preferred the new recipe, two the old. "Customers
+    <p>Three customers preferred the new recipe, two the old. "Customers
       prefer the new recipe" is not a conclusion; it is five people.</p>
     <p>In this study: every reported number comes from 30 runs with a range around it, and a difference is only
       claimed when the ranges do not overlap. Ten comparisons were named in advance as the ones that answer the

@@ -47,15 +47,7 @@
   <article class="page">
     <h1>Follow one run through the code</h1>
 
-    <p class="lead">A run is one program start: the program is launched, works, prints its times, and is
-      gone. This page follows two real runs of the main campaign through the code, line by line: the atomic
-      histogram at k = 1 with 8 threads, once natively (<code>campaign-v3-4610-native-hist-atomic-k1-n8-r0</code>)
-      and once in Chrome (<code>campaign-v3-4221-chrome-hist-atomic-k1-n8-r0</code>). Then the 30 runs of
-      each configuration go into the analysis.</p>
-
-    <p class="lead-more">In short: the campaign picks the run, the harness starts it on the
-      fast cores, both the native program and the browser end up in the same Rust function, which times
-      only the work, and the CSV it prints is stored next to a record of the conditions.</p>
+    <p class="lead">This guide follows two real runs of the main campaign through the code, line by line: the atomic histogram at k = 1 with 8 threads, once natively (<code>campaign-v3-4610-native-hist-atomic-k1-n8-r0</code>) and once in Chrome (<code>campaign-v3-4221-chrome-hist-atomic-k1-n8-r0</code>). The campaign picks the run, the harness starts it on the P-cores, both environments reach the same Rust function, which times only the work, and the CSV is stored next to a record of the conditions. Then the 30 runs of that configuration become one number.</p>
 
     <h2 id="shape">The shape before the steps</h2>
     <p>Before stepping through 27 lines of code, here is the whole shape. Each box is a separate program
@@ -125,7 +117,7 @@
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does only the red box matter for the numbers?</b> Everything to its left
       happens before the clock starts and runs on other cores; everything to its right happens after the
       CSV exists. So a slow harness, a slow disk or a slow analysis cannot change a measured time. The
-      only things that can are inside that box: the runtime, the code, and the machine it runs on, which is
+      only things that can are inside that box: the environment, the code, and the machine it runs on, which is
       what the study compares. <a href="code.html#picture">How the pieces talk</a> gives every port and file.</p></aside>
     <p>Below, each step shows the line that runs, what the variables hold, and, in the box marked
       <b>In plain words</b>, the one thing a newcomer would not get from the code. Use the arrow keys.</p>

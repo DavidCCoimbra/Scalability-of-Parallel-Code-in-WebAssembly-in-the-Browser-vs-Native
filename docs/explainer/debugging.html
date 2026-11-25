@@ -38,13 +38,7 @@
   <article class="page">
     <h1>Debug a run</h1>
 
-    <p class="lead">A campaign of thousands of runs will, now and then, have one that fails: a browser that
-      did not post its result in time, a checksum that disagrees, a machine that was not quiet. The harness
-      never hides this. It writes the failure next to the good runs, keeps counting, and gives you the exact
-      command to run the one run again by hand.</p>
-    <p class="lead-more">In short: <code>make status</code> says what failed,
-      <code>campaign.jsonl</code> says when, the run's <code>.error.json</code> says why, and
-      <code>harness.native</code> or <code>harness.launcher</code> replays one run while you watch.</p>
+    <p class="lead">A campaign of thousands of runs will sometimes have one that fails: a browser that did not post its result in time, a checksum that disagrees, a machine that was not prepared. The harness records the failure next to the good runs and keeps going. This guide shows you how to find what failed (<code>make status</code>), when (<code>campaign.jsonl</code>), why (the run's <code>.error.json</code>), and how to replay one run while you watch.</p>
 
     <h2 id="status">Start from make status</h2>
     <pre class="cmd">make status SPEC=harness/campaigns/&lt;name&gt;.json</pre>
