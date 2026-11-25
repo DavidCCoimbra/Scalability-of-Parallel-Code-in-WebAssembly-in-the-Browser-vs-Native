@@ -136,7 +136,7 @@ svg .val { font-size: 23px; font-weight: 600; }
 /* k illustration */
 .krow { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; font-size: 23px; }
 .krow .cells { display: flex; gap: 3px; }
-.krow .cells i { width: 10px; height: 22px; flex: none; background: var(--soft); border: 1px solid var(--graphite); }
+.krow .cells i { width: 9px; height: 22px; flex: none; background: var(--soft); border: 1px solid var(--graphite); }
 .krow .cells i.h { background: var(--line); border-color: var(--ink); }
 .krow span { width: 96px; flex: none; font-variant-numeric: tabular-nums; }
 
@@ -236,7 +236,7 @@ body.static .lane b { animation: none; left: 30%; }
     <div class="arrow" style="grid-column:4;grid-row:1"></div>
     <div class="node env n" style="grid-column:5;grid-row:1"><b class="native">Native</b> process on Linux</div>
     <div class="arrow" style="grid-column:2;grid-row:2 / span 2"></div>
-    <div class="node" style="grid-column:3;grid-row:2 / span 2">wasm32 module, simd128 (128-bit SIMD),<br>atomics and shared memory</div>
+    <div class="node" style="grid-column:3;grid-row:2 / span 2">wasm32 module, simd128 (128-bit SIMD)<br>atomics, shared memory</div>
     <div class="arrow" style="grid-column:4;grid-row:2"></div>
     <div class="node env c" style="grid-column:5;grid-row:2"><b class="chrome">Chrome 155</b>, V8 engine</div>
     <div class="arrow" style="grid-column:4;grid-row:3"></div>
@@ -487,7 +487,7 @@ new = old + 1
 <!-- 12 -->
 <section class="slide" data-title="Questions" data-time="20">
   <h1 style="margin-top:120px">Questions</h1>
-  <p style="margin-top:40px;max-width:1300px">Every number in this talk is from one tagged build, <span class="mono" style="font-size:27px">measured/v3</span>: 5310 primary runs and 21 840 exploratory ones, regenerated from the raw data by one command, with every design decision recorded.</p>
+  <p style="margin-top:40px;max-width:1300px">Every number in this talk is from one tagged build, <span class="mono" style="font-size:27px">measured/v3</span>: 5310 primary runs and 21&nbsp;840 exploratory ones, regenerated from the raw data by one command, with every design decision recorded.</p>
   <div class="cols c3" style="margin-top:60px;flex:none;gap:30px">
     <p class="key n small">RQ1: scales like native, at a constant factor in time</p>
     <p class="key c small">RQ2: Chrome 2.26 to 0.42 of the native cost of synchronization, by contention</p>
