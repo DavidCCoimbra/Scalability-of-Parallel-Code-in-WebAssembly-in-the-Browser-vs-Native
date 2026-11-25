@@ -11,6 +11,7 @@ import csv
 import json
 import re
 from pathlib import Path
+from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parent.parent
 TABLES = ROOT / "data" / "tables"
@@ -184,35 +185,57 @@ def atomic() -> dict[str, object]:
     return {"engine": engine, "probe": probes, "retries": retries}
 
 
-def journal() -> list[dict[str, object]]:
+class JournalRun(NamedTuple):
+    """One run of the campaign's journal, in the order it ran."""
+
+    position: int
+    environment: str
+    workload: str
+    k: int
+    threads: int
+    repetition: int
+
+    @property
+    def configuration(self) -> tuple[str, int, int]:
+        return (self.workload, self.k, self.threads)
+
+
+def journal() -> list[JournalRun]:
     with (CAMPAIGN / "campaign.jsonl").open() as handle:
         entries = [json.loads(line) for line in handle]
-    return sorted((entry for entry in entries if not entry.get("discarded")), key=lambda entry: entry["position"])
+    runs = [
+        JournalRun(
+            int(entry["position"]),
+            str(entry["environment"]),
+            str(entry["workload"]),
+            int(entry["k"] or 0),
+            int(entry["threads"]),
+            int(entry["repetition"]),
+        )
+        for entry in entries
+        if not entry.get("discarded")
+    ]
+    return sorted(runs)
+
+
+def base36(value: int) -> str:
+    digits = "0123456789abcdefghijklmnopqrstuvwxyz"
+    text = ""
+    for _ in range(ORDER_DIGITS):
+        text = digits[value % len(digits)] + text
+        value //= len(digits)
+    return text
 
 
 def execution_order() -> dict[str, object]:
     """The order the campaign ran in, as one cell index per run: environment, configuration, repetition."""
     runs = journal()
-    configurations: list[tuple[str, object, int]] = []
-    for run in runs:
-        key = (run["workload"], run["k"], run["threads"])
-        if key not in configurations:
-            configurations.append(key)
-    configurations.sort(key=lambda key: (str(key[0]), key[1] or 0, key[2]))
-    digits = "0123456789abcdefghijklmnopqrstuvwxyz"
-
-    def encode(value: int) -> str:
-        text = ""
-        for _ in range(ORDER_DIGITS):
-            text = digits[value % 36] + text
-            value //= 36
-        return text
-
+    configurations = sorted({run.configuration for run in runs})
     encoded = "".join(
-        encode(
-            ENVIRONMENTS.index(run["environment"]) * RUNS_PER_ENVIRONMENT
-            + configurations.index((run["workload"], run["k"], run["threads"])) * REPETITIONS
-            + run["repetition"]
+        base36(
+            ENVIRONMENTS.index(run.environment) * RUNS_PER_ENVIRONMENT
+            + configurations.index(run.configuration) * REPETITIONS
+            + run.repetition
         )
         for run in runs
     )

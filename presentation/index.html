@@ -143,6 +143,7 @@ kbd { font: 600 17px var(--mono); border: 2px solid var(--graphite); padding: 0 
 .runline .bars i.on { opacity: 1; }
 .runline .bars.meas i { background: var(--chrome); }
 .runline .bars.meas i.mid { outline: 3px solid var(--ink); outline-offset: 1px; }
+.gridhead span:first-child { white-space: nowrap; }
 .gridhead { display: flex; align-items: baseline; gap: 26px; font-size: 27px; margin-bottom: 4px; }
 .gridhead b { font-family: var(--display); font-size: 40px; display: inline-block; min-width: 96px; text-align: right; }
 .gridnames { display: grid; grid-template-columns: 531px 531px 531px; column-gap: 39px; font-size: 21px; margin-bottom: 4px; }
@@ -158,15 +159,16 @@ kbd { font: 600 17px var(--mono); border: 2px solid var(--graphite); padding: 0 
 
 /* Cache lines and the atomic add */
 .casrow { display: grid; grid-template-columns: 1106px minmax(0, 1fr); column-gap: 30px; }
-.arena8 { position: relative; height: 306px; background: var(--panel); border: 2px solid var(--ink); }
+.arena8 { position: relative; height: 250px; background: var(--panel); border: 2px solid var(--ink); }
 .arena8 .core { position: absolute; top: 10px; width: 124px; height: 62px; border: 3px solid var(--ink); background: var(--paper);
   display: flex; align-items: center; justify-content: center; font-size: 19px; line-height: 1.1; text-align: center; }
 .arena8 .core.ok { background: #d9ecd9; } .arena8 .core.fail { background: #f6c9c6; } .arena8 .core.wait { color: var(--graphite); }
-.arena8 .chip { position: absolute; left: 0; top: 0; background: var(--line); border: 2px solid var(--ink); transition: transform .24s cubic-bezier(.5,0,.3,1);
+.arena8 .chip { position: absolute; left: 0; top: 0; background: var(--line); border: 2px solid var(--ink); transition: transform .17s cubic-bezier(.5,0,.3,1);
   font-size: 19px; font-weight: 600; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
 .tallies { display: flex; align-items: baseline; gap: 22px; font-size: 23px; margin-top: 8px; }
 .tallies .tiny { flex: 1; }
 .tallies b { display: inline-block; min-width: 54px; text-align: right; }
+table.data.tight th, table.data.tight td { font-size: 23px; padding: 5px 8px; }
 table.data td.none { text-align: center; color: var(--graphite); font-style: italic; }
 
 /* Instruction sequences */
@@ -349,17 +351,17 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
     <span class="lab">Threads N <kbd>&uarr;</kbd><kbd>&darr;</kbd></span><div class="seg" id="sc-n"></div>
     <div class="cores" id="sc-cores" aria-hidden="true"></div>
   </div>
-  <div class="cols c64" style="gap:40px">
+  <div class="cols" style="gap:40px;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr)">
     <div>
       <div class="legend" style="margin-bottom:2px"><span><i class="sw-n"></i>native</span><span><i class="sw-c"></i>Chrome</span><span><i class="sw-f"></i>Firefox</span><span class="tiny">dashed: ideal; bars at N: 95 % intervals</span></div>
       <div id="sc-charts"></div>
     </div>
     <div>
       <h3 id="sc-title"></h3>
-      <table class="data compact" id="sc-table"></table>
-      <p class="tiny" style="margin:8px 0 18px">Geometric means of 30 runs. Time / native at the same N: what WASM costs is a constant factor in time, not scalability.</p>
+      <table class="data compact tight" id="sc-table"></table>
+      <p class="tiny" id="sc-note" style="margin:8px 0 14px"></p>
       <div data-step="1">
-        <h3>Primary contrast: filter speedup at N = 8, browser over native</h3>
+        <h3>Primary contrast: filter speedup at N = 8, browser / native</h3>
         <div id="ch-rq1"></div>
         <p class="tiny">99.5 % intervals. Chrome: not rejected, bounded within about 1 %. Firefox: 5.5 % higher, rejected by Holm.</p>
       </div>
@@ -427,12 +429,13 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
   <div class="ctl" style="margin:16px 0 10px">
     <span class="lab">Sequence <kbd>1</kbd>-<kbd>3</kbd></span><div class="seg" id="cas-seq"></div>
     <span class="lab">Counters hit, k <kbd>&uarr;</kbd><kbd>&darr;</kbd></span><div class="seg" id="cas-k"></div>
+    <span class="tiny">a model of 8 cores, not a measurement</span>
   </div>
   <div class="casrow">
     <div>
       <div class="arena8" id="arena"></div>
       <div class="tallies">
-        <span class="tiny">A model of 8 cores, not a measurement: a yellow cache line is where its counter can be written.</span>
+        <span class="tiny">Yellow: a cache line, at the core that can write its counter.</span>
         <span>adds <b class="num" id="cas-adds">0</b></span><span>retries <b class="num" id="cas-retries">0</b></span><span>retries per add <b class="num" id="cas-rate">0.00</b></span><span>line moves per add <b class="num" id="cas-transfers">0.00</b></span>
       </div>
     </div>
@@ -903,7 +906,7 @@ const runDemo = (() => {
   const run = DEMO.run, campaign = DEMO.campaign;
   const PANEL_COLUMNS = campaign.configurations, PANEL_ROWS = 30, PER_ENVIRONMENT = PANEL_COLUMNS * PANEL_ROWS;
   const CELL_W = 18, CELL_H = 12, PANEL_GAP = 78, PIXEL = 2;
-  const GRID_MS = 5200;
+  const GRID_MS = 5200, FRAME_MS = 16;
   let token = 0, filled = 0, order = null;
   const phases = () => [...document.querySelectorAll("#runline .ph")];
   const bars = (kind) => [...document.querySelectorAll(`#runline .bars.${kind} i`)];
@@ -962,14 +965,14 @@ const runDemo = (() => {
   }
   function playGrid(mine) {
     const started = performance.now();
-    const frame = (now) => {
-      if (mine !== token) return;
-      const share = clamp((now - started) / GRID_MS, 0, 1);
-      drawGrid(Math.round(share * campaign.runs));
-      if (share < 1) requestAnimationFrame(frame);
-    };
     drawGrid(0);
-    requestAnimationFrame(frame);
+    // A timer, not requestAnimationFrame: the fill also has to finish in a window that is not painting.
+    const timer = setInterval(() => {
+      if (mine !== token) { clearInterval(timer); return; }
+      const share = clamp((performance.now() - started) / GRID_MS, 0, 1);
+      drawGrid(Math.round(share * campaign.runs));
+      if (share === 1) clearInterval(timer);
+    }, FRAME_MS);
   }
   let lastStep = -1;
   function enter(step, slideChanged) {
@@ -994,7 +997,7 @@ const runDemo = (() => {
 
 // Slide 5: N of 8 cores, and the measured speedup and efficiency at that N.
 const scaleDemo = (() => {
-  const WORKLOADS = [["filter", "Gaussian filter"], ["local256", "Local histogram, k = 256"], ["atomic1", "Atomic, k = 1"], ["atomic256", "Atomic, k = 256"]];
+  const WORKLOADS = [["filter", "Filter", "Gaussian filter"], ["local256", "Local, k = 256", "local histogram, k = 256"], ["atomic1", "Atomic, k = 1", "atomic histogram, k = 1"], ["atomic256", "Atomic, k = 256", "atomic histogram, k = 256"]];
   const state = { workload: 0, n: 5 };
   let markWorkload, markN, token = 0;
 
@@ -1045,11 +1048,14 @@ const scaleDemo = (() => {
     holder.appendChild(root);
     const series = DEMO.scaling[WORKLOADS[state.workload][0]];
     const nativeMs = series.native[state.n].ms;
-    document.getElementById("sc-title").textContent = `Measured at N = ${threadsNow}: ${WORKLOADS[state.workload][1]}`;
-    document.getElementById("sc-table").innerHTML = "<tr><th></th><th>Time, ms</th><th>Speedup [95 % CI]</th><th>Efficiency</th><th>Time / native</th></tr>" +
+    document.getElementById("sc-title").textContent = `Measured at N = ${threadsNow}: ${WORKLOADS[state.workload][2]}`;
+    document.getElementById("sc-note").textContent = "Geometric means of 30 runs; time / native at the same N. " + (atomic
+      ? "Shared atomic counters: more threads are slower than one."
+      : "What WASM costs is a constant factor in time, not scalability.");
+    document.getElementById("sc-table").innerHTML = "<tr><th></th><th>Time, ms</th><th>Speedup [95 % CI]</th><th>Efficiency</th><th>Time / native</th></tr>".replace(/ /g, "\u00a0") +
       ENVS.map((env) => {
         const cell = series[env][state.n];
-        return `<tr><td class="${env}"><b>${NAME[env]}</b></td><td>${cell.ms >= 100 ? fixed(cell.ms, 0) : fixed(cell.ms, 2)}</td><td>${fixed(cell.s, 2)} [${fixed(cell.sl, 2)}, ${fixed(cell.sh, 2)}]</td><td>${fixed(cell.e, 3)}</td><td>${fixed(cell.ms / nativeMs, 2)}</td></tr>`;
+        return `<tr><td class="${env}"><b>${NAME[env]}</b></td><td>${cell.ms >= 100 ? fixed(cell.ms, 0) : fixed(cell.ms, 2)}</td><td style="white-space:nowrap">${fixed(cell.s, 2)} [${fixed(cell.sl, 2)}, ${fixed(cell.sh, 2)}]</td><td>${fixed(cell.e, 3)}</td><td>${fixed(cell.ms / nativeMs, 2)}</td></tr>`;
       }).join("");
   }
   // Untouched, the slide tells its story: the cores light up one after another up to eight.
@@ -1120,11 +1126,12 @@ const casDemo = (() => {
   const K = [1, 4, 16, 256];
   const CORES = 8, COLUMN = 140, CORE_W = 124, CACHE_TOP = 84;
   const CHIP = { 1: [112, 40, 1, 6], 4: [56, 30, 2, 6], 16: [28, 22, 4, 3], 256: [10, 10, 10, 1.5] };
-  const TICK_MS = 130, STATIC_TICKS = 600, TRANSIT_TICKS = 2;
-  // The chance that a line is taken from a core between its load and its compare-and-swap when
-  // another core is waiting for it. Set so that the model gives about the measured share of
-  // retried adds in Chrome at k = 1 with eight threads (0.24); it is not a measurement.
-  const STEAL_CHANCE = 0.2;
+  const TICK_MS = 90, STATIC_TICKS = 600, TRANSIT_TICKS = 2;
+  // How often a line is taken from a core between its load and its compare-and-swap when another
+  // core is waiting for it: once in STEAL_EVERY such moments, the first time at the second one.
+  // Set so that the model gives about the measured share of retried adds in Chrome at k = 1 with
+  // eight threads (0.24); it is not a measurement.
+  const STEAL_EVERY = 5, FIRST_STEAL = 1;
   const STORY = [[0, 0], [1, 0], [1, 3], [1, 3]];
   const state = { sequence: 1, k: 0 };
   let markSequence, markK, timer = null, model = null;
@@ -1145,7 +1152,7 @@ const casDemo = (() => {
     arena.querySelectorAll(".chip").forEach((chip) => chip.remove());
     const [width, height] = CHIP[k];
     model = {
-      random, adds: 0, retries: 0, transfers: 0,
+      random, adds: 0, retries: 0, transfers: 0, contendedLoads: 0,
       cores: Array.from({ length: CORES }, (_, index) => ({ state: "think", timer: 1 + (index % 4), line: 0, seen: 0, phase: "", label: "", mood: "" })),
       lines: Array.from({ length: k }, (_, index) => {
         const chip = document.createElement("div");
@@ -1183,7 +1190,8 @@ const casDemo = (() => {
           else { core.label = "load"; core.mood = ""; }
           // The load is done; until the compare-and-swap the line is not held.
           core.seen = line.version; line.lockedBy = -1; line.open = true;
-          line.stealable = cores.some((other, at) => at !== index && other.state === "want" && other.line === core.line) && random() < STEAL_CHANCE;
+          const contended = cores.some((other, at) => at !== index && other.state === "want" && other.line === core.line);
+          line.stealable = contended && model.contendedLoads++ % STEAL_EVERY === FIRST_STEAL;
           core.state = "gap";
         }
       } else if (core.state === "gap") {
