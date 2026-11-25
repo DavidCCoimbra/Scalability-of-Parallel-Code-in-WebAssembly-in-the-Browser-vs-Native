@@ -3,6 +3,7 @@
 
 \begin{figure}[t]
 \centering
+\resizebox{\linewidth}{!}{%
 \begin{tikzpicture}[
   node distance=5mm and 7mm,
   box/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, inner sep=4pt, minimum height=9mm},
@@ -29,7 +30,7 @@
   \draw[arr] (raw) -- (ana);
   \draw[arr] (ana) -- (res);
   \draw[arr, dashed] (wasm.south) |- ($(run.north)+(0,4mm)$) -- (run.north);
-\end{tikzpicture}
+\end{tikzpicture}}
 \caption{The study. Top: one source and one compiler give two artifacts and
 three environments. Bottom: a campaign runs every configuration of the three
 environments in one random order; each run is a fresh process that records

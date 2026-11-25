@@ -1,1 +1,138 @@
-% 08-harness
+\section{Harness and Run Protocol}
+\label{sec:harness}
+
+\paragraph{No automation framework.} A framework that drives the browser
+(Puppeteer, Playwright, a debugging protocol) attaches code and threads to
+the process being measured. The harness instead launches the browser binary
+like a user would, with the page URL carrying the configuration, and the
+page posts its results to a local server. The server also sends the COOP
+and COEP headers that shared memory needs. Nothing is attached to the
+browser while it measures.
+
+\paragraph{A browser run.} The launcher creates an empty temporary profile,
+starts the browser headless in its own process group, inside the run's
+scope and mask, and waits for the result file. The page waits a fixed start
+delay, creates the coordinating worker (the main thread cannot block),
+which instantiates the module, creates the thread pool and runs the
+measurement, and posts the rows and the page's metadata. The launcher then
+stops the scope, signals the whole process group so that no renderer
+survives into the next run, and deletes the profile. Background work is
+turned off symmetrically in both browsers (updates, telemetry, safe
+browsing, remote settings, prefetching; background throttling in Chrome).
+A run ends as done, timed out or exited without a result; a failed run is
+recorded, not retried silently, and the campaign reports a failure rate.
+
+\paragraph{A native run} goes through a wrapper that starts the runner in
+the same kind of scope with the same mask and writes the same pair of files
+(the rows and the context).
+
+\begin{figure}[t]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[font=\footnotesize, node distance=0pt,
+  ph/.style={draw, minimum height=8mm, inner sep=3pt, align=center}]
+  \node[ph, fill=gray!10, minimum width=22mm] (launch) {launch\\(+ 3 s delay)};
+  \node[ph, fill=gray!10, minimum width=20mm, right=of launch] (pool) {input,\\thread pool};
+  \node[ph, fill=gray!25, minimum width=24mm, right=of pool] (cal) {fork-join\\calibration};
+  \node[ph, fill=gray!25, minimum width=26mm, right=of cal] (warm) {warm-up\\$W$ iterations};
+  \node[ph, fill=native!25, minimum width=44mm, right=of warm] (meas) {10 measured iterations\\run value = their median};
+  \node[ph, fill=gray!10, minimum width=20mm, right=of meas] (post) {write or\\post rows};
+  \draw[decorate] ($(warm.south west)+(0,-3mm)$) -- node[below, font=\scriptsize, yshift=-1mm] {one iteration: \code{prepare} (untimed), \code{run} (timed), \code{checksum} (untimed, one thread)} ($(meas.south east)+(0,-3mm)$);
+  \draw ($(warm.south west)+(0,-3mm)$) -- ++(0,1.5mm);
+  \draw ($(meas.south east)+(0,-3mm)$) -- ++(0,1.5mm);
+  \node[font=\scriptsize, above=1mm of pool.north east, anchor=south] {memory sample 1};
+  \node[font=\scriptsize, above=1mm of meas.north west, anchor=south] {sample 2};
+  \node[font=\scriptsize, above=1mm of meas.north east, anchor=south] {sample 3};
+\end{tikzpicture}}
+\caption{The layout of one run, the same in the three environments. Only
+the measured iterations enter the analysis; the calibration is reported
+separately and nothing is subtracted from the times.}
+\Description{A timeline of a run: launch, input and thread pool, fork-join calibration, warm-up iterations, ten measured iterations, and writing the rows.}
+\label{fig:run}
+\end{figure}
+
+\paragraph{The layout of a run} is shared code, the same in the three
+environments (Figure~\ref{fig:run}). The input is generated and the pool of
+$N$ threads is created first. Then the \emph{fork-join calibration} times
+empty parallel regions, 20 samples each of two probes: an empty
+\code{broadcast}, which every worker must run (a barrier), and an empty
+parallel iterator (ordinary optional parallelism); each probe is timed warm
+(back to back, workers spinning) and cold (after a pause at least as long
+as the workload's checksum, so the workers are asleep, as they are before a
+measured iteration). Then come $W$ warm-up iterations and 10 measured
+ones. In each iteration only \code{run} is between the two clock reads.
+Every iteration is called from outside the pool, natively from the main
+thread and in WASM from the coordinating worker, as an application calls a
+parallel library. The memory size (the native resident set, the WASM linear
+memory) is recorded before the warm-up, before the first measured iteration
+and after the last; a WASM run whose memory grows during the measured phase
+fails. The clock is \code{performance.now()} in the browsers, with a
+resolution measured in every run: 5~\textmu s in Chrome, 20~\textmu s in
+Firefox.
+
+\paragraph{What a run writes.} One CSV with a row per iteration (phase,
+index, nanoseconds, checksum, and the settings of the run) and one JSON
+with the context of Section~\ref{sec:platform}. The run identifier is not
+stored in the rows; the analysis joins it, so a file cannot be filed under
+the wrong run.
+
+\paragraph{The orchestrator.} A campaign is a JSON specification holding
+every parameter: environments, workloads with their input, $k$ and warm-up,
+thread counts, repetitions, image size, iterations, calibration samples,
+masks, start delay and timeout. Unknown keys are rejected. The orchestrator
+builds every combination, shuffles the whole list once with the recorded
+seed and runs it in that order, so that a slow drift of the machine
+(temperature, background activity) is spread over the environments instead
+of lining up with one. Before the plan, each browser is launched once and
+discarded, because the first launch on a machine is slow. A campaign that
+is stopped resumes: finished runs are skipped and the order is the same. It
+refuses to continue with another specification, commit, artifact digest or
+browser version, so one campaign never mixes builds. During a campaign
+nothing else is started on the machine.
+
+\paragraph{The session of a build.} Measuring a build is a sequence of
+numbered, resumable stages, each writing its log:
+\begin{enumerate}[leftmargin=2em]
+\item \emph{Preflight}: the host state as found, the environment set up and
+checked, the tests, a tiny copy of every campaign to exercise the pipeline
+end to end, and the per-core check of Section~\ref{sec:core}.
+\item \emph{Build}: the tests, two builds from scratch, the digests, the
+tag.
+\item \emph{Gate}: a short campaign on the cells whose code changed, with
+criteria fixed in advance (Section~\ref{sec:gate}).
+\item \emph{Main campaign}, then the exploratory ones, in an order chosen so
+that what is dropped for lack of time is dropped from the end.
+\item \emph{Results}: every table and figure, then a check that
+regenerating them changes nothing.
+\end{enumerate}
+
+\subsection{The gate}
+\label{sec:gate}
+
+The gate ran the cells whose code changed (both histograms at $k=1$ and
+256, the sequential workloads) and the filter as a control, at $N=1$ and 8
+in the three environments, 3 runs each at the real size: 135 runs. It
+passes when, in every cell, the checksums agree across environments and
+thread counts, every timed sample is at least 100 clock ticks, and the
+median of the first three measured iterations is within 5\% of the median
+of the last three. Three runs only catch a gross failure, such as a warm-up
+that no longer covers a tier change. How a failure is read was fixed
+beforehand too: the gate is run once more, whole, with another seed, and
+the same cell failing twice stops the session for a recorded decision.
+
+Both gates ran without a failed or excluded run and passed the first two
+criteria; 44 of 45 cells passed the third, and the same cell failed both
+times: Firefox, local histogram, $k=1$, $N=8$, with ratios of 1.052 and
+1.077. In every one of its six runs, one or two of the first three measured
+iterations take 21 to 22~ms and the others 19.7~ms; the 71 warm-up
+iterations before them show nothing of the kind. The run value is a median
+of ten iterations, which one or two slow ones do not move: it is 1.000 to
+1.0015 times the value taken from the last seven iterations alone. The
+decision, recorded before the main campaign started: the campaigns go ahead
+with every parameter unchanged, the gate stays recorded as failed on one
+criterion in one cell, and the cell is declared with its measured effect of
+about 0.1\%. Changing the measurement after seeing data (dropping the first
+iterations, lengthening the warm-up) was the alternative rejected. The tier
+campaign later showed that these slow iterations come with the optimizing
+compiler's code (27 of 30 runs as shipped and with the optimizing compiler
+only, 1 of 30 with the baseline compiler only); what they are is not known.
