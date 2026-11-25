@@ -1,0 +1,58 @@
+\section{Related Work}
+\label{sec:related}
+
+\paragraph{WASM against native, one thread.} Haas et al.~\cite{haas2017}
+introduced WebAssembly and reported it within 10\% of native on most of
+PolyBenchC. Jangda et al.~\cite{jangda2019} ran the SPEC CPU suites in
+Chrome and Firefox through a kernel extension that gives the browser a Unix
+interface, and measured WASM 45\% slower than native on average in Firefox
+and 55\% in Chrome; they traced it to more instructions, more loads and
+stores, and more branches, from register pressure and safety checks. Yan et
+al.~\cite{yan2021} showed that the compiler, its optimization flags, the
+input size and the browser all change WASM results, sometimes in opposite
+directions. Szewczyk et al.~\cite{szewczyk2022} measured the bounds checks
+of linear memory outside browsers: under 20\% in runtimes that use virtual
+memory, up to 650\% in others. All four are single-threaded. We take their
+lesson for the design (pin the compiler, the flags, the input and the
+browser version; report absolute ratios) and add threads. Our one-thread
+ratios, 1.17 for Chrome and 1.36 for Firefox on the filter, are smaller than
+Jangda's averages; we measure where they come from as instructions and
+cycles per pixel (Section~\ref{sec:why-rq1}).
+
+\paragraph{WASM multithreading.} Watt et al.~\cite{watt2019} gave the
+formal semantics of WASM threads and atomics that this study relies on for
+``always sequentially consistent''. S{\'a}nchez-Artigas and
+Bohoyo-Bengoetxea~\cite{sanchez2025} studied portable WASM multithreading
+outside the browser and found overheads in the allocator and in atomics;
+this is why our allocation stays outside the timed region and why atomics
+are the factor of RQ2. Closest to us, Kyriakou and
+Tselikas~\cite{kyriakou2022} measured Rust compiled to WASM in Chromium at
+93.5\% of a native Node.js addon single-threaded and 67.9\% multithreaded:
+one workload without synchronization, 1 against 24 threads, means only. We
+add native code as the baseline in both engines, a sweep over thread counts,
+synchronization as a controlled factor, inferential statistics and a tested
+cause.
+
+\paragraph{Atomics and contention.} Schweizer et al.~\cite{schweizer2015}
+measured atomic operations on several architectures and showed that on x86
+compare-and-swap, fetch-and-add and swap cost about the same, whatever their
+semantics, and that their cost under contention is that of moving the cache
+line. Our RQ2 design takes its mechanism from them (padded counters, so that
+what is measured is true sharing), and our finding qualifies their result:
+the instructions around the atomic operation, not its kind, decide the cost
+(Section~\ref{sec:why-rq2}).
+
+\paragraph{Method.} Georges et al.~\cite{georges2007} showed that
+conclusions about managed runtimes change with the statistics used and
+asked for independent VM invocations and confidence intervals; Kalibera and
+Jones~\cite{kalibera2013} added that repetition has levels (iterations
+inside an invocation, invocations) and that the effort belongs at the level
+where the variance is. Our unit of analysis is the run, a fresh process or
+browser launch, with iterations summarized inside it. Mytkowicz et
+al.~\cite{mytkowicz2009} showed that link order and environment size alone
+move measurements; we therefore never mix runs of two builds and randomize
+the order of all runs. Hoefler and Belli~\cite{hoefler2015} listed rules for
+reporting parallel performance, among them: report the baseline of a
+speedup, report absolute performance, use ratios and geometric means
+consistently, and state the confidence of every number. The robustness check
+uses the test of Mann and Whitney~\cite{mann1947}.

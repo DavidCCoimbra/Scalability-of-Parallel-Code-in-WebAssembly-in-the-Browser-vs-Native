@@ -1,0 +1,69 @@
+\section{Introduction}
+
+Heavy work increasingly runs on the web client: image and video processing,
+documents, visualization, machine learning. WebAssembly with threads makes it
+possible to parallelize that work in the browser~\cite{haas2017}, but it is
+not known whether it scales like the same code natively, or whether thread
+synchronization widens the gap. A developer who ports a parallel Rust or C++
+program to the web needs to know two things: whether adding threads pays as
+it does natively, and whether the usual advice about synchronization still
+holds. We ask:
+
+\begin{description}[leftmargin=3em]
+  \item[RQ1] How do relative speedup and efficiency of the same parallel
+  code evolve with the number of threads, natively and in WASM in the
+  browser?
+  \item[RQ2] To what extent does synchronization between threads affect the
+  scalability gap between WASM and native?
+\end{description}
+
+\paragraph{Contributions.}
+\begin{enumerate}[leftmargin=2em]
+  \item A controlled comparison, with the analysis plan fixed before the
+  data, of one Rust/Rayon source compiled with the same compiler and release
+  profile for native and WASM, in two engines (V8 in Chrome, SpiderMonkey in
+  Firefox), with the run as the unit of analysis.
+  \item A synchronization design that separates the cost of shared atomics
+  from the effect of the input, swept over four contention levels.
+  \item An explanation of each finding, tested against predictions written
+  before the data: engine arms that select one compiler, a native probe that
+  changes one instruction sequence, hardware counters of the loop alone, and
+  the machine code each engine runs.
+  \item The problems of browser benchmarking that we met and how each was
+  detected and controlled.
+\end{enumerate}
+
+\paragraph{The answers in one paragraph.} RQ1: with enough work per parallel
+region, WASM threads scale like native code and cost a constant factor in
+time; the browsers' fork-join is several times slower, which matters only
+for small regions. RQ2: the effect of synchronization is a property of the
+engine's compiler, not of WASM threads. Chrome pays more than native under
+concentrated contention and less under spread contention, because of one
+instruction sequence; Firefox pays what native code pays.
+
+\paragraph{How to read this report.} It is self-contained: no claim needs the
+repository to be understood. Sections~\ref{sec:background}
+and~\ref{sec:related} give the background and the related work.
+Sections~\ref{sec:overview} to~\ref{sec:plan} are the method: the study in
+one picture and its three builds, the machine, the builds, the workloads,
+the harness and the layout of a run, the pilot decisions and the analysis
+plan. Section~\ref{sec:quality} is the data quality of every campaign.
+Sections~\ref{sec:rq1} and~\ref{sec:rq2} are the primary results,
+Section~\ref{sec:why} what explains them, and Section~\ref{sec:exploratory}
+the exploratory campaigns. Sections~\ref{sec:problems}
+to~\ref{sec:discussion} give the problems found, the threats to validity,
+how to reproduce the study, the discussion and what stays open.
+Appendix~\ref{sec:appendix} maps each section to the decision records and
+tables behind it and lists every campaign.
+
+Three levels of claim are kept apart throughout. A \emph{measured result}
+is a number from the committed data with its interval. An explanation is
+\emph{answered} when an intervention that changes one thing reproduces the
+effect, \emph{supported} when independent observations agree with a
+prediction written before them, and \emph{open} otherwise. Only the ten
+contrasts of the analysis plan are primary; everything else is labelled
+exploratory and reported with uncorrected 95\% intervals.
+
+Every result in this report comes from one build, tagged
+\code{measured/v3}. Numbers from pilots and from earlier builds appear only
+as the evidence for a design decision and are labelled as such.

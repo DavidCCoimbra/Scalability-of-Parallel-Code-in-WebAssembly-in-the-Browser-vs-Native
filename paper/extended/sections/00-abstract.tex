@@ -1,0 +1,25 @@
+\begin{abstract}
+We measure whether the same parallel Rust/Rayon code scales the same way
+natively and as WebAssembly (WASM) with threads in Chrome and Firefox. On an
+i9-14900KF with 8 dedicated P-cores we ran 5310 independent runs of an image
+filter (no synchronization) and of an image histogram with shared atomic or
+per-task local counters, under four contention levels, and 20\,490 more runs
+in seventeen exploratory campaigns on the same build. With enough work per
+parallel region, WASM threads scale like native code: on the filter, Chrome's
+speedup is 0.996 times native's (99.5\% CI [0.987, 1.004]) and Firefox's
+1.055 times [1.034, 1.072], at a constant 1.17 to 1.36 times the native time.
+Hardware counters, SIMD variants and image sizes indicate that the filter is
+bound by memory at eight threads, so Firefox's slower loop scales better; it
+does not run threads better. Synchronization depends on the engine: relative
+to the lock-free control, shared atomics cost Chrome 1.4 to 2.3 times what
+they cost natively under concentrated contention, and 0.42 times when
+contention is spread over 256 counters; Firefox is never worse than native.
+The cause is one instruction sequence. For an atomic add, V8's optimizing
+compiler emits a compare-and-swap loop where LLVM and SpiderMonkey emit one
+locked add; a native program with that loop reproduces Chrome's times in both
+directions, and V8's baseline compiler shows no penalty. This report is the
+long version of the paper: it gives every campaign, probe and pilot of the
+study, each decision with the number behind it, every result with its
+uncertainty, the problems of browser benchmarking that we met, and what
+stays open.
+\end{abstract}

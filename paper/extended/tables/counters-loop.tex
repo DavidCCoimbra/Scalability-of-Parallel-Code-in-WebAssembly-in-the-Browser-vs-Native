@@ -1,6 +1,7 @@
 \begin{table}[htbp]
 \caption{Counters of the loop alone, by the difference of two pass counts (10 runs with one pass and 10 with eight): per pixel at one thread, and the ratio of eight threads to one with its 95\,\% bootstrap interval. LLC and L2 are cache misses.}\label{tab:counters-loop}
 \centering\scriptsize
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{llrrrrcccc}
 \toprule
  &  & \multicolumn{4}{c}{Per pixel at $N=1$} & \multicolumn{4}{c}{$N=8$ over $N=1$ [95\,\%]} \\
@@ -19,4 +20,5 @@ local, $k$=256 & Chrome & 7.004 & 1.593 & 0.00307 & 0.0004338 & 1.012 [1.008, 1.
 local, $k$=256 & Firefox & 6.817 & 1.701 & 0.003646 & 0.0004924 & 1.009 [1.008, 1.011] & 0.9473 [0.8811, 0.9907] & 0.9595 [0.9213, 1.002] & 0.7394 [0.6411, 0.8402] \\
 \bottomrule
 \end{tabular}
+}
 \end{table}

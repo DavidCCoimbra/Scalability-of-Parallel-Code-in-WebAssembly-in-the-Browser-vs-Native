@@ -1,6 +1,7 @@
 \begin{table}[htbp]
 \caption{Hybrid campaign (900 runs): 8 P-cores and 12 E-cores in the mask. Time in ms and speedup $T_1/T_N$ with its 95\,\% interval.}\label{tab:hybrid}
 \centering\footnotesize
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{llrcrcrc}
 \toprule
  &  & \multicolumn{2}{c}{Native} & \multicolumn{2}{c}{Chrome} & \multicolumn{2}{c}{Firefox} \\
@@ -19,4 +20,5 @@ local, $k$=1 & 16 & 7.973 & 19.433 [19.195, 19.683] & 5.979 & 25.207 [24.908, 25
 local, $k$=1 & 20 & 6.078 & 25.495 [25.046, 25.915] & 5.112 & 29.480 [28.850, 30.092] & 6.140 & 25.353 [25.039, 25.688] \\
 \bottomrule
 \end{tabular}
+}
 \end{table}

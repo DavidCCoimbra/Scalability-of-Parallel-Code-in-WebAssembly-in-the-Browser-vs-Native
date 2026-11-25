@@ -1,6 +1,7 @@
 \begin{table}[htbp]
 \caption{Spread of the 30 per-run values of the cells behind the primary contrasts' ends: quartiles in ms, interquartile range over the median, and the slowest run over the median.}\label{tab:distributions}
 \centering\footnotesize
+\resizebox{\linewidth}{!}{%
 \begin{tabular}{lllrrrrrrr}
 \toprule
 Environment & Workload & $N$ & min & Q1 & median & Q3 & max & IQR/med. & max/med. \\
@@ -19,4 +20,5 @@ Chrome & atomic, $k$=256 & 8 & 209.708 & 210.226 & 210.445 & 210.572 & 210.825 &
 Firefox & atomic, $k$=256 & 8 & 392.060 & 392.650 & 392.995 & 393.277 & 394.280 & 0.0016 & 1.0033 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}

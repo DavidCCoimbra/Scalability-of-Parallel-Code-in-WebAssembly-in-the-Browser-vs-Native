@@ -87,8 +87,12 @@ def render(
     body: Sequence[Cells],
     long: bool = False,
     size: str = r"\small",
+    fit: bool = False,
 ) -> None:
-    """One file per table: a `table` float, or a `longtable` that may break across pages."""
+    """One file per table: a `table` float, or a `longtable` that may break across pages.
+
+    `fit` scales a table float that is wider than the text down to the text width.
+    """
     head = [" & ".join(line) + r" \\" for line in header]
     lines = [" & ".join(cells) + r" \\" if cells else r"\midrule" for cells in body]
     label = rf"\label{{tab:{name}}}"
@@ -116,6 +120,7 @@ def render(
             r"\begin{table}[htbp]",
             rf"\caption{{{caption}}}{label}",
             r"\centering" + size,
+            *([r"\resizebox{\linewidth}{!}{%"] if fit else []),
             rf"\begin{{tabular}}{{{columns}}}",
             r"\toprule",
             *head,
@@ -123,6 +128,7 @@ def render(
             *lines,
             r"\bottomrule",
             r"\end{tabular}",
+            *(["}"] if fit else []),
             r"\end{table}",
         ]
     OUTPUT.mkdir(exist_ok=True)
@@ -396,6 +402,7 @@ def sequential_table() -> None:
         header,
         [(workload_label(w, k), *cells(w, k)) for w, k in configurations(parallel)],
         size=r"\scriptsize",
+        fit=True,
     )
 
 
@@ -508,6 +515,7 @@ def distributions_table() -> None:
             for row in rows
         ],
         size=r"\footnotesize",
+        fit=True,
     )
 
 
@@ -766,6 +774,7 @@ def counter_tables() -> None:
         header,
         body,
         size=r"\scriptsize",
+        fit=True,
     )
 
 
@@ -952,6 +961,7 @@ def extras_tables() -> None:
         header,
         body,
         size=r"\scriptsize",
+        fit=True,
     )
 
     weak = read("weak-v3/weak-v3-scaling.csv")
@@ -998,6 +1008,7 @@ def extras_tables() -> None:
         ],
         grouped(hybrid, hybrid_cells, threads=("1", "8", "12", "16", "20")),
         size=r"\footnotesize",
+        fit=True,
     )
 
 
