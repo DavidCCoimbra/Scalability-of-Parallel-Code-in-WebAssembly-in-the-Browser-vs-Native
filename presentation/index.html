@@ -1,0 +1,1006 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scalability of Parallel Code in WebAssembly in the Browser vs. Native</title>
+<style>
+:root {
+  --paper: #eef1f4;
+  --panel: #ffffff;
+  --ink: #101a26;
+  --graphite: #56626f;
+  --rule: #c5ced8;
+  --soft: #dfe5eb;
+  --native: #1f6fb4;
+  --chrome: #d1332e;
+  --firefox: #e8820c;
+  --line: #f2c200;
+  --display: "Avenir Next Condensed", "Arial Narrow", "Helvetica Neue", Arial, sans-serif;
+  --body: "Avenir Next", "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+  --mono: "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: #1b2430; overflow: hidden; }
+body { font-family: var(--body); color: var(--ink); }
+
+/* The deck is drawn on a fixed 1920x1080 stage and scaled to the window, so a slide looks
+   the same on the laptop and on the projector. */
+#stage { position: fixed; left: 50%; top: 50%; width: 1920px; height: 1080px; background: var(--paper);
+  transform-origin: 0 0; overflow: hidden; }
+.slide { position: absolute; inset: 0; padding: 78px 110px 120px; display: none; flex-direction: column; }
+.slide.active { display: flex; }
+
+h1 { font-family: var(--display); font-weight: 600; font-size: 118px; line-height: 0.98; letter-spacing: -0.5px; }
+h2 { font-family: var(--display); font-weight: 600; font-size: 70px; line-height: 1.04; margin-bottom: 34px; max-width: 1640px; }
+h3 { font-family: var(--display); font-weight: 600; font-size: 38px; line-height: 1.1; margin-bottom: 12px; }
+p, li, td, th { font-size: 31px; line-height: 1.34; }
+.small { font-size: 25px; line-height: 1.32; color: var(--graphite); }
+.tiny { font-size: 21px; line-height: 1.3; color: var(--graphite); }
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: var(--mono); }
+.native { color: var(--native); } .chrome { color: var(--chrome); } .firefox { color: var(--firefox); }
+b, strong { font-weight: 600; }
+
+.cols { display: grid; gap: 56px; flex: 1; min-height: 0; }
+.c2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .c3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.c64 { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
+.box { background: var(--panel); border: 2px solid var(--ink); padding: 26px 30px; }
+.box.quiet { border: 2px solid var(--rule); }
+.key { border-left: 10px solid var(--ink); padding: 6px 0 6px 24px; }
+.key.n { border-color: var(--native); } .key.c { border-color: var(--chrome); } .key.f { border-color: var(--firefox); }
+ul.plain { list-style: none; }
+ul.plain li { margin: 0 0 16px; padding-left: 34px; position: relative; }
+ul.plain li::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 18px; height: 6px; background: var(--ink); }
+.legend { display: flex; gap: 34px; align-items: center; font-size: 25px; }
+.legend i { display: inline-block; width: 34px; height: 8px; margin-right: 10px; vertical-align: middle; }
+.sw-n { background: var(--native); } .sw-c { background: var(--chrome); } .sw-f { background: var(--firefox); }
+
+table.data { border-collapse: collapse; width: 100%; }
+table.data th, table.data td { font-size: 26px; padding: 9px 14px; text-align: right; border-bottom: 1px solid var(--rule); font-variant-numeric: tabular-nums; }
+table.data th { font-weight: 600; border-bottom: 2px solid var(--ink); }
+table.data th:first-child, table.data td:first-child { text-align: left; }
+table.data tr.hot td { background: #fbe9e8; }
+table.data tr.sep td { border-top: 2px solid var(--ink); }
+
+/* Step reveals: an element with data-step appears when the slide reaches that step. */
+[data-step] { opacity: 0; transform: translateY(10px); transition: opacity .35s ease, transform .35s ease; }
+[data-step].on { opacity: 1; transform: none; }
+
+svg text { font-family: var(--body); fill: var(--ink); }
+svg .axis { stroke: var(--ink); stroke-width: 2; fill: none; }
+svg .grid { stroke: var(--rule); stroke-width: 1; }
+svg .lbl { font-size: 22px; fill: var(--graphite); }
+svg .ttl { font-size: 26px; font-weight: 600; }
+svg .val { font-size: 23px; font-weight: 600; }
+.draw path.series { stroke-dasharray: 2600; stroke-dashoffset: 2600; }
+.slide.active .draw path.series { animation: draw 1.1s ease forwards; }
+@keyframes draw { to { stroke-dashoffset: 0; } }
+
+/* Footer: the twelve slides as the slots of one cache line; the yellow slot is the one held now. */
+#foot { position: absolute; left: 110px; right: 110px; bottom: 42px; display: flex; align-items: center; justify-content: space-between;
+  font-size: 22px; color: var(--graphite); }
+#slots { display: flex; gap: 6px; }
+#slots span { width: 44px; height: 16px; border: 2px solid var(--ink); background: transparent; }
+#slots span.done { background: var(--ink); }
+#slots span.now { background: var(--line); }
+#slots span.backup { border-style: dashed; border-color: var(--graphite); }
+#count { font-variant-numeric: tabular-nums; min-width: 90px; text-align: right; }
+
+/* Title: eight lanes, one per P-core. A block's speed is the one-thread filter time of its environment. */
+#lanes { position: absolute; left: 0; right: 0; bottom: 150px; height: 300px; }
+.lane { position: relative; height: 30px; margin-bottom: 7px; border-top: 2px solid var(--rule); overflow: hidden; }
+.lane b { position: absolute; top: 5px; left: -160px; height: 18px; width: 150px; animation: run linear infinite; }
+@keyframes run { to { transform: translateX(2100px); } }
+
+/* Run timeline */
+.timeline { display: flex; align-items: stretch; gap: 0; margin: 4px 0 6px; }
+.timeline div { border: 2px solid var(--ink); border-right: none; padding: 12px 16px; font-size: 23px; line-height: 1.2; background: var(--panel); }
+.timeline div:last-child { border-right: 2px solid var(--ink); }
+.timeline .meas { background: var(--ink); color: #fff; flex: 1.5; }
+.timeline .warm { background: var(--soft); flex: 1.3; }
+.cores { display: flex; gap: 4px; align-items: flex-end; }
+.cores i { display: block; flex: none; width: 36px; height: 36px; border: 2px solid var(--ink); background: var(--line); }
+.cores i.e { width: 12px; height: 12px; background: var(--soft); border-color: var(--graphite); }
+.funnel { display: grid; grid-template-columns: auto 1fr; gap: 6px 22px; align-items: baseline; }
+.funnel .n { font-family: var(--display); font-weight: 600; font-size: 54px; line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
+
+/* Instruction sequences */
+.seq { font-family: var(--mono); font-size: 25px; line-height: 1.45; background: var(--ink); color: #e9eef3; padding: 14px 18px; white-space: pre; }
+.seq .hl { color: var(--line); }
+.seq .rt { color: #ff9a94; }
+.seqgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.seqgrid h4 { font-size: 23px; font-weight: 600; margin-bottom: 6px; }
+
+/* Cache line animation */
+.arena { position: relative; height: 250px; background: var(--panel); border: 2px solid var(--ink); }
+.arena .core { position: absolute; top: 104px; width: 104px; height: 104px; border: 3px solid var(--ink); background: var(--paper);
+  display: flex; align-items: center; justify-content: center; font-size: 22px; text-align: center; line-height: 1.15; transition: background .2s; }
+.arena .core.fail { background: #f6c9c6; }
+.arena .core.ok { background: #d9ecd9; }
+.arena .tok { position: absolute; top: 44px; left: 0; width: 104px; height: 44px; background: var(--line); border: 3px solid var(--ink);
+  font-size: 22px; font-weight: 600; display: flex; align-items: center; justify-content: center; transition: transform .45s cubic-bezier(.5,0,.3,1); font-variant-numeric: tabular-nums; }
+.arena .cap { position: absolute; left: 18px; top: 8px; font-size: 22px; color: var(--graphite); }
+.arena .tally { position: absolute; right: 18px; top: 8px; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* k illustration */
+.krow { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; font-size: 23px; }
+.krow .cells { display: flex; gap: 3px; }
+.krow .cells i { width: 10px; height: 22px; flex: none; background: var(--soft); border: 1px solid var(--graphite); }
+.krow .cells i.h { background: var(--line); border-color: var(--ink); }
+.krow span { width: 96px; flex: none; font-variant-numeric: tabular-nums; }
+
+/* Flow diagram of the experiment */
+.flow { display: grid; grid-template-columns: 380px 70px 560px 70px 1fr; align-items: center; row-gap: 22px; }
+.flow .node { border: 2px solid var(--ink); background: var(--panel); padding: 20px 22px; font-size: 28px; line-height: 1.25; }
+.flow .node.src { background: var(--ink); color: #fff; }
+.flow .arrow { height: 3px; background: var(--ink); position: relative; margin: 0 6px; }
+.flow .arrow::after { content: ""; position: absolute; right: -2px; top: -8px; border-left: 14px solid var(--ink); border-top: 9px solid transparent; border-bottom: 9px solid transparent; }
+.flow .env { border-left-width: 12px; }
+.flow .env.n { border-left-color: var(--native); } .flow .env.c { border-left-color: var(--chrome); } .flow .env.f { border-left-color: var(--firefox); }
+
+/* Speaker notes, overview, help */
+#notes { position: fixed; right: 18px; top: 18px; width: min(560px, 44vw); max-height: 76vh; overflow: auto; display: none; z-index: 20;
+  background: #fffdf2; border: 2px solid var(--ink); padding: 16px 18px; font: 17px/1.45 var(--body); color: var(--ink); }
+#notes .bar { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+#notes.show, #help.show { display: block; }
+#overview { position: fixed; inset: 0; z-index: 30; background: rgba(16,26,38,.96); display: none; padding: 5vh 6vw; overflow: auto; }
+#overview.show { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; align-content: start; }
+#overview button { font: 16px/1.3 var(--body); text-align: left; padding: 14px 16px; min-height: 96px; background: var(--paper); border: 2px solid transparent; color: var(--ink); cursor: pointer; }
+#overview button:focus-visible, #overview button.cur { border-color: var(--line); outline: none; }
+#overview button b { display: block; font-family: var(--display); font-size: 22px; margin-bottom: 4px; }
+#help { position: fixed; left: 18px; bottom: 18px; z-index: 20; display: none; background: #fffdf2; border: 2px solid var(--ink); padding: 14px 18px; font: 15px/1.6 var(--mono); }
+.notes { display: none; }
+
+body.static [data-step] { opacity: 1; transform: none; transition: none; }
+body.static .draw path.series { stroke-dashoffset: 0; animation: none !important; }
+body.static .lane b { animation: none; left: 30%; }
+@media (prefers-reduced-motion: reduce) {
+  [data-step] { transition: none; transform: none; }
+  .draw path.series { stroke-dashoffset: 0; animation: none !important; }
+  .lane b { animation: none; left: 30%; }
+  .arena .tok { transition: none; }
+}
+@media print {
+  @page { size: 1920px 1080px; margin: 0; }
+  html, body { height: auto; overflow: visible; background: #fff; }
+  #stage { position: static; transform: none !important; height: auto; overflow: visible; }
+  .slide { display: flex !important; position: relative; height: 1080px; page-break-after: always; break-after: page; }
+  [data-step] { opacity: 1 !important; transform: none !important; }
+  .draw path.series { stroke-dashoffset: 0 !important; animation: none !important; }
+  #foot, #notes, #help, #overview { display: none !important; }
+}
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- 1 -->
+<section class="slide" data-title="Title" data-time="20">
+  <p class="small" style="margin-bottom:40px">Programação Paralela e Concorrente 2026/27, MSc in Informatics Engineering, FCUL</p>
+  <h1>Scalability of parallel code<br>in WebAssembly in the browser<br>vs. native</h1>
+  <p style="margin-top:34px">David Coimbra, fc68024</p>
+  <div id="lanes" aria-hidden="true"></div>
+  <p class="tiny" style="position:absolute;left:110px;bottom:108px">Eight lanes, one per P-core. A block's speed is the measured one-thread filter time of its environment:
+    <span class="native"><b>native 1.00</b></span>, <span class="chrome"><b>Chrome 1.17</b></span>, <span class="firefox"><b>Firefox 1.36</b></span>.</p>
+  <aside class="notes">Good morning. My project asks one thing: if I take the same parallel Rust code and run it natively and as WebAssembly with threads in Chrome and Firefox, does it scale the same way? The lanes below are the eight cores I measured on; the blocks move at the speed each environment really ran the filter with one thread.</aside>
+</section>
+
+<!-- 2 -->
+<section class="slide" data-title="Why, and the two questions" data-time="45">
+  <h2>Heavy work is moving to the browser. Does it scale there like it does natively?</h2>
+  <div class="cols c2">
+    <div>
+      <ul class="plain">
+        <li>Image and video processing, documents, visualization and machine learning now run on the web client.</li>
+        <li>WebAssembly with threads lets that work use every core: shared memory, Web Workers, atomics.</li>
+        <li data-step="1">Earlier studies measured WASM with <b>one thread</b>, or one parallel workload at two thread counts with means only. None sweeps the threads with native as baseline in two engines, and none controls synchronization.</li>
+      </ul>
+    </div>
+    <div>
+      <div class="box" data-step="2" style="margin-bottom:26px">
+        <h3>RQ1 - scaling</h3>
+        <p>How do relative speedup and efficiency of the same parallel code evolve with the number of threads, natively and as WASM in the browser?</p>
+      </div>
+      <div class="box" data-step="3">
+        <h3>RQ2 - synchronization</h3>
+        <p>To what extent does synchronization between threads affect the gap observed in RQ1?</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Why it matters: heavy work is moving to the client, and WASM threads are how it uses all the cores. What we know from the literature is mostly single-threaded: Jangda found WASM 45 to 55 percent slower with one thread; the closest multithreaded study, Kyriakou and Tselikas, has one workload, 1 against 24 threads, and means only. So two questions. RQ1: does speedup evolve the same way with the thread count? RQ2: how much does synchronization between threads change that gap?</aside>
+</section>
+
+<!-- 3 -->
+<section class="slide" data-title="The experiment in one picture" data-time="55">
+  <h2>One source, one compiler, three environments</h2>
+  <div class="flow" style="margin-bottom:30px">
+    <div class="node src" style="grid-column:1;grid-row:1 / span 3">One Rust + Rayon crate<br><span style="font-size:22px;opacity:.8">same nightly compiler, same release profile</span></div>
+    <div class="arrow" style="grid-column:2;grid-row:1"></div>
+    <div class="node" style="grid-column:3;grid-row:1">x86-64 binary, SSE2 (128-bit SIMD)</div>
+    <div class="arrow" style="grid-column:4;grid-row:1"></div>
+    <div class="node env n" style="grid-column:5;grid-row:1"><b class="native">Native</b> process on Linux</div>
+    <div class="arrow" style="grid-column:2;grid-row:2 / span 2"></div>
+    <div class="node" style="grid-column:3;grid-row:2 / span 2">wasm32 module, simd128 (128-bit SIMD),<br>atomics and shared memory</div>
+    <div class="arrow" style="grid-column:4;grid-row:2"></div>
+    <div class="node env c" style="grid-column:5;grid-row:2"><b class="chrome">Chrome 155</b>, V8 engine</div>
+    <div class="arrow" style="grid-column:4;grid-row:3"></div>
+    <div class="node env f" style="grid-column:5;grid-row:3"><b class="firefox">Firefox 158</b>, SpiderMonkey engine</div>
+  </div>
+  <div class="cols c3" style="gap:30px;flex:none;margin-top:14px">
+    <div class="box quiet" data-step="1">
+      <h3>Gaussian filter 3x3</h3>
+      <p class="small">Rows in parallel, <b>no synchronization</b>. The reference for RQ1. Image of 8192 x 8192 pixels.</p>
+    </div>
+    <div class="box quiet" data-step="2">
+      <h3>Histogram, two variants</h3>
+      <p class="small"><b>Atomic</b>: 256 shared counters, each alone on its cache line.<br><b>Local</b>: counters per task, merged at the end. Same result, no sharing: the control.</p>
+    </div>
+    <div class="box quiet" data-step="3">
+      <h3>Contention dial: k</h3>
+      <div id="kdial"></div>
+      <p class="tiny">The input has k distinct values, so the threads fight over k counters.</p>
+    </div>
+  </div>
+  <aside class="notes">The design in one picture. One Rust and Rayon crate, one pinned nightly compiler, one release profile. It is compiled twice: to an x86-64 binary with baseline SSE2, and to a wasm32 module with simd128, so both sides have 128-bit SIMD. Three environments: native, Chrome with V8, Firefox with SpiderMonkey, both pinned. Two workloads. The Gaussian filter has no synchronization: it is the RQ1 reference. The histogram exists twice with identical results: shared atomic counters, each padded to its own cache line so there is no false sharing, and per-task local counters merged at the end, which is the lock-free control. The input has k distinct values, so k is a dial: with k equal to 1 all eight threads hit one counter; with 256 the contention is spread. Every run checks a checksum that is equal across environments and thread counts.</aside>
+</section>
+
+<!-- 4 -->
+<section class="slide" data-title="Method and rigor" data-time="70">
+  <h2>The run is the unit of analysis, and the plan was fixed before the data</h2>
+  <div class="cols c64">
+    <div>
+      <p class="small" style="margin-bottom:8px"><b style="color:var(--ink)">One run = one fresh process or browser launch</b> (fresh profile, no automation framework)</p>
+      <div class="timeline">
+        <div>launch<br><span class="tiny">browsers wait 3 s</span></div>
+        <div>thread pool,<br>calibration</div>
+        <div class="warm">warm-up, W iterations<br><span class="tiny">5 to 71, per workload</span></div>
+        <div class="meas">10 measured iterations<br><span style="font-size:20px;opacity:.85">their median is the run's value</span></div>
+      </div>
+      <div class="funnel" style="margin-top:30px" data-step="1">
+        <div class="n">30</div><p>runs per configuration, each with its own start-up, JIT and memory layout</p>
+        <div class="n">177</div><p class="small" style="font-size:28px;color:var(--ink)">configurations: 3 environments x (9 workload cells x N in {1, 2, 4, 6, 7, 8} + 5 sequential references)</p>
+        <div class="n">5310</div><p>runs, interleaved in one random order with a recorded seed</p>
+      </div>
+      <p class="small" data-step="3" style="margin-top:22px"><b style="color:var(--ink)">0</b> failed, <b style="color:var(--ink)">0</b> excluded, <b style="color:var(--ink)">0</b> checksum conflicts; every timed sample at least 100 times the clock resolution.</p>
+    </div>
+    <div>
+      <div class="box quiet" style="margin-bottom:22px">
+        <h3>The machine, prepared</h3>
+        <div class="cores" id="coremap" style="margin:8px 0 10px"></div>
+        <p class="tiny">i9-14900KF. <b style="color:var(--ink)">8 P-cores</b> measured through a CPU mask; system and harness confined to the E-cores. Turbo off, SMT off, governor performance.</p>
+      </div>
+      <div class="box" data-step="2">
+        <h3>Analysis plan, before any run</h3>
+        <ul class="plain" style="margin-top:6px">
+          <li style="font-size:26px;margin-bottom:9px">10 primary contrasts at N = 8: 2 for RQ1, 8 for RQ2</li>
+          <li style="font-size:26px;margin-bottom:9px">geometric means, bootstrap intervals over runs (10 000 resamples)</li>
+          <li style="font-size:26px;margin-bottom:9px">Holm at 0.05, shown with 99.5 % intervals</li>
+          <li style="font-size:26px;margin-bottom:0">checked with Mann-Whitney and Cliff's delta: same 10 decisions</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">Method. The machine is an i9-14900KF: I measure only on the 8 P-cores through a process-level mask, with turbo and SMT off and the performance governor; the rest of the system lives on the E-cores. One run is one fresh process, or one fresh browser launch with a fresh profile and no automation framework. Inside the run: the pool, a fork-join calibration, a warm-up sized per workload from pilot data, then 10 measured iterations whose median is the run's single value. That follows Georges et al.: iterations inside one process are not independent, so the unit of analysis is the run. 30 runs per configuration, 177 configurations, 5310 runs interleaved in one seeded random order, so drift over the 14 hours hits every environment alike. The analysis plan was fixed before the campaign: ten primary contrasts at eight threads, bootstrap intervals, Holm correction. Nothing failed, nothing was excluded, no checksum differed. This build is a replication: the first build gave the same ten decisions.</aside>
+</section>
+
+<!-- 5 -->
+<section class="slide" data-title="RQ1 result" data-time="60">
+  <h2>RQ1: without synchronization, WASM threads scale like native code</h2>
+  <div class="cols c64" style="gap:44px">
+    <div>
+      <div class="legend" style="margin-bottom:6px"><span><i class="sw-n"></i>native</span><span><i class="sw-c"></i>Chrome</span><span><i class="sw-f"></i>Firefox</span><span class="tiny">speedup T1 / TN at N = 8 in each panel; dashed: ideal; 30 runs per point</span></div>
+      <div id="ch-speedup" class="draw"></div>
+    </div>
+    <div>
+      <div data-step="1">
+        <h3>Primary contrast: speedup at N = 8, browser over native</h3>
+        <div id="ch-rq1"></div>
+        <p class="tiny" style="margin-bottom:20px">99.5 % intervals. Chrome: not rejected, bounded within about 1 %. Firefox: 5.5 % higher, rejected by Holm.</p>
+      </div>
+      <div data-step="2">
+        <h3>What WASM costs is a constant factor in time</h3>
+        <table class="data">
+          <tr><th>Filter time over native</th><th>N = 1</th><th>N = 8</th></tr>
+          <tr><td class="chrome"><b>Chrome</b></td><td>1.17</td><td>1.18</td></tr>
+          <tr><td class="firefox"><b>Firefox</b></td><td>1.36</td><td>1.29</td></tr>
+        </table>
+        <p class="tiny" style="margin-top:12px">Speedup is not inflated by the baseline: a pool of one thread is within -7 % to +5 % of code with no Rayon at all.</p>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">RQ1. The filter reaches a speedup of 6.96 natively, 6.92 in Chrome and 7.34 in Firefox at eight threads; the local histogram reaches 7.8 to 8.5 everywhere. The curves lie on each other. The primary contrast: Chrome's speedup over native's is 0.996, interval 0.987 to 1.004, not rejected, and the interval bounds any difference to about one percent. Firefox is 1.055, rejected: it scales 5.5 percent better, but from a slower baseline. In absolute time WASM costs a constant factor: 1.17 in Chrome and 1.36 in Firefox with one thread, and about the same with eight. So WASM threads cost per-thread speed, not scalability. And the relative speedup is honest: I measured sequential versions with no Rayon call, and the pool of one thread is within minus 7 to plus 5 percent of them.</aside>
+</section>
+
+<!-- 6 -->
+<section class="slide" data-title="RQ1 explanation" data-time="65">
+  <h2>Why: longer code per pixel, and eight threads that run into memory, not into the runtime</h2>
+  <div class="cols c3" style="gap:36px">
+    <div>
+      <h3>1. The engines run a third more instructions</h3>
+      <div id="ch-instr"></div>
+      <p class="tiny">Filter loop, one thread, hardware counters of the loop alone. Cycles per pixel: 1.07, 1.24, 1.45, which are the time ratios 1.17 and 1.36.</p>
+    </div>
+    <div data-step="1">
+      <h3>2. Faster loops scale worse</h3>
+      <div id="ch-mem"></div>
+      <p class="tiny">Efficiency at N = 8 against what one thread reads per second, for scalar, baseline and AVX2 builds. One curve for three builds and three environments.</p>
+    </div>
+    <div data-step="2">
+      <h3>3. Fork-join is slower, and it only matters for small regions</h3>
+      <div id="ch-fj"></div>
+      <p class="tiny">Empty parallel region at N = 8, median. Against 3 to 4 ms of filter work it is noise; under about 0.4 to 0.5 ms of work per region the browsers lose half the efficiency.</p>
+    </div>
+  </div>
+  <p data-step="3" class="key f" style="margin-top:20px">Firefox scales better because its loop is slower and asks less of the shared memory. It is not evidence that a browser runs threads better: Firefox is the slowest at every N.</p>
+  <aside class="notes">Why. Three pieces of evidence, all exploratory. First, hardware counters of the loop alone: both engines execute about a third more instructions per pixel than native code for the same WASM, 5.5 and 5.4 against 4.1. Second, why nobody reaches 8: from one to eight threads the instructions per pixel do not change, but cycles and cache misses rise. And across scalar, baseline and AVX2 builds, the faster one thread goes through memory, the less eight threads gain: scalar builds keep 0.97 to 0.98, the native AVX2 build drops to 0.72. Firefox's baseline filter sits exactly where its one-thread throughput puts it on that curve. So Firefox scales better because its loop is slower. Third, the runtime itself: an empty fork-join costs 7.9 microseconds natively, 110 in Chrome and 60 in Firefox. With millisecond regions that is amortized; the cutoff campaign shows that below roughly 0.4 to 0.5 milliseconds of work per region the browsers lose half the efficiency, against 0.12 natively.</aside>
+</section>
+
+<!-- 7 -->
+<section class="slide" data-title="RQ2 result" data-time="55">
+  <h2>RQ2: synchronization is where the engines part ways</h2>
+  <div class="cols c64" style="gap:44px">
+    <div>
+      <div id="ch-rq2"></div>
+      <p class="tiny">Effect at N = 8: the atomic / local time ratio in the browser over the same ratio natively. 1 means synchronization costs what it costs natively. 99.5 % intervals; filled: rejected by Holm.</p>
+    </div>
+    <div>
+      <ul class="plain">
+        <li data-step="1">Shared atomics scale nowhere: with k up to 16, eight threads are <b>slower</b> than one in every environment (speedup 0.36 to 0.70).</li>
+        <li data-step="2"><span class="chrome"><b>Chrome</b></span> pays 1.4 to 2.3 times the native cost when contention is concentrated, and <b>0.42</b> times when it is spread over 256 counters.</li>
+        <li data-step="3"><span class="firefox"><b>Firefox</b></span> is never worse than native: no detectable difference at k = 1, cheaper from k = 4 on.</li>
+        <li data-step="4">Part of Chrome's penalty exists with <b>one thread</b>: 698 ms against 380 ms at k = 1. It is a cost per operation, not only a scaling one.</li>
+      </ul>
+    </div>
+  </div>
+  <aside class="notes">RQ2. The metric is a ratio of ratios: how much slower the atomic histogram is than the local control, in the browser, over the same thing natively. Dividing by the control removes the effect of the input. One means synchronization costs what it costs natively. First, shared atomics do not scale anywhere: at k up to 16, eight threads are slower than one, in all three environments. Then the engines differ. Chrome pays 2.26 times the native cost at k equal to 1, 1.77 at 4, 1.43 at 16, and then flips: 0.42 at 256, where Chrome's atomic histogram is twice as fast as native. Firefox is never worse than native: 1.01 at k 1, not rejected, and below 1 after that. All ten contrasts keep their decision under Mann-Whitney and under the three sensitivity checks. And notice: Chrome's penalty is already there with one thread, so it is a cost of the operation itself.</aside>
+</section>
+
+<!-- 8 -->
+<section class="slide" data-title="RQ2 explanation" data-time="80">
+  <h2>Why: one WASM instruction, four machine sequences</h2>
+  <div class="seqgrid" style="margin-bottom:18px">
+    <div><h4 class="native">LLVM, native</h4><div class="seq"><span class="hl">lock inc</span> [counter]</div></div>
+    <div><h4 class="firefox">SpiderMonkey, optimizing</h4><div class="seq"><span class="hl">lock add</span> [counter], 1</div></div>
+    <div><h4 class="chrome">V8, optimizing (what runs)</h4><div class="seq">old = <span class="hl">load</span> [counter]
+new = old + 1
+<span class="hl">lock cmpxchg</span> [counter]
+<span class="rt">changed? retry</span></div></div>
+    <div><h4 class="chrome">V8, baseline</h4><div class="seq"><span class="hl">lock xadd</span> [counter]</div></div>
+  </div>
+  <div class="cols c2" style="gap:30px;flex:none" data-step="1">
+    <div class="arena" id="arenaA"><span class="cap">locked add: take the line, add, done</span><span class="tally" id="tallyA"></span></div>
+    <div class="arena" id="arenaB"><span class="cap">compare-and-swap: read, add, write only if unchanged</span><span class="tally" id="tallyB"></span></div>
+  </div>
+  <div class="cols c2" style="gap:30px;margin-top:18px">
+    <div data-step="2">
+      <table class="data">
+        <tr><th>Atomic histogram, one thread, ms</th><th>k = 1</th><th>k = 256</th></tr>
+        <tr><td>native</td><td>379.6</td><td>379.6</td></tr>
+        <tr class="hot"><td>Chrome, optimizing compiler</td><td>698.0</td><td>411.9</td></tr>
+        <tr><td>Chrome, baseline compiler only</td><td>419.1</td><td>402.7</td></tr>
+        <tr class="sep"><td>native probe, lock inc</td><td>379.9</td><td>379.8</td></tr>
+        <tr class="hot"><td>native probe, compare-and-swap</td><td>677.1</td><td>408.2</td></tr>
+      </table>
+    </div>
+    <div data-step="3">
+      <p class="key c" style="margin-bottom:14px;font-size:28px">Changing <b>only</b> the increment in a native program reproduces Chrome. With eight threads at k = 1 Chrome retries one add in four (0.24 per add; native 0.001, Firefox 0.002).</p>
+      <p class="key" style="font-size:28px">At k = 256 the same sequence is the faster one: 210 ms in Chrome and 240 ms in the probe against 415 ms natively. Why is a proposed mechanism, not a shown one.</p>
+    </div>
+  </div>
+  <aside class="notes">Why. I read the machine code each engine produces for the same WASM instruction, i64 atomic add. LLVM natively emits one lock inc. SpiderMonkey emits one lock add. V8's optimizing compiler, which is what the campaign measures, emits a load, an add and a lock compare-and-swap that retries if another core changed the counter in between. V8's baseline compiler emits a lock xadd. The animation shows the difference: with a locked add each core takes the cache line and is done; with compare-and-swap a core can read, lose the line to a neighbour, and find its value stale: it retries. Then I tested it twice. Inside the engine: with only the baseline compiler, Chrome's penalty at k 1 disappears, the effect goes from 2.17 to 1.04. And outside the engine, the test that isolates the cause: a native program where I change only the increment to a compare-and-swap loop gives Chrome's times, 677 and 408 milliseconds against Chrome's 698 and 412. Counters confirm the retries: one add in four in Chrome at k 1, practically none elsewhere. At k 256 the same sequence is faster, in Chrome and in the native probe; the mechanism I can only propose: reading the line first asks for exclusive ownership less often. So the RQ2 finding is about a compiler's choice of instructions for an atomic add, not about WebAssembly threads as such.</aside>
+</section>
+
+<!-- 9 -->
+<section class="slide" data-title="Pitfalls of browser benchmarking" data-time="45">
+  <h2>A mask, a fresh profile and a pinned version do not confine, quiet and freeze a browser</h2>
+  <table class="data" style="margin-top:6px">
+    <tr><th style="width:27%">What went wrong</th><th style="text-align:left;width:36%">How it showed</th><th style="text-align:left">Control</th></tr>
+    <tr><td><b class="chrome">Chrome left the CPU mask</b></td><td style="text-align:left">its browser process moved itself to another systemd scope through the session bus</td><td style="text-align:left">no session bus for the browsers; every run records and rejects escaped processes</td></tr>
+    <tr data-step="1"><td><b class="firefox">Firefox was still starting up</b></td><td style="text-align:left">short iterations slower and bursty at high N</td><td style="text-align:left">every browser run waits 3 s before the pool starts</td></tr>
+    <tr data-step="2"><td><b class="firefox">Firefox updated itself</b></td><td style="text-align:left">the pinned 158.0 became 160.0 in the middle of the exploratory campaigns</td><td style="text-align:left">enterprise policy DisableAppUpdate, version check before each campaign, runs repeated</td></tr>
+    <tr data-step="3"><td><b>One P-core is degraded</b></td><td style="text-align:left">crashes on the unprepared machine (turbo on)</td><td style="text-align:left">per-core check: sound and as fast as the others with turbo off; build made twice, equal digests</td></tr>
+    <tr data-step="4"><td><b>Our own asymmetries</b></td><td style="text-align:left">a bounds check and a timed merge in one histogram variant only; later, different task splitting</td><td style="text-align:left">fixed, then every campaign re-run on one tagged build; builds are never mixed</td></tr>
+  </table>
+  <p class="small" data-step="4" style="margin-top:22px">Each one was found by a check that every run carries: strict validation, checksums, recorded versions, foreign CPU time.</p>
+  <aside class="notes">Half of this project was making the measurement trustworthy, and a browser is not a benchmark-friendly process. Chrome's browser process moved itself out of my CPU mask through the D-Bus session bus, so I withhold the bus and check every run for escaped processes. Firefox was still doing start-up work during short iterations, so every browser run waits three seconds. The pinned Firefox updated itself in the middle of the exploratory campaigns despite the profile setting; strict validation caught every one of those runs, and only an enterprise policy stops it. One P-core of the machine is degraded: I checked it core by core, and with turbo off it is sound and as fast as the others. And a code review found asymmetries of our own in the histogram variants: I fixed them and re-ran everything on one tagged build. No table mixes two builds.</aside>
+</section>
+
+<!-- 10 -->
+<section class="slide" data-title="Threats and what stays open" data-time="40">
+  <h2>What these results can and cannot support</h2>
+  <div class="cols c2">
+    <div>
+      <h3>Declared limits</h3>
+      <ul class="plain">
+        <li><b>External:</b> one machine, P-cores only, one version of each browser, headless, inputs larger than the caches (128 MiB against a 36 MB last-level cache).</li>
+        <li data-step="1"><b>Internal:</b> thread placement is left to the kernel, because a browser cannot pin; at N = 8 the browsers' own threads share the eight cores.</li>
+        <li data-step="2"><b>Construct:</b> "the same code" holds for the crate only. Below it, the engines' compilers differ, and that is what is measured.</li>
+        <li data-step="3"><b>Conclusion:</b> a non-rejection is a bound (about 1 % for RQ1, 7 % for RQ2), not proof of equality.</li>
+      </ul>
+    </div>
+    <div data-step="4">
+      <h3>Still open</h3>
+      <table class="data">
+        <tr><th>Question</th><th style="text-align:left">Status</th></tr>
+        <tr><td>Why the compare-and-swap wins at k = 256</td><td style="text-align:left">reproduced natively, mechanism proposed</td></tr>
+        <tr><td>Efficiency dip at N = 6 and 7</td><td style="text-align:left">not Rayon's splitting; placement not tested</td></tr>
+        <tr><td>Firefox's slower filter loop</td><td style="text-align:left">as long as V8's, fewer instructions per cycle</td></tr>
+        <tr><td>What Chrome loses outside the loop</td><td style="text-align:left">fits its fork-join, not measured</td></tr>
+      </table>
+      <p class="tiny" style="margin-top:14px">Explanations are exploratory: each prediction was written before its test ran, and the one that failed in part is reported as such.</p>
+    </div>
+  </div>
+  <aside class="notes">Limits. External validity is the largest: one machine, P-cores only, one pinned version of each browser, and inputs that live in memory, not in cache, so the results hold for large work per parallel region. Internally, I cannot pin threads because a browser cannot, and at eight threads the browser's own helper threads share the cores. The construct: "the same code" is true for my crate; below it the engines compile differently, and that difference is exactly what I measure. And a non-rejection is a bound, not equality. What stays open: the mechanism of Chrome's advantage at k 256, the small efficiency dip at six and seven threads, where I tested and ruled out Rayon's splitting, and why SpiderMonkey's filter loop runs fewer instructions per cycle.</aside>
+</section>
+
+<!-- 11 -->
+<section class="slide" data-title="Takeaways" data-time="45">
+  <h2>Answers, and what to do with them</h2>
+  <div class="cols c2" style="gap:44px">
+    <div>
+      <div class="box" style="margin-bottom:22px">
+        <h3>RQ1</h3>
+        <p>With enough work per parallel region, the same Rust/Rayon code scales in the browser as it does natively. WASM threads cost a constant factor in time (1.17 to 1.36 for the filter) and a slower fork-join.</p>
+      </div>
+      <div class="box" data-step="1">
+        <h3>RQ2</h3>
+        <p>Shared atomics widen the gap in Chrome under concentrated contention (up to 2.26) and narrow it under spread contention (0.42); Firefox is never worse than native. The cause is the instruction sequence V8 emits for an atomic add.</p>
+      </div>
+    </div>
+    <div>
+      <div data-step="2" style="margin-bottom:26px">
+        <h3>If you ship parallel WASM</h3>
+        <ul class="plain">
+          <li>Keep parallel regions coarse: at 8 threads, about 0.5 ms of work per region or more.</li>
+          <li>Prefer per-task state merged at the end to shared atomics; it scales to 8 everywhere.</li>
+          <li>Measure in both engines: the same module is not the same machine code.</li>
+        </ul>
+      </div>
+      <div data-step="3">
+        <h3>If you benchmark browsers</h3>
+        <ul class="plain">
+          <li>Fresh process per run, run as the unit, plan fixed before the data.</li>
+          <li>Verify confinement, version and quiet in every run; do not assume them.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <aside class="notes">To answer the two questions. RQ1: with enough work per parallel region, the same code scales in the browser as it does natively; WebAssembly threads cost a constant factor and a slower fork-join. RQ2: synchronization is where the engines differ, and the cause I can point to is the instruction sequence V8's optimizing compiler emits for an atomic add: worse under concentrated contention, better under spread contention. For developers: keep regions coarse, avoid shared atomics in favour of per-task state, and measure in both engines. For benchmarkers: a CPU mask, a fresh profile and a pinned version do not by themselves confine, quiet and freeze a browser; verify it in every run.</aside>
+</section>
+
+<!-- 12 -->
+<section class="slide" data-title="Questions" data-time="20">
+  <h1 style="margin-top:120px">Questions</h1>
+  <p style="margin-top:40px;max-width:1300px">Every number in this talk is from one tagged build, <span class="mono" style="font-size:27px">measured/v3</span>: 5310 primary runs and 21 840 exploratory ones, regenerated from the raw data by one command, with every design decision recorded.</p>
+  <div class="cols c3" style="margin-top:60px;flex:none;gap:30px">
+    <p class="key n small">RQ1: scales like native, at a constant factor in time</p>
+    <p class="key c small">RQ2: Chrome 2.26 to 0.42 of the native cost of synchronization, by contention</p>
+    <p class="key f small">Firefox: never worse than native on synchronization</p>
+  </div>
+  <p class="tiny" style="margin-top:60px">Backup slides: press B (extras, weak scaling and SIMD, cutoff and grain, E-cores, robustness).</p>
+  <aside class="notes">Thank you. Questions? Backup slides with B: B1 private and packed atomics and the sorts; B2 weak scaling and the SIMD builds; B3 cutoff and grain; B4 the E-cores; B5 robustness and sensitivity checks.</aside>
+</section>
+
+<!-- Backup slides -->
+<section class="slide backup" data-title="Backup: private and packed atomics" data-time="0">
+  <h2>Backup 1 - extras campaign: where Chrome's atomic cost sits (5400 runs)</h2>
+  <div class="cols c64">
+    <table class="data">
+      <tr><th>Time at N = 8, ms</th><th class="native">native</th><th class="chrome">Chrome</th><th class="firefox">Firefox</th></tr>
+      <tr><td>private atomics, k = 1 (one table per thread)</td><td>47.7</td><td>88.0</td><td>47.8</td></tr>
+      <tr><td>private atomics, k = 256</td><td>47.7</td><td>52.1</td><td>47.8</td></tr>
+      <tr class="sep"><td>shared, padded, k = 256</td><td>414.6</td><td>210.3</td><td>392.8</td></tr>
+      <tr><td>shared, packed 8 per line, k = 256</td><td>490.3</td><td>725.7</td><td>492.0</td></tr>
+      <tr class="sep"><td>parallel sort, speedup</td><td>7.79</td><td>7.78</td><td>7.80</td></tr>
+      <tr><td>parallel unstable sort, speedup</td><td>6.39</td><td>6.22</td><td>6.19</td></tr>
+    </table>
+    <ul class="plain">
+      <li>Private atomics share no line and scale to 7.9 everywhere, yet Chrome pays 1.85 times native at k = 1: the uncontended compare-and-swap chain.</li>
+      <li>Packing eight counters per line costs 1.18 times natively and 3.45 times in Chrome: Chrome's advantage at k = 256 depends on padding.</li>
+      <li>Cells shared with the main campaign reproduce it.</li>
+    </ul>
+  </div>
+  <aside class="notes">Extras: private atomics have one padded table per thread, so no sharing at all. They scale like the local control, but Chrome is 88 against 47.7 ms at k 1: that is the compare-and-swap sequence without any contention. Packed counters, eight per line, add false sharing: 1.18 times natively, 3.45 times in Chrome.</aside>
+</section>
+
+<section class="slide backup" data-title="Backup: weak scaling and SIMD" data-time="0">
+  <h2>Backup 2 - weak scaling and the SIMD builds</h2>
+  <div class="cols c2">
+    <div>
+      <h3>Weak scaling, 1024 rows per thread, N = 8 (1080 runs)</h3>
+      <table class="data">
+        <tr><th>Rate kept at N = 8</th><th class="native">native</th><th class="chrome">Chrome</th><th class="firefox">Firefox</th></tr>
+        <tr><td>filter</td><td>0.860</td><td>0.851</td><td>0.915</td></tr>
+        <tr><td>local histogram, k = 1</td><td>0.997</td><td>0.993</td><td>0.994</td></tr>
+        <tr><td>filter, strong scaling efficiency</td><td>0.869</td><td>0.865</td><td>0.917</td></tr>
+      </table>
+      <p class="tiny" style="margin-top:12px">Same picture as strong scaling: the loss is not from dividing a fixed input.</p>
+    </div>
+    <div>
+      <h3>Filter builds that change only vectorization (720 runs)</h3>
+      <table class="data">
+        <tr><th>Build, environment</th><th>MB/s, N = 1</th><th>Efficiency, N = 8</th></tr>
+        <tr><td>scalar, Firefox</td><td>476</td><td>0.982</td></tr>
+        <tr><td>scalar, Chrome</td><td>515</td><td>0.966</td></tr>
+        <tr><td>scalar, native</td><td>760</td><td>0.982</td></tr>
+        <tr><td>baseline, Firefox</td><td>2178</td><td>0.917</td></tr>
+        <tr><td>baseline, Chrome</td><td>2533</td><td>0.865</td></tr>
+        <tr><td>baseline, native</td><td>2969</td><td>0.869</td></tr>
+        <tr><td>AVX2, native</td><td>4337</td><td>0.721</td></tr>
+      </table>
+      <p class="tiny" style="margin-top:12px">Without SIMD the browser gap is larger (Chrome 1.48 to 1.50, Firefox 1.59 to 1.60 times native): the gap is not caused by WASM's SIMD path.</p>
+    </div>
+  </div>
+  <aside class="notes">Weak scaling: the image grows with the thread count, 1024 rows per thread. The filter keeps 0.86, 0.85 and 0.92 of its one-thread rate: the same as strong scaling. SIMD builds: scalar on both sides and native AVX2. The faster the loop, the lower the efficiency at eight threads.</aside>
+</section>
+
+<section class="slide backup" data-title="Backup: cutoff and grain" data-time="0">
+  <h2>Backup 3 - how small can a parallel region be, and how fine a task?</h2>
+  <div class="cols c2">
+    <div>
+      <h3>Cutoff: work below which efficiency at N = 8 falls under 0.5 (4080 runs)</h3>
+      <table class="data">
+        <tr><th>Sequential work per region</th><th class="native">native</th><th class="chrome">Chrome</th><th class="firefox">Firefox</th></tr>
+        <tr><td>filter, microseconds</td><td>125</td><td>396</td><td>459</td></tr>
+        <tr><td>filter, image side in pixels</td><td>613</td><td>996</td><td>994</td></tr>
+        <tr><td>local histogram, microseconds</td><td>183</td><td>325</td><td>362</td></tr>
+        <tr><td>empty fork-join at N = 8, microseconds</td><td>10.8</td><td>105</td><td>60</td></tr>
+      </table>
+      <p class="tiny" style="margin-top:12px">Parallel never lost to sequential at any size measured (512 squared to 8192 squared): the speedup stays above 1.</p>
+    </div>
+    <div>
+      <h3>Grain sweep at 8192 squared, N = 8 (5400 runs)</h3>
+      <table class="data">
+        <tr><th>Best fixed grain</th><th class="native">native</th><th class="chrome">Chrome</th><th class="firefox">Firefox</th></tr>
+        <tr><td>filter, rows per task</td><td>4</td><td>4</td><td>4</td></tr>
+        <tr><td>local histogram, KB per task</td><td>128</td><td>64</td><td>128</td></tr>
+        <tr><td>Rayon's adaptive split over the best</td><td>1.002, 0.995</td><td>0.999, 1.027</td><td>0.996, 1.010</td></tr>
+      </table>
+      <p class="tiny" style="margin-top:12px">The same U-curve and nearly the same best grain in the three environments; the adaptive split used by the main campaign is within 3 % of the best. The atomic histogram does not depend on the grain (within 1.3 %).</p>
+    </div>
+  </div>
+  <aside class="notes">Cutoff campaign: images from 512 squared up, repeated passes per sample so small regions are measurable. Efficiency at eight threads falls under one half below 125 microseconds of sequential work natively, about 400 in Chrome and 460 in Firefox. Grain sweep: a fixed task size swept in powers of two gives the U-curve of the lectures; the best grain is the same in all three, and Rayon's adaptive split is within 3 percent of it.</aside>
+</section>
+
+<section class="slide backup" data-title="Backup: E-cores" data-time="0">
+  <h2>Backup 4 - adding twelve E-cores (hybrid campaign, 900 runs)</h2>
+  <div class="cols c64">
+    <table class="data">
+      <tr><th>Speedup</th><th>N = 8</th><th>N = 12</th><th>N = 16</th><th>N = 20</th></tr>
+      <tr><td class="native"><b>filter, native</b></td><td>6.46</td><td>7.47</td><td>7.86</td><td>8.01</td></tr>
+      <tr><td class="chrome"><b>filter, Chrome</b></td><td>6.55</td><td>7.60</td><td>7.65</td><td>7.62</td></tr>
+      <tr><td class="firefox"><b>filter, Firefox</b></td><td>7.02</td><td>8.23</td><td>8.67</td><td>8.62</td></tr>
+      <tr class="sep"><td class="native"><b>local histogram k = 1, native</b></td><td>7.89</td><td>13.39</td><td>19.43</td><td>25.50</td></tr>
+      <tr><td class="chrome"><b>local histogram k = 1, Chrome</b></td><td>8.08</td><td>16.95</td><td>25.21</td><td>29.48</td></tr>
+      <tr><td class="firefox"><b>local histogram k = 1, Firefox</b></td><td>7.85</td><td>15.08</td><td>20.95</td><td>25.35</td></tr>
+    </table>
+    <ul class="plain">
+      <li>The memory-bound filter gains little from twelve more cores, in every environment.</li>
+      <li>The local histogram at k = 1 passes the thread count: the E-cores run that dependent chain faster than the P-cores do.</li>
+      <li>Which thread lands on which kind of core is not controlled: these cells vary more than any P-only cell. This is why the study measures on P-cores only.</li>
+    </ul>
+  </div>
+  <aside class="notes">Hybrid campaign: the mask takes the eight P-cores plus twelve E-cores, up to twenty threads. The filter barely gains: it is memory-bound. The local histogram at k 1 goes beyond the thread count because that loop is a store-to-load chain that the E-cores happen to run faster. Placement on P or E cores is not controlled, which is the reason the study itself uses P-cores only.</aside>
+</section>
+
+<section class="slide backup" data-title="Backup: robustness of the ten decisions" data-time="0">
+  <h2>Backup 5 - do the ten primary decisions survive other choices?</h2>
+  <div id="tbl-robust"></div>
+  <p class="tiny" style="margin-top:14px">Effect at N = 8 with its 99.5 % interval; the same contrast with the per-run mean instead of the median, and with the median of runs instead of the geometric mean; Cliff's delta and the Holm-adjusted Mann-Whitney p. Every decision is the same in every column. Data quality of the campaign: 1 configuration trends with the execution order (Firefox, local histogram, k = 1, N = 7), not a primary one.</p>
+  <aside class="notes">The plan's sensitivity checks: per-run mean instead of median, median centre instead of geometric mean, no foreign-CPU exclusion (which excluded nothing). And a rank test, Mann-Whitney with Cliff's delta, Holm-adjusted. All ten decisions are the same under every check.</aside>
+</section>
+
+<div id="foot"><span>PPC 2026/27 - Scalability of parallel code in WASM vs. native</span><div id="slots"></div><span id="count"></span></div>
+</div>
+
+<div id="notes"><div class="bar"><span id="notes-slide"></span><span id="notes-time"></span></div><div id="notes-text"></div></div>
+<div id="help">right / space  next step<br>left           previous step<br>Home / End     first / last slide<br>N  notes and timer   T  reset timer<br>O  overview          B  backup slides<br>F  fullscreen        ?  this help</div>
+<div id="overview"></div>
+
+<script>
+"use strict";
+// Every number below is from the tables of measured/v3; presentation/README.md names the file of each.
+const DATA = {
+  threads: [1, 2, 4, 6, 7, 8],
+  speedup: {
+    filter: {
+      native: [1, 1.965, 3.780, 5.459, 6.179, 6.955],
+      chrome: [1, 1.961, 3.725, 5.396, 6.088, 6.924],
+      firefox: [1, 1.970, 3.782, 5.566, 6.400, 7.336],
+    },
+    local256: {
+      native: [1, 1.993, 3.907, 5.701, 6.800, 7.931],
+      chrome: [1, 1.993, 3.868, 5.627, 6.677, 8.006],
+      firefox: [1, 1.997, 3.890, 5.771, 6.808, 8.484],
+    },
+  },
+  rq1: [
+    { env: "chrome", effect: 0.9955, low: 0.9868, high: 1.004, rejected: false },
+    { env: "firefox", effect: 1.055, low: 1.034, high: 1.072, rejected: true },
+  ],
+  rq2: {
+    k: [1, 4, 16, 256],
+    chrome: [[2.259, 2.110, 2.406, true], [1.771, 1.746, 1.793, true], [1.425, 1.399, 1.451, true], [0.4159, 0.4072, 0.4251, true]],
+    firefox: [[1.010, 0.9573, 1.067, false], [0.9691, 0.9555, 0.9827, true], [0.8311, 0.8208, 0.8417, true], [0.7965, 0.7820, 0.8089, true]],
+  },
+  instructionsPerPixel: { native: 4.10, chrome: 5.52, firefox: 5.41 },
+  forkJoinUs: { native: 7.9, chrome: 110, firefox: 60 },
+  memory: [
+    { build: "scalar", env: "firefox", mbs: 476, eff: 0.982 },
+    { build: "scalar", env: "chrome", mbs: 515, eff: 0.966 },
+    { build: "scalar", env: "native", mbs: 760, eff: 0.982 },
+    { build: "baseline", env: "firefox", mbs: 2178, eff: 0.917 },
+    { build: "baseline", env: "chrome", mbs: 2533, eff: 0.865 },
+    { build: "baseline", env: "native", mbs: 2969, eff: 0.869 },
+    { build: "AVX2", env: "native", mbs: 4337, eff: 0.721 },
+  ],
+  // contrast, effect [99.5 % CI], per-run mean, median centre, Cliff's delta, Mann-Whitney Holm p, decision
+  robustness: [
+    ["RQ1 filter, Chrome", "0.996 [0.987, 1.004]", "0.994", "0.995", "-0.24", "0.21", "not rejected"],
+    ["RQ1 filter, Firefox", "1.055 [1.034, 1.072]", "1.037", "1.051", "0.92", "3.2e-09", "rejected"],
+    ["RQ2 Chrome, k = 1", "2.259 [2.110, 2.406]", "2.259", "2.397", "1", "3.0e-10", "rejected"],
+    ["RQ2 Chrome, k = 4", "1.771 [1.746, 1.793]", "1.765", "1.766", "1", "3.0e-10", "rejected"],
+    ["RQ2 Chrome, k = 16", "1.425 [1.399, 1.451]", "1.429", "1.419", "1", "3.0e-10", "rejected"],
+    ["RQ2 Chrome, k = 256", "0.416 [0.407, 0.425]", "0.416", "0.415", "-1", "3.0e-10", "rejected"],
+    ["RQ2 Firefox, k = 1", "1.010 [0.957, 1.067]", "0.994", "1.053", "0.06", "0.71", "not rejected"],
+    ["RQ2 Firefox, k = 4", "0.969 [0.956, 0.983]", "0.973", "0.967", "-0.74", "2.7e-06", "rejected"],
+    ["RQ2 Firefox, k = 16", "0.831 [0.821, 0.842]", "0.839", "0.830", "-1", "3.0e-10", "rejected"],
+    ["RQ2 Firefox, k = 256", "0.797 [0.782, 0.809]", "0.799", "0.805", "-1", "3.0e-10", "rejected"],
+  ],
+};
+const COLOR = { native: "var(--native)", chrome: "var(--chrome)", firefox: "var(--firefox)" };
+const ENVS = ["native", "chrome", "firefox"];
+const NAME = { native: "native", chrome: "Chrome", firefox: "Firefox" };
+const SVG = "http://www.w3.org/2000/svg";
+
+function svg(width, height) {
+  const root = document.createElementNS(SVG, "svg");
+  root.setAttribute("viewBox", `0 0 ${width} ${height}`);
+  root.style.width = "100%";
+  root.style.maxWidth = width + "px";
+  root.style.height = "auto";
+  root.style.display = "block";
+  return root;
+}
+function add(parent, tag, attributes, text) {
+  const node = document.createElementNS(SVG, tag);
+  for (const [key, value] of Object.entries(attributes || {})) node.setAttribute(key, value);
+  if (text !== undefined) node.textContent = text;
+  parent.appendChild(node);
+  return node;
+}
+
+// Two speedup panels side by side, sharing the y axis 0 to 9.
+function speedupChart(target) {
+  const width = 1050, height = 610, top = 50, bottom = 70, panelWidth = 440, gap = 80, left = 70;
+  const root = svg(width, height);
+  const panels = [["Gaussian filter", DATA.speedup.filter], ["Local histogram, k = 256", DATA.speedup.local256]];
+  const y = (value) => top + (height - top - bottom) * (1 - value / 9);
+  panels.forEach(([title, series], index) => {
+    const x0 = left + index * (panelWidth + gap);
+    const x = (threads) => x0 + (panelWidth * (threads - 1)) / 7;
+    add(root, "text", { x: x0, y: 30, class: "ttl" }, title);
+    for (let tick = 0; tick <= 8; tick += 2) {
+      add(root, "line", { x1: x0, x2: x0 + panelWidth, y1: y(tick), y2: y(tick), class: "grid" });
+      add(root, "text", { x: x0 - 12, y: y(tick) + 8, class: "lbl", "text-anchor": "end" }, tick);
+    }
+    DATA.threads.forEach((threads) => add(root, "text", { x: x(threads), y: height - bottom + 32, class: "lbl", "text-anchor": "middle" }, threads));
+    add(root, "path", { d: `M${x0},${y(0)} V${top - 6} M${x0},${y(0)} H${x0 + panelWidth}`, class: "axis" });
+    add(root, "line", { x1: x(1), y1: y(1), x2: x(8), y2: y(8), stroke: "var(--graphite)", "stroke-width": 2, "stroke-dasharray": "8 7" });
+    ENVS.forEach((env) => {
+      const points = series[env].map((value, i) => `${x(DATA.threads[i])},${y(value)}`);
+      add(root, "path", { d: "M" + points.join(" L"), class: "series", fill: "none", stroke: COLOR[env], "stroke-width": 4.5, "stroke-linejoin": "round" });
+      series[env].forEach((value, i) => add(root, "circle", { cx: x(DATA.threads[i]), cy: y(value), r: 6, fill: COLOR[env] }));
+    });
+    // End labels at N = 8, spread so they never overlap.
+    const ends = ENVS.map((env) => ({ env, value: series[env][5] })).sort((a, b) => b.value - a.value);
+    ends.forEach((end, rank) => add(root, "text", { x: x(8), y: y(2.9) + rank * 32, class: "val", "text-anchor": "end", style: `fill:${COLOR[end.env]}` },
+      `${NAME[end.env]} ${end.value.toFixed(2)}`));
+    add(root, "text", { x: x0 + panelWidth / 2, y: height - 4, class: "lbl", "text-anchor": "middle" }, "threads N");
+  });
+  target.appendChild(root);
+}
+
+// Horizontal interval plot around a reference of 1.
+function intervalChart(target, rows, options) {
+  const { width, rowHeight, min, max, log, ticks, labelWidth } = options;
+  const top = 16, height = top + rows.length * rowHeight + 46;
+  const root = svg(width, height);
+  const scale = (value) => {
+    const position = log ? (Math.log(value) - Math.log(min)) / (Math.log(max) - Math.log(min)) : (value - min) / (max - min);
+    return labelWidth + position * (width - labelWidth - 150);
+  };
+  ticks.forEach((tick) => {
+    add(root, "line", { x1: scale(tick), x2: scale(tick), y1: top, y2: height - 40, class: "grid" });
+    add(root, "text", { x: scale(tick), y: height - 10, class: "lbl", "text-anchor": "middle" }, tick);
+  });
+  add(root, "line", { x1: scale(1), x2: scale(1), y1: top - 6, y2: height - 40, stroke: "var(--ink)", "stroke-width": 3 });
+  rows.forEach((row, index) => {
+    const y = top + index * rowHeight + rowHeight / 2;
+    if (row.gapBefore) add(root, "line", { x1: 0, x2: width, y1: y - rowHeight / 2, y2: y - rowHeight / 2, class: "grid" });
+    add(root, "text", { x: 0, y: y + 8, class: "val", style: `fill:${COLOR[row.env]}` }, row.label);
+    add(root, "line", { x1: scale(row.low), x2: scale(row.high), y1: y, y2: y, stroke: COLOR[row.env], "stroke-width": 5 });
+    [row.low, row.high].forEach((end) => add(root, "line", { x1: scale(end), x2: scale(end), y1: y - 11, y2: y + 11, stroke: COLOR[row.env], "stroke-width": 5 }));
+    add(root, "circle", { cx: scale(row.effect), cy: y, r: 10, fill: row.rejected ? COLOR[row.env] : "var(--paper)", stroke: COLOR[row.env], "stroke-width": 4 });
+    add(root, "text", { x: width - 138, y: y + 8, class: "val" }, row.text);
+  });
+  target.appendChild(root);
+}
+
+function barChart(target, values, options) {
+  const { width, height, max, unit, digits, log } = options;
+  const root = svg(width, height), left = 130, right = 130, barHeight = (height - 20) / 3 - 16;
+  ENVS.forEach((env, index) => {
+    const y = 10 + index * (barHeight + 16);
+    const share = log ? Math.log(values[env] / log) / Math.log(max / log) : values[env] / max;
+    add(root, "text", { x: 0, y: y + barHeight / 2 + 9, class: "val", style: `fill:${COLOR[env]}` }, NAME[env]);
+    add(root, "rect", { x: left, y, width: Math.max(4, share * (width - left - right)), height: barHeight, fill: COLOR[env] });
+    add(root, "text", { x: left + share * (width - left - right) + 12, y: y + barHeight / 2 + 9, class: "val" }, values[env].toFixed(digits) + unit);
+  });
+  target.appendChild(root);
+}
+
+function memoryChart(target) {
+  const width = 540, height = 400, left = 78, bottom = 62, top = 16, right = 20;
+  const root = svg(width, height);
+  const x = (mbs) => left + (mbs / 4800) * (width - left - right);
+  const y = (eff) => top + (1 - (eff - 0.65) / 0.4) * (height - top - bottom);
+  [0.7, 0.8, 0.9, 1.0].forEach((tick) => {
+    add(root, "line", { x1: left, x2: width - right, y1: y(tick), y2: y(tick), class: "grid" });
+    add(root, "text", { x: left - 10, y: y(tick) + 8, class: "lbl", "text-anchor": "end" }, tick.toFixed(1));
+  });
+  [0, 2000, 4000].forEach((tick) => add(root, "text", { x: x(tick), y: height - bottom + 30, class: "lbl", "text-anchor": "middle" }, tick));
+  add(root, "path", { d: `M${left},${top} V${height - bottom} H${width - right}`, class: "axis" });
+  add(root, "text", { x: (left + width) / 2, y: height - 4, class: "lbl", "text-anchor": "middle" }, "MB/s read by one thread");
+  const ordered = [...DATA.memory].sort((a, b) => a.mbs - b.mbs);
+  add(root, "path", { d: "M" + ordered.map((point) => `${x(point.mbs)},${y(point.eff)}`).join(" L"), fill: "none", stroke: "var(--graphite)", "stroke-width": 2, "stroke-dasharray": "6 6" });
+  const shape = { scalar: "circle", baseline: "square", AVX2: "diamond" };
+  DATA.memory.forEach((point) => {
+    const cx = x(point.mbs), cy = y(point.eff), color = COLOR[point.env];
+    if (shape[point.build] === "circle") add(root, "circle", { cx, cy, r: 11, fill: color });
+    else if (shape[point.build] === "square") add(root, "rect", { x: cx - 11, y: cy - 11, width: 22, height: 22, fill: color });
+    else add(root, "path", { d: `M${cx},${cy - 15} L${cx + 15},${cy} L${cx},${cy + 15} L${cx - 15},${cy} Z`, fill: color });
+  });
+  add(root, "text", { x: x(760) + 22, y: y(0.982) - 14, class: "lbl" }, "scalar: 0.97 to 0.98");
+  add(root, "text", { x: x(2178) - 44, y: y(0.917) - 22, class: "lbl", style: `fill:${COLOR.firefox}` }, "Firefox 0.92");
+  add(root, "text", { x: x(2969) - 250, y: y(0.869) + 44, class: "lbl" }, "baseline: 0.87");
+  add(root, "text", { x: x(4337) - 150, y: y(0.721) + 8, class: "lbl" }, "AVX2 0.72");
+  target.appendChild(root);
+}
+
+function build() {
+  // Title lanes: block speed encodes the one-thread filter time of each environment.
+  const lanes = document.getElementById("lanes");
+  const factor = { native: 1.0, chrome: 1.17, firefox: 1.36 };
+  for (let lane = 0; lane < 8; lane++) {
+    const row = document.createElement("div");
+    row.className = "lane";
+    ENVS.forEach((env, index) => {
+      const block = document.createElement("b");
+      block.style.background = COLOR[env];
+      block.style.animationDuration = (7 * factor[env]).toFixed(2) + "s";
+      block.style.animationDelay = (-(lane * 0.83 + index * 2.4)).toFixed(2) + "s";
+      row.appendChild(block);
+    });
+    lanes.appendChild(row);
+  }
+
+  // k dial: 32 counters drawn; k of them are hit (k = 256 is drawn as all of them).
+  const dial = document.getElementById("kdial");
+  [[1, 1], [4, 4], [16, 16], [256, 32]].forEach(([k, lit]) => {
+    const row = document.createElement("div");
+    row.className = "krow";
+    const cells = Array.from({ length: 32 }, (_, i) => `<i class="${lit === 32 || i % (32 / lit) === 0 ? "h" : ""}"></i>`).join("");
+    row.innerHTML = `<span>k = ${k}</span><div class="cells">${cells}</div>`;
+    dial.appendChild(row);
+  });
+
+  const cores = document.getElementById("coremap");
+  cores.innerHTML = "<i></i>".repeat(8) + '<span style="width:18px"></span>' + '<i class="e"></i>'.repeat(16);
+
+  speedupChart(document.getElementById("ch-speedup"));
+  intervalChart(document.getElementById("ch-rq1"), DATA.rq1.map((row) => ({
+    env: row.env, label: NAME[row.env], effect: row.effect, low: row.low, high: row.high, rejected: row.rejected,
+    text: row.effect.toFixed(3),
+  })), { width: 700, rowHeight: 62, min: 0.96, max: 1.09, log: false, ticks: [0.98, 1, 1.02, 1.04, 1.06, 1.08], labelWidth: 170 });
+
+  const rq2Rows = [];
+  ["chrome", "firefox"].forEach((env) => DATA.rq2.k.forEach((k, index) => {
+    const [effect, low, high, rejected] = DATA.rq2[env][index];
+    rq2Rows.push({ env, label: `${NAME[env]}, k = ${k}`, effect, low, high, rejected, text: effect.toFixed(2), gapBefore: env === "firefox" && index === 0 });
+  }));
+  intervalChart(document.getElementById("ch-rq2"), rq2Rows, { width: 1040, rowHeight: 74, min: 0.35, max: 2.8, log: true, ticks: [0.4, 0.5, 0.7, 1, 1.5, 2, 2.5], labelWidth: 260 });
+
+  barChart(document.getElementById("ch-instr"), DATA.instructionsPerPixel, { width: 540, height: 250, max: 6, unit: " instr/px", digits: 2 });
+  barChart(document.getElementById("ch-fj"), DATA.forkJoinUs, { width: 540, height: 250, max: 130, unit: " us", digits: 1 });
+  memoryChart(document.getElementById("ch-mem"));
+
+  const robust = document.getElementById("tbl-robust");
+  robust.innerHTML = '<table class="data"><tr><th>Primary contrast</th><th>Effect [99.5 % CI]</th><th>Per-run mean</th><th>Median centre</th><th>Cliff\'s delta</th><th>Mann-Whitney p (Holm)</th><th>Decision, all checks</th></tr>' +
+    DATA.robustness.map((row) => "<tr>" + row.map((cell) => `<td>${cell}</td>`).join("") + "</tr>").join("") + "</table>";
+
+  buildArena("arenaA");
+  buildArena("arenaB");
+}
+
+// Cache line animation -----------------------------------------------------------------------
+const CORE_X = [60, 250, 440, 630];
+function buildArena(id) {
+  const arena = document.getElementById(id);
+  CORE_X.forEach((x, index) => {
+    const core = document.createElement("div");
+    core.className = "core";
+    core.style.left = x + "px";
+    core.dataset.index = index;
+    core.textContent = "core " + index;
+    arena.appendChild(core);
+  });
+  const token = document.createElement("div");
+  token.className = "tok";
+  token.textContent = "41";
+  token.style.transform = `translateX(${CORE_X[0]}px)`;
+  arena.appendChild(token);
+}
+let arenaRun = 0;
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+async function playArenas(run) {
+  const a = document.getElementById("arenaA"), b = document.getElementById("arenaB");
+  const coresA = a.querySelectorAll(".core"), coresB = b.querySelectorAll(".core");
+  const tokenA = a.querySelector(".tok"), tokenB = b.querySelector(".tok");
+  const move = (token, index) => { token.style.transform = `translateX(${CORE_X[index]}px)`; };
+  const label = (core, text, state) => { core.textContent = text; core.className = "core" + (state ? " " + state : ""); };
+  const alive = () => run === arenaRun;
+  let valueA = 41, valueB = 41, retries = 0, addsA = 0, addsB = 0;
+  const tally = () => {
+    document.getElementById("tallyA").textContent = `adds ${addsA}, retries 0`;
+    document.getElementById("tallyB").textContent = `adds ${addsB}, retries ${retries}`;
+  };
+  const reset = () => { coresA.forEach((core, i) => label(core, "core " + i)); coresB.forEach((core, i) => label(core, "core " + i)); };
+  tally();
+  // Each round: in A, two cores add in turn. In B, core 0 reads, core 1 gets the line in between and
+  // writes first, so core 0's compare-and-swap finds another value and has to go round again.
+  for (let round = 0; alive(); round++) {
+    const first = (round * 2) % 4, second = (first + 1) % 4;
+    reset();
+    move(tokenA, first); move(tokenB, first);
+    await wait(650); if (!alive()) return;
+    label(coresA[first], "lock add", "ok"); valueA++; addsA++; tokenA.textContent = valueA;
+    label(coresB[first], `load ${valueB}`);
+    tally();
+    await wait(800); if (!alive()) return;
+    move(tokenA, second); move(tokenB, second);
+    await wait(650); if (!alive()) return;
+    label(coresA[second], "lock add", "ok"); valueA++; addsA++; tokenA.textContent = valueA;
+    const stale = valueB;
+    label(coresB[second], "cmpxchg ok", "ok"); valueB++; addsB++; tokenB.textContent = valueB;
+    tally();
+    await wait(800); if (!alive()) return;
+    move(tokenB, first);
+    await wait(650); if (!alive()) return;
+    label(coresB[first], `${stale} != ${valueB} retry`, "fail"); retries++;
+    tally();
+    await wait(1000); if (!alive()) return;
+    label(coresB[first], `load ${valueB}`);
+    await wait(650); if (!alive()) return;
+    label(coresB[first], "cmpxchg ok", "ok"); valueB++; addsB++; tokenB.textContent = valueB;
+    tally();
+    await wait(1100);
+  }
+}
+function staticArenas() {
+  document.getElementById("tallyA").textContent = "adds 2, retries 0";
+  document.getElementById("tallyB").textContent = "adds 2, retries 1";
+  const b = document.getElementById("arenaB").querySelectorAll(".core");
+  b[0].textContent = "41 != 42 retry"; b[0].classList.add("fail");
+  b[1].textContent = "cmpxchg ok"; b[1].classList.add("ok");
+  document.getElementById("arenaB").querySelector(".tok").textContent = "42";
+  document.getElementById("arenaA").querySelectorAll(".core").forEach((core, i) => { if (i < 2) { core.textContent = "lock add"; core.classList.add("ok"); } });
+  document.getElementById("arenaA").querySelector(".tok").textContent = "43";
+}
+
+// Deck -----------------------------------------------------------------------------------------
+const slides = [...document.querySelectorAll(".slide")];
+const mainCount = slides.filter((slide) => !slide.classList.contains("backup")).length;
+const isStatic = new URLSearchParams(location.search).has("static");
+const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let current = 0, step = 0, startedAt = null;
+
+function stepsOf(slide) {
+  return Math.max(0, ...[...slide.querySelectorAll("[data-step]")].map((node) => Number(node.dataset.step)));
+}
+function show(index, atStep) {
+  current = Math.max(0, Math.min(slides.length - 1, index));
+  const slide = slides[current];
+  step = atStep === "last" ? stepsOf(slide) : (atStep || 0);
+  slides.forEach((other, i) => other.classList.toggle("active", i === current));
+  slide.querySelectorAll("[data-step]").forEach((node) => node.classList.toggle("on", isStatic || Number(node.dataset.step) <= step));
+  document.querySelectorAll("#slots span").forEach((slot, i) => {
+    slot.classList.toggle("now", i === current);
+    slot.classList.toggle("done", i < current && i < mainCount);
+  });
+  const backup = slide.classList.contains("backup");
+  document.getElementById("count").textContent = backup ? `B${current - mainCount + 1}` : `${current + 1} / ${mainCount}`;
+  history.replaceState(null, "", location.pathname + location.search + "#" + (current + 1));
+  arenaRun++;
+  if (slide.querySelector("#arenaA")) {
+    if (isStatic || reducedMotion) staticArenas(); else playArenas(arenaRun);
+  }
+  renderNotes();
+}
+function next() {
+  if (step < stepsOf(slides[current]) && !isStatic) show(current, step + 1);
+  else if (current < slides.length - 1) show(current + 1, 0);
+}
+function previous() {
+  if (step > 0 && !isStatic) show(current, step - 1);
+  else if (current > 0) show(current - 1, "last");
+}
+function clock(seconds) {
+  return String(Math.floor(seconds / 60)).padStart(2, "0") + ":" + String(Math.floor(seconds % 60)).padStart(2, "0");
+}
+function renderNotes() {
+  const slide = slides[current];
+  const budget = slides.slice(0, current + 1).reduce((sum, other) => sum + Number(other.dataset.time || 0), 0);
+  const elapsed = startedAt === null ? 0 : (Date.now() - startedAt) / 1000;
+  document.getElementById("notes-slide").textContent = `${document.getElementById("count").textContent}  ${slide.dataset.title} (${slide.dataset.time} s)`;
+  document.getElementById("notes-time").textContent = `${clock(elapsed)} of ${clock(budget)}`;
+  document.getElementById("notes-text").textContent = slide.querySelector(".notes")?.textContent || "";
+}
+function fit() {
+  const scale = Math.min(innerWidth / 1920, innerHeight / 1080);
+  document.getElementById("stage").style.transform = `scale(${scale}) translate(-50%, -50%)`;
+}
+function toggleOverview(force) {
+  const overview = document.getElementById("overview");
+  const open = force ?? !overview.classList.contains("show");
+  overview.classList.toggle("show", open);
+  if (open) {
+    overview.querySelectorAll("button").forEach((button, i) => button.classList.toggle("cur", i === current));
+    overview.querySelectorAll("button")[current].focus();
+  }
+}
+
+build();
+const slots = document.getElementById("slots");
+slides.forEach((slide) => {
+  const slot = document.createElement("span");
+  if (slide.classList.contains("backup")) slot.className = "backup";
+  slots.appendChild(slot);
+});
+const overview = document.getElementById("overview");
+slides.forEach((slide, index) => {
+  const button = document.createElement("button");
+  const label = slide.classList.contains("backup") ? `B${index - mainCount + 1}` : String(index + 1);
+  button.innerHTML = `<b>${label}</b>${slide.dataset.title}`;
+  button.addEventListener("click", () => { toggleOverview(false); show(index, 0); });
+  overview.appendChild(button);
+});
+if (isStatic) document.body.classList.add("static");
+
+addEventListener("keydown", (event) => {
+  if (event.metaKey || event.ctrlKey || event.altKey) return;
+  const overviewOpen = overview.classList.contains("show");
+  if (event.key === "Escape") { toggleOverview(false); document.getElementById("help").classList.remove("show"); return; }
+  if (overviewOpen && event.key !== "o" && event.key !== "O") return;
+  if (startedAt === null && ["ArrowRight", " ", "PageDown", "Enter"].includes(event.key)) startedAt = Date.now();
+  switch (event.key) {
+    case "ArrowRight": case " ": case "PageDown": case "Enter": event.preventDefault(); next(); break;
+    case "ArrowLeft": case "PageUp": case "Backspace": event.preventDefault(); previous(); break;
+    case "Home": show(0, 0); break;
+    case "End": show(mainCount - 1, 0); break;
+    case "n": case "N": document.getElementById("notes").classList.toggle("show"); break;
+    case "t": case "T": startedAt = Date.now(); renderNotes(); break;
+    case "o": case "O": toggleOverview(); break;
+    case "b": case "B": show(slides[current].classList.contains("backup") ? mainCount - 1 : mainCount, 0); break;
+    case "f": case "F": if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen(); break;
+    case "?": document.getElementById("help").classList.toggle("show"); break;
+  }
+});
+addEventListener("resize", fit);
+setInterval(() => { if (document.getElementById("notes").classList.contains("show")) renderNotes(); }, 1000);
+fit();
+show(Math.max(1, Number(location.hash.slice(1)) || 1) - 1, 0);
+</script>
+</body>
+</html>
