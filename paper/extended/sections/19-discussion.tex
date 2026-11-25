@@ -67,7 +67,7 @@ like these.
 0.4 to 0.5~ms of sequential work in a browser to get half the ideal
 speedup, three to four times what native code needs, and more if it is
 called once and cold.
-\item Inside a region, Rayon's adaptive split is within 3\% of the best
+\item Inside a region (Section~\ref{sec:grain}), Rayon's adaptive split is within 3\% of the best
 fixed grain at these sizes in the three environments; there is no reason
 to tune the grain per environment.
 \item Avoid shared counters, as natively: they do not scale anywhere.

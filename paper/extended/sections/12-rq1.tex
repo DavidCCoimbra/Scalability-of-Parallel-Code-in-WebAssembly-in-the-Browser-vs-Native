@@ -152,7 +152,7 @@ of the filter has no serial part: every row is processed in parallel and
 nothing else is timed. So $e$ here is not serial code, it is a cost of
 running in parallel, and Section~\ref{sec:why-rq1} attributes about half of
 it natively to the cores' own slower work on shared memory. For the local
-histogram $e$ is within $\pm0.01$ of zero from $N=4$ on.
+histogram $e$ is between $-0.008$ and $0.013$ from $N=4$ on.
 
 \input{tables/times}
 \input{tables/speedup}

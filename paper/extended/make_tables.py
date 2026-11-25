@@ -742,38 +742,62 @@ def counter_tables() -> None:
     loop = read("perf-loop-v3/perf-loop-v3-counters.csv")
     rises = read("perf-loop-v3/perf-loop-v3-rises.csv")
     shown = ("instructions", "cycles", "llc_misses", "l2_misses")
-    body = []
+    names = ("Instructions", "Cycles", "LLC misses", "L2 misses")
+    per_pixel: list[Cells] = []
+    over_one: list[Cells] = []
     for workload, k in configurations(loop):
-        if body:
-            body.append(())
+        if per_pixel:
+            per_pixel.append(())
+            over_one.append(())
         for env in ENVIRONMENTS:
-            one = [
-                pick(loop, environment=env, workload=workload, k=k, threads="1", counter=c)["per_pixel"]
-                for c in shown
-            ]
-            rise = [
-                interval(
-                    pick(rises, environment=env, workload=workload, k=k, counter=c),
-                    "over_one_thread",
-                    "low",
-                    "high",
+            label = (workload_label(workload, k), ENVIRONMENT_LABEL[env])
+            per_pixel.append(
+                (
+                    *label,
+                    *(
+                        interval(
+                            pick(loop, environment=env, workload=workload, k=k, threads="1", counter=c),
+                            "per_pixel",
+                            "low",
+                            "high",
+                        )
+                        for c in shown
+                    ),
                 )
-                for c in ("instructions", "cycles", "llc_misses", "l2_misses")
-            ]
-            body.append((workload_label(workload, k), ENVIRONMENT_LABEL[env], *one, *rise))
-    header = [
-        ("", "", r"\multicolumn{4}{c}{Per pixel at $N=1$}", r"\multicolumn{4}{c}{$N=8$ over $N=1$ [95\,\%]}"),
-        ("Workload", "Env.", "Instr.", "Cycles", "LLC", "L2", "Instr.", "Cycles", "LLC", "L2"),
-    ]
+            )
+            over_one.append(
+                (
+                    *label,
+                    *(
+                        interval(
+                            pick(rises, environment=env, workload=workload, k=k, counter=c),
+                            "over_one_thread",
+                            "low",
+                            "high",
+                        )
+                        for c in shown
+                    ),
+                )
+            )
     render(
         "counters-loop",
-        "Counters of the loop alone, by the difference of two pass counts (10 runs with one "
-        "pass and 10 with eight): per pixel at one thread, and the ratio of eight threads to one "
-        "with its 95\\,\\% bootstrap interval. LLC and L2 are cache misses.",
-        "ll" + "r" * 4 + "c" * 4,
-        header,
-        body,
+        "Counters of the loop alone at one thread, per pixel, by the difference of two pass "
+        "counts (10 runs with one pass and 10 with eight), with 95\\,\\% bootstrap intervals. "
+        "LLC and L2 are cache misses.",
+        "llcccc",
+        [("Workload", "Environment", *names)],
+        per_pixel,
         size=r"\scriptsize",
+        fit=True,
+    )
+    render(
+        "counters-loop-rises",
+        "Counters of the loop alone: the count per pixel with eight threads over the count with "
+        "one, with 95\\,\\% bootstrap intervals.",
+        "llcccc",
+        [("Workload", "Environment", *names)],
+        over_one,
+        size=r"\footnotesize",
         fit=True,
     )
 
@@ -927,40 +951,44 @@ def grain_tables() -> None:
 
 def extras_tables() -> None:
     rows = read("extras-v3/extras-v3-scaling.csv")
-    body: list[Cells] = []
+    ordered = sorted(configurations(rows), key=lambda pair: (pair[1] == "", int(pair[1] or 0)))
+    times: list[Cells] = []
+    speedups: list[Cells] = []
     last = ""
-    for workload, k in sorted(configurations(rows), key=lambda pair: (pair[1] == "", int(pair[1] or 0))):
-        if body and k != last:
-            body.append(())
+    for workload, k in ordered:
+        if times and k != last:
+            times.append(())
+            speedups.append(())
         last = k
         native = pick(rows, environment="native", workload=workload, k=k, threads="8")
         cells: list[str] = []
+        gains: list[str] = []
         for env in ENVIRONMENTS:
             one = pick(rows, environment=env, workload=workload, k=k, threads="1")
             eight = pick(rows, environment=env, workload=workload, k=k, threads="8")
             cells.extend((milliseconds(one["center_ns"]), milliseconds(eight["center_ns"])))
-            cells.append(interval(eight, "speedup", "speedup_low", "speedup_high"))
             if env != "native":
                 cells.append(f"{float(eight['center_ns']) / float(native['center_ns']):.2f}")
-        body.append((workload_label(workload, k), *cells))
-    header = [
-        (
-            "",
-            r"\multicolumn{3}{c}{Native}",
-            r"\multicolumn{4}{c}{Chrome}",
-            r"\multicolumn{4}{c}{Firefox}",
-        ),
-        ("Workload", "$T_1$", "$T_8$", "$S_8$", *("$T_1$", "$T_8$", "$S_8$", "/nat.") * 2),
-    ]
+            gains.append(interval(eight, "speedup", "speedup_low", "speedup_high"))
+        times.append((workload_label(workload, k), *cells))
+        speedups.append((workload_label(workload, k), *gains))
     render(
         "extras",
-        "Extras campaign (5400 runs): time in ms at $N=1$ and 8, speedup at $N=8$ with its "
-        "95\\,\\% interval, and the time at $N=8$ over the native one.",
-        "l" + "rrc" + "rrcr" * 2,
-        header,
-        body,
-        size=r"\scriptsize",
-        fit=True,
+        "Extras campaign (5400 runs): time in ms at $N=1$ and 8, and the time at $N=8$ over the "
+        "native one.",
+        "l" + "rr" + "rrr" * 2,
+        [
+            ("", r"\multicolumn{2}{c}{Native}", r"\multicolumn{3}{c}{Chrome}", r"\multicolumn{3}{c}{Firefox}"),
+            ("Workload", "$T_1$", "$T_8$", *("$T_1$", "$T_8$", "/nat.") * 2),
+        ],
+        times,
+    )
+    render(
+        "extras-speedup",
+        "Extras campaign: speedup at $N=8$ with its 95\\,\\% bootstrap interval.",
+        "lccc",
+        [("Workload", *(ENVIRONMENT_LABEL[env] for env in ENVIRONMENTS))],
+        speedups,
     )
 
     weak = read("weak-v3/weak-v3-scaling.csv")
