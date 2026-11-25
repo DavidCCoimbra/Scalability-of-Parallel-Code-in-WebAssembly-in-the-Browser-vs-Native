@@ -1,1 +1,118 @@
-% 19-discussion
+\section{Discussion and Conclusions}
+\label{sec:discussion}
+
+\subsection{RQ1}
+
+\emph{How do relative speedup and efficiency of the same parallel code
+evolve with the number of threads, natively and in WASM in the browser?}
+
+With enough work per parallel region, the same way. On a loop with no
+synchronization the efficiency falls slowly with $N$, to 0.87 at eight
+threads natively and in Chrome and 0.92 in Firefox; Chrome's speedup is
+within about 1\% of native's, and the browser over native time ratio does
+not grow with $N$, in strong and in weak scaling. A loop that does not
+touch shared memory scales almost ideally in the three environments (the
+local histogram, 0.98 to 1.06).
+
+WASM costs a constant factor per thread, 1.17 in Chrome and 1.36 in Firefox
+on the filter, measured here as a third more instructions per pixel run at
+different rates. That factor divides with the work. What does not divide is
+the fixed cost of a parallel region, six to ten times larger in the
+browsers: negligible for regions of milliseconds, half of the time for
+regions of about 0.4~ms at eight threads.
+
+The one significant RQ1 difference, Firefox's higher speedup, is not
+evidence that a browser runs threads better. The sub-linear speedup of the
+filter is not a serial fraction (the timed region has none) but a cost of
+eight threads sharing memory, and a slower loop asks less of the memory:
+across three builds and three environments, the faster one thread reads
+memory the less eight threads gain. Firefox is the slowest environment at
+every thread count. This explanation is supported by counters, by the SIMD
+builds, natively by the image size, and by one intervention inside each
+engine; none of them intervenes on the memory itself, and about half of the
+native loss is time outside the loop that was not measured.
+
+\subsection{RQ2}
+
+\emph{To what extent does synchronization between threads affect the
+scalability gap between WASM and native?}
+
+It depends on the engine, and on how the contention is spread. In Chrome,
+relative to the lock-free control, shared atomic counters cost 1.4 to 2.3
+times what they cost natively when contention is concentrated, and 0.42
+times when it is spread over 256 counters. In Firefox they cost what they
+cost natively in absolute time; its ratios below 1 come from a slower
+control, not from cheaper synchronization.
+
+The difference is a compiler's choice, not a property of WASM threads.
+Memory ordering is not the reason: WASM atomics are sequentially
+consistent~\cite{watt2019}, but on x86 an atomic add costs the same
+whatever ordering is asked~\cite{schweizer2015}. V8's optimizing compiler
+turns an atomic add whose result is unused into a compare-and-swap loop.
+That sequence is slower uncontended, is retried once in four adds under
+concentrated contention, and is faster when eight cores spread over 256
+lines. A native program with the same sequence reproduces Chrome's times in
+both directions; the same engine with its baseline compiler, and the other
+engine, show no penalty at $k=1$. One source and one set of flags do not
+give one instruction stream, so a statement about ``WASM atomics'' is a
+statement about an engine version.
+
+\subsection{For developers}
+
+\begin{itemize}[leftmargin=1.5em]
+\item Porting a data-parallel loop to WASM threads keeps its scaling and
+costs a constant factor; expect 1.2 to 1.4 times the native time on loops
+like these.
+\item Keep parallel regions coarse. At eight threads a region needs about
+0.4 to 0.5~ms of sequential work in a browser to get half the ideal
+speedup, three to four times what native code needs, and more if it is
+called once and cold.
+\item Inside a region, Rayon's adaptive split is within 3\% of the best
+fixed grain at these sizes in the three environments; there is no reason
+to tune the grain per environment.
+\item Avoid shared counters, as natively: they do not scale anywhere.
+Privatize and merge. Where atomics are unavoidable, give each its own cache
+line, and do not assume that their cost in one engine predicts another.
+\end{itemize}
+
+\subsection{For benchmarkers}
+
+\begin{itemize}[leftmargin=1.5em]
+\item A CPU mask, a fresh profile and a pinned version do not by
+themselves confine, quiet and freeze a browser. Record the state with every
+run and reject runs by rules fixed in advance.
+\item Read the machine code. Both findings of this study, and two of our
+own mistakes, were visible only there.
+\item A relative speedup needs its baseline: a slower environment can
+scale better because it is slower.
+\item Whole-run hardware counters of a browser are mostly not the code
+under test.
+\item Write the prediction before the test. One of ours failed in part,
+and it is the most informative line of Section~\ref{sec:why-rq2}.
+\end{itemize}
+
+\subsection{What stays open}
+
+The mechanism that makes a compare-and-swap loop faster than a locked add
+when eight cores spread over 256 padded counters. Why SpiderMonkey's filter
+loop, as long as V8's, runs fewer instructions per cycle, and why its local
+histogram misses more caches with one thread. What Chrome loses outside the
+loop at eight threads, and whether the idle and wake path of the WASM
+thread pool is what makes the browsers' fork-join slower. The efficiency
+dip at six and seven threads. What sets the state of contention of a run
+at $k=1$. The slow early iterations of one Firefox cell. And everything
+outside this design: other machines, turbo, other engine versions, locks
+and irregular parallelism.
+
+\subsection{Conclusion}
+
+The same Rust/Rayon code scales in the browser as natively when each
+parallel region has enough work: WASM threads cost a roughly constant
+factor and a slower fork-join, and where a browser scales better it is
+because its code is slower on a memory-bound loop. Shared atomics widen the
+gap in Chrome under concentrated contention and narrow it under spread
+contention; Firefox is never worse than native. The cause is V8's
+compare-and-swap loop for an atomic add, reproduced natively and absent
+from V8's other compiler. The study was measured twice in full; the second
+measurement, with its corrections and a rule for adopting it fixed in
+advance, gives the same ten decisions as the first.

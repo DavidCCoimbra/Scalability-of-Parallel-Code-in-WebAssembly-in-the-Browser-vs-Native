@@ -181,6 +181,25 @@ and $N$.}
 \input{tables/cutoff}
 \input{tables/cutoff-estimates}
 
+\begin{figure}[tbp]
+\centering
+\begin{tikzpicture}[font=\scriptsize, x=1cm, y=1cm]
+  \node[anchor=east] at (0,1.5) {large region};
+  \draw[fill=native!20] (0.1,1.25) rectangle ++(6.0,0.5) node[midway] {work $W/N$};
+  \draw[fill=chrome!30] (6.1,1.25) rectangle ++(0.25,0.5);
+  \node[anchor=west] at (6.45,1.5) {$F$: under 3\% of $T_N$};
+  \node[anchor=east] at (0,0.6) {small region};
+  \draw[fill=native!20] (0.1,0.35) rectangle ++(0.9,0.5) node[midway] {$W/N$};
+  \draw[fill=chrome!30] (1.0,0.35) rectangle ++(0.9,0.5) node[midway] {$F$};
+  \node[anchor=west] at (2.0,0.6) {$W = NF$: half of $T_N$ is fork-join, efficiency 0.5};
+\end{tikzpicture}
+\caption{The fork-join model $T_N = W/N + F$. The work of a region divides
+by $N$; its fixed cost $F$ does not, and $F$ is six to ten times larger in
+the browsers.}
+\Description{Two bars: a long bar of work with a small fork-join part, and a short bar where work and fork-join are equal.}
+\label{fig:forkjoin-model}
+\end{figure}
+
 \begin{itemize}[leftmargin=1.5em]
 \item \emph{No size measured reached break-even.} The speedup is above 1 at
 every size and thread count, in every environment: even at 512$^2$ eight
@@ -191,7 +210,7 @@ the filter (Table~\ref{tab:cutoff-estimates}): 125~\textmu s of sequential
 work natively, 396 in Chrome and 459 in Firefox. A region must hold about
 three to four times more work in a browser than natively before eight
 threads pay half of what they could.
-\item \emph{The fork-join model.} $T_N = W/N + F$, with $W$ the work of a
+\item \emph{The fork-join model} (Figure~\ref{fig:forkjoin-model}). $T_N = W/N + F$, with $W$ the work of a
 region and $F$ the warm fork-join cost of these campaigns' calibration
 (10.8, 105 and 60~\textmu s), predicts efficiency 0.5 at $W = NF$: 86, 840
 and 480~\textmu s. The measured 125, 396 and 459 agree for Firefox, are 1.5

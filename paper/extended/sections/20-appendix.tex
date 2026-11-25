@@ -1,1 +1,56 @@
-% appendix
+\section{Campaigns, Records and Tables}
+\label{sec:appendix}
+
+\begin{table}[htbp]
+\caption{Every campaign of \code{measured/v3}: what it runs and what it is
+for. Run counts and durations are in Table~\ref{tab:quality}. Every cell
+has 30 runs unless stated.}
+\label{tab:campaigns}
+\centering\scriptsize
+\begin{tabular}{p{0.14\linewidth}p{0.42\linewidth}p{0.36\linewidth}}
+\toprule
+Campaign & Cells & Purpose \\
+\midrule
+campaign & Filter; atomic and local histograms at $k=1$, 4, 16, 256; $N=1$, 2, 4, 6, 7, 8; sequential references at $N=1$; three environments & RQ1 and RQ2 (primary); sequential references (descriptive) \\
+tier & Filter, both histograms at $k=1$ and 256; $N=1$, 8; each browser as shipped, optimizing only, baseline only; native & Which compiler is measured; the RQ2 cause \\
+perf & Atomic histogram at $k=1$ and 256, filter, local histogram at $k=256$; $N=1$, 8; hardware counters & Retries and line transfers per atomic add \\
+perf-loop1, perf-loop8 & Filter, local histogram at $k=16$ and 256; $N=1$, 8; one and eight passes; 10 runs per cell & Counters of the loop alone \\
+simd-scalar, simd-avx2 & Filter; six thread counts; no SIMD in the three environments; AVX2 natively & What the scaling owes to memory throughput \\
+cutoff (five sizes) & Filter, local histogram at $k=256$; sides 512 to 8192; $N=1$, 2, 4, 8; repeated passes & Where parallelizing stops paying \\
+cutoff-control (two) & The same natively at 512 and 2048 with one pass & What repeated passes hide \\
+grain-threads & Local histogram at $k=16$; $N=1$, 6, 7, 8; adaptive split and two fixed grains & The dip at six and seven threads \\
+grain-1024, grain-8192 & Filter, local histogram at $k=256$, atomic histogram at $k=256$ (8192 only); $N=8$; fixed grains in powers of two & The best task size per environment \\
+weak & Filter, local histogram at $k=1$; image $8192 \times 1024N$ & Weak scaling \\
+extras & Local, private, shared and packed histograms at $k=1$ and 256; two sorts; six thread counts & The cost of the atomic instruction, false sharing, allocation \\
+hybrid & Filter, local histogram at $k=1$; $N=1$, 8, 12, 16, 20; P-cores and 12 E-cores & Heterogeneous cores \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{table}[htbp]
+\caption{Where each section comes from: the decision records (numbered as
+in the repository's \code{docs/adr}) and the committed tables or data.}
+\label{tab:sources}
+\centering\scriptsize
+\begin{tabular}{p{0.25\linewidth}p{0.24\linewidth}p{0.43\linewidth}}
+\toprule
+Section & Decision records & Tables and data \\
+\midrule
+\ref{sec:overview} Overview, builds & 0062, 0069, 0084, 0095 & \\
+\ref{sec:platform} Platform & 0001, 0002, 0025, 0028, 0035, 0040, 0042, 0083, 0085, 0094 & \code{data/checks/core-check}, campaign \code{sysinfo}, \code{campaign-v3-core-split} \\
+\ref{sec:builds} Builds & 0004, 0009, 0017, 0062, 0076, 0086 & \code{data/sessions/v3/build} \\
+\ref{sec:workloads} Workloads & 0008, 0011 to 0014, 0026, 0049, 0052, 0075 & \code{data/earlier/pilot} (padding) \\
+\ref{sec:harness} Harness, gate & 0005, 0006, 0015, 0016, 0018 to 0023, 0027, 0029 to 0034, 0087 & \code{data/checks/gate-v3}, \code{gate2-v3} \\
+\ref{sec:pilots} Pilots & 0041, 0043 to 0051 & \code{data/earlier/pilot} \\
+\ref{sec:plan} Analysis plan & 0036 to 0039, 0047, 0051, 0078, 0081, 0082 & \\
+\ref{sec:quality} Data quality & 0051, 0087 & \code{*-quality.md}, \code{campaign-v3-distributions} \\
+\ref{sec:rq1} RQ1 & 0003, 0030, 0039, 0060, 0076, 0082, 0091, 0095 & \code{campaign-v3-scaling}, \code{-contrasts}, \code{-sequential}, \code{-throughput}, \code{-fork-join}, \code{-karp-flatt} \\
+\ref{sec:rq2} RQ2 & 0026, 0037, 0078, 0095 & \code{campaign-v3-contrasts}, \code{-rq2-decomposition}, \code{-robustness}, \code{-sensitivity} \\
+\ref{sec:why} Explanations & 0088 to 0091 & \code{tier-v3}, \code{perf-v3}, \code{perf-loop-v3}, \code{simd-v3}, \code{grain-threads-v3}, \code{data/probes} \\
+\ref{sec:exploratory} Exploratory & 0052 to 0059, 0061, 0064 to 0067, 0092 to 0094 & \code{extras-v3}, \code{weak-v3}, \code{hybrid-v3}, \code{cutoff-v3}, \code{grain-v3} \\
+\ref{sec:problems} Problems & 0045, 0048, 0069 to 0071, 0085 to 0087, 0090, 0094 & \\
+\ref{sec:threats} Threats & 0080, as amended by 0085, 0087, 0091 & \\
+\ref{sec:reproducibility} Reproducibility & 0027, 0034, 0062, 0083, 0086, 0094, 0095 & \code{data/README.md} \\
+\bottomrule
+\end{tabular}
+\end{table}
