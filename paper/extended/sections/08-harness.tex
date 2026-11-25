@@ -37,7 +37,7 @@ the same kind of scope with the same mask and writes the same pair of files
   \node[ph, fill=gray!25, minimum width=26mm, right=of cal] (warm) {warm-up\\$W$ iterations};
   \node[ph, fill=native!25, minimum width=44mm, right=of warm] (meas) {10 measured iterations\\run value = their median};
   \node[ph, fill=gray!10, minimum width=20mm, right=of meas] (post) {write or\\post rows};
-  \draw[decorate] ($(warm.south west)+(0,-3mm)$) -- node[below, font=\scriptsize, yshift=-1mm] {one iteration: \code{prepare} (untimed), \code{run} (timed), \code{checksum} (untimed, one thread)} ($(meas.south east)+(0,-3mm)$);
+  \draw ($(warm.south west)+(0,-3mm)$) -- node[below, font=\scriptsize, yshift=-1mm] {one iteration: \code{prepare} (untimed), \code{run} (timed), \code{checksum} (untimed, one thread)} ($(meas.south east)+(0,-3mm)$);
   \draw ($(warm.south west)+(0,-3mm)$) -- ++(0,1.5mm);
   \draw ($(meas.south east)+(0,-3mm)$) -- ++(0,1.5mm);
   \node[font=\scriptsize, above=1mm of pool.north east, anchor=south] {memory sample 1};
