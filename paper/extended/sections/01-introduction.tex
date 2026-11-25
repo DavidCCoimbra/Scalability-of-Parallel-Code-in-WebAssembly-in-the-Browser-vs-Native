@@ -34,8 +34,8 @@ holds. We ask:
 \end{enumerate}
 
 \paragraph{The answers in one paragraph.} RQ1: with enough work per parallel
-region, WASM threads scale like native code and cost a constant factor in
-time; the browsers' fork-join is several times slower, which matters only
+region, WASM threads scale like native code and cost a factor in time that does
+not grow with the threads; the browsers' fork-join is several times slower, which matters only
 for small regions. RQ2: the effect of synchronization is a property of the
 engine's compiler, not of WASM threads. Chrome pays more than native under
 concentrated contention and less under spread contention, because of one

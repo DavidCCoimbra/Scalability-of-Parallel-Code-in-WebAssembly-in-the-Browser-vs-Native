@@ -14,7 +14,7 @@ not grow with $N$, in strong and in weak scaling. A loop that does not
 touch shared memory scales almost ideally in the three environments (the
 local histogram, 0.98 to 1.06).
 
-WASM costs a constant factor per thread, 1.17 in Chrome and 1.36 in Firefox
+WASM costs a factor per thread, 1.17 in Chrome and 1.36 in Firefox
 on the filter, measured here as a third more instructions per pixel run at
 different rates. That factor divides with the work. What does not divide is
 the fixed cost of a parallel region, six to ten times larger in the
@@ -48,11 +48,13 @@ The difference is a compiler's choice, not a property of WASM threads.
 Memory ordering is not the reason: WASM atomics are sequentially
 consistent~\cite{watt2019}, but on x86 an atomic add costs the same
 whatever ordering is asked~\cite{schweizer2015}. V8's optimizing compiler
-turns an atomic add whose result is unused into a compare-and-swap loop.
+turns an atomic add into a compare-and-swap loop.
 That sequence is slower uncontended, is retried once in four adds under
-concentrated contention, and is faster when eight cores spread over 256
-lines. A native program with the same sequence reproduces Chrome's times in
-both directions; the same engine with its baseline compiler, and the other
+concentrated contention, and is faster, for a reason not shown, when eight
+cores spread over 256 lines. A native program with the same sequence gives
+Chrome's one-thread times within 3\% and both directions of the effect
+(14 to 17\% from Chrome with eight threads), which shows the sequence is
+enough on this CPU, not that nothing else contributes; the same engine with its baseline compiler, and the other
 engine, show no penalty at $k=1$. One source and one set of flags do not
 give one instruction stream, so a statement about ``WASM atomics'' is a
 statement about an engine version.
@@ -61,7 +63,7 @@ statement about an engine version.
 
 \begin{itemize}[leftmargin=1.5em]
 \item Porting a data-parallel loop to WASM threads keeps its scaling and
-costs a constant factor; expect 1.2 to 1.4 times the native time on loops
+costs a factor that does not grow with the threads; expect 1.2 to 1.4 times the native time on loops
 like these.
 \item Keep parallel regions coarse. At eight threads a region needs about
 0.4 to 0.5~ms of sequential work in a browser to get half the ideal
@@ -107,12 +109,13 @@ and irregular parallelism.
 \subsection{Conclusion}
 
 The same Rust/Rayon code scales in the browser as natively when each
-parallel region has enough work: WASM threads cost a roughly constant
-factor and a slower fork-join, and where a browser scales better it is
+parallel region has enough work: WASM threads cost a factor that does not
+grow with the threads and a slower fork-join, and where a browser scales better it is
 because its code is slower on a memory-bound loop. Shared atomics widen the
 gap in Chrome under concentrated contention and narrow it under spread
-contention; Firefox is never worse than native. The cause is V8's
-compare-and-swap loop for an atomic add, reproduced natively and absent
-from V8's other compiler. The study was measured twice in full; the second
-measurement, with its corrections and a rule for adopting it fixed in
-advance, gives the same ten decisions as the first.
+contention; in Firefox they never cost more. The penalty follows V8's
+compare-and-swap loop for an atomic add, absent from V8's other compiler
+and reproduced natively; its advantage under spread contention is
+reproduced but not explained. The reported build replicates the one before
+it, with corrections and a rule for adopting it fixed in advance, and gives
+the same ten decisions.

@@ -55,7 +55,7 @@ Section~\ref{sec:why-superlinear}), and a dip of the efficiency at six and
 seven threads that recovers at eight, in every environment
 (Section~\ref{sec:dip}).
 
-\subsection{Absolute time: a constant factor}
+\subsection{Absolute time: a factor that does not grow}
 
 A speedup compares an environment with itself.
 Table~\ref{tab:absolute} and Figure~\ref{fig:absolute} give the time in the
@@ -64,7 +64,8 @@ for the filter (Chrome 1.172 times native [1.167, 1.177], Firefox 1.363
 [1.356, 1.372]) and for the local histogram at $k \geq 16$ (1.23 to 1.27
 times), and within 7\% at $k \leq 4$. The ratio does not grow with $N$:
 for the filter at eight threads it is 1.177 in Chrome and 1.292 in Firefox.
-WASM threads cost a constant factor in time, not scalability.
+WASM threads cost time, not scalability; in Firefox the factor even falls
+with $N$.
 
 One cell goes the other way: at $k=1$ Chrome's local histogram is 2.7\%
 \emph{faster} than native (0.973 [0.972, 0.974]). With every pixel on one
@@ -114,7 +115,7 @@ Firefox.
 \subsection{Fork-join: what does not divide with the work}
 \label{sec:forkjoin}
 
-The constant factor divides with the work; the cost of starting and ending
+That factor divides with the work; the cost of starting and ending
 a parallel region does not. The calibration of every run measures it
 (Table~\ref{tab:fork-join}). With the workers awake (warm), an empty
 \code{broadcast} at $N=8$ takes 110~\textmu s in Chrome and 60~\textmu s in

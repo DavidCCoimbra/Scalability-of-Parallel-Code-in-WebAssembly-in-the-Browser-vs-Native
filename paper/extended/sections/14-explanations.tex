@@ -200,9 +200,9 @@ thread at every $k$, 415~ms at $k=256$ with eight.
 The engine arms show that the effect follows the compiler; the probe
 isolates the increment. Together: the cost of Chrome's atomic histogram at
 $k=1$ is the compare-and-swap sequence of V8's optimizing compiler
-(question 6, answered). It costs more already with one thread because at
-$k=1$ the loop becomes a chain through memory, each load waiting for the
-previous locked write.
+(question 6, answered). That it costs more already with one thread fits a
+chain through memory at $k=1$, each load waiting for the previous locked
+write; this was not tested by itself.
 
 \paragraph{Retries, counted.} A separate campaign (720 runs) ran
 \code{perf stat} on the P-cores during the runs
