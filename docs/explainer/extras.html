@@ -81,9 +81,7 @@
     </ul>
     <div data-code="bench/src/workloads/histogram/extras/private.rs|let own =|3" data-title="Private atomics: each worker adds to its own table"></div>
     <p><b>Answer 1: it is partly the instruction.</b> Private atomics, with nothing shared, scale like the local
-      control, but still cost Chrome 1.83 to 1.85 times native at k = 1 and 1.08 to 1.09 at k = 256, at every N
-      including N = 1. Firefox matches native. So of Chrome's 2.16 at k = 1 with real sharing, 1.85 is the atomic
-      sequence itself and the rest is the sharing (<a href="why.html#code">the machine code</a>).</p>
+      control, but still cost Chrome 1.83 to 1.85 times native at k = 1 and 1.08 to 1.09 at k = 256, at every N including N = 1. Firefox matches native. So of Chrome's 2.06 at k = 1 with real sharing in this campaign, about 1.85 is already there with nothing shared. This campaign has times only, so by itself it cannot say what that excess is; it has the shape that the native probe found for the compare-and-swap sequence (slow at k = 1, close to the locked add at k = 256), and the probe is what shows the cause (<a href="why.html#probe">The test: change only the add</a>).</p>
     <p><b>Answer 2: yes, it depends on the padding.</b> Packed counters at k = 256 slow the atomic histogram by 1.18
       times natively, 1.25 in Firefox and <b>3.45 in Chrome</b>. Chrome's advantage under spread contention needs every
       counter on its own line.</p>
@@ -94,8 +92,7 @@
     <div class="card"><div id="w-private"></div></div>
     <p class="src" data-src="extras-v3-scaling"></p>
     <details class="deeper"><summary>If you already know this: the reproduction check and the sort</summary>
-      <p>The cells this campaign shares with the primary one reproduce it (time ratios 0.95 to 1.05, geometric mean
-        1.00), which is the control for comparing the two. The campaign also carries a parallel sort as a third kind
+      <p>The cells this campaign shares with the primary one reproduce it (time ratios 0.96 to 1.08, geometric mean 1.00; the widest are the shared counters at k = 1, the cells that fall on several time levels from run to run), which is the control for comparing the two. The campaign also carries a parallel sort as a third kind
         of workload: it scales similarly in all three (stable 7.8, unstable 6.2 to 6.4 at N = 8), see the table's
         "sort" tab.</p>
     </details>
@@ -108,9 +105,7 @@
     <div class="controls-row"><span class="muted">Workload:</span><span id="w-weak-wl"></span></div>
     <div class="card"><div id="w-weak"></div></div>
     <p class="src" data-src="weak-v3-scaling"></p>
-    <p><b>Answer 3: yes.</b> The filter's weak efficiency at N = 8 is 0.86, 0.85 and 0.91 (native, Chrome, Firefox),
-      the local histogram's 0.99 to 1.00, within 3 points of what strong scaling gave. Browser / native time stays flat
-      in Chrome (1.16 to 1.21) and falls from 1.36 to 1.27 in Firefox: the browser gap does not grow with N here
+    <p><b>Answer 3: yes.</b> The filter's weak efficiency at N = 8 is 0.86, 0.85 and 0.92 (native, Chrome, Firefox), the local histogram's 0.99 to 1.00, within 2 points of what strong scaling gave. Browser / native time stays flat in Chrome (1.16 to 1.20) and falls from 1.36 to 1.28 in Firefox: the browser gap does not grow with N here
       either.</p>
     <div class="why"><b>Why ask the question twice?</b> Strong scaling can hide a problem: with a fixed image, each
       thread's share gets smaller as N grows, so a per-thread cost could be masked by the shrinking work. Weak scaling
@@ -125,16 +120,11 @@
     <div class="controls-row"><span class="muted">Show:</span><span id="w-simd-what"></span></div>
     <div class="card"><div id="w-simd"></div></div>
     <p class="src" data-src="simd-v3-variants"></p>
-    <p><b>Answer 4: no, SIMD is not the cause.</b> Without SIMD the filter at N = 1 is 3.8 to 4.9 times slower, and the
-      browser gap is <i>larger</i>, not smaller (Chrome 1.47 to 1.50, Firefox 1.58 to 1.60, flat across N). The gap
-      comes from somewhere else.</p>
+    <p><b>Answer 4: no, SIMD is not the cause.</b> Without SIMD the filter at N = 1 is 3.9 to 4.9 times slower, and the browser gap is <i>larger</i>, not smaller (Chrome 1.48 to 1.50, Firefox 1.59 to 1.60, flat across N). The gap comes from somewhere else: the engines run about a third more instructions per pixel (<a href="explains.html#q3">question 3</a>).</p>
     <details class="deeper"><summary>If you already know this: the faster the code, the worse it scales</summary>
       <ul>
-        <li>Efficiency at N = 8 rises to 0.97 to 0.98 without SIMD, and drops to 0.73 with AVX2.</li>
-        <li>The excess time T<sub>8</sub> - T<sub>1</sub>/8 grows natively with the code's speed (211, 391 and 728 µs
-          for scalar, baseline and AVX2), as when cores share memory bandwidth. In the browsers it stays about constant
-          (Chrome 546 and 494, Firefox 330 and 316 µs), consistent with a fixed per-iteration overhead, of which
-          fork-join is a fifth to a third.</li>
+        <li>Efficiency at N = 8 rises to 0.97 to 0.98 without SIMD, and drops to 0.72 with AVX2. Across the three builds and the three runtimes, the faster one thread goes through memory, the less eight threads gain (<a href="explains.html#q1">question 1</a> has the chart).</li>
+        <li>The excess time T<sub>8</sub> - T<sub>1</sub>/8 grows natively with the code's speed (207, 424 and 748 µs for scalar, baseline and AVX2), as when cores share memory bandwidth. In the browsers it changes little (Chrome 569 and 515, Firefox 317 and 349 µs), consistent with a fixed per-iteration overhead, of which the fork-join is about a fifth.</li>
       </ul>
     </details>
 
@@ -145,16 +135,15 @@
     <div class="controls-row"><span class="muted">Workload:</span><span id="w-hyb-wl"></span></div>
     <div class="card"><div id="w-hybrid"></div></div>
     <p class="src" data-src="hybrid-v3-scaling, campaign-v3-scaling"></p>
-    <p><b>Answer 5: it works in all three.</b> The E-cores gain the filter 10 to 16% in every environment over the
-      main campaign's P-only N = 8, with browser / native 1.16 to 1.35. Work stealing balances unequal cores in all
+    <p><b>Answer 5: it works in all three.</b> The E-cores gain the filter 10 to 18% in every environment over the main campaign's P-only N = 8 (time at N = 8 there over time at N = 20 here), with browser / native 1.15 to 1.36. Work stealing balances unequal cores in all
       three runtimes.</p>
     <details class="deeper"><summary>If you already know this: speedups above N on the local histogram</summary>
-      <p>The local histogram at k = 1 reaches speedups above N (Chrome 29.4 at N = 20). That is not
+      <p>The local histogram at k = 1 reaches speedups above N (Chrome 29.5 at N = 20). That is not
         <span data-term="superlinear">super-linear</span> parallelism: the single-thread baseline is a store-forwarding
         chain on one counter (<a href="atomics.html#forwarding">Store forwarding at k = 1</a>), and ADR 0061 traces the
         excess to that loop running faster per core on an E-core than on a P-core. The evidence is a single-core probe
         on the earlier build (<code>data/earlier/probes/ecore-workloads.txt</code>), not repeated on <code>measured/v3</code>,
-        so it is given as the likely reason and without numbers.</p>
+        so it is given as the likely reason and without numbers. The cells with E-cores also vary more between the two builds than any other (up to 8%, where every P-core cell is within 1%): which threads the kernel puts on which kind of core is not controlled and not recorded per thread (ADR 0094).</p>
     </details>
     <div class="remember"><b>What to remember.</b> Chrome's atomic add is slow on its own, and its one advantage needs
       the padding. The RQ1 answer survives three changes of angle: more work with more threads, no SIMD, and slow

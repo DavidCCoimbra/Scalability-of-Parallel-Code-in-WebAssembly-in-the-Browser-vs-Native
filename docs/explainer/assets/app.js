@@ -67,7 +67,7 @@
     { id: "granularity", file: "granularity.html", title: "When parallelism pays", group: "5 · Results",
       sections: [["advice", "Advice for developers"], ["cutoff", "The cutoff campaign"], ["rule", "The 100:1 rule"], ["grain", "The grain U-curve"]] },
     { id: "pitfalls", file: "pitfalls.html", title: "Problems found and fixed", group: "5 · Results",
-      sections: [["mask", "Chrome escapes the CPU mask"], ["startup", "Firefox's start-up"], ["update", "A pinned Firefox updates itself"], ["v2", "Our own asymmetries: the v2 build"]] },
+      sections: [["mask", "Chrome escapes the CPU mask"], ["startup", "Firefox's start-up"], ["update", "A pinned Firefox updates itself"], ["v2", "Our own asymmetries: the v2 build"], ["core", "A core that computes wrongly"]] },
     { id: "threats", file: "threats.html", title: "Threats to validity", group: "5 · Results",
       sections: [["three", "The three that matter most"], ["internal", "Internal"], ["construct", "Construct"], ["external", "External"], ["conclusion", "Conclusion"]] },
     { id: "pieces", file: "pieces.html", title: "How the pieces talk", group: "6 · Working on it",

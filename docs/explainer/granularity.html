@@ -51,15 +51,13 @@
 
     <h2 id="advice">Advice for developers</h2>
     <div class="grid two">
-      <div class="card"><h3>Make parallel regions coarse</h3><p>With 8 threads in the browser, start a parallel
-        region only when it holds roughly <b>0.4 to 0.5 ms</b> of work as one thread would do it. Below that, more than
+      <div class="card"><h3>Make parallel regions coarse</h3><p>With 8 threads in the browser, start a parallel region only when it holds roughly <b>0.3 to 0.5 ms</b> of work as one thread would do it. Below that, more than
         half of what the threads could give is lost to starting and stopping them. Natively about <b>0.12 to 0.19 ms</b>
         is enough.</p></div>
       <div class="card"><h3>Let Rayon pick the task size</h3><p>Inside a region, the best size for each piece a thread
-        picks up is the same in all three runtimes, and Rayon's own choice is within 2.5% of it. Tuning it by hand
+        picks up is the same in all three runtimes, and Rayon's own choice is within 3% of it. Tuning it by hand
         for the browser gains almost nothing.</p></div>
-      <div class="card"><h3>Avoid or spread synchronization</h3><p>Shared atomic counters that every thread hits cost
-        Chrome up to 2.2 times what they cost natively (<a href="rq2.html">RQ2</a>). Give each thread its own counters
+      <div class="card"><h3>Avoid or spread synchronization</h3><p>Shared atomic counters that every thread hits cost Chrome up to 2.3 times what they cost natively (<a href="rq2.html">RQ2</a>). Give each thread its own counters
         and merge at the end, or spread the sharing over many padded counters.</p></div>
       <div class="card"><h3>Measure in the browser</h3><p>One source does not give one instruction stream: the engine
         rewrites your atomics its own way, and that is part of the cost (<a href="why.html">Why Chrome</a>).</p></div>
@@ -88,9 +86,7 @@
       it left. The study reads where each curve crosses it, and reports the work per call at that point:</div>
     <div id="w-est"></div>
     <p class="src" data-src="cutoff-estimates"></p>
-    <p>For the filter that is 123 µs of single-thread work natively, 399 in Chrome and 469 in Firefox: <b>the browsers
-      need 3 to 4 times the work native needs</b> to keep half the threads' worth. That is the "0.4 to 0.5 ms" of the
-      advice. In Firefox it is about the cost of 8 fork-joins (8 × 60 µs); natively it is 1.4 times that (8 × 10.8 µs).</p>
+    <p>For the filter that is 125 µs of single-thread work natively, 396 in Chrome and 459 in Firefox: <b>the browsers need 3 to 4 times the work native needs</b> to keep half the threads' worth. With the local histogram's 325 and 362 µs, that is the "0.3 to 0.5 ms" of the advice. In Firefox it is about the cost of 8 fork-joins (8 × 60 µs); natively it is 1.4 times that (8 × 10.8 µs). The fork-join of the browsers here is the campaign's median; Firefox's 20 µs clock makes it coarse.</p>
 
     <h2 id="rule">The 100:1 rule</h2>
     <p>A rule of thumb from the course: a parallel region should do at least 100 times the work its fork-join costs,
@@ -98,7 +94,7 @@
       this campaign measured (300 runs per environment), applied to the full 8192 x 8192 image at N = 8:</p>
     <div id="w-rule"></div>
     <p class="src" data-src="cutoff-model, cutoff-table"></p>
-    <p>Only native keeps the fork-join under 1% of the time at 8192² (0.33%; Firefox 1.45%, Chrome 2.7%). To reach
+    <p>Only native keeps the fork-join under 1% of the time at 8192² (0.33%; Firefox 1.4%, Chrome 2.7%). To reach
       the 1% line, the browsers need <b>6 to 10 times more work per region than native</b> (last column), because their
       fork-join costs that many times more.</p>
     <div class="def"><b>Two lines, two numbers.</b> "3 to 4 times the work" and "6 to 10 times the work" measure the
@@ -111,7 +107,7 @@
     <p>Inside one region, Rayon cuts the work into tasks that idle threads pick up
       (<a href="threads.html#grain">Grain size</a>). Cut too small, and the cost of handling each task dominates; cut
       too large, and there are too few tasks to keep all the threads busy. Somewhere in between is a flat bottom: the
-      U-curve. The grain sweep (4050 runs, N = 8) fixes the task size by hand and measures the time; <i>adaptive</i>
+      U-curve. The grain sweep (5400 runs, N = 8) fixes the task size by hand and measures the time; <i>adaptive</i>
       is Rayon's own split.</p>
     <div class="controls-row"><span class="muted">Workload:</span><span id="w-gwl"></span><span class="muted">Image:</span><span id="w-gside"></span></div>
     <div class="card"><div id="w-grain"></div><div id="w-grain-note" class="muted" style="font-size:var(--fs-sm)"></div></div>
@@ -120,8 +116,8 @@
       <li>At 8192² the best task is 4 rows for the filter and 64 to 128 KB for the local histogram, <b>in all three
         runtimes</b>. The bottom of the U is in the same place.</li>
       <li>Too fine: 1 KB histogram tasks cost 2.1 to 3.0 times the best. Too coarse: one task per thread, with nothing
-        left for an idle thread to pick up, costs 1.01 times the best natively and 1.13 to 1.16 in the browsers.</li>
-      <li>Rayon's adaptive split is within 2.5% of the best. Hence the advice: let it choose.</li>
+        left for an idle thread to pick up, costs 1.01 times the best natively and 1.11 to 1.16 in the browsers.</li>
+      <li>Rayon's adaptive split is within 3% of the best at 8192² (and 3 to 18% slower at 1024², where regions are small). Hence the advice: let it choose.</li> <li>The shared atomic histogram hardly cares: at k = 256 its time stays within 0.3% of the best natively, 0.6% in Chrome and 1.3% in Firefox over every grain from 1 KB to 8192 KB. Its time is set by the fight for the counters, not by how the image is cut.</li>
     </ul>
     <details class="deeper"><summary>If you already know this: the best grains, and the 100:1 rule applied per task</summary>
       <p>The 100:1 rule lands in or near the flat region of best grains when it is applied to the <b>cost per task</b>
@@ -131,8 +127,7 @@
       <p class="src" data-src="grain-best"></p>
     </details>
     <div class="remember"><b>What to remember.</b> Threads in the browser pay off the same way as native ones, but the
-      entry ticket is 3 to 10 times bigger. Make each parallel region worth about half a millisecond of work, and let
-      Rayon cut it up.</div>
+      entry ticket is 3 to 10 times bigger. Make each parallel region worth about a third to half a millisecond of work, and let Rayon cut it up.</div>
 
     <footer class="pager" id="pager"></footer>
   </article>

@@ -113,7 +113,7 @@
     <div id="w-q3"></div>
     <p class="src" data-src="perf-loop-v3-counters"></p>
     <p>Both engines run about a third more instructions per pixel than native code on the filter. Chrome gets
-      through them at a higher rate (more instructions per cycle) and ends about 1.17 times the native cycles.
+      through them at a higher rate (more instructions per cycle) and ends about 1.16 times the native cycles.
       Firefox runs them at the native rate or below, and ends about 1.36 times. Those two ratios are the time ratios
       of the main campaign: the counters and the clock tell the same story.</p>
     <div class="analogy"><b>Picture it.</b> Three cooks follow the same recipe. One was given it in 65 steps, the
@@ -175,10 +175,7 @@
       its efficiency at 8 threads than the 8192 x 8192 one (128 MB):</p>
     <div id="w-q1-cut"></div>
     <p class="src" data-src="cutoff-4096-v3-scaling, cutoff-8192-v3-scaling"></p>
-    <p>Natively this agrees. In the browsers it does not show (their efficiency is <i>lower</i> on the smaller
-      image, because the fixed cost of a parallel region weighs more there, see
-      <a href="granularity.html">When parallelism pays</a>), so the cutoff supports the reading natively and is not
-      clear for the browsers.</p>
+    <p>Natively this agrees. In the browsers it does not show: their efficiency is <i>lower</i> on the smaller image, not higher (on small images the fixed cost of a parallel region also weighs in, see <a href="granularity.html">When parallelism pays</a>). So the cutoff supports the reading natively and is not clear for the browsers.</p>
 
     <h2 id="q2">Question 2: why Firefox scales better</h2>
     <p>This is the one RQ1 contrast that came out different from native: Firefox's filter speedup at 8 threads is

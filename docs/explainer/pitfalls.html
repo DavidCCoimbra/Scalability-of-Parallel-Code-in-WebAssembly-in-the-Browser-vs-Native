@@ -46,10 +46,8 @@
       and the numbers look plausible. Each problem on this page is of that kind. They are part of the results because
       anyone who benchmarks a browser will meet them.</p>
     <div class="oneliner"><b>In one sentence:</b> telling a browser which cores to use, giving it a fresh profile and
-      installing a fixed version are not enough to confine it, quiet it and freeze it; and a review of our own measured
-      code found two asymmetries, fixed in the build <code>measured/v3</code>.</div>
-    <div class="def"><b>Pilot numbers on this page.</b> The numbers that found these problems come from pilots run
-      before the campaigns. They justify the fixes; they are not results of the study.</div>
+      installing a fixed version are not enough to confine it, quiet it and freeze it; a review of our own measured code found two asymmetries; and one core of the measuring PC turned out to compute wrongly when it runs fast.</div>
+    <div class="def"><b>Pilot numbers on this page.</b> The numbers that found these problems come from pilots and from the earlier build, <code>measured/v2</code>. They justify the fixes; they are not results of the study. Every fix was in place before the first run of <code>measured/v3</code>.</div>
     <p>Each problem is told the same way: what happened, why it would have fooled us, the fix, and the check that now
       catches it.</p>
 
@@ -90,24 +88,20 @@
 
     <h2 id="update">A pinned Firefox updates itself</h2>
     <p>The study pins Firefox 158.0, downloaded from Mozilla's archive, and the fresh profile turns automatic updates
-      off. On 2026-11-10, between two exploratory campaigns, the installed Firefox <b>updated itself in place to
+      off. On 2026-11-10, between two exploratory campaigns of the earlier build, the installed Firefox <b>updated itself in place to
       160.0</b> anyway. Only the enterprise policy <code>DisableAppUpdate</code> stops it (ADR 0071).</p>
     <div class="why"><b>Why this would have fooled us.</b> Two campaigns meant to compare the same Firefox would have
       compared two different ones, with whatever changed in the engine between them mixed into the result.</div>
     <ul>
-      <li><b>Caught:</b> strict validation checks the browser version of every run, and rejected all 2640 affected
-        exploratory runs.</li>
+      <li><b>Caught:</b> strict validation checks the browser version of every run, and rejected all 2640 affected exploratory runs of that build.</li>
       <li><b>Fix:</b> the installer writes the policy and reinstalls a moved install, and a campaign refuses to start
         when a browser is not the pinned version.</li>
-      <li><b>Repeated:</b> the 2640 runs were repeated on 158.0, in one block after native and Chrome rather than
-        interleaved. Four cells shared with the main campaign control the block: their time ratios to it average
-        1.000 to 1.001 in every environment, with the same spread as the interleaved ones.</li>
+      <li><b>Now:</b> on <code>measured/v3</code> the policy and the version check were in place from the first run, so every Firefox run of every campaign is 158.0 and interleaved with the others. No run was rejected for its version.</li>
     </ul>
     <div data-code="harness/browsers.py|# Firefox from archive.mozilla.org updates itself|4" data-title="The policy that keeps Firefox pinned"></div>
 
     <h2 id="v2">Our own asymmetries: the v2 build</h2>
-    <p>After the first campaigns, a review of the measured code against the textbook, the cited papers and the lectures
-      found two asymmetries the study had caused itself (ADR 0069):</p>
+    <p>After the very first campaigns, a review of the measured code against the textbook, the cited papers and the lectures found two asymmetries the study had caused itself. They were fixed in the build <code>measured/v2</code> (ADR 0069):</p>
     <ul>
       <li><b>A safety check only on one side of RQ2.</b> The shared-counter histograms indexed a table whose length the
         compiler did not know, so every pixel paid a bounds check (compare and branch) that the local control did not.
@@ -122,8 +116,7 @@
     <p>The fix: fixed-size counter tables (no per-pixel check; LLVM then unrolls the loop by 8 itself), and every
       histogram's timed run now ends with its final histogram. The checksums did not change.</p>
     <div data-code="bench/src/workloads/histogram/atomic.rs|fn run(|10" data-title="Reading the counters back is now timed, like the local merge"></div>
-    <p>Then <b>every reported campaign was re-run on the corrected build</b>, tagged <code>measured/v3</code>. Every
-      number in this guide comes from it; the earlier build's campaigns are not reported as results.</p>
+    <p>Then every campaign was re-run on the corrected build. Later the study was measured a third time, on <code>measured/v3</code>, which adds what v2 could only declare (<a href="session.html#twice">Why the study was measured twice</a>). <b>Every number in this guide comes from <code>measured/v3</code></b>; the earlier builds' campaigns are not reported as results.</p>
     <details class="deeper"><summary>If you already know this: why builds are never mixed</summary>
       <p>Builds are never mixed in one comparison because a change in code layout alone, with the same instructions,
         can change timing by a few percent (Mytkowicz et al. 2009). A refactor of the measured path is accepted only
@@ -131,9 +124,7 @@
         campaigns stay valid only for their own build (ADR 0062, <a href="changing.html#hotpath">Touching the measured
         code</a>).</p>
     </details>
-    <div class="remember"><b>What to remember.</b> Confining, quieting and freezing a browser each needs its own check,
-      not just its own setting; and a ratio only cancels what is truly the same on both sides. Every one of these is now
-      checked on every run.</div>
+    <h2 id="core">A core that computes wrongly</h2> <p>One of the PC's eight fast cores is degraded. With the desktop's usual settings (turbo on), a test pinned to it crashed in 17 of 18 tries. With turbo off, the setting of every measurement, it passed 30 of 30 and timed the filter as fast as the other cores.</p> <div class="why"><b>Why this would have fooled us.</b> A core that crashes is easy: you see it. A core that sometimes computes a wrong value and carries on is the dangerous one, and not only for the runs. The compiler that builds the measured program is a program too, and so is the analysis. That happened once: with the PC restored after the last campaign, an analysis command stopped with an error raised from inside Python's own statistics code, on data it reads without trouble elsewhere.</div> <ul> <li><b>Fix:</b> the measured build is made on the prepared PC, twice from scratch, and tagged only if both builds are byte for byte equal. Outside a prepared session, analysis on that PC runs pinned away from that core.</li> <li><b>Check:</b> every run has a checksum that must match across runtimes and thread counts, and CI regenerates every table on another machine and compares it with the committed one.</li> </ul> <p class="src" data-files="docs/adr/0085-per-core-check.md, docs/adr/0094-hybrid-on-v3.md"></p> <p>The whole story is on <a href="session.html#cores">The per-core check</a>.</p> <div class="remember"><b>What to remember.</b> Confining, quieting and freezing a browser each needs its own check, not just its own setting; a ratio only cancels what is truly the same on both sides; and the machine itself is part of what has to be checked. Every one of these is now checked on every run.</div>
 
     <footer class="pager" id="pager"></footer>
   </article>

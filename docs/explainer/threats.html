@@ -45,27 +45,20 @@
     <p class="lead">Every measurement can be wrong in ways its numbers do not show. A careful study ends by listing how
       it could be wrong, what was done about each, and what is left. This page does that for this study, in plain
       words first and then in full.</p>
-    <div class="oneliner"><b>In one sentence:</b> the known ways to be wrong are controlled or measured; what is left is
-      one machine, a possible crowding of the cores at N = 8 in Firefox, an explanation of Chrome that was observed but
-      not tested by changing something, and intervals that bound what "no difference" can mean.</div>
+    <div class="oneliner"><b>In one sentence:</b> the known ways to be wrong are controlled or measured; what is left is one machine, a possible crowding of the cores at N = 8, explanations that are supported to different degrees, and intervals that bound what "no difference" can mean.</div>
     <p>The four kinds of threat below are explained with an example each in
       <a href="validity.html">Four ways a study fools itself</a>.</p>
 
     <h2 id="three">The three that matter most</h2>
-    <p>Three threats are left open, and one limit applies to every "no difference" in the study:</p>
+    <p>Three things are left open, and one limit applies to every "no difference" in the study:</p>
     <div class="grid two">
       <div class="card"><h3>Only one machine</h3><p>Every number comes from one PC, one CPU, one operating system.
         Another CPU, especially one whose cores share cache lines differently, could move the RQ2 numbers. The study
         says what the machine is and does not claim more.</p></div>
-      <div class="card"><h3>Crowded cores at N = 8</h3><p>With 8 threads on 8 cores, the browser's own threads and the
-        worker that coordinates the run have nowhere else to go. A pilot was consistent with this costing Firefox
-        something at N = 8, but could not separate it from other effects, so Firefox's N = 8 results may include it.</p></div>
-      <div class="card"><h3>An explanation observed, not tested</h3><p>The counters show Chrome's loop retrying and
-        reading the line first. Nobody changed the loop and measured again, so the counters show the mechanism, not
-        proof that it is the whole cause. And why Chrome wins at k = 256 is not explained at all.</p></div>
+      <div class="card"><h3>Crowded cores at N = 8</h3><p>With 8 threads on 8 cores, the browser's own threads and the worker that coordinates the run have nowhere else to go. How much they take during a timed iteration was not established, so the N = 8 results of the browsers may include it.</p></div>
+      <div class="card"><h3>Explanations at different levels</h3><p>Why Chrome pays more for a shared counter was tested by changing one thing, the instructions of the add, and the effect followed. Why the same instructions win at k = 256 is a proposed mechanism. Why the filter scales as it does is supported by measurements that agree, not proven (<a href="explains.html">What explains the results</a>).</p></div>
       <div class="card" style="border-color: var(--accent)"><h3>And one limit: "no difference" is not "the same"</h3><p>When a comparison finds no difference, it only
-        means the difference is smaller than the interval could see: within about ±4% for RQ1 and ±6.5% for RQ2. A
-        3% real difference would pass unnoticed.</p></div>
+        means the difference is smaller than the interval could see: the widest intervals are shown below. A real difference smaller than that would pass unnoticed.</p></div>
     </div>
     <div class="stats" id="w-widths"></div>
     <p class="src" data-src="campaign-v3-contrasts"></p>
@@ -101,9 +94,7 @@
       <div id="w-conclusion"></div>
     </details>
     <p class="src" data-files="docs/adr/0080-threats-to-validity.md, paper/final/paper.tex"></p>
-    <div class="remember"><b>What to remember.</b> The results are solid for this machine and this setup, and honest
-      about their limits: one PC, a possible crowding at N = 8, an explanation seen but not tested, and a few percent
-      of difference that the intervals cannot see.</div>
+    <div class="remember"><b>What to remember.</b> The results are solid for this machine and this setup, came back the same when everything was measured again, and are honest about their limits: one PC, a possible crowding at N = 8, explanations that are tested, supported or open and labelled as such, and a few percent of difference that the intervals cannot see.</div>
 
     <footer class="pager" id="pager"></footer>
   </article>
@@ -181,29 +172,36 @@ window.page = function (UI) {
     ]));
   }
   list($("#w-internal"), [
-    ["Foreign work on the measured cores", "Shield of the P-cores, quiet mode, foreign CPU time recorded per run and runs above 0.25 s excluded (ADRs 0028, 0042, 0051); none was.", "The L3 cache and memory bandwidth are shared with the E-cores."],
+    ["Foreign work on the measured cores", "Shield of the P-cores, quiet mode, foreign CPU time recorded per run and runs above 0.25 s excluded (ADRs 0028, 0042, 0051); none was, in any v3 campaign.", "The L3 cache and memory bandwidth are shared with the E-cores. During the v3 campaigns the coding assistant stayed on under a no-command rule; load and foreign CPU time are those of the earlier campaign, which is evidence of the same quiet, not proof (ADR 0087)."],
     ["Browser processes outside the mask", "No session bus for the browsers; escaped processes recorded and required to be 0 (ADR 0045).", "Sampled once per run, at the end."],
-    ["Browser start-up work", "A 3 s start delay in every browser run (ADR 0048).", "Native has no delay; 3 s against 6 s differs by about 1%."],
-    ["Oversubscription at N = 8", "The browsers' own threads and the coordinating worker share the 8 cores; measured in a pilot.", "The pilot was consistent with oversubscription in Firefox but confounded, so Firefox's N = 8 primary contrasts may include it."],
-    ["Clock resolution", "8192² images, so every configuration is at least 100 times the browser clock (5 µs Chrome, 20 µs Firefox) (ADR 0041).", "Warm fork-join samples are close to the resolution."],
-    ["Warm-up and JIT tiers", "Warm-up W per workload, 1.5 times the worst observed, the same everywhere (ADR 0043).", "W comes from N = 1 and 8."],
-    ["Wrong results passing as fast ones", "A checksum per run, equal across environments and N; a conflict stops the analysis.", "None found."],
-    ["Drift and order", "One seeded random order over every run (ADR 0034); trends with the order reported before the analysis.", "Three of 162 configurations trend (about 1.1 expected by chance); kept."],
-    ["Browser version drift", "DisableAppUpdate policy, a version check before each campaign, strict validation per run (ADR 0071).", "The 2640 repeated Firefox runs ran in one block; their control covers only histogram cells, so the Firefox filter numbers of the weak, SIMD and E-core campaigns rest on it."],
-    ["Buffer placement", "Recorded per run (audit A2).", "Natively the filter's input and output share an offset modulo 4096, which understates its browser / native ratios by 1 to 2%."],
-    ["Degraded core and frequency", "Turbo off keeps every core at base clock; turbo and governor recorded per run.", "One core is slower, the same for every environment; the frequency itself is not logged."]
+    ["Browser start-up work", "A 3 s start delay in every browser run (ADR 0048).", "Native has no delay; 3 s against 6 s differed by about 1% in a pilot."],
+    ["Browser threads on the measured cores", "The browsers' own threads and the coordinating worker share the 8 cores at N = 8. Firefox reports a hardware concurrency of 32 and Chrome of 8, so Firefox sizes its helper threads for the whole machine.", "How much CPU, cache or memory bandwidth they take during a timed iteration is not established, so the N = 8 primary contrasts may include it."],
+    ["Thread placement", "A process-level mask, no per-thread pinning, because a browser cannot pin (ADR 0001). The busy time of every measured CPU is recorded per run.", "The kernel places the threads. The shared-atomic cells at k = 1 land on several time levels from run to run; a run's time follows its count of line transfers, and what sets the state of a run is not known (ADR 0091)."],
+    ["Clock resolution", "8192² images, so every configuration is at least 100 times the browser clock (5 µs Chrome, 20 µs Firefox) (ADR 0041).", "The fork-join calibration has 20 samples and a coarse clock: Firefox's warm fork-join reads 0 at N ≤ 4."],
+    ["Warm-up and compiler tiers", "Warm-up W per workload, 1.5 times the worst observed, the same everywhere (ADR 0043). The tier campaign shows the campaigns measure the optimizing compiler in both browsers (ADR 0089).", "In Firefox, the local histogram at k = 1, N = 8 has one or two slow iterations among its first three measured ones. The gate failed on that cell twice; the effect on a run's value is about 0.1% (ADR 0087). What they are is not known."],
+    ["Wrong results passing as fast ones", "A checksum per run, equal across environments, thread counts and each sequential reference with its parallel workloads; a conflict stops the analysis.", "None found in any campaign."],
+    ["Drift and order", "One seeded random order over every run (ADR 0034); trends with the order reported before the analysis.", "One configuration of the main campaign trends with the order (Firefox, local histogram, k = 1, N = 7, ρ = +0.54); it is kept and is not a primary cell."],
+    ["Browser version drift", "DisableAppUpdate policy, a version check before each campaign, strict validation per run (ADR 0071). On measured/v3 they were in place from the start, so every Firefox run is interleaved with the others.", "None on measured/v3."],
+    ["A degraded core", "Turbo off. The per-core check found the core as fast as the others and with the right checksum on the prepared PC; the build is made twice with equal digests (ADR 0085).", "Every N = 8 run uses that core, in every environment. The frequency during a run is not known: the two samples per run proved unusable and are not used."],
+    ["The layers below the crate", "One source, compiler and release profile for the crate (ADR 0076).", "WASM-only flags, a rebuilt standard library, other locks inside Rayon, idle workers that spin instead of yielding and the engines' own compilers differ. They are the environment under study, but \"the same code\" is claimed for the crate only."],
+    ["Buffer placement", "The address of every buffer modulo 4096 and 64 is recorded per run.", "Natively the filter's input and output share an offset modulo 4096, which on the earlier build understated its browser / native ratios by 1 to 2%."],
+    ["Machine memory configuration", "Recorded with every campaign since ADR 0083 (sysinfo.hostState): huge pages, kernel command line, mitigations, C-states.", "Recorded, not varied."]
   ]);
   list($("#w-construct"), [
-    ["Relative speedup hides absolute differences", "The browser / native time ratio is always reported next to the speedup (ADR 0039).", "None."],
-    ["The RQ2 metric", "log T_atomic - log T_local within the same k removes the input's own cost (ADR 0026).", "The same source does not give the same atomic machine code in every engine; that is part of what RQ2 measures, and it is said."],
-    ["Hardware counters as the explanation", "A separate campaign on measured/v3, 30 runs per cell; retries read as the excess over N = 1, with Firefox (same module, same Rayon) as control (ADR 0072).", "The counters show the mechanism but no intervention tested it; cycles include spinning, so they measure time; why Chrome is faster at k = 256 is not isolated."],
-    ["Contention levels", "Padding keeps each counter on its own line, checked with perf c2c in WASM memory too (ADRs 0049, 0072).", "None known."]
+    ["Relative speedup hides absolute differences", "The browser / native time ratio is reported next to every speedup (ADR 0039), and the absolute speedup against native's one-thread time is tabulated (ADR 0082).", "The points of one speedup curve share their T1, so an error in T1 shifts the whole curve."],
+    ["A slow one-thread baseline", "The sequential references of measured/v3: the pool of one thread costs between -7% and +5% against code with no pool.", "None for the pool. Firefox's local histogram at k = 16 and 256 has a one-thread run that misses the cache more, which is why its speedup passes 8 (ADR 0091)."],
+    ["The RQ2 metric is a ratio of ratios", "log T_atomic - log T_local within the same k removes the input's own cost (ADR 0026); it is shown with its two factors (ADR 0078). Since measured/v3 both histograms build their tasks through the same grain control.", "The environment gap of the local control moves the number as much as the atomics do: Firefox's values under 1 come from its local histogram, not from cheaper atomics."],
+    ["The explanation of RQ2", "A native probe that changes only the instructions of the add reproduces Chrome's times in both directions; the tier campaign shows the effect follows V8's optimizing compiler (ADR 0089).", "The mechanism at k = 256 is proposed, not tested. The probe pins its threads and gives them fixed slices, so it shows the sequence is enough, not that nothing else contributes. One prediction of the tier campaign failed in part and is kept as such."],
+    ["The explanation of RQ1", "Counters of the loop alone, the SIMD builds and the cutoff agree, and one intervention inside each engine (the baseline compiler) goes the same way (ADR 0091).", "These are correlations: support, not proof. They explain about half of the lost efficiency natively; what Chrome loses outside the loop was not measured."],
+    ["The dip at N = 6 and 7", "Tested with fixed grains at those thread counts.", "Not explained: the splitting hypothesis was not supported, and placement was not tested."],
+    ["Contention levels", "Padding keeps each counter on its own line, checked with perf c2c in WASM memory on the earlier build (ADRs 0049, 0072); the counter table is unchanged.", "Not repeated on measured/v3."]
   ]);
   list($("#w-external"), [
-    ["One machine", "An i9-14900KF, Ubuntu 26.04, one kernel.", "Other CPUs, especially other cache-coherence designs, may differ."],
+    ["One machine", "An i9-14900KF, Ubuntu 26.04, kernel 7.0.0-43, one compiler version.", "Other CPUs, especially other cache-coherence designs, may differ. The RQ2 pattern depends on what one CPU makes of two instruction sequences."],
     ["Far from how a user's browser runs", "P-cores only, SMT and turbo off, chosen for reproducibility (ADRs 0001, 0002, 0025).", "A real desktop has turbo, SMT and other tabs."],
-    ["Two pinned browser versions, headless", "Chrome for Testing matches stable within about 1.3% (ADR 0050); headful differs by at most 0.3% (ADR 0046).", "Other versions may compile atomics differently."],
-    ["Two workloads, one image size", "The cutoff and grain campaigns cover smaller regions (ADRs 0064 to 0067).", "The results hold for large work per parallel region."]
+    ["Two pinned browser versions, headless", "Chrome for Testing matches stable within about 1.3% (ADR 0050); headful differs by at most 0.3% (ADR 0046).", "Other versions may compile atomics differently: with another instruction sequence the same engine shows no penalty at k = 1."],
+    ["Work that lives in memory, not in cache", "128 MiB for the filter's two images and 64 MiB for the histograms, against a 36 MB last-level cache. The in-cache regime appears only in the cutoff campaigns.", "The results hold for large work per parallel region that streams from memory. A slower runtime asks less of that memory, which is part of Firefox's higher speedup."],
+    ["Two workloads, uniform random inputs", "The cutoff and grain campaigns cover smaller regions (ADRs 0064 to 0067); the extras add sorts.", "Inputs have no spatial structure. The cutoff sizes are lower bounds for a single call, and no size measured reached break-even."]
   ]);
 
   var prim = UI.rows("campaign-v3-contrasts", { primary: "yes" });
@@ -212,11 +210,12 @@ window.page = function (UI) {
     $("#w-widths").appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: s[0] }), el("div", { class: "k", text: s[1] })]));
   });
   list($("#w-conclusion"), [
-    ["Too few runs, pseudo-replication", "30 runs per configuration, the run as the unit of analysis, percentile bootstrap over runs (ADRs 0037, 0047).", "None."],
+    ["Too few runs, pseudo-replication", "30 runs per configuration, the run as the unit of analysis, percentile bootstrap over runs (ADRs 0037, 0047).", "Percentile intervals over 30 runs run slightly narrow at the 99.5% level; the plan fixed them before the data."],
     ["Many comparisons", "Holm over the 10 primary contrasts fixed before the campaign, with Bonferroni 99.5% intervals (ADR 0038).", "Exploratory results use uncorrected 95% intervals and are labelled."],
-    ["Reading 'not rejected' as 'equal'", "Intervals reported for every contrast.", "Non-rejection is bounded by those intervals (above), not proof of equality."],
-    ["Test choice", "Mann-Whitney U with Cliff's delta as a robustness check; it agrees with the bootstrap on all 10 primary contrasts.", "Several pilot thresholds were set after seeing pilot data, and are reported as such."],
-    ["SIMD baseline", "The SIMD builds are compared with the main campaign's filter.", "That baseline comes from another campaign."]
+    ["Reading 'not rejected' as 'equal'", "Intervals reported for every contrast.", "The two non-rejections (Chrome's filter speedup, Firefox at k = 1) are bounded by those intervals (above), not proof of equality."],
+    ["Test and analysis choices", "Mann-Whitney U with Cliff's delta agrees with the bootstrap on all 10 primary contrasts; the plan's three sensitivity checks keep all 10 decisions on measured/v3.", "Several pilot thresholds were set after seeing pilot data, and are reported as such. On the earlier build one RQ1 decision was not robust to the centre of a configuration (ADR 0077)."],
+    ["A replication whose first results were known", "The rules for measured/v3 (which build is reported, the degraded core, the gate) were fixed before any v3 run, and read counts of runs, never a result (ADR 0084).", "Not a blind experiment. The ten decisions are the same on both builds; Firefox's RQ2 values moved between builds by more than the smallest effects rejected (ADR 0078)."],
+    ["Baselines from another campaign", "The SIMD builds are compared with the main campaign's filter; the E-core gain with the main campaign's N = 8.", "Those comparisons cross campaigns of the same build."]
   ]);
 
 };
