@@ -1,0 +1,22 @@
+\begin{table}[htbp]
+\caption{One-thread filter runs of the main campaign split by the CPU with the most busy time: runs, their median and slowest run over the configuration's median, and that CPU's share of the run's busy time. CPU 12 is the degraded core.}\label{tab:core-split}
+\centering\small
+\begin{tabular}{llrrrrr}
+\toprule
+Environment & Workload & CPU & Runs & Median & Max & Busy share \\
+\midrule
+Chrome & filter & 12 & 12 & 1.0026 & 1.0144 & 0.643 \\
+Chrome & filter & 14 & 18 & 0.9986 & 1.0189 & 0.595 \\
+Chrome & filter-seq & 12 & 16 & 1.0043 & 1.0190 & 0.811 \\
+Chrome & filter-seq & 14 & 14 & 0.9938 & 1.0216 & 0.807 \\
+Firefox & filter & 12 & 11 & 1.0020 & 1.0426 & 0.471 \\
+Firefox & filter & 14 & 19 & 0.9997 & 1.0622 & 0.485 \\
+Firefox & filter-seq & 12 & 12 & 1.0052 & 1.0525 & 0.562 \\
+Firefox & filter-seq & 14 & 18 & 0.9997 & 1.0352 & 0.559 \\
+Native & filter & 12 & 9 & 1.0003 & 1.0029 & 0.801 \\
+Native & filter & 14 & 21 & 0.9997 & 1.0049 & 0.706 \\
+Native & filter-seq & 12 & 22 & 1.0000 & 1.0017 & 0.990 \\
+Native & filter-seq & 14 & 8 & 1.0001 & 1.0016 & 0.990 \\
+\bottomrule
+\end{tabular}
+\end{table}
