@@ -122,7 +122,7 @@
     <p>At N = 8 one empty fork-join costs about 110 µs in Chrome and 60 µs in Firefox against 7.9 µs natively: eight to fourteen times more. That sounds bad, until you compare it with the work: one filter pass over the 8192 x 8192 image
       takes several milliseconds, so the fork-join is about 3% of it in Chrome and 0.2% natively. With big pieces
       of work it is noise; with pieces of a few hundred microseconds it is the main cost.
-      <a href="extras.html#granularity">When parallelism pays</a> measures exactly where that line is.</p>
+      <a href="extras.html#cutoff">When parallelism pays</a> measures exactly where that line is.</p>
     <p><em>An analogy.</em> Handing out the brushes and collecting them at the end takes the browser's
       painters a minute instead of a few seconds. On a wall that takes an hour, nobody notices. On a wall that takes
       two minutes, it is half the job.</p>

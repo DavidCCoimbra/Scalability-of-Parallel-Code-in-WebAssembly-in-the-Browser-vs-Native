@@ -59,7 +59,7 @@
       paper</a>).</p></aside>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Never mix runs of two builds in one comparison.</b> The compiler lays out code
       differently after almost any change, and the layout alone can move a time by a few percent
-      (<a href="machine.html#v2">Our own asymmetries</a>). Two builds compared against each other would measure
+      (<a href="environments.html#v2">Our own asymmetries</a>). Two builds compared against each other would measure
       the change, not the runtime. Every reported campaign ran on the build tagged <code>measured/v3</code>,
       and every run records the binary's hash (<a href="environments.html#builds">Builds and tags</a>).</p></aside>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>The measured code changes only with an ADR and a codegen diff.</b> The timed region,

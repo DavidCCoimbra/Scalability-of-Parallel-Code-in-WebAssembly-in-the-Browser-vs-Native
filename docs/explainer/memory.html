@@ -57,12 +57,7 @@
   <article class="page">
     <h1>Memory and caches</h1>
 
-    <p class="lead">A core can add two numbers in a fraction of a billionth of a second. Fetching one of those
-      numbers from the computer's main memory takes a hundred times longer. Everything about speed on a modern
-      chip comes from hiding that gap, and the histogram in this study lives or dies on it.</p>
-    <p class="lead-more">In short: main memory is far away, so each core keeps a small copy of
-      what it is using close by, in boxes of 64 bytes; when two cores want to write the same box, it has to travel
-      between them, and that trip is what "contention" costs.</p>
+    <p class="lead">Fetching a number from main memory takes about a hundred times longer than adding two numbers. Caches hide that gap, and they work in lines of 64 bytes that only one core at a time may write. This page explains caches, cache lines, what happens when two cores write the same line (contention), and why the study pads its counters.</p>
 
     <h2 id="far">RAM is far away</h2>
     <p>The chip's main memory (<b>RAM</b>) is big, gigabytes, but it sits outside the core, at the end of a long
@@ -127,40 +122,6 @@
       explains why the study's shared-counter histogram gets <i>slower</i> with more threads
       (<a href="rq2.html">RQ2</a>), and why the project counts exactly how many of these trips each add costs
       (<a href="rq2.html#readfirst">Why Chrome</a>).</p>
-
-    <h2 id="remember">What to remember</h2>
-    <p class="takeaway"><strong>In summary.</strong> RAM is far, caches are near. Data moves in 64-byte lines, so
-      neighbours travel together. Many cores may read a line, only one may write it, and when the writer changes,
-      the line travels, which costs about a hundred times more than the write itself.</p>
-    <p>Used by: <a href="memory.html#contention-and-padding">Contention and padding</a>, <a href="atomics.html">Atomics in machine
-      code</a>, <a href="rq2.html#cause">Why Chrome</a>. Next foundation: <a href="compilers.html">From source to
-      machine code</a>.</p>
-
-    <h2 id="contention-and-padding">Contention and padding</h2>
-
-
-    <p>Eight threads adding to the same counter can be slower than one thread doing all the adds
-      alone. That sounds wrong until you know one fact about CPUs: cores do not share single numbers, they share
-      <b>blocks of 64 bytes</b>, and only one core at a time may hold a block in order to write it. This page is
-      about what that fact does to the histogram, and how the study keeps it under control.</p>
-
-    <p class="lead-more">In short: an atomic add needs its block exclusively, so contention is the
-      block moving from core to core; the study sets how many blocks the adds spread over (k) and gives every counter
-      its own block (padding).</p>
-
-    <h3 id="caches-lines">One line, one writer</h3>
-    <p>The whole story rests on two facts from <a href="memory.html">Memory and caches</a>:</p>
-    <ul>
-      <li>Main memory is far from the cores, so each core keeps copies of what it is working on in a small, fast
-        memory of its own, its cache. Data moves between memory and caches in fixed blocks of 64 bytes, called
-        <span data-term="cache-line">cache lines</span>, never one byte at a time.</li>
-      <li>Many cores may hold a copy of the same line for <b>reading</b>. But to <b>write</b> into a line, a core must
-        be the only one holding it: every other copy is thrown away first, and the next core that wants it has to
-        fetch it again from the one that wrote it.</li>
-    </ul>
-    <p><em>An analogy.</em> One sheet of paper on a table, and eight people who each want to write
-      one tick on it. Anyone may look at the sheet, but to write, you have to pick it up, and only one person can hold
-      it. So the eight take turns, and most of each person's time is spent waiting for the sheet to come round.</p>
     <p>An atomic add (<a href="atomics.html#what">what that is</a>) reads the counter, adds one and writes it back as
       one indivisible step, so it always needs the counter's line for writing. If another core wrote that line last,
       the line must first travel over. On an 8-core chip that trip is of the order of a hundred clock ticks, a
@@ -176,7 +137,7 @@
         add to the same slot, they queue for it.</p>
     </details>
 
-    <h3 id="contention">Contention</h3>
+    <h2 id="contention">Contention</h2>
     <p><span data-term="contention">Contention</span> is several cores wanting the same line for writing at the same
       time. The histogram turns it up and down with its input: an image with <i>k</i> distinct grey levels sends every
       add to one of <i>k</i> counters (<a href="workloads.html#k">k: the contention dial</a>). Pick <i>k</i> and watch
@@ -194,13 +155,13 @@
       three runtimes. At <i>k</i> = 256 two cores rarely want the same line at the same moment, but with 8 threads
       most adds still find their line last written by another core, so natively and in Firefox the speedup stays
       near 1: no gain from 8 threads, but no loss either. Chrome is the exception, and that is the subject of
-      <a href="rq2.html#cause">Why Chrome</a>.</p>
+      <a href="rq2.html#code">Why Chrome</a>.</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is this not a flaw of the histogram, to be fixed?</b> It is the thing being measured.
       Sharing one counter across threads is the simplest possible synchronization, and its cost is pure cache-line
       traffic. RQ2 asks whether that cost is the same in the browser as natively. A histogram that avoided the
       sharing (the private control) is also measured, and that is the version a real program should use.</p></aside>
 
-    <h3 id="falsesharing">False sharing and padding</h3>
+    <h2 id="falsesharing">False sharing and padding</h2>
     <p>There is a second way to fight over a line without wanting the same counter. A counter is 8 bytes and a line
       is 64, so eight counters fit in one line. Two threads adding to two <i>different</i> counters that happen to
       share a line still take turns holding the line. This is <span data-term="false-sharing">false sharing</span>:
@@ -242,7 +203,7 @@
       <p class="src" data-files="data/raw/perf-v3/c2c/README.md, docs/adr/0008-padded-shared-atomics.md, docs/adr/0049-padding-and-atomic-code.md"></p>
     </details>
 
-    <h3 id="hitm">Counting line moves</h3>
+    <h2 id="hitm">Counting line moves</h2>
     <p>Everything above would be a story if it could not be checked. It can: the CPU keeps counters of its own, and
       one of them counts exactly the event described here, a core asking for a line and finding it in another core's
       cache with fresh writes in it (a <span data-term="hitm">HITM</span>, for "hit modified"). Reading those counters
@@ -251,13 +212,9 @@
       <i>k</i> = 1 (when a core keeps the line for a while, its next few adds find it already there). Chrome's
       numbers look different, and that difference is the whole of <a href="rq2.html#readfirst">Why Chrome: code and
       counters</a>, where the table lives.</p>
+    <p class="takeaway"><strong>In summary.</strong> RAM is far and caches are near. Data moves in 64-byte lines, so neighbours travel together. Many cores may read a line but only one may write it, so threads that add to the same counter take turns and the line travels, which costs about a hundred times the add itself. In the study, k sets how many counters the adds spread over, and padding gives each counter a line of its own, so only true sharing is measured.</p>
 
-    <p class="takeaway"><strong>In summary.</strong> Cores share 64-byte lines, and only one may write a line at a
-      time, so threads adding to the same counter take turns and the line travels. k sets how many counters the adds
-      spread over; padding makes sure each counter has a line of its own, so only true sharing is measured. The CPU
-      can count the line moves, and the study did.</p>
-
-        <footer class="pager" id="pager"></footer>
+    <footer class="pager" id="pager"></footer>
   </article>
   </main>
   <aside class="outline" id="outline" aria-label="On this page"></aside>

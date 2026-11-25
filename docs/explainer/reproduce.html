@@ -125,7 +125,7 @@ window.page = function (UI) {
   var BOXES = [
     { key: "raw", t: "data/raw", s: "*-v3 runs", d: "The runs as they were written: one CSV of times and one JSON of context per run, plus the campaign journal. Never edited.", page: "data.html#raw" },
     { key: "check", t: "datacheck", s: "quality.md", d: "The quality report: missing, failed and conflicting runs, strict validation, foreign CPU, clock, order drift. Blocks the chain if the data cannot be analysed.", page: "campaigns.html#quality" },
-    { key: "stats", t: "analysis", s: "v0, results, ...", d: "One value per run, speedups with bootstrap intervals, the plan's contrasts with Holm, the robustness check, Karp-Flatt, cutoff, grain, counters.", page: "reading.html#statistics" },
+    { key: "stats", t: "analysis", s: "v0, results, ...", d: "One value per run, speedups with bootstrap intervals, the plan's contrasts with Holm, the robustness check, Karp-Flatt, cutoff, grain, counters.", page: "reading.html#speedup" },
     { key: "tables", t: "data/tables", s: "*-v3 CSV", d: "One table per question, with a JSON sidecar that records the settings and the commit.", page: "data.html#tables" },
     { key: "figures", t: "figures", s: "paper/figures", d: "PDF figures drawn by matplotlib from the same raw runs.", page: "data.html#figures" },
     { key: "paper", t: "paper.tex", s: "quotes, includes", d: "The paper includes the figures and quotes the tables; the main numbers are checked below.", page: "reproduce.html#numbers" }

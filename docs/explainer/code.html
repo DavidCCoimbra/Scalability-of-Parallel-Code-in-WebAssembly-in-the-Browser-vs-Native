@@ -54,14 +54,7 @@
   <article class="page">
     <h1>Repository tour</h1>
 
-    <p class="lead">The repository holds three programs, in two languages, and each one has exactly one job.
-      One does the work and times itself. One starts that work under controlled conditions and keeps what it
-      produced. One reads what was kept and turns it into tables and figures. Knowing which of the three you
-      are looking at tells you most of what a file is for.</p>
-
-    <p class="lead-more">In short: the code that is measured and the code that measures are
-      separate programs that only talk through files, so the measurement can never slow down what it
-      measures.</p>
+    <p class="lead">The repository holds three programs that never run inside each other. A Rust crate does the work and times itself. A Python harness starts it under controlled conditions and keeps what it wrote. A Python analysis reads what was kept and writes the tables and figures. This page shows the folders, how the three programs hand work to each other, what each one contains, and two lookup tables for finding a file.</p>
 
     <p><em>An analogy.</em> A cooking contest. The cook (<code>bench/</code>) makes the dish and
       stops the clock. The referee (<code>harness/</code>) sets up the kitchen the same way for every cook,
@@ -86,7 +79,7 @@
       at the same moment as a timed iteration and add to its time, and nobody could tell by how much. Keeping
       them in separate processes, on separate cores, with files as the only link, means a slow harness cannot
       make a workload look slow. How they are connected, process by process, is on
-      <a href="code.html#pieces">How the pieces talk</a>.</p></aside>
+      <a href="code.html#picture">How the pieces talk</a>.</p></aside>
 
     <h2 id="folders">The folders</h2>
     <p>Left to right is the order data flows. Click a box to see what the folder holds and which page explains it.</p>
@@ -110,6 +103,84 @@
     <p class="src" data-files="README.md, Makefile, make/"></p>
     <p><p class="def"><b>Crate.</b> Rust's word for one buildable package of code with its own
       <code>Cargo.toml</code>. <code>bench/</code> is one crate.</p></p>
+
+    <h2 id="picture">How the three programs talk</h2>
+    <p>Every box below is a separate <a href="machines.html#program">process</a>: its own program start, its own
+      memory. Arrows are what one hands to the next. Click a box.</p>
+    <div class="card">
+      <div id="pieces-svg" class="diagram"></div>
+      <div id="pieces-panel" class="panel" aria-live="polite"><p class="muted">Pick a box above.</p></div>
+    </div>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why so many separate programs, and not one?</b> Because the thing being measured must
+      not be the thing doing the measuring. If the orchestrator lived inside the benchmark, its own work
+      (planning, writing files, waiting) would be inside the timed region, and worse, it would be inside it
+      <i>differently</i> natively and in a browser. So the Rust code times only itself, and everything
+      around it is another process on other cores (<a href="machine.html#quiet">Shield and quiet mode</a>).
+      The price is that the pieces have to agree on formats, and that is what this page lists.</p></aside>
+    <p><em>An analogy.</em> A lab with a stopwatch inside the experiment, a technician who
+      sets up each trial and writes the label, and an analyst who only ever sees the labelled sheets. The
+      technician never touches the stopwatch; the analyst never enters the lab.</p>
+
+    <h2 id="boundaries">What crosses each boundary</h2>
+    <p>Each hand-off carries one small, fixed thing. Knowing them is most of knowing the project.</p>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>From</th><th>To</th><th>What crosses</th><th>Looks like</th></tr></thead>
+      <tbody>
+        <tr><td><code>make</code></td><td><code>python3 -m harness.campaign</code></td><td>The path of a spec file</td><td><code>SPEC=harness/campaigns/campaign-v3.json</code></td></tr>
+        <tr><td>orchestrator</td><td>native binary</td><td>A command line: the configuration as <code>key=value</code> pairs, under a CPU mask</td><td><code>taskset -c 0,2,... native workload=filter input=noise threads=8 ...</code></td></tr>
+        <tr><td>native binary</td><td>orchestrator</td><td>CSV text on standard output, one row per timed round</td><td><code>native,filter,noise,,8192,8192,...,measured,0,3990000,...</code></td></tr>
+        <tr><td>orchestrator</td><td>browser</td><td>A command line with a fresh profile, a CPU mask and a URL whose <b>query string</b> holds the same configuration</td><td><code>http://127.0.0.1:8000/?run=...&amp;workload=filter&amp;threads=8...</code></td></tr>
+        <tr><td>browser page</td><td>results server</td><td>One HTTP POST with the CSV text as its body</td><td><code>POST /results</code> on <code>127.0.0.1:8000</code></td></tr>
+        <tr><td>results server</td><td>disk</td><td><code>&lt;run&gt;.csv</code></td><td><code>data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.csv</code></td></tr>
+        <tr><td>orchestrator</td><td>disk</td><td><code>&lt;run&gt;.json</code>: the context (build, machine state, mask, times, CPU time) and one line in <code>campaign.jsonl</code></td><td><a href="data.html#json">The run record</a></td></tr>
+        <tr><td>disk</td><td>analysis</td><td>Only files. The analysis never talks to the harness.</td><td><code>python3 -m analysis.v0 data/raw/campaign-v3</code></td></tr>
+      </tbody>
+    </table></div>
+    <p class="def"><b>Query string.</b> The part of a web address after the <code>?</code>: pairs of
+      <code>name=value</code> joined by <code>&amp;</code>. The page reads it to know what to measure, the same
+      way the native program reads its command line. One parser in the Rust code reads both
+      (<a href="environments.html#same">same source, same flags</a>).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the browser post the result instead of saving a file?</b> A web page cannot
+      write to disk. So a tiny web server (<code>harness/server.py</code>) serves the page and accepts the
+      result back; it is also what sends the two headers that let the page use shared memory
+      (<a href="environments.html#wasm">What WASM threads need</a>). It listens only on
+      <code>127.0.0.1</code>, the machine itself, never the network.</p></aside>
+    <div data-code="harness/server.py|    def do_POST|12" data-title="The server stores what the page posts"></div>
+
+    <h2 id="who">Who starts whom</h2>
+    <ol class="steps">
+      <li><b>You</b> type <code>make campaign SPEC=...</code>. <code>make</code> builds the right variant, turns
+        quiet mode on, and starts the orchestrator under <code>systemd-inhibit</code> so the PC cannot sleep.</li>
+      <li><b>The orchestrator</b> (<code>harness.campaign</code>) reads the spec, shuffles the runs with the
+        spec's seed, checks the machine (strict campaigns), writes <code>campaign.json</code>, and starts the
+        results server once for the whole campaign.</li>
+      <li><b>Per run</b>, it starts one fresh process in its own
+        <span data-term="systemd-scope-slice">systemd scope</span>: the native binary, or Chrome or Firefox
+        with a fresh profile. It waits for the CSV (standard output, or the server), then writes the JSON.</li>
+      <li><b>The run</b> starts its thread pool, warms up, times its rounds, writes the CSV, and exits. A
+        browser run is a page and a coordinating worker; the pool is more workers started by the page
+        (<a href="protocol.html#browser">A browser run</a>).</li>
+      <li><b>After the last run</b>, the orchestrator stops the server, prints the counts, and <code>make</code>
+        turns quiet mode off.</li>
+      <li><b>Later, by hand</b>, <code>make results</code> runs the analysis commands over the folder.</li>
+    </ol>
+    <div data-code="harness/campaign/executors.py|class NativeExecutor|14" data-title="One native run, started by the orchestrator"></div>
+    <p>Nothing is kept in memory between runs that cannot be rebuilt from the folder, which is why a
+      campaign can be stopped and continued (<a href="campaigns.html#resume">Sessions, status and resume</a>).</p>
+
+    <h2 id="onemachine">On the Mac and on the PC</h2>
+    <div class="two">
+      <div class="card"><h3>On the Mac</h3>
+        <p>Every box runs, but with no CPU mask, no scope, no machine check (<code>"strict": false</code>
+          specs, <code>make quick-*</code>). The pieces talk exactly the same way, so
+          a change to a format shows up here first. The times are not results.</p></div>
+      <div class="card"><h3>On the PC</h3>
+        <p>The same boxes, plus the ones that hold the machine still: the shield keeps everything but the
+          run off the 8 measured cores, each run gets its own scope so its CPU time and any escaped browser
+          process are counted, and a strict campaign refuses to start if any of that is missing
+          (<a href="machine.html#checked">Checked on every run</a>).</p></div>
+    </div>
+    <p class="src" data-files="harness/README.md, harness/campaign/README.md, harness/server.py, harness/campaign/executors.py, bench/src/config.rs"></p>
 
     <h2 id="bench">bench/</h2>
     <p>One Rust crate builds two things from the same source: the native program
@@ -261,130 +332,18 @@
 
     <p class="src" data-files="CLAUDE.md, make/test.mk, scripts/codegen_diff.sh"></p>
 
-    <p class="takeaway"><strong>In summary.</strong> Three programs: the cook, the referee, the judge. The cook
-      (<code>bench/</code>) is the only one inside the clock, and changing it is a procedure, not an edit.
-      Everything else is Python that can be changed freely as long as the types and the tests pass.</p>
-
-    <h2 id="pieces">How the pieces talk</h2>
-
-
-    <p>The project is three programs in three languages that never run inside each other.
-      A Rust program does the measuring. A Python program starts it, hundreds of times, in a controlled way.
-      A second set of Python programs reads what was written and turns it into tables. They talk through
-      files, one web request and one command line. This page is the map of those hand-offs.</p>
-    <p class="lead-more">In short: <code>make</code> starts the Python orchestrator, which
-      starts one fresh process per run (the native binary, or a browser), the run writes a CSV of times (to
-      its standard output, or by posting it to a tiny local web server), the orchestrator writes the
-      context next to it, and the analysis reads only those files.</p>
-
-    <h3 id="picture">Processes, files and ports</h3>
-    <p>Every box below is a separate <a href="machines.html#program">process</a>: its own program start, its own
-      memory. Arrows are what one hands to the next. Click a box.</p>
-    <div class="card">
-      <div id="pieces-svg" class="diagram"></div>
-      <div id="pieces-panel" class="panel" aria-live="polite"><p class="muted">Pick a box above.</p></div>
-    </div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why so many separate programs, and not one?</b> Because the thing being measured must
-      not be the thing doing the measuring. If the orchestrator lived inside the benchmark, its own work
-      (planning, writing files, waiting) would be inside the timed region, and worse, it would be inside it
-      <i>differently</i> natively and in a browser. So the Rust code times only itself, and everything
-      around it is another process on other cores (<a href="machine.html#quiet">Shield and quiet mode</a>).
-      The price is that the pieces have to agree on formats, and that is what this page lists.</p></aside>
-    <p><em>An analogy.</em> A lab with a stopwatch inside the experiment, a technician who
-      sets up each trial and writes the label, and an analyst who only ever sees the labelled sheets. The
-      technician never touches the stopwatch; the analyst never enters the lab.</p>
-
-    <h3 id="boundaries">What crosses each boundary</h3>
-    <p>Each hand-off carries one small, fixed thing. Knowing them is most of knowing the project.</p>
-    <div class="scroll-x"><table class="t">
-      <thead><tr><th>From</th><th>To</th><th>What crosses</th><th>Looks like</th></tr></thead>
-      <tbody>
-        <tr><td><code>make</code></td><td><code>python3 -m harness.campaign</code></td><td>The path of a spec file</td><td><code>SPEC=harness/campaigns/campaign-v3.json</code></td></tr>
-        <tr><td>orchestrator</td><td>native binary</td><td>A command line: the configuration as <code>key=value</code> pairs, under a CPU mask</td><td><code>taskset -c 0,2,... native workload=filter input=noise threads=8 ...</code></td></tr>
-        <tr><td>native binary</td><td>orchestrator</td><td>CSV text on standard output, one row per timed round</td><td><code>native,filter,noise,,8192,8192,...,measured,0,3990000,...</code></td></tr>
-        <tr><td>orchestrator</td><td>browser</td><td>A command line with a fresh profile, a CPU mask and a URL whose <b>query string</b> holds the same configuration</td><td><code>http://127.0.0.1:8000/?run=...&amp;workload=filter&amp;threads=8...</code></td></tr>
-        <tr><td>browser page</td><td>results server</td><td>One HTTP POST with the CSV text as its body</td><td><code>POST /results</code> on <code>127.0.0.1:8000</code></td></tr>
-        <tr><td>results server</td><td>disk</td><td><code>&lt;run&gt;.csv</code></td><td><code>data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.csv</code></td></tr>
-        <tr><td>orchestrator</td><td>disk</td><td><code>&lt;run&gt;.json</code>: the context (build, machine state, mask, times, CPU time) and one line in <code>campaign.jsonl</code></td><td><a href="data.html#json">The run record</a></td></tr>
-        <tr><td>disk</td><td>analysis</td><td>Only files. The analysis never talks to the harness.</td><td><code>python3 -m analysis.v0 data/raw/campaign-v3</code></td></tr>
-      </tbody>
-    </table></div>
-    <p class="def"><b>Query string.</b> The part of a web address after the <code>?</code>: pairs of
-      <code>name=value</code> joined by <code>&amp;</code>. The page reads it to know what to measure, the same
-      way the native program reads its command line. One parser in the Rust code reads both
-      (<a href="environments.html#same">same source, same flags</a>).</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the browser post the result instead of saving a file?</b> A web page cannot
-      write to disk. So a tiny web server (<code>harness/server.py</code>) serves the page and accepts the
-      result back; it is also what sends the two headers that let the page use shared memory
-      (<a href="environments.html#wasm">What WASM threads need</a>). It listens only on
-      <code>127.0.0.1</code>, the machine itself, never the network.</p></aside>
-    <div data-code="harness/server.py|    def do_POST|12" data-title="The server stores what the page posts"></div>
-
-    <h3 id="who">Who starts whom</h3>
-    <ol class="steps">
-      <li><b>You</b> type <code>make campaign SPEC=...</code>. <code>make</code> builds the right variant, turns
-        quiet mode on, and starts the orchestrator under <code>systemd-inhibit</code> so the PC cannot sleep.</li>
-      <li><b>The orchestrator</b> (<code>harness.campaign</code>) reads the spec, shuffles the runs with the
-        spec's seed, checks the machine (strict campaigns), writes <code>campaign.json</code>, and starts the
-        results server once for the whole campaign.</li>
-      <li><b>Per run</b>, it starts one fresh process in its own
-        <span data-term="systemd-scope-slice">systemd scope</span>: the native binary, or Chrome or Firefox
-        with a fresh profile. It waits for the CSV (standard output, or the server), then writes the JSON.</li>
-      <li><b>The run</b> starts its thread pool, warms up, times its rounds, writes the CSV, and exits. A
-        browser run is a page and a coordinating worker; the pool is more workers started by the page
-        (<a href="protocol.html#browser">A browser run</a>).</li>
-      <li><b>After the last run</b>, the orchestrator stops the server, prints the counts, and <code>make</code>
-        turns quiet mode off.</li>
-      <li><b>Later, by hand</b>, <code>make results</code> runs the analysis commands over the folder.</li>
-    </ol>
-    <div data-code="harness/campaign/executors.py|class NativeExecutor|14" data-title="One native run, started by the orchestrator"></div>
-    <p>Nothing is kept in memory between runs that cannot be rebuilt from the folder, which is why a
-      campaign can be stopped and continued (<a href="campaigns.html#resume">Sessions, status and resume</a>).</p>
-
-    <h3 id="onemachine">On the Mac and on the PC</h3>
-    <div class="two">
-      <div class="card"><h4>On the Mac</h4>
-        <p>Every box runs, but with no CPU mask, no scope, no machine check (<code>"strict": false</code>
-          specs, <code>make quick-*</code>). The pieces talk exactly the same way, so
-          a change to a format shows up here first. The times are not results.</p></div>
-      <div class="card"><h4>On the PC</h4>
-        <p>The same boxes, plus the ones that hold the machine still: the shield keeps everything but the
-          run off the 8 measured cores, each run gets its own scope so its CPU time and any escaped browser
-          process are counted, and a strict campaign refuses to start if any of that is missing
-          (<a href="machine.html#checked">Checked on every run</a>).</p></div>
-    </div>
-    <p class="takeaway"><strong>In summary.</strong> Three programs, four hand-offs: a spec path, a command line
-      or URL, a CSV, a JSON. The Rust code never knows about campaigns; the analysis never knows about
-      browsers. Change a format in one place and look for the two readers of it.</p>
-    <p class="src" data-files="harness/README.md, harness/campaign/README.md, harness/server.py, harness/campaign/executors.py, bench/src/config.rs"></p>
-
-    <h2 id="where">Where to find things</h2>
-
-
-    <p>Two lookup tables, for when you know what you are looking for but not which file holds
-      it. The first answers "where in the code is this done?" with the file to open and the page that
-      explains it. The second starts from something that went wrong ("the campaign refuses to start", "a
-      checksum conflict") and says which check caught it and where to look.</p>
-
-    <p class="lead-more">In short: every part of the study has one home in the code, and
-      every failure is caught by a named check; these tables map both.</p>
-
-    <p><em>An analogy.</em> The index at the back of a textbook, and the troubleshooting
-      page at the back of a manual. Neither explains anything; both tell you which page does.</p>
-
+    <h2 id="questions">Lookup: where is it done?</h2>
     <p>Type a word in the box to filter both tables. Rows whose name uses a technical term carry a one-line
       gloss under it; the glossary and the linked page have the rest.</p>
-
     <div class="filter-row">
       <label for="where-filter" class="sr">Filter</label>
       <input id="where-filter" type="search" placeholder="Filter both tables, for example: checksum">
       <span id="where-count" class="muted"></span>
     </div>
 
-    <h3 id="questions">Where is it done?</h3>
     <div id="questions-table"></div>
 
-    <h3 id="symptoms">Something broke: where to look</h3>
+    <h2 id="symptoms">Lookup: something broke</h2>
     <p>Most failures stop a run or a campaign with a message, on purpose: a run that would give a wrong
       number fails instead, and is counted. Tests run with <code>make test</code> (Rust, Python) and
       <code>make lint</code>; CI runs both on every PR. For the step-by-step, from <code>make status</code>
@@ -394,11 +353,9 @@
       checksum would sit in the table like any other and move a result. So every check that can tell
       refuses the run, writes an error file, and the data check counts it; nothing is dropped quietly.</p></aside>
     <div id="symptoms-table"></div>
+    <p class="takeaway"><strong>In summary.</strong> Three programs and four hand-offs: a spec path, a command line or URL, a CSV and a JSON. Only <code>bench/</code> runs inside the timed region, so changing it is a procedure, not an edit; the Rust code never knows about campaigns and the analysis never knows about browsers. To find a file, use the first lookup table; to find why something stopped, use the second.</p>
 
-    <p class="takeaway"><strong>In summary.</strong> If you are asking "where is X", the first table has the
-      file and the page. If you are asking "why did it stop", the second table names the check, and the
-      check is on your side.</p>
-        <footer class="pager" id="pager"></footer>
+    <footer class="pager" id="pager"></footer>
   </article>
   </main>
   <aside class="outline" id="outline" aria-label="On this page"></aside>
@@ -412,7 +369,7 @@ window.page = function (UI) {
   var el = UI.el, $ = UI.$;
   var BOXES = [
     { key: "bench", t: "bench/", s: "Rust, measured", page: "workloads.html", d: "The workloads and the loop that times them. The only code that runs while the clock is running. Builds the native runner and the WASM package." },
-    { key: "harness", t: "harness/", s: "Python, starts runs", page: "protocol.html#launch", d: "Launches each run as a fresh process or browser, confined to the P-cores, and stores its CSV and context in data/raw/<campaign>/." },
+    { key: "harness", t: "harness/", s: "Python, starts runs", page: "protocol.html#pipeline", d: "Launches each run as a fresh process or browser, confined to the P-cores, and stores its CSV and context in data/raw/<campaign>/." },
     { key: "data", t: "data/", s: "raw runs, tables", page: "data.html", d: "data/raw holds the runs exactly as produced; data/tables holds what analysis derived from them. Raw files are never edited." },
     { key: "analysis", t: "analysis/", s: "Python, statistics", page: "reading.html", d: "Reads data/raw, writes data/tables and paper/figures: one value per run, speedup, bootstrap intervals, Holm, figures." },
     { key: "paper", t: "paper/", s: "LaTeX", page: "reproduce.html", d: "paper/final/paper.tex reads its numbers from data/tables and its figures from paper/figures." },

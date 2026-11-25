@@ -50,13 +50,7 @@
   <article class="page">
     <h1>The machine and environment control</h1>
 
-    <p class="lead">Every number in the study comes from one PC. Before measuring, we make that PC
-      <b>slower and quieter than it normally is</b>, on purpose, and we keep it that way for every run. This
-      page says what we switch off, why each switch matters, and how the harness checks it every time.</p>
-
-    <p class="lead-more">In short: the same 8 identical cores, at the same speed, with nothing
-      else on them, for every run; so when Chrome and native differ, the difference cannot have come from the
-      hardware.</p>
+    <p class="lead">Every number of the study comes from one PC, prepared the same way for every run: eight identical cores at a fixed clock for the measured program, everything else on the other cores. This page lists each control, why it exists, how the harness checks it on every run, and two problems of the machine that the checks now catch.</p>
 
     <h2 id="pc">One PC, slowed down on purpose</h2>
     <p>A modern computer is built to be fast on average, not to be the same every second. It speeds up
@@ -158,6 +152,8 @@
         which is also why turbo stays off for every experiment on this PC, not only the reported ones.</p>
     </details>
 
+    <h2 id="core">The degraded core</h2> <p>One of the PC's eight fast cores is degraded. With the desktop's usual settings (turbo on), a test pinned to it crashed in 17 of 18 tries. With turbo off, the setting of every measurement, it passed 30 of 30 and timed the filter as fast as the other cores.</p> <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> A core that crashes is easy: you see it. A core that sometimes computes a wrong value and carries on is the dangerous one, and not only for the runs. The compiler that builds the measured program is a program too, and so is the analysis. That happened once: with the PC restored after the last campaign, an analysis command stopped with an error raised from inside Python's own statistics code, on data it reads without trouble elsewhere.</p></aside> <ul> <li><b>Fix:</b> the measured build is made on the prepared PC, twice from scratch, and tagged only if both builds are byte for byte equal. Outside a prepared session, analysis on that PC runs pinned away from that core.</li> <li><b>Check:</b> every run has a checksum that must match across runtimes and thread counts, and CI regenerates every table on another machine and compares it with the committed one.</li> </ul> <p class="src" data-files="docs/adr/0085-per-core-check.md, docs/adr/0094-hybrid-on-v3.md"></p> <p>The whole story is on <a href="session.html#cores">The per-core check</a>.</p>
+
     <h2 id="quiet">Shield and quiet mode</h2>
     <p>The mask keeps the measured program <i>on</i> the 8 P-cores. It does not keep anything else
       <i>off</i> them: the desktop, the terminal, a file indexer, an update check, all of them may still be
@@ -188,6 +184,28 @@
         <span data-term="kworker-irq">kworkers and interrupt handlers</span> cannot be moved and are the
         reason "foreign CPU time" below is measured rather than assumed to be zero.</p>
     </details>
+
+    <h2 id="mask">A browser that left the mask</h2>
+    <p class="def"><b>Pilot numbers.</b> The numbers that found the problems on this page come from pilots and from the earlier build, <code>measured/v2</code>. They justify the fixes; they are not results of the study. Every fix was in place before the first run of <code>measured/v3</code>.</p>
+
+    <p>Every run is told to use only the 8 fast cores (a <span data-term="taskset">taskset</span> mask), inside its
+      own <span data-term="systemd-scope-slice">systemd scope</span>, a box the operating system keeps the run's
+      processes in. During the pilot, a sampler that checked where every thread was allowed to run found that
+      <b>Chrome's main process had moved itself out of the box</b>: through the <span data-term="session-bus-d-bus">session
+      bus</span> it asked the system for a box of its own, in the user's area, and ran on the slow cores, outside the
+      mask. Firefox's processes stayed in (ADR 0045).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> Chrome would have had the 8 fast cores for its workers plus
+      extra cores for its own housekeeping, and Firefox would not. A difference between the two browsers would then
+      have been partly a difference in how many cores each really had, and we would have read it as a difference
+      between the engines.</p></aside>
+    <ul>
+      <li><b>Fix:</b> the harness launches the browsers without the session bus address. Without it, every Chrome
+        process stays in the run's box.</li>
+      <li><b>Check:</b> every run records <span data-term="escaped-process">escapedProcesses</span>, the browser
+        processes found outside the box, and <span data-term="strict-validation">strict validation</span> rejects any
+        run where it is not 0.</li>
+    </ul>
+    <div data-code="harness/context/validation.py|escaped = self.data.get(|3" data-title="A run with escaped processes fails validation"></div>
 
     <h2 id="checked">Checked on every run</h2>
     <p>Setting all of this once is not enough. A reboot undoes it. A step can be forgotten. A background job
@@ -226,99 +244,9 @@
       <div data-code="harness/context/validation.py|    def machine(self)|11" data-title="Part of strict validation"></div>
       <p class="src" data-files="harness/env/setup.sh, harness/env/check.sh, harness/environment/, harness/shield/cpu_time.py, harness/context/validation.py, analysis/quality/foreign_cpu.py"></p>
     </details>
+    <p class="takeaway"><strong>In summary.</strong> One PC, prepared the same way for every run: eight P-cores at a fixed clock for the measured program, the rest of the system on the E-cores, and every setting checked before a run and recorded with it. A CPU mask does not confine a browser by itself, and one core of this PC computes wrongly when it runs fast; both are now checked.</p>
 
-    <p class="takeaway"><strong>In summary.</strong> One PC, made slow and quiet on purpose: 8 identical cores
-      at a fixed clock for the measured program, everything else pushed to the other cores, and every setting
-      checked before and recorded with every run. A difference between native and a browser cannot be the
-      machine, because the machine was the same for both.</p>
-
-    <h2 id="problems">Problems found and fixed</h2>
-
-    <p>A benchmark can be wrong without anything looking wrong: every run finishes, every checksum matches,
-      and the numbers look plausible. Each problem on this page is of that kind. They are part of the results because
-      anyone who benchmarks a browser will meet them.</p>
-    <p class="lead-more">In short: telling a browser which cores to use, giving it a fresh profile and
-      installing a fixed version are not enough to confine it, quiet it and freeze it; a review of our own measured code found two asymmetries; and one core of the measuring PC turned out to compute wrongly when it runs fast.</p>
-    <p class="def"><b>Pilot numbers on this page.</b> The numbers that found these problems come from pilots and from the earlier build, <code>measured/v2</code>. They justify the fixes; they are not results of the study. Every fix was in place before the first run of <code>measured/v3</code>.</p>
-    <p>Each problem is told the same way: what happened, why it would have fooled us, the fix, and the check that now
-      catches it.</p>
-
-    <h3 id="mask">Chrome escapes the CPU mask</h3>
-    <p>Every run is told to use only the 8 fast cores (a <span data-term="taskset">taskset</span> mask), inside its
-      own <span data-term="systemd-scope-slice">systemd scope</span>, a box the operating system keeps the run's
-      processes in. During the pilot, a sampler that checked where every thread was allowed to run found that
-      <b>Chrome's main process had moved itself out of the box</b>: through the <span data-term="session-bus-d-bus">session
-      bus</span> it asked the system for a box of its own, in the user's area, and ran on the slow cores, outside the
-      mask. Firefox's processes stayed in (ADR 0045).</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> Chrome would have had the 8 fast cores for its workers plus
-      extra cores for its own housekeeping, and Firefox would not. A difference between the two browsers would then
-      have been partly a difference in how many cores each really had, and we would have read it as a difference
-      between the engines.</p></aside>
-    <ul>
-      <li><b>Fix:</b> the harness launches the browsers without the session bus address. Without it, every Chrome
-        process stays in the run's box.</li>
-      <li><b>Check:</b> every run records <span data-term="escaped-process">escapedProcesses</span>, the browser
-        processes found outside the box, and <span data-term="strict-validation">strict validation</span> rejects any
-        run where it is not 0.</li>
-    </ul>
-    <div data-code="harness/context/validation.py|escaped = self.data.get(|3" data-title="A run with escaped processes fails validation"></div>
-
-    <h3 id="startup">Firefox's start-up</h3>
-    <p>A browser keeps working for seconds after the page has loaded: it compiles code, loads components, starts
-      services. The warm-up pilot ran with no delay, so its short measurements ended less than a second after the page
-      loaded. The delay pilot (ADR 0048) then showed <b>Firefox's local histogram at N = 8 up to 32% slower and
-      erratic</b> without a delay: Firefox's own start-up work was competing with the 8 workers for the 8 cores.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> Firefox would have looked worse at scaling than it is, and
-      the loss would have been blamed on WASM threads. The cause had nothing to do with threads: it was the browser
-      still starting up during the measurement.</p></aside>
-    <ul>
-      <li><b>Fix:</b> every browser run waits 3 s before it creates the coordinating worker (the
-        <span data-term="start-delay">start delay</span>), recorded with the run.</li>
-      <li><b>Left:</b> native has no delay, a known asymmetry that does not change a speedup within one runtime; 3 s
-        against 6 s differs by about 1% (<a href="threats.html#internal">Threats</a>).</li>
-    </ul>
-
-    <h3 id="update">A pinned Firefox updates itself</h3>
-    <p>The study pins Firefox 158.0, downloaded from Mozilla's archive, and the fresh profile turns automatic updates
-      off. On 2026-11-10, between two exploratory campaigns of the earlier build, the installed Firefox <b>updated itself in place to
-      160.0</b> anyway. Only the enterprise policy <code>DisableAppUpdate</code> stops it (ADR 0071).</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> Two campaigns meant to compare the same Firefox would have
-      compared two different ones, with whatever changed in the engine between them mixed into the result.</p></aside>
-    <ul>
-      <li><b>Caught:</b> strict validation checks the browser version of every run, and rejected all 2640 affected exploratory runs of that build.</li>
-      <li><b>Fix:</b> the installer writes the policy and reinstalls a moved install, and a campaign refuses to start
-        when a browser is not the pinned version.</li>
-      <li><b>Now:</b> on <code>measured/v3</code> the policy and the version check were in place from the first run, so every Firefox run of every campaign is 158.0 and interleaved with the others. No run was rejected for its version.</li>
-    </ul>
-    <div data-code="harness/browsers.py|# Firefox from archive.mozilla.org updates itself|4" data-title="The policy that keeps Firefox pinned"></div>
-
-    <h3 id="v2">Our own asymmetries: the v2 build</h3>
-    <p>After the very first campaigns, a review of the measured code against the textbook, the cited papers and the lectures found two asymmetries the study had caused itself. They were fixed in the build <code>measured/v2</code> (ADR 0069):</p>
-    <ul>
-      <li><b>A safety check only on one side of RQ2.</b> The shared-counter histograms indexed a table whose length the
-        compiler did not know, so every pixel paid a bounds check (compare and branch) that the local control did not.
-        The atomic/local ratio therefore included code that only the atomic side ran, and that the engines might
-        compile differently from LLVM.</li>
-      <li><b>Final work timed in some variants only.</b> The local histogram's merge was inside the timed region; the
-        private merge and the read-back of the shared counters were outside it.</li>
-    </ul>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> RQ2 is a ratio of ratios, and it only cancels what is the
-      same on both sides. A check that ran on one side only, or a merge timed on one side only, would have been read
-      as a cost of synchronization in every engine.</p></aside>
-    <p>The fix: fixed-size counter tables (no per-pixel check; LLVM then unrolls the loop by 8 itself), and every
-      histogram's timed run now ends with its final histogram. The checksums did not change.</p>
-    <div data-code="bench/src/workloads/histogram/atomic.rs|fn run(|10" data-title="Reading the counters back is now timed, like the local merge"></div>
-    <p>Then every campaign was re-run on the corrected build. Later the study was measured a third time, on <code>measured/v3</code>, which adds what v2 could only declare (<a href="session.html#twice">Why the study was measured twice</a>). <b>Every number in this documentation comes from <code>measured/v3</code></b>; the earlier builds' campaigns are not reported as results.</p>
-    <details class="deeper"><summary>In depth: why builds are never mixed</summary>
-      <p>Builds are never mixed in one comparison because a change in code layout alone, with the same instructions,
-        can change timing by a few percent (Mytkowicz et al. 2009). A refactor of the measured path is accepted only
-        when a codegen diff shows the hot functions unchanged; otherwise it is a new build with a new tag, and earlier
-        campaigns stay valid only for their own build (ADR 0062, <a href="changing.html#hotpath">Touching the measured
-        code</a>).</p>
-    </details>
-    <h3 id="core">A core that computes wrongly</h3> <p>One of the PC's eight fast cores is degraded. With the desktop's usual settings (turbo on), a test pinned to it crashed in 17 of 18 tries. With turbo off, the setting of every measurement, it passed 30 of 30 and timed the filter as fast as the other cores.</p> <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> A core that crashes is easy: you see it. A core that sometimes computes a wrong value and carries on is the dangerous one, and not only for the runs. The compiler that builds the measured program is a program too, and so is the analysis. That happened once: with the PC restored after the last campaign, an analysis command stopped with an error raised from inside Python's own statistics code, on data it reads without trouble elsewhere.</p></aside> <ul> <li><b>Fix:</b> the measured build is made on the prepared PC, twice from scratch, and tagged only if both builds are byte for byte equal. Outside a prepared session, analysis on that PC runs pinned away from that core.</li> <li><b>Check:</b> every run has a checksum that must match across runtimes and thread counts, and CI regenerates every table on another machine and compares it with the committed one.</li> </ul> <p class="src" data-files="docs/adr/0085-per-core-check.md, docs/adr/0094-hybrid-on-v3.md"></p> <p>The whole story is on <a href="session.html#cores">The per-core check</a>.</p> <p class="takeaway"><strong>In summary.</strong> Confining, quieting and freezing a browser each needs its own check, not just its own setting; a ratio only cancels what is truly the same on both sides; and the machine itself is part of what has to be checked. Every one of these is now checked on every run.</p>
-
-        <footer class="pager" id="pager"></footer>
+    <footer class="pager" id="pager"></footer>
   </article>
   </main>
   <aside class="outline" id="outline" aria-label="On this page"></aside>

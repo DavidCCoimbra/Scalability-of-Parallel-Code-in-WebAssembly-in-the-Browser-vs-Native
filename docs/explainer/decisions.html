@@ -102,7 +102,7 @@
       <h4>From a hypothesis to machine code and counters (ADR 0049, 0068, 0072)</h4>
       <p>ADR 0049 kept the 128-byte padding and recorded Chrome's odd counter pattern as a hypothesis: "the
         code was not inspected". The v2 audit then read the JIT code from each browser's memory: V8 compiles
-        the atomic add as a load plus a <code>lock cmpxchg</code> loop. ADR 0068 made the hardware counters readable, and ADR 0072 counted with 30 runs per cell: the loop retries once every four adds at k = 1, N = 8, and Chrome reads the line before it writes it. That was still an observation. ADR 0088 wrote down what a test would show, and ADR 0089 ran it on <code>measured/v3</code>: a native program in which only the instructions of the add change gets Chrome's times.</p> <p><b>The lesson:</b> a hypothesis is allowed in an ADR as long as it is labelled one; it took four more ADRs to turn it first into a measurement and then into a tested cause. <a href="rq2.html#cause">Why Chrome: code and counters</a>.</p>
+        the atomic add as a load plus a <code>lock cmpxchg</code> loop. ADR 0068 made the hardware counters readable, and ADR 0072 counted with 30 runs per cell: the loop retries once every four adds at k = 1, N = 8, and Chrome reads the line before it writes it. That was still an observation. ADR 0088 wrote down what a test would show, and ADR 0089 ran it on <code>measured/v3</code>: a native program in which only the instructions of the add change gets Chrome's times.</p> <p><b>The lesson:</b> a hypothesis is allowed in an ADR as long as it is labelled one; it took four more ADRs to turn it first into a measurement and then into a tested cause. <a href="rq2.html#code">Why Chrome: code and counters</a>.</p>
     </div>
     <div class="story">
       <h4>The v2 build: asymmetries of our own (ADR 0069)</h4>
@@ -111,7 +111,7 @@
         and others did not. Both were fixed in one tagged build, <code>measured/v2</code>, and every campaign was run again on it. Earlier campaigns stay valid for their own build but are never mixed with v2 in one comparison (ADR 0062).</p>
       <p><b>The lesson:</b> the control and the thing it controls for must differ in exactly one way; two
         hidden differences meant every earlier RQ2 number had to be remeasured.
-        <a href="machine.html#v2">Our own asymmetries: the v2 build</a>.</p>
+        <a href="environments.html#v2">Our own asymmetries: the v2 build</a>.</p>
     </div>
     <div class="story">
       <h4>A pinned browser that updated itself (ADR 0071)</h4>
@@ -119,7 +119,7 @@
         updates. The affected runs of that build were repeated on 158.0, Firefox now gets an enterprise policy that turns
         updates off, and a campaign refuses to start with an unpinned browser.</p>
       <p><b>The lesson:</b> "pinned" is a claim until something checks it on every start.
-        <a href="machine.html#update">A pinned Firefox updates itself</a>.</p>
+        <a href="environments.html#update">A pinned Firefox updates itself</a>.</p>
     </div>
     <div class="story">
       <h4>Notion out, Markdown in (ADR 0063)</h4> <p>ADR 0010 mirrored every ADR to Notion. Keeping two copies in sync by hand was dropped: the files in <code>docs/adr/</code> are the only copy.</p>

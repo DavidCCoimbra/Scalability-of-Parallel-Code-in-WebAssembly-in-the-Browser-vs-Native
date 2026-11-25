@@ -43,19 +43,14 @@
   <main id="main">
   <article class="page">
     <h1>Exploratory campaigns</h1>
-    <p class="lead">The main campaign answered RQ1 and RQ2 with ten comparisons decided in advance. Those answers raise
-      follow-up questions, and these campaigns ask them. Same build (<code>measured/v3</code>), same protocol, 30 runs
-      per configuration; only the questions are new.</p>
-    <p class="lead-more">In short: part of Chrome's extra cost is the atomic instruction itself even with
-      nothing shared, its advantage at k = 256 needs the padding, and the RQ1 picture holds when the work grows with
-      the threads, when SIMD is removed, and when slow cores are added.</p>
+    <p class="lead">The main campaign answers RQ1 and RQ2 with ten comparisons fixed in advance. The exploratory campaigns ask the follow-up questions on the same build and protocol, 30 runs per configuration: where Chrome's atomic cost comes from, whether the RQ1 picture holds when the work grows, when SIMD is removed and when slow cores are added, and how much work a parallel region needs before threads pay.</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why "exploratory", and why it matters for how you read the numbers.</b> The ten main comparisons
       were named before any data existed, and tested with a bar raised for testing ten things at once. These were
       not. If you look at enough numbers, some will look surprising by chance alone, so a result here describes and
       explains; it does not decide. The intervals are plain 95% ones with no correction
       (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>).</p></aside>
 
-    <h2 id="questions">Five questions</h2>
+    <h2 id="questions">The questions</h2>
     <ol>
       <li><b>Is Chrome's extra cost about threads sharing a counter, or about the atomic instruction itself?</b> Give
         each thread its own counters, so nothing is shared, and see what remains.</li>
@@ -67,6 +62,8 @@
         natively with wider SIMD, and compare the gaps.</li>
       <li><b>What happens with slow cores added?</b> Let the runtimes use the 16 efficiency cores too, up to 20
         threads.</li>
+          <li><b>How much work does a parallel region need before threads pay?</b> Shrink the image until the fixed cost of starting the threads shows.</li>
+      <li><b>How small may a task inside a region be?</b> Fix the task size by hand and sweep it.</li>
     </ol>
 
     <h2 id="private">Private and packed atomics</h2>
@@ -146,40 +143,10 @@
         on the earlier build (<code>data/earlier/probes/ecore-workloads.txt</code>), not repeated on <code>measured/v3</code>,
         so it is given as the likely reason and without numbers. The cells with E-cores also vary more between the two builds than any other (up to 8%, where every P-core cell is within 1%): which threads the kernel puts on which kind of core is not controlled and not recorded per thread (ADR 0094).</p>
     </details>
-    <p class="takeaway"><strong>In summary.</strong> Chrome's atomic add is slow on its own, and its one advantage needs
-      the padding. The RQ1 answer survives three changes of angle: more work with more threads, no SIMD, and slow
-      cores added.</p>
 
-    <h2 id="granularity">When parallelism pays</h2>
+    <h2 id="cutoff">How much work a region needs: the cutoff campaign</h2>
+    <p><b>Question 6.</b> The answer to RQ1 holds "with enough work per parallel region". This campaign measures how much is enough in each environment.</p>
 
-    <p>RQ1's answer came with a condition: "with enough work per parallel region". This page says how
-      much is enough, in each runtime, and turns it into advice you can use. The measurements that back the advice
-      come after it.</p>
-    <p class="lead-more">In short: in the browser, only split work across threads when each piece is
-      worth about half a millisecond of work; natively a third of that is enough; inside a piece, let Rayon choose
-      the task size.</p>
-
-    <h3 id="advice">Advice for developers</h3>
-    <div class="grid two">
-      <div class="card"><h4>Make parallel regions coarse</h4><p>With 8 threads in the browser, start a parallel region only when it holds roughly <b>0.3 to 0.5 ms</b> of work as one thread would do it. Below that, more than
-        half of what the threads could give is lost to starting and stopping them. Natively about <b>0.12 to 0.19 ms</b>
-        is enough.</p></div>
-      <div class="card"><h4>Let Rayon pick the task size</h4><p>Inside a region, the best size for each piece a thread
-        picks up is the same in all three runtimes, and Rayon's own choice is within 3% of it. Tuning it by hand
-        for the browser gains almost nothing.</p></div>
-      <div class="card"><h4>Avoid or spread synchronization</h4><p>Shared atomic counters that every thread hits cost Chrome up to 2.3 times what they cost natively (<a href="rq2.html">RQ2</a>). Give each thread its own counters
-        and merge at the end, or spread the sharing over many padded counters.</p></div>
-      <div class="card"><h4>Measure in the browser</h4><p>One source does not give one instruction stream: the engine
-        rewrites your atomics its own way, and that is part of the cost (<a href="rq2.html#cause">Why Chrome</a>).</p></div>
-    </div>
-    <p><em>An analogy.</em> Calling eight friends to help carry boxes takes a few minutes of phone
-      calls. For a whole house move it is nothing. For one box, you would have carried it yourself before the first
-      call ended. The browser's phone calls take ten times longer than native's, so the house has to be bigger before
-      calling pays.</p>
-    <p>The rest of the page is where each number above comes from: the size of a whole parallel region (the cutoff
-      campaign), a rule of thumb from the course, and the size of each task inside a region (the grain sweep).</p>
-
-    <h3 id="cutoff">The cutoff campaign</h3>
     <p>The filter and the local histogram (k = 256) ran on images from 512 x 512 to 8192 x 8192 pixels, at N = 1 to
       8 (4080 runs). The smallest images take a few microseconds, less than the browser's clock can tell apart, so
       each timed sample repeats the work several times (<i>passes</i>) and divides by the count (ADR 0064). For each
@@ -198,7 +165,7 @@
     <p class="src" data-src="cutoff-estimates"></p>
     <p>For the filter that is 125 µs of single-thread work natively, 396 in Chrome and 459 in Firefox: <b>the browsers need 3 to 4 times the work native needs</b> to keep half the threads' worth. With the local histogram's 325 and 362 µs, that is the "0.3 to 0.5 ms" of the advice. In Firefox it is about the cost of 8 fork-joins (8 × 60 µs); natively it is 1.4 times that (8 × 10.8 µs). The fork-join of the browsers here is the campaign's median; Firefox's 20 µs clock makes it coarse.</p>
 
-    <h3 id="rule">The 100:1 rule</h3>
+    <h2 id="rule">The 100:1 rule</h2>
     <p>A rule of thumb from the course: a parallel region should do at least 100 times the work its fork-join costs,
       so that the overhead stays under 1%. It gives a second, stricter line than efficiency 0.5. With the fork-join
       this campaign measured (300 runs per environment), applied to the full 8192 x 8192 image at N = 8:</p>
@@ -213,7 +180,9 @@
       because its fork-join is a bigger share of a smaller budget. Both say: in the browser, make the regions
       bigger.</p>
 
-    <h3 id="grain">The grain U-curve</h3>
+    <h2 id="grain">How small a task may be: the grain sweep</h2>
+    <p><b>Question 7.</b></p>
+
     <p>Inside one region, Rayon cuts the work into tasks that idle threads pick up
       (<a href="threads.html#grain">Grain size</a>). Cut too small, and the cost of handling each task dominates; cut
       too large, and there are too few tasks to keep all the threads busy. Somewhere in between is a flat bottom: the
@@ -236,10 +205,29 @@
       <div id="w-best"></div>
       <p class="src" data-src="grain-best"></p>
     </details>
-    <p class="takeaway"><strong>In summary.</strong> Threads in the browser pay off the same way as native ones, but the
-      entry ticket is 3 to 10 times bigger. Make each parallel region worth about a third to half a millisecond of work, and let Rayon cut it up.</p>
 
-        <footer class="pager" id="pager"></footer>
+    <h2 id="advice">What this means for a developer</h2>
+    <div class="grid two">
+      <div class="card"><h3>Make parallel regions coarse</h3><p>With 8 threads in the browser, start a parallel region only when it holds roughly <b>0.3 to 0.5 ms</b> of work as one thread would do it. Below that, more than
+        half of what the threads could give is lost to starting and stopping them. Natively about <b>0.12 to 0.19 ms</b>
+        is enough.</p></div>
+      <div class="card"><h3>Let Rayon pick the task size</h3><p>Inside a region, the best size for each piece a thread
+        picks up is the same in all three runtimes, and Rayon's own choice is within 3% of it. Tuning it by hand
+        for the browser gains almost nothing.</p></div>
+      <div class="card"><h3>Avoid or spread synchronization</h3><p>Shared atomic counters that every thread hits cost Chrome up to 2.3 times what they cost natively (<a href="rq2.html">RQ2</a>). Give each thread its own counters
+        and merge at the end, or spread the sharing over many padded counters.</p></div>
+      <div class="card"><h3>Measure in the browser</h3><p>One source does not give one instruction stream: the engine
+        rewrites your atomics its own way, and that is part of the cost (<a href="rq2.html#code">Why Chrome</a>).</p></div>
+    </div>
+    <p><em>An analogy.</em> Calling eight friends to help carry boxes takes a few minutes of phone
+      calls. For a whole house move it is nothing. For one box, you would have carried it yourself before the first
+      call ended. The browser's phone calls take ten times longer than native's, so the house has to be bigger before
+      calling pays.</p>
+    <p>The rest of the page is where each number above comes from: the size of a whole parallel region (the cutoff
+      campaign), a rule of thumb from the course, and the size of each task inside a region (the grain sweep).</p>
+    <p class="takeaway"><strong>In summary.</strong> With nothing shared, Chrome's atomic add already costs more than the native one at k = 1, and its advantage at k = 256 needs the padding. The RQ1 picture holds when the work grows with the threads, without SIMD and with slow cores added. Threads pay in the browser as they do natively, but a parallel region needs about three to four times the native work to keep half of the threads' worth; inside a region, Rayon's own split is within 3% of the best fixed task size at 8192 x 8192.</p>
+
+    <footer class="pager" id="pager"></footer>
   </article>
   </main>
   <aside class="outline" id="outline" aria-label="On this page"></aside>
