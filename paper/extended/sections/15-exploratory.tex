@@ -16,24 +16,41 @@ ends of the contention sweep: local counters, \emph{private} atomics (one
 padded table per thread), shared padded atomics, and \emph{packed} shared
 atomics (eight counters per line), plus two parallel sorts
 (Table~\ref{tab:extras}, Figures~\ref{fig:extras-speedup}
-and~\ref{fig:extras-absolute}).
+to~\ref{fig:extras-rq2}).
 
 \input{tables/extras}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
-\includegraphics[width=\linewidth]{../figures/extras-speedup.pdf}
+\includegraphics[width=0.8\linewidth]{../figures/extras-speedup.pdf}
 \caption{Extras campaign: relative speedup per workload.}
 \Description{Speedup against thread count for the extras workloads in the three environments.}
 \label{fig:extras-speedup}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
-\includegraphics[width=\linewidth]{../figures/extras-absolute.pdf}
+\includegraphics[width=0.8\linewidth]{../figures/extras-absolute.pdf}
 \caption{Extras campaign: absolute time per workload and environment.}
 \Description{Absolute time against thread count for the extras workloads.}
 \label{fig:extras-absolute}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.8\linewidth]{../figures/extras-efficiency.pdf}
+\caption{Extras campaign: efficiency per workload.}
+\Description{Efficiency against thread count for the extras workloads.}
+\label{fig:extras-efficiency}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{../figures/extras-rq2.pdf}
+\caption{Extras campaign: $T_{\mathrm{atomic}}/T_{\mathrm{local}}$ against
+$N$ for the shared padded atomics at $k=1$ and 256, measured again.}
+\Description{Atomic over local time ratio against thread count in the extras campaign.}
+\label{fig:extras-rq2}
 \end{figure}
 
 \begin{itemize}[leftmargin=1.5em]
@@ -71,6 +88,7 @@ $N=2$). Against the earlier build, every cell at eight threads is within
 the cells whose runs fall on levels; this is a consistency observation, not
 a comparison of results.
 
+\clearpage
 \subsection{Weak scaling}
 
 In strong scaling each thread gets $1/N$ of the work; in weak scaling the
@@ -81,7 +99,7 @@ Figure~\ref{fig:weak}).
 
 \input{tables/weak}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
 \includegraphics[width=0.75\linewidth]{../figures/weak-absolute.pdf}
 \caption{Weak scaling: absolute time against $N$ (ideal: flat).}
@@ -98,6 +116,7 @@ memory and not a serial part. The browser over native time ratio stays flat
 in Chrome (1.16 to 1.20) and falls in Firefox from 1.36 at $N=1$ to 1.28 at
 $N=8$.
 
+\clearpage
 \subsection{E-cores}
 
 The hybrid campaign (900 runs) put the eight P-cores and twelve E-cores in
@@ -107,7 +126,7 @@ and~\ref{fig:hybrid-absolute}).
 
 \input{tables/hybrid}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
 \includegraphics[width=0.75\linewidth]{../figures/hybrid-speedup.pdf}
 \caption{Hybrid campaign: speedup against $N$ with P-cores and E-cores.}
@@ -115,7 +134,7 @@ and~\ref{fig:hybrid-absolute}).
 \label{fig:hybrid-speedup}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
 \includegraphics[width=0.75\linewidth]{../figures/hybrid-absolute.pdf}
 \caption{Hybrid campaign: absolute time against $N$.}
@@ -136,6 +155,7 @@ thread, and the cells with E-cores vary more than the others. With the
 wider mask the eight-thread cells are slower than in the P-only campaign
 (native filter 3.50 against 3.25~ms), as the mask pilot had found.
 
+\clearpage
 \subsection{Small regions: the cutoff}
 \label{sec:cutoff}
 
@@ -149,7 +169,7 @@ $K = (8192/\mathrm{side})^2$ times and reports the time per pass. Sizes are
 compared only through speedups within a size, where $K$ cancels
 (Table~\ref{tab:cutoff}, Figure~\ref{fig:cutoff}).
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
 \includegraphics[width=\linewidth]{../figures/cutoff-speedup.pdf}
 \caption{Cutoff campaigns: speedup against the image side, per environment
@@ -194,6 +214,7 @@ the filter on eight threads takes 33.0~\textmu s per call against
 changes there, 235 against 229~\textmu s). A program that calls a parallel
 region once, cold, needs more work per region than the table says.
 
+\clearpage
 \subsection{Inside a region: the grain}
 \label{sec:grain}
 
@@ -203,7 +224,7 @@ powers of two, from one row or 1~KB up to one task per thread, with Rayon's
 adaptive split as the reference (Table~\ref{tab:grain-best},
 Figures~\ref{fig:grain} and~\ref{fig:grain-all}).
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
 \includegraphics[width=0.8\linewidth]{../figures/grain-ucurve-8192.pdf}
 \caption{Grain sweep at 8192$^2$, $N=8$: time per pass against the task
@@ -212,7 +233,7 @@ grain (log-log, 95\% CI); dashed: Rayon's adaptive split.}
 \label{fig:grain}
 \end{figure}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
 \includegraphics[width=\linewidth]{../figures/grain-ucurve.pdf}
 \caption{Grain sweeps at both sizes and for every workload swept.}

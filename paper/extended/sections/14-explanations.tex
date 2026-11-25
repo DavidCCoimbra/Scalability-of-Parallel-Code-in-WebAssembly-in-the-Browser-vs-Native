@@ -55,7 +55,7 @@ equal). LLVM unrolls alike for both targets: eight atomic increments per
 turn and four plain ones, in x86 and in WASM. What differs between native
 and browser is made by the engine from the same WASM.
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \footnotesize
 \begin{minipage}[t]{0.47\linewidth}
 \textbf{LLVM, native}
@@ -126,7 +126,7 @@ SpiderMonkey's baseline code was not captured.
 \subsection{RQ2: one instruction sequence}
 \label{sec:why-rq2}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
 \begin{tikzpicture}[font=\scriptsize, x=1cm, y=1cm,
   stp/.style={draw, rounded corners=1pt, minimum height=5mm, inner sep=2pt},
@@ -312,7 +312,7 @@ last-level misses rise less. Two other sources agree.
 
 \input{tables/simd}
 
-\begin{figure}[htbp]
+\begin{figure}[tbp]
 \centering
 \includegraphics[width=\linewidth]{../figures/simd-efficiency.pdf}
 \caption{Filter efficiency per build: scalar (no SIMD on either side), the

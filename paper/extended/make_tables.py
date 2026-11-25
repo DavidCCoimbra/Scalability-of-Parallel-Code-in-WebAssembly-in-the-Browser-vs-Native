@@ -841,7 +841,6 @@ def cutoff_tables() -> None:
         "lll" + "c" * len(sides),
         [("Workload", "$N$", "Environment", *(f"{side}$^2$" for side in sides))],
         body,
-        long=True,
         size=r"\footnotesize",
     )
     estimates = [row for row in read("cutoff-v3/cutoff-estimates.csv") if row["placement"] == "crossed"]
