@@ -129,19 +129,19 @@ SpiderMonkey's baseline code was not captured.
 \begin{figure}[htbp]
 \centering
 \begin{tikzpicture}[font=\scriptsize, x=1cm, y=1cm,
-  step/.style={draw, rounded corners=1pt, minimum height=5mm, inner sep=2pt},
+  stp/.style={draw, rounded corners=1pt, minimum height=5mm, inner sep=2pt},
   arr/.style={-{Stealth[length=1.6mm]}}]
   \node[font=\footnotesize\bfseries, anchor=west] at (0,2.6) {Locked add (LLVM, SpiderMonkey)};
-  \node[step, fill=native!15] (a1) at (1.2,1.8) {take line exclusive};
-  \node[step, fill=native!15, right=3mm of a1] (a2) {add 1};
-  \node[step, fill=native!15, right=3mm of a2] (a3) {done};
+  \node[stp, fill=native!15] (a1) at (1.2,1.8) {take line exclusive};
+  \node[stp, fill=native!15, right=3mm of a1] (a2) {add 1};
+  \node[stp, fill=native!15, right=3mm of a2] (a3) {done};
   \draw[arr] (a1) -- (a2); \draw[arr] (a2) -- (a3);
   \node[anchor=west, text width=5.4cm] at (0,1.0) {One transfer of the line per increment. Never repeated.};
   \node[font=\footnotesize\bfseries, anchor=west] at (6.6,2.6) {Compare-and-swap loop (V8 optimizing)};
-  \node[step, fill=chrome!15] (b1) at (7.4,1.8) {load value};
-  \node[step, fill=chrome!15, right=3mm of b1] (b2) {add 1};
-  \node[step, fill=chrome!15, right=3mm of b2] (b3) {\code{lock cmpxchg}};
-  \node[step, fill=chrome!15, right=3mm of b3] (b4) {done};
+  \node[stp, fill=chrome!15] (b1) at (7.4,1.8) {load value};
+  \node[stp, fill=chrome!15, right=3mm of b1] (b2) {add 1};
+  \node[stp, fill=chrome!15, right=3mm of b2] (b3) {\code{lock cmpxchg}};
+  \node[stp, fill=chrome!15, right=3mm of b3] (b4) {done};
   \draw[arr] (b1) -- (b2); \draw[arr] (b2) -- (b3); \draw[arr] (b3) -- node[above]{same} (b4);
   \draw[arr] (b3.south) -- ++(0,-4mm) -| node[pos=0.25, below]{value changed by another core: retry} (b1.south);
   \node[anchor=west, text width=6.6cm] at (6.6,0.35) {A read of the line, then a write. If another core wrote in between, everything is done again.};
