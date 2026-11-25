@@ -53,6 +53,7 @@ ul.plain { list-style: none; }
 ul.plain li { margin: 0 0 16px; padding-left: 34px; position: relative; }
 ul.plain li::before { content: ""; position: absolute; left: 0; top: 0.5em; width: 18px; height: 6px; background: var(--ink); }
 .legend { display: flex; gap: 34px; align-items: center; font-size: 25px; }
+.legend span { white-space: nowrap; }
 .legend i { display: inline-block; width: 34px; height: 8px; margin-right: 10px; vertical-align: middle; }
 .sw-n { background: var(--native); } .sw-c { background: var(--chrome); } .sw-f { background: var(--firefox); }
 
@@ -61,6 +62,7 @@ table.data th, table.data td { font-size: 26px; padding: 9px 14px; text-align: r
 table.data th { font-weight: 600; border-bottom: 2px solid var(--ink); }
 table.data th:first-child, table.data td:first-child { text-align: left; }
 table.data tr.hot td { background: #fbe9e8; }
+table.data.compact th, table.data.compact td { padding: 5px 14px; font-size: 25px; }
 table.data tr.sep td { border-top: 2px solid var(--ink); }
 
 /* Step reveals: an element with data-step appears when the slide reaches that step. */
@@ -93,6 +95,14 @@ svg .val { font-size: 23px; font-weight: 600; }
 .lane b { position: absolute; top: 5px; left: -160px; height: 18px; width: 150px; animation: run linear infinite; }
 @keyframes run { to { transform: translateX(2100px); } }
 
+/* WASM threads in a tab */
+.wasm { margin-top: 26px; }
+.wasm .row { display: flex; gap: 8px; align-items: stretch; margin-bottom: 8px; }
+.wasm .t { border: 2px solid var(--ink); background: var(--panel); padding: 8px 12px; font-size: 21px; line-height: 1.2; }
+.wasm .t i { color: var(--graphite); font-style: normal; }
+.wasm .w { flex: 1; border: 2px solid var(--ink); background: var(--soft); min-height: 62px; }
+.wasm .mem { border: 2px solid var(--ink); background: var(--line); padding: 10px 14px; font-size: 22px; }
+
 /* Run timeline */
 .timeline { display: flex; align-items: stretch; gap: 0; margin: 4px 0 6px; }
 .timeline div { border: 2px solid var(--ink); border-right: none; padding: 12px 16px; font-size: 23px; line-height: 1.2; background: var(--panel); }
@@ -106,19 +116,19 @@ svg .val { font-size: 23px; font-weight: 600; }
 .funnel .n { font-family: var(--display); font-weight: 600; font-size: 54px; line-height: 1; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* Instruction sequences */
-.seq { font-family: var(--mono); font-size: 25px; line-height: 1.45; background: var(--ink); color: #e9eef3; padding: 14px 18px; white-space: pre; }
+.seq { font-family: var(--mono); font-size: 24px; line-height: 1.4; background: var(--ink); color: #e9eef3; padding: 14px 18px; white-space: pre; }
 .seq .hl { color: var(--line); }
 .seq .rt { color: #ff9a94; }
 .seqgrid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
 .seqgrid h4 { font-size: 23px; font-weight: 600; margin-bottom: 6px; }
 
 /* Cache line animation */
-.arena { position: relative; height: 250px; background: var(--panel); border: 2px solid var(--ink); }
-.arena .core { position: absolute; top: 104px; width: 104px; height: 104px; border: 3px solid var(--ink); background: var(--paper);
+.arena { position: relative; height: 196px; background: var(--panel); border: 2px solid var(--ink); }
+.arena .core { position: absolute; top: 92px; width: 104px; height: 92px; border: 3px solid var(--ink); background: var(--paper);
   display: flex; align-items: center; justify-content: center; font-size: 22px; text-align: center; line-height: 1.15; transition: background .2s; }
 .arena .core.fail { background: #f6c9c6; }
 .arena .core.ok { background: #d9ecd9; }
-.arena .tok { position: absolute; top: 44px; left: 0; width: 104px; height: 44px; background: var(--line); border: 3px solid var(--ink);
+.arena .tok { position: absolute; top: 44px; left: 0; width: 104px; height: 40px; background: var(--line); border: 3px solid var(--ink);
   font-size: 22px; font-weight: 600; display: flex; align-items: center; justify-content: center; transition: transform .45s cubic-bezier(.5,0,.3,1); font-variant-numeric: tabular-nums; }
 .arena .cap { position: absolute; left: 18px; top: 8px; font-size: 22px; color: var(--graphite); }
 .arena .tally { position: absolute; right: 18px; top: 8px; font-size: 22px; font-weight: 600; font-variant-numeric: tabular-nums; }
@@ -196,6 +206,11 @@ body.static .lane b { animation: none; left: 30%; }
         <li>WebAssembly with threads lets that work use every core: shared memory, Web Workers, atomics.</li>
         <li data-step="1">Earlier studies measured WASM with <b>one thread</b>, or one parallel workload at two thread counts with means only. None sweeps the threads with native as baseline in two engines, and none controls synchronization.</li>
       </ul>
+      <div class="wasm" aria-label="A browser tab with a coordinating worker and eight worker threads over one shared memory">
+        <div class="row"><span class="t">main thread<br><i>cannot block</i></span><span class="t">coordinating worker</span><span class="w"></span><span class="w"></span><span class="w"></span><span class="w"></span><span class="w"></span><span class="w"></span><span class="w"></span><span class="w"></span></div>
+        <div class="mem">one shared linear memory (SharedArrayBuffer): the image, the counters, the Rayon pool</div>
+        <p class="tiny" style="margin-top:8px">WASM threads in a tab: each Web Worker instantiates the same module over the same memory.</p>
+      </div>
     </div>
     <div>
       <div class="box" data-step="2" style="margin-bottom:26px">
@@ -289,7 +304,7 @@ body.static .lane b { animation: none; left: 30%; }
   <h2>RQ1: without synchronization, WASM threads scale like native code</h2>
   <div class="cols c64" style="gap:44px">
     <div>
-      <div class="legend" style="margin-bottom:6px"><span><i class="sw-n"></i>native</span><span><i class="sw-c"></i>Chrome</span><span><i class="sw-f"></i>Firefox</span><span class="tiny">speedup T1 / TN at N = 8 in each panel; dashed: ideal; 30 runs per point</span></div>
+      <div class="legend" style="margin-bottom:6px"><span><i class="sw-n"></i>native</span><span><i class="sw-c"></i>Chrome</span><span><i class="sw-f"></i>Firefox</span><span class="tiny">dashed: ideal; 30 runs per point</span></div>
       <div id="ch-speedup" class="draw"></div>
     </div>
     <div>
@@ -358,8 +373,8 @@ body.static .lane b { animation: none; left: 30%; }
 
 <!-- 8 -->
 <section class="slide" data-title="RQ2 explanation" data-time="80">
-  <h2>Why: one WASM instruction, four machine sequences</h2>
-  <div class="seqgrid" style="margin-bottom:18px">
+  <h2 style="margin-bottom:22px">Why: one WASM instruction, four machine sequences</h2>
+  <div class="seqgrid" style="margin-bottom:16px">
     <div><h4 class="native">LLVM, native</h4><div class="seq"><span class="hl">lock inc</span> [counter]</div></div>
     <div><h4 class="firefox">SpiderMonkey, optimizing</h4><div class="seq"><span class="hl">lock add</span> [counter], 1</div></div>
     <div><h4 class="chrome">V8, optimizing (what runs)</h4><div class="seq">old = <span class="hl">load</span> [counter]
@@ -372,9 +387,9 @@ new = old + 1
     <div class="arena" id="arenaA"><span class="cap">locked add: take the line, add, done</span><span class="tally" id="tallyA"></span></div>
     <div class="arena" id="arenaB"><span class="cap">compare-and-swap: read, add, write only if unchanged</span><span class="tally" id="tallyB"></span></div>
   </div>
-  <div class="cols c2" style="gap:30px;margin-top:18px">
+  <div class="cols c2" style="gap:30px;margin-top:14px">
     <div data-step="2">
-      <table class="data">
+      <table class="data compact">
         <tr><th>Atomic histogram, one thread, ms</th><th>k = 1</th><th>k = 256</th></tr>
         <tr><td>native</td><td>379.6</td><td>379.6</td></tr>
         <tr class="hot"><td>Chrome, optimizing compiler</td><td>698.0</td><td>411.9</td></tr>
@@ -813,7 +828,7 @@ function build() {
   intervalChart(document.getElementById("ch-rq2"), rq2Rows, { width: 1040, rowHeight: 74, min: 0.35, max: 2.8, log: true, ticks: [0.4, 0.5, 0.7, 1, 1.5, 2, 2.5], labelWidth: 260 });
 
   barChart(document.getElementById("ch-instr"), DATA.instructionsPerPixel, { width: 540, height: 250, max: 6, unit: " instr/px", digits: 2 });
-  barChart(document.getElementById("ch-fj"), DATA.forkJoinUs, { width: 540, height: 250, max: 130, unit: " us", digits: 1 });
+  barChart(document.getElementById("ch-fj"), DATA.forkJoinUs, { width: 540, height: 250, max: 130, unit: " \u00b5s", digits: 1 });
   memoryChart(document.getElementById("ch-mem"));
 
   const robust = document.getElementById("tbl-robust");
