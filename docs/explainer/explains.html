@@ -45,8 +45,7 @@
     <h1>What explains the results</h1>
     <p class="lead">A measurement tells you <i>what</i> happened: the filter gets 7 times faster with 8 threads, Chrome
       pays twice for a shared counter. It does not tell you <i>why</i>. This page is about the why. The study listed
-      nine things it had seen and could not yet explain, wrote down a guess for each, wrote down what a test would
-      show (a <span data-term="prediction">prediction</span>) if the guess were right and if it were wrong, and only then ran the tests.</p>
+      nine things it had seen and could not yet explain, wrote down a guess for each, wrote down what a test would show (a <span data-term="prediction">prediction</span>) if the guess were right and if it were wrong, and only then ran the tests. The predictions were written after the main campaign, which is what raised the questions, and before each test.</p>
     <p class="lead-more">In short: of nine open questions, the tests answered three, supported four,
       explained one through another, and left one open; no answer changes a result, each one says how far the
       explanation of a result can be trusted.</p>
@@ -60,14 +59,14 @@
       <path class="arrow" d="M120 68 h 22"/>
       <rect class="box" x="146" y="40" width="112" height="56" rx="8"/><text x="202" y="64" text-anchor="middle" font-weight="600">A guess</text><text x="202" y="82" text-anchor="middle">the hypothesis</text>
       <path class="arrow" d="M260 68 h 22"/>
-      <rect class="cool" x="286" y="28" width="136" height="80" rx="8"/><text x="354" y="52" text-anchor="middle" font-weight="600">Written first</text><text x="354" y="70" text-anchor="middle">if right, we see A</text><text x="354" y="88" text-anchor="middle">if wrong, we see B</text>
+      <rect class="cool" x="286" y="28" width="136" height="80" rx="8"/><text x="354" y="52" text-anchor="middle" font-weight="600">Before the test</text><text x="354" y="70" text-anchor="middle">if right, we see A</text><text x="354" y="88" text-anchor="middle">if wrong, we see B</text>
       <path class="arrow" d="M424 68 h 22"/>
       <rect class="box" x="450" y="40" width="96" height="56" rx="8"/><text x="498" y="64" text-anchor="middle" font-weight="600">The test</text><text x="498" y="82" text-anchor="middle">runs</text>
       <path class="arrow" d="M548 68 h 22"/>
       <rect class="good" x="574" y="8" width="120" height="30" rx="8"/><text x="634" y="28" text-anchor="middle">answered</text>
       <rect class="box" x="574" y="53" width="120" height="30" rx="8"/><text x="634" y="73" text-anchor="middle">supported</text>
       <rect class="hot" x="574" y="98" width="120" height="30" rx="8"/><text x="634" y="118" text-anchor="middle">not supported</text>
-    </svg><figcaption>The prediction is written before the test runs (ADR 0088). The outcome is one of three words, never "it fits".</figcaption></figure>
+    </svg><figcaption>The prediction is written before its test runs and after the main campaign (ADR 0088). The outcome is one of three words, never "it fits".</figcaption></figure>
     <p>The three words mean different things, and the difference is the whole point:</p>
     <ul>
       <li><b>Answered</b>: the test changed <i>one thing</i> and the effect followed it. That shows a cause.</li>
@@ -96,7 +95,7 @@
         <tr><td>4</td><td>The local histogram's efficiency dips at 6 and 7 threads</td><td>Rayon splits work in powers of two, which loads 6 or 7 threads unevenly</td><td>fixed grains at N = 6, 7, 8</td><td><a href="#q4"><span class="chip no">not supported, open</span></a></td></tr>
         <tr><td>5</td><td>The local histogram's speedup passes 8 in Firefox</td><td>One thread pays for cache misses that eight threads do not</td><td>counters</td><td><a href="#q5"><span class="chip part">supported</span></a></td></tr>
         <tr><td>6</td><td>With one thread, Chrome's atomic histogram depends on k; nobody else's does</td><td>V8's optimizing compiler adds with a read and a compare-and-swap</td><td>tier campaign, native probe, engine code</td><td><a href="#q67"><span class="chip ok">answered</span></a></td></tr>
-        <tr><td>7</td><td>At k = 256 with 8 threads, Chrome's atomic histogram is twice as fast as native's</td><td>The same sequence changes how eight cores contend for 256 lines</td><td>tier campaign, native probe</td><td><a href="#q67"><span class="chip ok">answered for the sequence</span></a> <span class="chip part">mechanism open</span></td></tr>
+        <tr><td>7</td><td>At k = 256 with 8 threads, Chrome's atomic histogram is twice as fast as native's</td><td>The same sequence changes how eight cores contend for 256 lines</td><td>tier campaign, native probe</td><td><a href="#q67"><span class="chip part">direction reproduced</span></a> <span class="chip part">mechanism open</span></td></tr>
         <tr><td>8</td><td>Firefox's RQ2 number is under 1 at k = 16 and 256</td><td>It comes from the denominator: its local histogram scales more</td><td>the two factors of the ratio</td><td><a href="#q8"><span class="chip ok">follows from 5</span></a></td></tr>
         <tr><td>9</td><td>The atomic cells at k = 1 are noisy: runs fall on several time levels</td><td>The levels are states of contention that differ from run to run</td><td>counters per run</td><td><a href="#q9"><span class="chip part">supported</span></a></td></tr>
       </tbody></table></div>
@@ -130,8 +129,7 @@
         counted too. So the loop was isolated by a difference: two campaigns identical except that one does 1 pass
         per timed sample and the other 8 (<code>perf-loop1-v3</code>, <code>perf-loop8-v3</code>, 180 runs each).
         The second does seven more passes of the loop and nothing else, so (count of the second - count of the
-        first) / (7 × samples × pixels) is the loop alone (ADR 0090). The check that the method works: the native
-        local histogram gives 2.77 instructions per pixel against the 2.75 of its code.</p>
+        first) / (7 × samples × pixels) is the loop alone (ADR 0090). The check that the method works: the native local histogram gives 2.77 instructions per pixel against the 2.75 of its code. One caveat: the rules for calling two counter values "the same" or "smaller" (overlapping 95% intervals) were fixed after a first look at the differences, so the counter comparisons on this page are not predictions in the strict sense (ADR 0090).</p>
     </details>
 
     <h2 id="q1">Question 1: why 8 threads give 7, not 8</h2>
@@ -168,8 +166,7 @@
       running the loop at all, which a cycle counter does not see: it fits the cost of handing out and collecting
       the tasks, and was not measured here. That is why the outcome says "supported, for about half".</p>
     <p>Two other measurements point the same way. First, three builds of the same filter that differ only in how
-      fast one thread goes through memory (<a href="extras.html#simd">SIMD builds</a>): the faster one thread reads,
-      the less eight threads gain.</p>
+      fast one thread goes through memory (<a href="extras.html#simd">SIMD builds</a>): among the native builds and Firefox, the faster one thread reads, the less eight threads gain. Chrome is the exception: it reads more slowly than native and ends at the native efficiency.</p>
     <div class="card"><div id="w-q1-simd"></div></div>
     <p class="src" data-src="simd-v3-variants"></p>
     <p>Second, the image size. Natively, a 4096 x 4096 image (32 MB for input and output together) keeps more of
@@ -188,8 +185,7 @@
       be praising the slowest runtime for being slow.</p></aside>
     <p>Firefox's loop is the slowest of the three per thread (question 3). A slower loop asks for less memory per
       second, so eight of them run into the shared memory less (question 1). The counters agree: from 1 to 8
-      threads Firefox's cycles per pixel rise less than native's, and so do its cache misses (the table above). In
-      the SIMD chart Firefox sits where its one-thread speed puts it, on the same curve as the native builds.</p>
+      threads Firefox's cycles per pixel rise less than native's, and so do its cache misses (the table above). In the SIMD chart Firefox sits where its one-thread speed puts it, on the same curve as the native builds; Chrome sits below that curve.</p>
     <p>And there is one test that changes the speed inside a single engine. With the slower baseline compiler, the
       filter is slower per thread and scales slightly better, in <i>both</i> browsers:</p>
     <div id="w-q2"></div>
@@ -233,10 +229,7 @@
     <h2 id="q67">Questions 6 and 7: Chrome's atomic add</h2>
     <p>These two are the heart of RQ2 and have a page of their own: <a href="rq2.html#code">Why Chrome: code and
       counters</a>. In short: V8's optimizing compiler adds to a shared counter with a read and a compare-and-swap
-      that retries; a native program changed to add the same way gets Chrome's times, slower on one counter
-      (<a href="rq2.html#probe">question 6, answered</a>) and faster on 256 counters with eight threads
-      (<a href="rq2.html#k256">question 7, answered for the sequence</a>). Why the same sequence wins on 256
-      counters is a proposed mechanism, not a tested one.</p>
+      that retries; a native program changed to add the same way comes within 3% of Chrome's one-thread times, slower on one counter (<a href="rq2.html#probe">question 6, answered</a>). On 256 counters with eight threads it is faster than the native add, as Chrome is, but 14% from Chrome's time (<a href="rq2.html#k256">question 7, answered for the direction</a>). Why the same sequence wins on 256 counters is a proposed mechanism, not a tested one.</p>
 
     <h2 id="q8">Question 8: Firefox below 1</h2>
     <p>Firefox's RQ2 number is 0.83 at k = 16 and 0.80 at k = 256: it seems to pay less than native for sharing.
@@ -291,7 +284,7 @@
       <li>What sets a run's state of contention at k = 1.</li>
     </ul>
     <p class="takeaway"><strong>In summary.</strong> An explanation is only as good as the test it survived. Here,
-      Chrome's atomic penalty has a cause shown by changing one thing; the filter's scaling has a reading supported
+      Chrome's atomic penalty at k = 1 has a cause shown by changing one thing; its advantage at k = 256 is reproduced in direction only; the filter's scaling has a reading supported
       by three measurements that agree; one guess failed its test and was dropped. And twice a ratio looked better
       because its bottom got worse: always look at the seconds.</p>
 

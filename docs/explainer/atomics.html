@@ -111,7 +111,7 @@ Atomics.add(counters, value, 1n);</pre></figure>
     <div id="cas-table"></div>
     <p class="src" data-src="perf-v3-retries, perf-v3-counters"></p>
     <p>Read the first column as "extra attempts per add": at k = 1 with 8 threads, one Chrome add in four goes round
-      the loop a second time, while native and Firefox almost never do. The full reading of these numbers, the test that shows the loop is the cause, and the question left open at <i>k</i> = 256, are in <a href="rq2.html#code">Why Chrome: code and counters</a>.</p>
+      the loop a second time, while native and Firefox almost never do. The full reading of these numbers, the test that ties the penalty at k = 1 to the loop, and the question left open at <i>k</i> = 256, are in <a href="rq2.html#code">Why Chrome: code and counters</a>.</p>
 
     <h2 id="code">What each engine emits</h2>
     <p>Which strategy a runtime uses is not chosen by the Rust source; it is chosen by whatever turns the code into

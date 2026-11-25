@@ -52,8 +52,7 @@
       had no plain sequential code to compare with, the two histograms did not split their work the same way, a few
       slow runs had no established cause, nobody knew for sure which of a browser's two compilers was being
       measured.</p>
-    <p>A new copy, <code>measured/v3</code>, fixes those, and <i>every</i> campaign was run again on it. The study
-      reports v3 only.</p>
+    <p>A new copy, <code>measured/v3</code>, adds what answers them: plain sequential versions of the workloads, the same task-splitting code for both histograms, and more recorded per run. <i>Every</i> campaign was run again on it, and the study reports v3 only. The asymmetries in the measured code had been fixed earlier, from the first build to the second (<a href="environments.html#v2">The build history</a>); v3 is a replication of v2, not a correction of its results.</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not keep the v2 numbers and add the new ones next to them?</b> Because two copies of a
       program are two different programs to a CPU. Moving a function by a few bytes can change a timing by a percent
       or two, for reasons that have nothing to do with what is being studied. A table that mixed runs of two builds
@@ -62,7 +61,7 @@
     <p><em>An analogy.</em> You timed runners on one track, then resurfaced the track. You cannot
       add new lap times to the old table: you run everybody again on the new surface and publish that table.</p>
     <p>There is one more thing to be honest about. The v2 results were already known when v3 was measured. That
-      makes v3 a <b><span data-term="replication">replication</span> with corrections</b>, not a blind experiment. To keep the known numbers from steering
+      makes v3 a <b><span data-term="replication">replication</span> with known results</b>, not a blind experiment. To keep the known numbers from steering
       any choice, every rule on this page was written down before any v3 run existed (ADR 0084).</p>
 
     <h2 id="steps">The steps, in order</h2>

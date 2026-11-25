@@ -53,7 +53,7 @@
     <h2 id="found">What it found</h2>
     <h3 id="found-rq1">RQ1: browser threads scale like native threads</h3>
     <p>With enough work per parallel region, the filter gains from 8 threads in the browsers as it does natively.
-      The browser is slower by a constant factor per thread, and that factor does not grow with the thread count.</p>
+      The browser is slower by a factor per thread that does not grow with the thread count (Firefox's falls from 1.36 to 1.29).</p>
     <div class="card"><div id="rq1-chart"></div></div>
     <p class="src" data-src="campaign-v3-scaling"></p>
     <div id="rq1-table"></div>
@@ -67,15 +67,10 @@
       threads. 1 means the browser pays what native pays; 2 means twice as much.</p>
     <div class="card"><div id="rq2-bars"></div></div>
     <p class="src" data-src="campaign-v3-contrasts"></p>
-    <p>Chrome pays more than twice the native cost when every thread hits one counter, and less than half when
-      the counters are spread out. Firefox never pays more than native. The cause is one choice of instructions:
-      Chrome's optimizing compiler adds to a shared counter with a read and a compare-and-swap that retries, where
-      native code and Firefox use one locked add. A native program rewritten to add Chrome's way gets Chrome's
-      times in both directions. <a href="rq2.html">RQ2: synchronization</a> has the contrasts and the test.</p>
+    <p>Chrome pays more than twice the native cost when every thread hits one counter, and less than half when the counters are spread out. Firefox's ratio is never above native's. The penalty follows one choice of instructions: Chrome's optimizing compiler adds to a shared counter with a read and a compare-and-swap that retries, where native code and Firefox use one locked add. With Chrome's other compiler the penalty is gone, and a native program rewritten to add Chrome's way comes within 3% of Chrome's one-thread times. On 256 counters that program reproduces the direction of Chrome's advantage, 14% from its time; why the loop wins there is not shown. <a href="rq2.html">RQ2: synchronization</a> has the contrasts and the test.</p>
 
     <h3 id="found-method">Measured twice</h3>
-    <p>The study was measured on two builds of the program. The rules for the second measurement were written
-      before it started, and all ten primary decisions came out the same.
+    <p>The study was measured on two builds of the program. The second is a replication of the first with its results known, so its rules were written before it started; all ten primary decisions came out the same.
       <a href="session.html">The session of a build</a> tells that story, and
       <a href="threats.html">Threats to validity</a> lists what the results cannot establish.</p>
 

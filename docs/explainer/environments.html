@@ -267,7 +267,7 @@
     <p>The fix: fixed-size counter tables (no per-pixel check; LLVM then unrolls the loop by 8 itself), and every
       histogram's timed run now ends with its final histogram. The checksums did not change.</p>
     <div data-code="bench/src/workloads/histogram/atomic.rs|fn run(|10" data-title="Reading the counters back is now timed, like the local merge"></div>
-    <p>Then every campaign was re-run on the corrected build. Later the study was measured a third time, on <code>measured/v3</code>, which adds what v2 could only declare (<a href="session.html#twice">Why the study was measured twice</a>). <b>Every number in this documentation comes from <code>measured/v3</code></b>; the earlier builds' campaigns are not reported as results.</p>
+    <p>Then every campaign was re-run on the corrected build. The reported build is the third, <code>measured/v3</code>: a replication of v2 with known results, which adds the sequential references and the same task-splitting code for both histograms (<a href="session.html#twice">Why the study was measured twice</a>). <b>Every number in this documentation comes from <code>measured/v3</code></b>; the earlier builds' campaigns are not reported as results.</p>
     <details class="deeper"><summary>In depth: why builds are never mixed</summary>
       <p>Builds are never mixed in one comparison because a change in code layout alone, with the same instructions,
         can change timing by a few percent (Mytkowicz et al. 2009). A refactor of the measured path is accepted only

@@ -183,7 +183,7 @@ window.page = function (UI) {
       data: function () { return list(function (e) { return scale(e, "hist-atomic", 256, 8).speedup; }, 2); } },
     { what: "Atomic over local time at k = 1, N = 1 (Chrome, native)", paper: "4.6, 2.5", src: "campaign-v3-scaling",
       data: function () { return ["chrome", "native"].map(function (e) { return fmt(scale(e, "hist-atomic", 1, 1).center_ns / scale(e, "hist-local", 1, 1).center_ns, 1); }).join(", "); } },
-    { what: "Half-width of the primary 99.5 % intervals (RQ1, RQ2)", paper: "±2 %, ±6.6 %", src: "campaign-v3-contrasts",
+    { what: "Half-width of the primary 99.5 % intervals (RQ1, RQ2)", paper: "±2 %, ±7 %", src: "campaign-v3-contrasts",
       data: function () { return "±" + fmt(halfWidth("RQ1"), 1) + " %, ±" + fmt(halfWidth("RQ2"), 1) + " %"; } },
     { what: "Mann-Whitney: smallest |δ| of the rejected contrasts; how many with |δ| = 1", paper: "0.74; six", src: "campaign-v3-robustness",
       data: function () { return fmt(Math.min.apply(null, rej.map(function (r) { return Math.abs(r.cliffs_delta); })), 2) + "; " + rej.filter(function (r) { return Math.abs(r.cliffs_delta) === 1; }).length; } },
