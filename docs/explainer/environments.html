@@ -220,10 +220,7 @@
         <li>Every run records the git commit and the SHA-256 of the native binary and of the <code>.wasm</code> file.</li>
         <li>A refactor of the measured path is checked with <code>scripts/codegen_diff.sh</code>; if any hot function's
           code changes, it is a new build, with its own tag (ADR 0062).</li>
-        <li>The earlier tags (<code>measured/campaign</code>, <code>measured/extras</code>, and the others) mark the first
-          build. A review of the measured path found asymmetries in it, among them a per-pixel bounds check paid only by
-          the shared counters; v2 removed them, and every reported campaign was run again on v2
-          (<a href="machine.html#v2">Our own asymmetries</a>).</li>
+        <li>Two builds came before it. A review of the first one found asymmetries in the measured path, among them a per-pixel bounds check paid only by the shared counters; <code>measured/v2</code> removed them (<a href="machine.html#v2">Our own asymmetries</a>). <code>measured/v3</code> adds the sequential references and gives every histogram the same task splitting, and every campaign was run again on it (<a href="session.html">The session of a build</a>). The data of <code>measured/v2</code> is at the tag <code>data/v2</code>.</li>
       </ul>
     </details>
     <p>One last point, and it is a finding rather than a flaw: the same WebAssembly instruction does not give the

@@ -131,8 +131,7 @@
     <p><b>Synchronization changes the gap, and how depends on the engine.</b> Relative to the no-sharing control,
       shared atomics cost Chrome 1.4 to 2.3 times what they cost natively when the sharing is concentrated on a few counters (k = 1 to 16), and 0.42 times when it is spread over 256 counters, where Chrome's atomic histogram even scales (speedup 1.96, against native's 0.92 and Firefox's 0.97). Firefox is never worse than native: no detectable difference at k = 1, cheaper from k = 4 on.</p> <p>Two things the number hides, both shown by its two factors below. Firefox's values under 1 at k = 16 and 256 do not come from cheaper atomics: its atomic times are the native ones, and its <i>local</i> histogram scales more than native's, which makes the denominator smaller (<a href="explains.html#q8">question 8</a>). And Chrome's effect in both directions follows one thing, the instructions its optimizing compiler emits for the add (<a href="rq2.html#probe">the probe</a>).</p> <div id="w-factors"></div> <p class="src" data-src="campaign-v3-rq2-decomposition"></p>
     <p class="takeaway"><strong>In summary.</strong> Sharing between threads is expensive everywhere. Chrome pays more than twice native's price when everyone hits the same counter, and less than half when the sharing is spread out.
-      Firefox pays what native pays. The reason is the machine code each engine produces for the atomic add: the
-      next page.</p>
+      Firefox pays what native pays. The reason is the machine code each engine produces for the atomic add, shown in <a href="#cause">the next section</a>.</p>
     <details class="deeper"><summary>In depth: why memory order is not the explanation</summary>
       <p>WASM atomics are always sequentially consistent, which a reader may suspect as the cause. It is not: on x86
         a locked read-modify-write costs about the same whatever its ordering, so <code>Relaxed</code> and

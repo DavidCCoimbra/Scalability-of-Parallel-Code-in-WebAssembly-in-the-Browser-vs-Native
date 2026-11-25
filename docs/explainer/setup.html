@@ -41,7 +41,7 @@
       and run its tests. Every command here works on the Mac. Nothing you do today produces a result for the
       paper; that only happens on the measuring PC, and the page says where that line is.</p>
     <p class="lead-more">In short: <code>make setup</code>, <code>make build</code>, one native run,
-      one CSV row read field by field, <code>make test</code>: an hour, and you can read the rest of the guide
+      one CSV row read field by field, <code>make test</code>: an hour, and you can read the rest of the documentation
       with the code in front of you.</p>
 
     <h2 id="machines">Two machines, two jobs</h2>
@@ -81,7 +81,7 @@ make build                    # the native program and the WASM package</pre>
   --width 1024 --height 1024 --warmup 2 --iters 5</pre>
     <p>Read the flags as a sentence: <i>the histogram with shared counters, on a picture with few shades (4 of
       them), using 8 threads, 1024 by 1024 pixels, 2 untimed rounds then 5 timed ones.</i> Every word of that
-      sentence is a page of this guide: <a href="workloads.html">The workloads</a>, <a href="workloads.html#k">k</a>,
+      sentence is a page of this documentation: <a href="workloads.html">The workloads</a>, <a href="workloads.html#k">k</a>,
       <a href="protocol.html#warmup">warm-up</a>.</p>
     <p>In the browser the same options go in the page's address instead of on the command line, and the result
       is sent to a small local server rather than printed. That needs the pinned browsers and belongs to the PC;
@@ -121,13 +121,13 @@ make build                    # the native program and the WASM package</pre>
       at every thread count from 1 to 8. One of them:</p>
     <div data-code="bench/src/workloads/histogram/atomic.rs|fn matches_sequential_histogram_for_every_thread_count|13" data-title="One of the thread-count tests"></div>
     <p>The lint part (<code>make lint</code>) checks formatting, Rust's own warnings, the shape of the decision
-      records, the "no em dash" rule, that this guide's data file is up to date, and Python's types. On a Mac two
+      records, that this documentation's data file is up to date, and Python's types. On a Mac two
       of its checks complain about Linux-only code; the same checks pass in CI, which runs on Linux. That is
       expected, not something to fix.</p>
 
     <h2 id="next">Where to go next</h2>
     <ul>
-      <li>Never met threads, caches or a median? Start at <a href="machines.html">Foundations</a>; an hour, no
+      <li>Never met threads, caches or a median? Start at <a href="machines.html">Concepts</a>; an hour, no
         project numbers.</li>
       <li>Know those? <a href="questions.html">Questions and design</a>, then <a href="workloads.html">The
         workloads</a> with <code>bench/src/workloads/</code> open next to it.</li>

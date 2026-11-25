@@ -100,12 +100,11 @@
         <tr><td><code>bench/</code></td><td>Rust crate: workloads, the timed loop, native runner, WASM entry and the browser page (<code>www/</code>)</td></tr>
         <tr><td><code>harness/</code></td><td>Results server, browser launcher (no automation framework), environment scripts, the campaign orchestrator, campaign specs</td></tr>
         <tr><td><code>analysis/</code></td><td>Statistics and figures, one command per output</td></tr>
-        <tr><td><code>scripts/</code></td><td>Repository checks (ADRs, no em dash, SIMD parity, codegen diff), the perf counting script and the generator of this guide's data</td></tr>
+        <tr><td><code>scripts/</code></td><td>Repository checks (ADRs, SIMD parity, codegen diff, tables diff), the session runner, the engine-code capture scripts, the perf counting script and the generator of this documentation's data</td></tr>
         <tr><td><code>make/</code>, <code>Makefile</code></td><td>Every command, split by topic: setup, build, env, campaign, results, test, quick</td></tr>
-        <tr><td><code>data/</code></td><td><code>raw/</code> (one folder per campaign, the measured runs), <code>tables/&lt;campaign&gt;/</code> (tables derived from them), <code>probes/</code> (one-off probes)</td></tr>
-        <tr><td><code>paper/</code></td><td>LaTeX, ACM template: <code>final/</code> (the paper), <code>pilot/</code>, <code>proposal/</code>, <code>defense/</code>, shared <code>figures/</code> and <code>bib/</code></td></tr>
-        <tr><td><code>docs/</code></td><td><code>adr/</code> (decisions), <code>explainer/</code> (this guide), <code>paper-material/</code>, <code>study/</code> (analysis plan, parameters, threats, related work), <code>defense/</code>, <code>history/</code></td></tr>
-        <tr><td><code>presentation/</code></td><td>The slides of the talk</td></tr>
+        <tr><td><code>data/</code></td><td><code>raw/&lt;campaign&gt;-v3/</code> (the measured runs), <code>tables/&lt;campaign&gt;-v3/</code> (tables derived from them), and evidence that is not results: <code>probes/</code>, <code>checks/</code>, <code>sessions/</code>, <code>earlier/</code></td></tr>
+        <tr><td><code>paper/</code></td><td>LaTeX, ACM template: <code>final/</code> (the paper), with shared <code>figures/</code> and <code>bib/</code></td></tr>
+        <tr><td><code>docs/</code></td><td><code>adr/</code> (the decision records) and <code>explainer/</code> (this documentation)</td></tr>
       </tbody>
     </table></div>
     <p class="src" data-files="README.md, Makefile, make/"></p>
@@ -346,7 +345,7 @@
     <div class="two">
       <div class="card"><h4>On the Mac</h4>
         <p>Every box runs, but with no CPU mask, no scope, no machine check (<code>"strict": false</code>
-          specs, <code>make quick-*</code>, <code>make mini</code>). The pieces talk exactly the same way, so
+          specs, <code>make quick-*</code>). The pieces talk exactly the same way, so
           a change to a format shows up here first. The times are not results.</p></div>
       <div class="card"><h4>On the PC</h4>
         <p>The same boxes, plus the ones that hold the machine still: the shield keeps everything but the
@@ -417,7 +416,7 @@ window.page = function (UI) {
     { key: "data", t: "data/", s: "raw runs, tables", page: "data.html", d: "data/raw holds the runs exactly as produced; data/tables holds what analysis derived from them. Raw files are never edited." },
     { key: "analysis", t: "analysis/", s: "Python, statistics", page: "reading.html", d: "Reads data/raw, writes data/tables and paper/figures: one value per run, speedup, bootstrap intervals, Holm, figures." },
     { key: "paper", t: "paper/", s: "LaTeX", page: "reproduce.html", d: "paper/final/paper.tex reads its numbers from data/tables and its figures from paper/figures." },
-    { key: "docs", t: "docs/", s: "ADRs, guide", page: "decisions.html", d: "Every decision as an ADR, the study documents, the paper material and this explainer." }
+    { key: "docs", t: "docs/", s: "ADRs, docs", page: "decisions.html", d: "Every decision as an ADR, and this documentation." }
   ];
   var W = 760, bw = 104, gap = (W - 20 - bw * BOXES.length) / (BOXES.length - 1);
   var svg = '<svg viewBox="0 0 ' + W + ' 86" role="img" aria-label="The folders of the repository, in the order data flows">';
@@ -509,7 +508,7 @@ window.page = function (UI) {
     ["Hardware counters per atomic add", "scripts/perf-counters.sh, analysis/extras/perf_counters.py", "why.html#retries", "Counts the CPU keeps of its own events, read with the Linux tool perf."],
     ["Figures of the paper", "analysis/figures/", "reproduce.html"],
     ["Every command", "Makefile, make/", "commands.html"],
-    ["This guide's numbers", "scripts/explainer_data.py, docs/explainer/assets/data.js", "reproduce.html#explainer"]
+    ["The numbers of this documentation", "scripts/explainer_data.py, docs/explainer/assets/data.js", "reproduce.html#explainer"]
   ];
   // [symptom, where to look, explanation, gloss (optional)]
   var S = [
@@ -527,8 +526,8 @@ window.page = function (UI) {
     ["A refactor of bench/ changed the measured code", "scripts/codegen_diff.sh, scripts/codegen_diff.py", "Builds the base and the working tree and compares every function; a hot function that differs means the change is not codegen-neutral and needs a new build tag (ADR 0062).", "The machine code of the timed functions is compared before and after an edit; if it changed, the numbers are not comparable."],
     ["The filter is no longer vectorized", "scripts/check_simd.py", "CI checks that blur_interior uses packed 16-bit SIMD in both the native binary and bench.wasm (ADR 0017).", "The compiler stopped using the instructions that process 8 pixels at once."],
     ["Browser results differ from native in CI", "harness/browser_check/", "The CI correctness check runs small cases in both browsers and compares the checksums with native (ADR 0024)."],
-    ["An ADR or a page has an em dash, or an ADR is malformed", "scripts/check_no_em_dash.py, scripts/check_adrs.py", "make lint and CI refuse it."],
-    ["This guide shows old numbers or a missing excerpt", "scripts/explainer_data.py", "Run python3 -m scripts.explainer_data; it fails if an excerpt's first line is no longer found in its file."]
+    ["An ADR is malformed", "scripts/check_adrs.py", "make lint and CI refuse it."],
+    ["This documentation shows old numbers or a missing excerpt", "scripts/explainer_data.py", "Run python3 -m scripts.explainer_data; it fails if an excerpt's first line is no longer found in its file."]
   ];
   function files(list) {
     var td = el("span");

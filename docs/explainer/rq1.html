@@ -74,7 +74,7 @@
       divided by N: the share of each thread's time that turned into useful work. 1.0 is perfect; above 0.8 is
       considered good for memory-heavy code like an image filter, because the 8 threads share one memory bus. The filter's 0.87 natively, 0.87 in Chrome and 0.92 in Firefox at N = 8 are all in that range.</p>
     <details class="deeper"><summary>In depth: the superlinear Firefox value, and why the ratio must come with the speedup</summary>
-      <p>The filter reaches about 7 at N = 8 everywhere. The local histogram reaches 7.8 to 8.5; Firefox's value above 8 at k = 256 (8.48) starts from a slower T<sub>1</sub> (1.27 times native), not from faster threads: its one-thread run pays for cache misses that its eight-thread run does not (<a href="explains.html#q5">question 5</a>). A relative speedup compares each runtime with itself, so a runtime with a slow single thread can show a high speedup and still be slower in seconds. That is why every speedup in this guide is read next to the time ratio
+      <p>The filter reaches about 7 at N = 8 everywhere. The local histogram reaches 7.8 to 8.5; Firefox's value above 8 at k = 256 (8.48) starts from a slower T<sub>1</sub> (1.27 times native), not from faster threads: its one-thread run pays for cache misses that its eight-thread run does not (<a href="explains.html#q5">question 5</a>). A relative speedup compares each runtime with itself, so a runtime with a slow single thread can show a high speedup and still be slower in seconds. That is why every speedup in this documentation is read next to the time ratio
         browser / native (ADR 0039), the next section. The paper reports this reading in
         <code>paper/final/paper.tex</code>, section RQ1.</p>
     </details>

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Reproduce the tables and figures - WASM threads vs native</title>
-<meta name="description" content="The chain from the raw runs of measured/v3 to the tables, figures and numbers of the paper, a check of the paper's main numbers against the tables they come from, and how this guide gets its numbers.">
+<meta name="description" content="The chain from the raw runs of measured/v3 to the tables, figures and numbers of the paper, a check of the paper's main numbers against the tables they come from, and how this documentation gets its numbers.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <style>
@@ -40,7 +40,7 @@
       the repository can delete the tables and make them again.</p>
 
     <p class="lead-more">In short: <code>make all-results</code> turns
-      <code>data/raw/*-v3</code> into <code>data/tables/*-v3</code> and <code>paper/figures/</code>; the paper and this guide quote those tables, and this page checks the main numbers against them.</p>
+      <code>data/raw/*-v3</code> into <code>data/tables/*-v3</code> and <code>paper/figures/</code>; the paper and this documentation quote those tables, and this page checks the main numbers against them.</p>
 
     <h2 id="chain">The chain</h2>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why must every number be reproducible from a command?</b> Because a number typed
@@ -76,7 +76,7 @@
     <pre class="code" style="padding:10px 12px;overflow-x:auto">git checkout main
 make all-results           # every table and figure of every campaign
 make tables-check          # the same, then fail if a committed table differs
-make explainer             # this guide's data.js</pre>
+make explainer             # this documentation's data.js</pre>
     <p class="def"><b>Why the tables carry a sidecar.</b> Each <code>-scaling.json</code> and
       <code>-contrasts.json</code> records the settings (summary, centre, bootstrap seed and resamples)
       and the commit that wrote it, in a fixed key order. Regenerating a table on the same data changes
@@ -84,15 +84,15 @@ make explainer             # this guide's data.js</pre>
     <p class="src" data-files="make/results.mk, analysis/README.md"></p>
 
     <h2 id="numbers">Every paper number, its file</h2>
-    <p>The main numbers of the study, as the paper and this guide state them, next to what the table gives when this guide reads it. The "Table gives" column is computed in your browser from <code>assets/data.js</code>, which is itself generated from the tables, so a mismatch here means the text and the data disagree.</p>
+    <p>The main numbers of the study, as the paper and this documentation state them, next to what the table gives when this documentation reads it. The "Table gives" column is computed in your browser from <code>assets/data.js</code>, which is itself generated from the tables, so a mismatch here means the text and the data disagree.</p>
     <div id="number-check"></div>
     <p>Numbers not in the table above are in the same files. The paper's run counts come from the specs
       (<a href="campaigns.html#list">Every campaign</a>), the machine description from
       <code>data/raw/campaign-v3/sysinfo/</code>, the machine code of the atomic add from <code>data/probes/engine-code/</code>, the probe times from <code>data/probes/atomic-increment/</code>, and the pilot numbers that justify a design
       decision from the pilot campaigns and their ADRs.</p>
 
-    <h2 id="explainer">This guide's numbers</h2>
-    <p>The pages of this guide contain no measured number in their text. They draw tables and charts
+    <h2 id="explainer">The numbers of this documentation</h2>
+    <p>The pages of this documentation contain no measured number in their text. They draw tables and charts
       from <code>assets/data.js</code>, which one script writes:</p>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Part of data.js</th><th>Read from</th></tr></thead>

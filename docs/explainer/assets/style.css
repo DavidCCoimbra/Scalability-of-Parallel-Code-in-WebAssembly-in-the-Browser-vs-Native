@@ -319,3 +319,20 @@ details.deeper > :last-child { margin-bottom: 14px; }
 .figure { margin: 1.6em 0; text-align: center; }
 .figure svg { max-width: 100%; height: auto; }
 .figure figcaption { font-size: var(--fs-sm); color: var(--muted); margin-top: 8px; }
+
+/* narrow screens: nothing may be wider than the viewport */
+.code header { flex-wrap: wrap; }
+.code header > span { min-width: 0; overflow-wrap: anywhere; }
+.page-sources li, .page-sources a { overflow-wrap: anywhere; min-width: 0; }
+main, .page { overflow-wrap: break-word; }
+@media (max-width: 860px) {
+  .topbar { gap: 8px; padding: 0 12px; }
+  .search { flex: 1 1 0; width: auto; min-width: 0; }
+  .brand { overflow: hidden; text-overflow: ellipsis; flex: 0 1 auto; min-width: 0; }
+  .topbar .spacer { display: none; }
+  .icon-btn { padding: 0 8px; }
+}
+@media (max-width: 480px) {
+  .brand { max-width: 9.5em; }
+  main { padding-left: 16px; padding-right: 16px; }
+}

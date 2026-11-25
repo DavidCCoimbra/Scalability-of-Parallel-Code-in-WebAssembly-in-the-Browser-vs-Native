@@ -362,7 +362,7 @@ window.page = function (UI) {
       memory: [["speedup", nat ? fmt(nat.speedup, 3) : "-"], ["95% CI", nat ? "[" + fmt(nat.speedup_low, 3) + ", " + fmt(nat.speedup_high, 3) + "]" : "-"]] },
     { title: "The bootstrap interval", code: K.boot, highlight: /random\.Random|choices|sorted/,
       plain: "\"With replacement\" means: draw 30 runs out of the 30, putting each one back before drawing the next, so some are picked twice and some not at all. Doing that 10,000 times shows how much the answer could move with another 30 runs; the middle 95 % of those answers is the interval.",
-      say: "Resample the 30 runs of each group with replacement, 10,000 times with a fixed seed, recompute the ratio each time, and keep the middle 95 %. The result lands in <code>data/tables/campaign-v3/campaign-v3-scaling.csv</code>, which the paper and this guide read.",
+      say: "Resample the 30 runs of each group with replacement, 10,000 times with a fixed seed, recompute the ratio each time, and keep the middle 95 %. The result lands in <code>data/tables/campaign-v3/campaign-v3-scaling.csv</code>, which the paper and this documentation read.",
       next: "<a href=\"reading.html\">Reading the numbers</a> explains each step in plain words, <a href=\"stats.html\">The statistics, in detail</a> with the formulas." }
   ]));
 };

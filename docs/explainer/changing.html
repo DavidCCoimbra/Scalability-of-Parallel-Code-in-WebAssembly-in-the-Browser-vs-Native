@@ -78,9 +78,7 @@
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Named constants, comments only for a why.</b> <code>CACHE_LINE_BYTES</code> can be
       searched for; <code>128</code> cannot. A comment that repeats the code goes stale the first time the code
       changes; a comment that says why (and which ADR) does not.</p></aside>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>No em dash anywhere, and the paper in English.</b> Small, but checked by CI
-      (<code>scripts/check_no_em_dash.py</code>): the author's rule, applied to every file so no one has to
-      remember it.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>No em dash anywhere, and every document in English.</b> The author's rule, applied to every file so that the repository reads as one text.</p></aside>
 
     <h2 id="workload">Add a workload</h2>
     <p>A workload is a struct that implements one small trait: <code>prepare</code> outside the clock,
@@ -143,8 +141,8 @@
         commit (<a href="reproduce.html#chain">Why the tables carry a sidecar</a>).</li>
       <li>A unit test in <code>analysis/tests/</code> on a tiny made-up campaign; a row in
         <code>analysis/README.md</code>; the command in a <code>make *-results</code> target.</li>
-      <li>If the pages of this guide should show it: <code>make explainer</code> picks up every CSV in
-        <code>data/tables/*-v3/</code> automatically (<a href="reproduce.html#explainer">This guide's numbers</a>).</li>
+      <li>If the pages of this documentation should show it: <code>make explainer</code> picks up every CSV in
+        <code>data/tables/*-v3/</code> automatically (<a href="reproduce.html#explainer">The numbers of this documentation</a>).</li>
     </ol>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why was the analysis plan written before the campaign?</b> With 162 configurations
       and many statistics to choose from, something would come out "significant" by luck, and it is human to

@@ -107,7 +107,7 @@
       all-results</code> brings it back identical, except for the time stamp in each sidecar. If a number
       in the paper is ever doubted, that one command is the answer.</p></aside>
     <p>One folder per campaign (or per family of campaigns), written by the <code>*-results</code> make
-      targets. Every folder ends in <code>-v3</code>: the final build, and the only one this guide and the paper read. The tables of the earlier build are at the tag <code>data/v2</code>.</p>
+      targets. Every folder ends in <code>-v3</code>: the final build, and the only one this documentation and the paper read. The tables of the earlier build are at the tag <code>data/v2</code>.</p>
     <details class="deeper"><summary>In depth: every table suffix and its columns</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Suffix</th><th>Written by</th><th>One row per</th><th>Main columns</th></tr></thead>
@@ -121,14 +121,14 @@
         <tr><td><code>-karp-flatt.csv</code></td><td><code>analysis.karp_flatt</code></td><td>configuration, N &gt; 1</td><td><code>serial_fraction</code> with bounds</td></tr>
         <tr><td><code>-distributions.csv</code></td><td><code>analysis.distributions</code></td><td>cell of the violin figure</td><td>Quartiles of the per-run medians in ms</td></tr>
         <tr><td><code>-iteration-drift.csv</code></td><td><code>analysis.iteration_drift</code></td><td>configuration</td><td>First over last measured iterations</td></tr>
-        <tr><td><code>simd-v3-variants.csv</code></td><td><code>analysis.build_variants</code></td><td>build, environment, N</td><td>Efficiency, excess time, time over the baseline and over native</td></tr>
+        <tr><td><code>simd-v3-variants.csv</code></td><td><code>analysis.extras.build_variants</code></td><td>build, environment, N</td><td>Efficiency, excess time, time over the baseline and over native</td></tr>
         <tr><td><code>cutoff-table/estimates/model.csv</code></td><td><code>analysis.cutoff</code></td><td>size, or criterion</td><td>Speedup against work per region, break-even and worth-it sizes, the fork-join model</td></tr>
         <tr><td><code>grain-points/best.csv</code></td><td><code>analysis.grain</code></td><td>grain, or configuration</td><td>Time per grain, best grain, flat region, 100:1 grain</td></tr>
-        <tr><td><code>perf-v3-runs/counters/retries.csv</code></td><td><code>analysis.perf_counters</code></td><td>run, cell, or cell pair</td><td>Counters per atomic add; their means with bounds; locked loads above N = 1</td></tr>
+        <tr><td><code>perf-v3-runs/counters/retries.csv</code></td><td><code>analysis.extras.perf_counters</code></td><td>run, cell, or cell pair</td><td>Counters per atomic add; their means with bounds; locked loads above N = 1</td></tr>
       </tbody>
     </table></div>
 </details>
-    <p>Every <code>-v3</code> table, as this guide read it:</p>
+    <p>Every <code>-v3</code> table, as this documentation read it:</p>
     <div id="table-list"></div>
     <p>The first rows of the main scaling table:</p>
     <div id="scaling"></div>
@@ -201,7 +201,6 @@
         <tr><td><code>campaign-rq2.pdf</code>, <code>campaign-efficiency.pdf</code>, <code>campaign-absolute.pdf</code></td><td><code>analysis.figures</code></td><td>No (every k, efficiency, absolute ratios)</td></tr>
         <tr><td><code>extras-*.pdf</code>, <code>weak-absolute.pdf</code>, <code>hybrid-*.pdf</code>, <code>simd-efficiency.pdf</code></td><td><code>make extras-results</code></td><td>No (the exploratory numbers are in a table)</td></tr>
         <tr><td><code>cutoff-speedup.pdf</code>, <code>grain-ucurve.pdf</code></td><td><code>make cutoff-results</code>, <code>make grain-results</code></td><td>No (every size)</td></tr>
-        <tr><td><code>warmup-*.pdf</code>, <code>pilot-*.pdf</code></td><td><code>make figures</code></td><td>No: the pilot reports</td></tr>
       </tbody>
     </table></div>
     <p class="src" data-files="paper/final/paper.tex, analysis/figures/README.md"></p>
