@@ -3,8 +3,8 @@ We measure whether the same parallel Rust/Rayon code scales the same way
 natively and as WebAssembly (WASM) with threads in Chrome and Firefox. On an
 i9-14900KF with 8 dedicated P-cores we ran 5310 independent runs of an image
 filter (no synchronization) and of an image histogram with shared atomic or
-per-task local counters, under four contention levels, and 20\,490 more runs
-in seventeen exploratory campaigns on the same build. With enough work per
+per-task local counters, under four contention levels, and 21\,840 more runs
+in nineteen exploratory campaigns on the same build. With enough work per
 parallel region, WASM threads scale like native code: on the filter, Chrome's
 speedup is 0.996 times native's (99.5\% CI [0.987, 1.004]) and Firefox's
 1.055 times [1.034, 1.072], at a constant 1.17 to 1.36 times the native time.
