@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - Debugging a run</title>
+<meta name="description" content="From make status to the journal, the error record and replaying one run by hand; the common failures and where to look.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  pre.cmd { background: var(--panel-2); border: 1px solid var(--edge); border-radius: 8px; padding: 10px 12px; overflow-x: auto; font-size: var(--fs-sm); }
+  .two { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .two .card h3 { margin: 0 0 4px; font-size: 1rem; }
+  .two .card p, .two .card li { font-size: var(--fs-sm); }
+  .steps li { margin: 6px 0; }
+  .t td:first-child code { white-space: nowrap; }
+</style>
+</head>
+<body data-page="debugging">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <p class="kicker">Working on it · 7 of 8</p>
+    <h1>Debugging a run</h1>
+
+    <p class="lead">A campaign of thousands of runs will, now and then, have one that fails: a browser that
+      did not post its result in time, a checksum that disagrees, a machine that was not quiet. The harness
+      never hides this. It writes the failure next to the good runs, keeps counting, and gives you the exact
+      command to run the one run again by hand.</p>
+    <div class="oneliner"><b>In one sentence:</b> <code>make status</code> says what failed,
+      <code>campaign.jsonl</code> says when, the run's <code>.error.json</code> says why, and
+      <code>harness.native</code> or <code>harness.launcher</code> replays one run while you watch.</div>
+
+    <h2 id="status">Start from make status</h2>
+    <pre class="cmd">make status SPEC=harness/campaigns/&lt;name&gt;.json</pre>
+    <p>It reads only the campaign's two journal files, never the machine, so it is safe while a campaign runs.
+      The lines to look at:</p>
+    <ul>
+      <li><b>progress</b>: done, failed and remaining, then the same per environment. One environment failing
+        more than the others points at that environment (a browser not pinned, a profile problem), not at the
+        machine.</li>
+      <li><b>problems</b>: what the strict checks found in the runs so far (an escaped process, foreign CPU
+        time, a context key that could not be read). <code>none</code> is the normal line.</li>
+      <li><b>sessions</b>: how many times the campaign was started. More than one is fine; it means it was
+        stopped and resumed.</li>
+      <li><b>last run</b>: its id and age. A last run that is minutes old with <code>remaining &gt; 0</code>
+        and no progress is a hung run; the orchestrator kills it at <code>timeoutSeconds</code>.</li>
+    </ul>
+    <div class="why"><b>Why does the harness not stop at the first failure?</b> Because one failed browser run
+      in 4860 is normal and a stopped campaign at 3 in the morning wastes the night. The failure is recorded,
+      the campaign goes on, and the data check refuses to analyse a campaign with a failed run until it is
+      re-run or excluded with a reason (<a href="campaigns.html#quality">The data check</a>).</div>
+
+    <h2 id="records">The run's records</h2>
+    <p>Everything a run left is in <code>data/raw/&lt;name&gt;/</code>, named by its id:</p>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>File</th><th>When it exists</th><th>What to read in it</th></tr></thead>
+      <tbody>
+        <tr><td><code>campaign.jsonl</code></td><td>Always; one line per run as it finished</td><td><code>status</code> (<code>done</code> or <code>failed</code>), <code>seconds</code>, <code>problems</code>. <code>grep failed campaign.jsonl</code> lists the failed ids in order.</td></tr>
+        <tr><td><code>&lt;run&gt;.error.json</code></td><td>The run failed</td><td>The same context as a good run's JSON plus the error: a timeout, a non-zero exit, a missing result, a validation problem. The run counts as failed until it is run again.</td></tr>
+        <tr><td><code>&lt;run&gt;.browser.log</code></td><td>A browser run did not finish</td><td>The browser's own output: a crashed tab, a page that could not load the WASM module, a policy error. Deleted when the run succeeds.</td></tr>
+        <tr><td><code>&lt;run&gt;.json</code> and <code>.csv</code></td><td>The run succeeded</td><td>The context and the times. A succeeded run can still be wrong: a checksum that differs from the others, or a context that fails strict validation. Those are found by the data check, not by status.</td></tr>
+        <tr><td><code>failed/</code></td><td>After <code>--retry-failed</code></td><td>The previous attempt's files, moved aside so the retry starts clean; a second retry adds <code>.attempt2</code>.</td></tr>
+        <tr><td><code>sysinfo/</code></td><td>Strict campaigns, one file per session</td><td>The machine state at each start: governor, turbo, SMT, mask, shield, browser versions, with any problem found. The first thing to compare when a later session behaves differently.</td></tr>
+      </tbody>
+    </table></div>
+    <div data-code="harness/campaign/runner.py|def keep_failure|9" data-title="A retry keeps the earlier attempt"></div>
+
+    <h2 id="rerun">Re-run one id by hand</h2>
+    <p>The <code>launchFlags</code> key of any run's JSON is the exact command the orchestrator used. To
+      replay one run outside a campaign, with its output on your screen:</p>
+    <pre class="cmd"># a native run, no scope and no mask (fine on the Mac)
+python3 -m harness.native --run debug-filter-n8 --results data/raw/debug \
+  --query "workload=filter&amp;input=noise&amp;threads=8&amp;width=4096&amp;height=4096&amp;warmup=5&amp;iters=10&amp;calibration=20"
+
+# a browser run: the launcher starts the results server itself
+python3 -m harness.launcher --browser chrome \
+  --executable harness/browsers/chrome-155.0.8059.84/chrome-linux64/chrome \
+  --run debug-chrome-filter-n8 --results data/raw/debug --headless \
+  --query "workload=filter&amp;input=noise&amp;threads=8&amp;width=4096&amp;height=4096&amp;warmup=5&amp;iters=10&amp;calibration=20"</pre>
+    <p>Drop <code>--headless</code> to see the browser window and its console. Add <code>--cpus 0,2,4,6,8,10,12,14</code>
+      and <code>--scope-user $USER</code> on the PC to reproduce the campaign's conditions exactly.</p>
+    <p>To run the failed runs of a campaign again, in their place in the order:</p>
+    <pre class="cmd">make campaign SPEC=harness/campaigns/&lt;name&gt;.json   # resumes; skips what is done, skips failed
+python3 -m harness.campaign harness/campaigns/&lt;name&gt;.json --retry-failed   # runs the failed ones again</pre>
+    <div class="why"><b>Why does a plain resume skip failed runs?</b> So that a failure you have not looked
+      at is not silently repeated and overwritten. You decide, after reading the error, whether to retry;
+      <code>--retry-failed</code> moves the old files to <code>failed/</code> and keeps the attempt count.</div>
+
+    <h2 id="common">The common failures</h2>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>Symptom</th><th>Usual cause</th><th>Where to look</th></tr></thead>
+      <tbody>
+        <tr><td>A strict campaign refuses to start</td><td>The machine is not prepared, or a browser is not the pinned version</td><td><code>make env-check</code> prints each problem; <code>make env-setup</code> fixes the CPU ones; <code>python3 harness/browsers.py</code> restores the browsers (ADR 0071)</td></tr>
+        <tr><td>Browser runs fail with a timeout, native runs are fine</td><td>The page could not start the thread pool: the server's isolation headers, or a stale <code>bench/www/pkg</code> from another build variant</td><td><code>.browser.log</code>; <code>make build-wasm</code>; the header check in <code>harness/server.py</code></td></tr>
+        <tr><td>Checksum conflict in the data check</td><td>Two runs of one configuration computed different outputs: a real bug in the workload, or a changed build mid-campaign</td><td><code>artifactSha256</code> in the runs' JSON (must be equal); CI's browser check; the workload's checksum</td></tr>
+        <tr><td>Runs excluded for foreign CPU time</td><td>Something else ran on the measured cores: an update, an indexer, a browser process that escaped the scope</td><td><code>foreignCpuSeconds</code> and <code>escapedProcesses</code> in the JSON; <code>make quiet</code>; <code>python3 -m harness.shield check</code> (ADR 0045, 0051)</td></tr>
+        <tr><td>A run's JSON has a <code>-dirty</code> commit</td><td>A tracked file was edited while the campaign ran</td><td><code>git status</code>; never edit the checkout during a campaign; the run fails strict validation</td></tr>
+        <tr><td>Chrome refuses to start on the PC</td><td>Ubuntu's restriction on user namespaces blocks its sandbox</td><td><code>make chrome-apparmor</code> (once, sudo)</td></tr>
+        <tr><td><code>make lint</code> fails on the Mac in clippy or mypy only</td><td>Two Linux-only checks (<code>sched_setaffinity</code>, a resident-set test)</td><td>Expected; CI runs them on Linux. The other lint steps must pass</td></tr>
+      </tbody>
+    </table></div>
+    <p>A longer list, by symptom, is on <a href="where.html#symptoms">Something broke: where to look</a>.</p>
+    <div class="remember"><b>What to remember.</b> status, then the journal, then the error file, then replay
+      the one run by hand with its own <code>launchFlags</code>. Retry only after reading why. The data check,
+      not status, is what says the campaign can be analysed.</div>
+    <p class="src" data-files="harness/campaign/status/README.md, harness/campaign/runner.py, harness/native/cli.py, harness/launcher/cli.py, docs/adr/0051-foreign-cpu-threshold-and-data-check.md"></p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // nothing page-specific
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

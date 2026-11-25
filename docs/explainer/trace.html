@@ -1,0 +1,370 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - One run, start to end</title>
+<meta name="description" content="The shape of a run first (which program runs where, and what crosses each boundary), then two real runs followed line by line through the code, natively and in Chrome, and the path of their numbers into the analysis.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .hops { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 6px; margin: 10px 0 16px; }
+  .hops .card { padding: 8px 10px; text-align: center; font-size: var(--fs-xs); }
+  .hops .card b { display: block; font-family: var(--mono); font-size: var(--fs-xs); color: var(--ink); }
+  .hops .card span { color: var(--muted); }
+  #shape-svg { width: 100%; height: auto; display: block; }
+  #shape-svg text { font-family: var(--sans); font-size: 11px; fill: var(--ink); }
+  #shape-svg .muted { fill: var(--muted); font-size: 10px; }
+  #shape-svg .zone { fill: var(--panel-2); stroke: var(--edge); stroke-dasharray: 4 3; }
+  #shape-svg .zone.hot { fill: var(--chrome-soft); stroke: var(--chrome); }
+  #shape-svg .proc { fill: var(--panel); stroke: var(--edge); }
+  #shape-svg .proc.measured { stroke: var(--chrome); stroke-width: 2; }
+  #shape-svg .file { fill: var(--accent-soft); stroke: var(--accent); }
+  #shape-svg .wire { stroke: var(--faint); stroke-width: 1.2; fill: none; marker-end: url(#tr-arrow); }
+  #shape-svg .label { font-size: 10px; fill: var(--muted); }
+  .trace-say .def { font-size: var(--fs-sm); }
+</style>
+</head>
+<body data-page="trace">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="words.html">Words of the project</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <p class="kicker">The code · 2 of 4</p>
+    <h1>One run, start to end</h1>
+
+    <p class="lead">A run is one program start: the program is launched, works, prints its times, and is
+      gone. This page follows two real runs of the main campaign through the code, line by line: the atomic
+      histogram at k = 1 with 8 threads, once natively (<code>campaign-v3-4610-native-hist-atomic-k1-n8-r0</code>)
+      and once in Chrome (<code>campaign-v3-4221-chrome-hist-atomic-k1-n8-r0</code>). Then the 30 runs of
+      each configuration go into the analysis.</p>
+
+    <div class="oneliner"><b>In one sentence:</b> the campaign picks the run, the harness starts it on the
+      fast cores, both the native program and the browser end up in the same Rust function, which times
+      only the work, and the CSV it prints is stored next to a record of the conditions.</div>
+
+    <h2 id="shape">The shape before the steps</h2>
+    <p>Before stepping through 27 lines of code, here is the whole shape. Each box is a separate program
+      (a <a href="machines.html#program">process</a>); the dashed zones are where it runs; the arrows say what
+      crosses from one to the next. Only the red box is inside the clock.</p>
+    <figure class="figure">
+      <svg id="shape-svg" viewBox="0 0 760 300" role="img" aria-label="The programs of one run, where each runs, and what crosses between them">
+        <defs><marker id="tr-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--faint)"/></marker></defs>
+        <rect class="zone" x="8" y="20" width="250" height="262" rx="10"/>
+        <text x="20" y="38" class="muted">E-cores 16 to 31: the harness</text>
+        <rect class="zone hot" x="272" y="20" width="236" height="262" rx="10"/>
+        <text x="284" y="38" class="muted">P-cores 0, 2, ... 14: the run, alone</text>
+        <rect class="zone" x="522" y="20" width="230" height="262" rx="10"/>
+        <text x="534" y="38" class="muted">Disk, then any machine</text>
+
+        <rect class="proc" x="24" y="56" width="110" height="40" rx="8"/>
+        <text x="79" y="73" text-anchor="middle" font-weight="600">make campaign</text>
+        <text x="79" y="88" text-anchor="middle" class="muted">Python orchestrator</text>
+
+        <rect class="proc" x="24" y="124" width="110" height="40" rx="8"/>
+        <text x="79" y="141" text-anchor="middle" font-weight="600">results server</text>
+        <text x="79" y="156" text-anchor="middle" class="muted">Python, 127.0.0.1</text>
+
+        <rect class="proc" x="140" y="56" width="104" height="40" rx="8"/>
+        <text x="192" y="73" text-anchor="middle" font-weight="600">confine()</text>
+        <text x="192" y="88" text-anchor="middle" class="muted">scope + taskset</text>
+
+        <rect class="proc measured" x="290" y="56" width="200" height="56" rx="8"/>
+        <text x="390" y="76" text-anchor="middle" font-weight="600">native binary, or Chrome / Firefox</text>
+        <text x="390" y="92" text-anchor="middle" class="muted">8 threads: run_in_pool, the clock</text>
+        <text x="390" y="104" text-anchor="middle" class="muted">prints CSV / POSTs CSV</text>
+
+        <rect class="file" x="540" y="56" width="196" height="40" rx="8"/>
+        <text x="638" y="73" text-anchor="middle" font-weight="600">run.csv + run.json</text>
+        <text x="638" y="88" text-anchor="middle" class="muted">data/raw/campaign-v3/, never edited</text>
+
+        <rect class="proc" x="540" y="140" width="196" height="40" rx="8"/>
+        <text x="638" y="157" text-anchor="middle" font-weight="600">analysis</text>
+        <text x="638" y="172" text-anchor="middle" class="muted">Python, reads 4860 runs</text>
+
+        <rect class="file" x="540" y="224" width="196" height="40" rx="8"/>
+        <text x="638" y="241" text-anchor="middle" font-weight="600">data/tables, paper/figures</text>
+        <text x="638" y="256" text-anchor="middle" class="muted">what the paper reads</text>
+
+        <path class="wire" d="M134 76 H140"/>
+        <path class="wire" d="M244 76 H290"/>
+        <text x="267" y="50" text-anchor="middle" class="label">argv or URL</text>
+        <path class="wire" d="M490 76 H540"/>
+        <text x="515" y="50" text-anchor="middle" class="label">CSV text</text>
+        <path class="wire" d="M390 112 V144 H134"/>
+        <text x="262" y="138" text-anchor="middle" class="label">browser only: HTTP POST {csv, meta}</text>
+        <path class="wire" d="M79 124 V96"/>
+        <path class="wire" d="M638 96 V140"/>
+        <text x="650" y="122" class="label">files only</text>
+        <path class="wire" d="M638 180 V224"/>
+
+        <text x="24" y="206" class="muted">The harness never runs on the measured cores.</text>
+        <text x="24" y="222" class="muted">It starts the run, waits, and stores what came back.</text>
+        <text x="24" y="250" class="muted">Native: the CSV comes back on stdout.</text>
+        <text x="24" y="266" class="muted">Browser: the page POSTs it to the server.</text>
+        <text x="290" y="206" class="muted">A fresh process per run: no state carries over.</text>
+        <text x="290" y="222" class="muted">Same Rust code in all three, compiled twice:</text>
+        <text x="290" y="238" class="muted">to x86-64, and to WASM for the browser.</text>
+      </svg>
+      <figcaption>Three zones, three kinds of boundary: a command line or a URL goes in, CSV text comes out, and from then on only files connect the programs.</figcaption>
+    </figure>
+    <div class="why"><b>Why does only the red box matter for the numbers?</b> Everything to its left
+      happens before the clock starts and runs on other cores; everything to its right happens after the
+      CSV exists. So a slow harness, a slow disk or a slow analysis cannot change a measured time. The
+      only things that can are inside that box: the runtime, the code, and the machine it runs on, which is
+      what the study compares. <a href="pieces.html">How the pieces talk</a> gives every port and file.</div>
+    <p>Below, each step shows the line that runs, what the variables hold, and, in the box marked
+      <b>In plain words</b>, the one thing a newcomer would not get from the code. Use the arrow keys.</p>
+
+    <h2 id="native">A native run</h2>
+    <div class="hops">
+      <div class="card"><b>plan.py</b><span>shuffled order</span></div>
+      <div class="card"><b>executors.py</b><span>NativeExecutor</span></div>
+      <div class="card"><b>native/run.py</b><span>confine, start</span></div>
+      <div class="card"><b>main.rs</b><span>pool, run_in_pool</span></div>
+      <div class="card"><b>run.rs</b><span>execute</span></div>
+      <div class="card"><b>measure.rs</b><span>timed loop</span></div>
+      <div class="card"><b>atomic.rs</b><span>the work</span></div>
+      <div class="card"><b>run.py</b><span>store CSV + JSON</span></div>
+    </div>
+    <div id="native-trace"></div>
+
+    <h2 id="browser">A browser run</h2>
+    <p>The same run in Chrome. Everything from <code>run_in_pool</code> down is the same Rust code,
+      compiled to WASM: only the start (a browser launch) and the end (an HTTP POST) differ.</p>
+    <div class="hops">
+      <div class="card"><b>launcher.py</b><span>fresh profile</span></div>
+      <div class="card"><b>url.py</b><span>config in the URL</span></div>
+      <div class="card"><b>main.js</b><span>isolation, delay</span></div>
+      <div class="card"><b>worker.js</b><span>pool on Web Workers</span></div>
+      <div class="card"><b>wasm.rs</b><span>run_in_pool</span></div>
+      <div class="card"><b>server.py</b><span>POST /results</span></div>
+      <div class="card"><b>launcher.py</b><span>wait, tear down</span></div>
+    </div>
+    <div id="browser-trace"></div>
+
+    <h2 id="analysis">Into the analysis</h2>
+    <p>Each run left a CSV (one row per iteration) and a JSON (its context) in
+      <code>data/raw/campaign-v3/</code>. The analysis joins them, reduces each run to one number, and
+      compares configurations. Follow the atomic histogram at k = 1 from its runs to its speedup; the plain
+      version of each statistic is on <a href="reading.html">Reading the numbers</a>.</p>
+    <div id="analysis-trace"></div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+
+    <div class="remember"><b>What to remember.</b> One run is one fresh process, started from outside the
+      measured cores, that ends in <code>run_in_pool</code> whatever the environment. The clock brackets only
+      <code>Workload::run</code>. What comes out is text in a file, and from there on it is arithmetic.</div>
+
+    <div hidden>
+      <div data-code="harness/campaign/plan.py|def plan(spec: CampaignSpec)|13"></div>
+      <div data-code="harness/campaign/executors.py|class NativeExecutor:|23"></div>
+      <div data-code="harness/native/run.py|def command(self, run_id: str, query: str)|28"></div>
+      <div data-code="harness/shield/confinement.py|def confine(argv|7"></div>
+      <div data-code="bench/src/bin/native/main.rs|fn run()|9"></div>
+      <div data-code="bench/src/run.rs|pub fn run_in_pool|12"></div>
+      <div data-code="bench/src/run.rs|pub fn execute|33"></div>
+      <div data-code="bench/src/measurement/measure.rs|pub fn measure_with|34"></div>
+      <div data-code="bench/src/measurement/measure.rs|fn timed_iteration|13"></div>
+      <div data-code="bench/src/workloads/histogram/atomic.rs|fn run(|10"></div>
+      <div data-code="bench/src/workloads/histogram/counter_table.rs|pub fn increment(|5"></div>
+      <div data-code="bench/src/measurement/measure.rs|fn verify_checksum|22"></div>
+      <div data-code="harness/native/run.py|def store(self, files: RunFiles|10"></div>
+      <div data-code="harness/launcher/launcher.py|def run(self, run_id: str, query: str)|8"></div>
+      <div data-code="harness/launcher/launcher.py|def command(self, profile: Path, run_id: str, query: str)|4"></div>
+      <div data-code="harness/launcher/url.py|def run_url(|5"></div>
+      <div data-code="bench/www/main.js|async function measure(runId, startDelay, query, status) {|15"></div>
+      <div data-code="bench/www/worker.js|async function measure(query, meta) {|13"></div>
+      <div data-code="bench/src/wasm.rs|#[wasm_bindgen(js_name = startThreadPool)]|16"></div>
+      <div data-code="harness/server.py|def save(self, run_id: str, csv: str|18"></div>
+      <div data-code="harness/server.py|def publish(self, text: str, target: Path)|8"></div>
+      <div data-code="harness/launcher/launcher.py|def wait_for_result(|10"></div>
+      <div data-code="harness/collect.py|def joined_rows(directory: Path, csvs: set[str])|15"></div>
+      <div data-code="analysis/runs.py|# One value per run, never per iteration|5"></div>
+      <div data-code="analysis/stats/summary.py|class Summary(Enum):|17"></div>
+      <div data-code="analysis/scaling/table.py|def speedup_of(|5"></div>
+      <div data-code="analysis/stats/bootstrap.py|# Each group is resampled on its own|9"></div>
+    </div>
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var $ = UI.$, fmt = UI.fmt;
+  var K = {
+    plan: "harness/campaign/plan.py|def plan(spec: CampaignSpec)|13",
+    exec: "harness/campaign/executors.py|class NativeExecutor:|23",
+    nrun: "harness/native/run.py|def command(self, run_id: str, query: str)|28",
+    confine: "harness/shield/confinement.py|def confine(argv|7",
+    main: "bench/src/bin/native/main.rs|fn run()|9",
+    inpool: "bench/src/run.rs|pub fn run_in_pool|12",
+    execute: "bench/src/run.rs|pub fn execute|33",
+    measure: "bench/src/measurement/measure.rs|pub fn measure_with|34",
+    timed: "bench/src/measurement/measure.rs|fn timed_iteration|13",
+    atomic: "bench/src/workloads/histogram/atomic.rs|fn run(|10",
+    inc: "bench/src/workloads/histogram/counter_table.rs|pub fn increment(|5",
+    verify: "bench/src/measurement/measure.rs|fn verify_checksum|22",
+    store: "harness/native/run.py|def store(self, files: RunFiles|10",
+    lrun: "harness/launcher/launcher.py|def run(self, run_id: str, query: str)|8",
+    lcmd: "harness/launcher/launcher.py|def command(self, profile: Path, run_id: str, query: str)|4",
+    url: "harness/launcher/url.py|def run_url(|5",
+    mainjs: "bench/www/main.js|async function measure(runId, startDelay, query, status) {|15",
+    worker: "bench/www/worker.js|async function measure(query, meta) {|13",
+    wasm: "bench/src/wasm.rs|#[wasm_bindgen(js_name = startThreadPool)]|16",
+    save: "harness/server.py|def save(self, run_id: str, csv: str|18",
+    publish: "harness/server.py|def publish(self, text: str, target: Path)|8",
+    wait: "harness/launcher/launcher.py|def wait_for_result(|10",
+    joined: "harness/collect.py|def joined_rows(directory: Path, csvs: set[str])|15",
+    runs: "analysis/runs.py|# One value per run, never per iteration|5",
+    summary: "analysis/stats/summary.py|class Summary(Enum):|17",
+    speedup: "analysis/scaling/table.py|def speedup_of(|5",
+    boot: "analysis/stats/bootstrap.py|# Each group is resampled on its own|9"
+  };
+  var NATIVE_ID = "campaign-v3-4610-native-hist-atomic-k1-n8-r0";
+  var CHROME_ID = "campaign-v3-4221-chrome-hist-atomic-k1-n8-r0";
+  var QUERY = "workload=hist-atomic&amp;input=few&amp;k=1&amp;threads=8&amp;width=8192&amp;height=8192&amp;warmup=5&amp;iters=10&amp;calibration=20";
+
+  // Every step may carry `plain`: the one sentence a newcomer needs before the technical one.
+  function steps(list) {
+    return list.map(function (s) {
+      if (s.plain) s.say = '<span class="def"><b>In plain words.</b> ' + s.plain + '</span>' + (s.say || "");
+      return s;
+    });
+  }
+
+  UI.trace($("#native-trace"), steps([
+    { title: "The campaign shuffles every run", code: K.plan, highlight: /shuffle|combinations = \[|PlannedRun\(position/,
+      plain: "A campaign is a list of every run to do. The list is shuffled once, with a number (the seed) that lets anyone shuffle it the same way again, so native, Chrome and Firefox runs are mixed through the day instead of done in blocks.",
+      say: "<code>make campaign SPEC=harness/campaigns/campaign-v3.json</code> starts the orchestrator. It lists every (environment, workload, N, repetition) of the spec: 3 &times; 9 &times; 6 &times; 30 = 4860 runs, and shuffles them with the recorded seed. Native, Chrome and Firefox runs are interleaved, so a slow afternoon hits all three alike.",
+      memory: [["spec.order_seed", "20261109"], ["combinations", "4860 tuples"], ["this run", "position 1801: native, hist-atomic k = 1, N = 8, repetition 0"]],
+      next: "the native executor runs position 1801." },
+    { title: "NativeExecutor.execute", code: K.exec, highlight: /NativeRun\(|native\.run\(/,
+      plain: "The orchestrator writes the run's settings as one text string, the same string a browser would receive in its web address. Native and browser runs are told what to do in the same words.",
+      say: "One <code>NativeRun</code> per planned run, with the spec's CPU mask and the run scope user. <code>self.spec.query(run)</code> turns the planned run into the same query string a browser would get in its URL.",
+      memory: [["run.run_id", NATIVE_ID], ["self.spec.cpus", "0,2,4,6,8,10,12,14 (the 8 P-cores)"], ["query", QUERY]] },
+    { title: "NativeRun.run: confine, then start", code: K.nrun, highlight: /def run\(|self\.command\(|CpuUsage|usage\.start|self\.execute|self\.store/,
+      plain: "Before starting the program, the harness notes how busy the measured cores already are, so that if something else used them during the run, that can be seen afterwards and the run can be excluded.",
+      say: "Builds the command line, records the build (<code>native --build-info</code>), and starts counting CPU time on the measured cores before the process starts, so foreign work during the run is measured too. The query becomes flags: <code>--workload hist-atomic --k 1 --threads 8 ...</code>.",
+      memory: [["argv", "sudo -n systemd-run --scope ... taskset -c 0,2,...,14 bench/target/release/native --workload hist-atomic --input few --k 1 --threads 8 --width 8192 --height 8192 --warmup 5 --iters 10 --calibration 20"]] },
+    { title: "confine: taskset inside a scope", code: K.confine, highlight: /taskset|scope_prefix/,
+      plain: "<code>taskset</code> is a Linux command that says \"this program, and anything it starts, may only use these cores\". A scope is a labelled group Linux keeps of the program and all its children, so the harness can later ask how much CPU the whole group used and whether any part of it wandered off.",
+      say: "Every run, native or browser, goes through this one function. <code>taskset -c</code> limits the process and every thread it creates to the P-cores; the systemd scope groups all its processes so the harness can measure their CPU time and find any that escaped.",
+      memory: [["pinned", "['taskset', '-c', '0,2,4,6,8,10,12,14', ...]"]] },
+    { title: "native main: start the pool", code: K.main, highlight: /args::parse|start_global|run_in_pool|to_csv/,
+      plain: "The program is new: nothing from an earlier run is in memory. It reads its settings, creates the 8 worker threads that will do the parallel work, and then calls the shared entry point from its own main thread, which is not one of the 8.",
+      say: "A fresh process. It parses the flags into a <code>RunConfig</code>, builds Rayon's global pool with exactly 8 threads, and calls <code>run_in_pool</code> from the main thread, outside the pool.",
+      memory: [["config.threads", "8"], ["config.workload", "WorkloadKind::HistogramAtomic"], ["config.image", "few_colors(k = 1), 8192 &times; 8192"]] },
+    { title: "run_in_pool: the shared entry", code: K.inpool, highlight: /pool::check|execute\(/,
+      plain: "From here on the native program and the browser run the same lines of Rust. The first thing it does is check that the pool really has the number of threads the run asked for; a run at the wrong N would be a wrong data point with the right label.",
+      say: "The function both hosts call. It checks that the pool really has the configured number of threads, then runs. Because the caller is outside the pool, every parallel region is injected into it the same way natively and in the browser.",
+      next: "<code>execute</code>, the same code in every environment." },
+    { title: "execute: input, workload, calibration", code: K.execute, highlight: /image\(\)|fingerprint|build_with|calibrate_probes|measure_with|calibration_records|records\.extend/,
+      plain: "The image is generated from a fixed seed, so every environment gets the same pixels. Then, before any timing, the program measures how long an empty parallel call takes (the fixed cost of handing out work), 20 times.",
+      say: "Generates the input image (seeded, so identical everywhere) and its fingerprint, builds the workload, runs the fork-join calibration (20 empty <code>broadcast</code> and 20 empty <code>par_iter</code> calls, warm and cold), then the measurement. All of this is outside the timed region.",
+      memory: [["image", "67,108,864 pixels, all the same grey level (k = 1)"], ["workload", "Box&lt;dyn Workload&gt;: AtomicHistogram"], ["calibration", "Some(...): 20 samples per probe"]] },
+    { title: "measure_with: warm-up, then measured", code: K.measure, highlight: /for iteration in|timed_iteration|verify_checksum|before_measured/,
+      plain: "The work is done 15 times in a row. The first 5 are warm-up: their times are recorded but not used, because a program is slower the first few times it does something. The next 10 are the measurement.",
+      say: "Two phases with the same loop: W = 5 warm-up iterations (W per workload, from the pilot) and 10 measured ones. Every iteration is checked against the first one's checksum.",
+      memory: [["plan.warmup", "5"], ["plan.measured", "10"], ["times.measured_ns", "fills with 10 values"]] },
+    { title: "timed_iteration: only run() is timed", code: K.timed, highlight: /prepare|now_ns|workload\.run|per_pass_ns/,
+      plain: "Read the clock, do the work, read the clock again. Resetting the counters happens before the first read, and the checksum after the second, so neither is inside the time.",
+      say: "<code>prepare</code> (reset the 256 counters) is before the first clock read. Between the two reads there is only <code>run()</code>, K times (K = 1 in the main campaign). The checksum is computed after.",
+      memory: [["passes.count()", "1"], ["clock", "NativeClock: a monotonic clock in ns"]] },
+    { title: "The work: every pixel adds to a shared counter", code: K.atomic, highlight: /par_chunks|increment|self\.counters\.read/,
+      plain: "The image is cut into pieces of 64 KiB and the 8 threads take pieces until none are left. Each pixel adds one to the counter for its shade of grey. With k = 1 every pixel has the same shade, so all 8 threads keep adding to one counter.",
+      say: "Rayon splits the image into 64 KiB chunks and hands them to the 8 threads. Every pixel adds 1 to the counter of its grey level. With k = 1 all 8 threads add to the same counter, so the cache line that holds it moves between cores on almost every add. Reading the counters back is inside the timed work, as the reduce is for the local histogram.",
+      memory: [["CHUNK_BYTES", "65,536"], ["chunks", "1024"], ["counters", "256 counters, each alone on a 128-byte line"]] },
+    { title: "increment: one atomic add", code: K.inc, highlight: /fetch_add/,
+      plain: "An atomic add is an add that cannot be interrupted halfway by another thread. This one line of Rust becomes different machine instructions in each environment, and that difference is the result of RQ2.",
+      say: "<code>fetch_add(1, Relaxed)</code>. Natively LLVM emits one <code>lock</code>-prefixed add per pixel. Compiled to WASM it is <code>i64.atomic.rmw.add</code>, which each browser's compiler turns into its own machine code: see <a href=\"why.html\">Why Chrome</a>." },
+    { title: "verify_checksum", code: K.verify, highlight: /get_or_insert|InconsistentChecksum/,
+      plain: "After each iteration the result is boiled down to one number, the checksum. If any iteration's checksum differs from the first, the program computed something wrong, and the run fails instead of handing in a time for wrong work.",
+      say: "The first iteration's checksum becomes the reference; a different one fails the run instead of timing a wrong result. The same checksum must also match across environments and thread counts (the analysis checks that)." },
+    { title: "Back in the harness: store", code: K.store, highlight: /failure|files\.csv|annotate\(files\.metadata/,
+      plain: "The program printed its times as text. The harness saves that text as the run's CSV and, next to it, a JSON with everything about the conditions: which cores, which build, when it started and ended, how much other work touched the cores. A failed run is saved too, as an error file, so it can be counted.",
+      say: "<code>main</code> printed the CSV on stdout. The harness writes it as <code>&lt;run&gt;.csv</code> and the context (mask, build hash, start and end time, CPU time, load, shield state) as <code>&lt;run&gt;.json</code>. A failed run writes <code>&lt;run&gt;.error.json</code> instead and is kept, counted, never silently dropped.",
+      memory: [["files", "data/raw/campaign-v3/" + NATIVE_ID + ".csv and .json"], ["CSV rows", "1 pause + 80 calibration + 5 warm-up + 10 measured"]] }
+  ]));
+
+  UI.trace($("#browser-trace"), steps([
+    { title: "Launcher.run: a fresh profile", code: K.lrun, highlight: /mkdtemp|rmtree|run_on_profile/,
+      plain: "A browser profile is the folder where a browser keeps its settings, cache and history. Each run gets a brand-new empty one, deleted afterwards, so no run can be faster because an earlier run left something behind.",
+      say: "A new empty browser profile in a temporary folder for every run, deleted afterwards: no cache, no compiled code, no state from an earlier run.",
+      memory: [["profile", "/tmp/bench-chrome-qg7aid_n"]] },
+    { title: "Launcher.command", code: K.lcmd, highlight: /run_url|argv|confine/,
+      plain: "The browser is started like any other program, from the command line, with the same <code>confine</code> as the native run, so it too may only use the 8 fast cores. Headless means it draws no window.",
+      say: "The browser binary (the pinned Chrome for Testing 155.0.8059.84), its quiet flags, <code>--headless=new</code> and the URL, all through the same <code>confine</code> as the native run.",
+      memory: [["argv", "sudo -n systemd-run --scope ... taskset -c 0,2,...,14 chrome --user-data-dir=... --no-first-run ... --headless=new http://127.0.0.1:46223/index.html?..."]] },
+    { title: "run_url: the configuration in the URL", code: K.url, highlight: /return f"http/,
+      plain: "Nothing remote-controls the browser. The page is given its instructions the way any web page gets parameters: in the address, after the question mark.",
+      say: "No automation framework talks to the browser: the page learns what to run from its URL. The launcher adds the run id, the environment and the 3 s start delay.",
+      memory: [["url", "http://127.0.0.1:46223/index.html?run=" + CHROME_ID + "&amp;env=chrome&amp;startDelayMs=3000&amp;" + QUERY]] },
+    { title: "main.js: isolation check, then wait", code: K.mainjs, highlight: /crossOriginIsolated|sleep\(delay\)|CoordinatorWorker|post\(/,
+      plain: "Threads in a browser need memory that several workers can see at once, and browsers only allow that on a page served with two special security headers. The page checks it got them, then waits 3 seconds so the browser finishes its own start-up chores before the measurement.",
+      say: "Shared WASM memory is a SharedArrayBuffer, which the browser allows only on a cross-origin isolated page (COOP/COEP headers from the server). Then the page waits 3000 ms so the browser's own start-up work is over, and hands the query to a worker.",
+      memory: [["delay", "3000"], ["globalThis.crossOriginIsolated", "true"]] },
+    { title: "worker.js: start the pool, run", code: K.worker, highlight: /startThreadPool|clockStats|run\(query\)/,
+      plain: "A browser's main thread is the one that draws the page, and it is not allowed to stop and wait for other threads. So the work is handed to a helper worker, which is allowed to wait. That worker starts 8 more workers to be the thread pool and then runs the same Rust entry point.",
+      say: "The coordinator worker, because the page's main thread may not block in <code>Atomics.wait</code>. It starts 8 more Web Workers that share the module's memory and become the Rayon pool, records the clock's resolution, then calls the WASM <code>run(query)</code> and blocks until it returns.",
+      memory: [["requestedThreads(query)", "8"], ["meta.clockResolutionNs", "5000 in Chrome (performance.now())"]] },
+    { title: "wasm.rs: the same run_in_pool", code: K.wasm, highlight: /init_thread_pool|from_query|PerformanceClock|run_in_pool/,
+      plain: "The browser's clock is <code>performance.now()</code>, which is deliberately coarse; it is handed to the shared code as the clock to use. From here the steps are exactly the native ones.",
+      say: "<code>run</code> parses the same query with the same Rust parser and calls <code>run_in_pool</code> with a WASM <code>Platform</code>: the <code>performance.now()</code> clock and the linear-memory probe. From here on the steps are those of the native run above, compiled to WebAssembly.",
+      next: "the CSV string goes back to the page, which POSTs it." },
+    { title: "server.py: store the result", code: K.save, highlight: /validate|publish\(metadata|publish\(csv/,
+      plain: "A browser cannot write files on disk, so the page sends its CSV to a tiny web server the harness runs on the same machine, which writes the files.",
+      say: "The page POSTs <code>{csv, meta}</code> to <code>/results?run=...</code>. The server validates the run id and the metadata and writes both files.",
+      memory: [["files", "data/raw/campaign-v3/" + CHROME_ID + ".csv and .json"]] },
+    { title: "publish: never half written", code: K.publish, highlight: /os\.link/,
+      plain: "The file is written under a temporary name first and then given its final name in one step, so nobody can ever read a result that is only half written, and a result that already exists is never overwritten.",
+      say: "Written to a temporary file first, then hard-linked into place: the result appears complete in one step, and an existing result can never be overwritten." },
+    { title: "Launcher.wait_for_result, then tear down", code: K.wait, highlight: /files\.csv\.exists|files\.error\.exists|TIMEOUT/,
+      plain: "The harness checks every so often whether the result file has appeared. When it has (or an error file, or too much time has passed), it closes the browser and adds what it saw to the run's record.",
+      say: "The launcher polls for the CSV (or an error file), then closes the browser, kills any process still using the profile, records escaped processes and CPU time, and adds the launch context to the run's JSON." }
+  ]));
+
+  var nat = UI.row("campaign-v3-scaling", { environment: "native", workload: "hist-atomic", k: 1, threads: 8 });
+  var nat1 = UI.row("campaign-v3-scaling", { environment: "native", workload: "hist-atomic", k: 1, threads: 1 });
+  var ms = function (r) { return r ? fmt(r.center_ns / 1e6, 1) + " ms" : "-"; };
+  UI.trace($("#analysis-trace"), steps([
+    { title: "collect: join CSV and context", code: K.joined, highlight: /read_json|DictReader|rows\.append/,
+      plain: "Every run's times and its conditions are put side by side in one big table. If two runs that did the same work got different checksums, something is wrong, and the analysis stops before writing anything.",
+      say: "<code>harness.collect</code> reads every complete run of the campaign, adds its context to each CSV row, and checks that every configuration of one input has a single checksum. A conflict stops the analysis before any table is written.",
+      memory: [["rows", "one per iteration, with run id, environment, mask, build..."]] },
+    { title: "One value per run: the median", code: K.runs, highlight: /summary\.of/,
+      plain: "A run's 10 measured times become one number: the middle one when sorted. Ten times from one program start are not ten separate pieces of evidence, so they are never counted as such.",
+      say: "The run is the unit of analysis. Each run is reduced to the median of its 10 measured iterations before anything is compared, so 10 iterations of one process never count as 10 observations." },
+    { title: "Summary: median per run, geometric mean per configuration", code: K.summary, highlight: /RUN_SUMMARY|CONFIGURATION_CENTER/,
+      plain: "The 30 run values become one time for the configuration, using the average that treats \"twice as fast\" and \"twice as slow\" as equal and opposite.",
+      say: "Then the 30 run values of a configuration are summarised by their geometric mean, the right centre for times that are compared as ratios.",
+      memory: [["native hist-atomic k = 1, N = 1", ms(nat1)], ["native hist-atomic k = 1, N = 8", ms(nat)]] },
+    { title: "speedup_of: T1 / TN", code: K.speedup, highlight: /return Speedup|bootstrap_interval/,
+      plain: "Speedup is the time with 1 thread divided by the time with N threads, inside one environment. Below 1 means more threads made it slower.",
+      say: "Speedup within one environment: the centre at N = 1 over the centre at N. With k = 1 natively it is below 1: 8 threads fighting over one counter are slower than one thread alone.",
+      memory: [["speedup", nat ? fmt(nat.speedup, 3) : "-"], ["95% CI", nat ? "[" + fmt(nat.speedup_low, 3) + ", " + fmt(nat.speedup_high, 3) + "]" : "-"]] },
+    { title: "The bootstrap interval", code: K.boot, highlight: /random\.Random|choices|sorted/,
+      plain: "\"With replacement\" means: draw 30 runs out of the 30, putting each one back before drawing the next, so some are picked twice and some not at all. Doing that 10,000 times shows how much the answer could move with another 30 runs; the middle 95 % of those answers is the interval.",
+      say: "Resample the 30 runs of each group with replacement, 10,000 times with a fixed seed, recompute the ratio each time, and keep the middle 95 %. The result lands in <code>data/tables/campaign-v3/campaign-v3-scaling.csv</code>, which the paper and this guide read.",
+      next: "<a href=\"reading.html\">Reading the numbers</a> explains each step in plain words, <a href=\"stats.html\">The statistics, in detail</a> with the formulas." }
+  ]));
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

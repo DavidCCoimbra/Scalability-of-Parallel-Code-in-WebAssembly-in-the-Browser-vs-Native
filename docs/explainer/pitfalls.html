@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - Problems found and fixed</title>
+<meta name="description" content="Three pitfalls of benchmarking browsers and two asymmetries of our own, each with why it would have fooled us, the fix and the check.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .chart { width: 100%; height: auto; display: block; }
+  .chart text { font-family: var(--sans); fill: var(--muted); font-size: 11px; }
+  .chart .axis { stroke: var(--edge); }
+  .chart .ideal { stroke: var(--faint); stroke-dasharray: 4 4; fill: none; }
+  .controls-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 10px 0; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+  .fig text { font-family: var(--sans); font-size: 12px; fill: var(--body); }
+  .fig .box { fill: var(--panel); stroke: var(--edge); }
+  .fig .hot { fill: var(--chrome-soft); stroke: var(--chrome); }
+  .fig .cool { fill: var(--native-soft); stroke: var(--native); }
+  .fig .arrow { stroke: var(--muted); fill: none; marker-end: url(#ah); }
+
+</style>
+</head>
+<body data-page="pitfalls">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+<p class="kicker">Results · 6 of 7</p>
+    <h1>Problems found and fixed</h1>
+    <p class="lead">A benchmark can be wrong without anything looking wrong: every run finishes, every checksum matches,
+      and the numbers look plausible. Each problem on this page is of that kind. They are part of the results because
+      anyone who benchmarks a browser will meet them.</p>
+    <div class="oneliner"><b>In one sentence:</b> telling a browser which cores to use, giving it a fresh profile and
+      installing a fixed version are not enough to confine it, quiet it and freeze it; and a review of our own measured
+      code found two asymmetries, fixed in the build <code>measured/v3</code>.</div>
+    <div class="def"><b>Pilot numbers on this page.</b> The numbers that found these problems come from pilots run
+      before the campaigns. They justify the fixes; they are not results of the study.</div>
+    <p>Each problem is told the same way: what happened, why it would have fooled us, the fix, and the check that now
+      catches it.</p>
+
+    <h2 id="mask">Chrome escapes the CPU mask</h2>
+    <p>Every run is told to use only the 8 fast cores (a <span data-term="taskset">taskset</span> mask), inside its
+      own <span data-term="systemd-scope-slice">systemd scope</span>, a box the operating system keeps the run's
+      processes in. During the pilot, a sampler that checked where every thread was allowed to run found that
+      <b>Chrome's main process had moved itself out of the box</b>: through the <span data-term="session-bus-d-bus">session
+      bus</span> it asked the system for a box of its own, in the user's area, and ran on the slow cores, outside the
+      mask. Firefox's processes stayed in (ADR 0045).</p>
+    <div class="why"><b>Why this would have fooled us.</b> Chrome would have had the 8 fast cores for its workers plus
+      extra cores for its own housekeeping, and Firefox would not. A difference between the two browsers would then
+      have been partly a difference in how many cores each really had, and we would have read it as a difference
+      between the engines.</div>
+    <ul>
+      <li><b>Fix:</b> the harness launches the browsers without the session bus address. Without it, every Chrome
+        process stays in the run's box.</li>
+      <li><b>Check:</b> every run records <span data-term="escaped-process">escapedProcesses</span>, the browser
+        processes found outside the box, and <span data-term="strict-validation">strict validation</span> rejects any
+        run where it is not 0.</li>
+    </ul>
+    <div data-code="harness/context/validation.py|escaped = self.data.get(|3" data-title="A run with escaped processes fails validation"></div>
+
+    <h2 id="startup">Firefox's start-up</h2>
+    <p>A browser keeps working for seconds after the page has loaded: it compiles code, loads components, starts
+      services. The warm-up pilot ran with no delay, so its short measurements ended less than a second after the page
+      loaded. The delay pilot (ADR 0048) then showed <b>Firefox's local histogram at N = 8 up to 32% slower and
+      erratic</b> without a delay: Firefox's own start-up work was competing with the 8 workers for the 8 cores.</p>
+    <div class="why"><b>Why this would have fooled us.</b> Firefox would have looked worse at scaling than it is, and
+      the loss would have been blamed on WASM threads. The cause had nothing to do with threads: it was the browser
+      still starting up during the measurement.</div>
+    <ul>
+      <li><b>Fix:</b> every browser run waits 3 s before it creates the coordinating worker (the
+        <span data-term="start-delay">start delay</span>), recorded with the run.</li>
+      <li><b>Left:</b> native has no delay, a known asymmetry that does not change a speedup within one runtime; 3 s
+        against 6 s differs by about 1% (<a href="threats.html#internal">Threats</a>).</li>
+    </ul>
+
+    <h2 id="update">A pinned Firefox updates itself</h2>
+    <p>The study pins Firefox 158.0, downloaded from Mozilla's archive, and the fresh profile turns automatic updates
+      off. On 2026-11-10, between two exploratory campaigns, the installed Firefox <b>updated itself in place to
+      160.0</b> anyway. Only the enterprise policy <code>DisableAppUpdate</code> stops it (ADR 0071).</p>
+    <div class="why"><b>Why this would have fooled us.</b> Two campaigns meant to compare the same Firefox would have
+      compared two different ones, with whatever changed in the engine between them mixed into the result.</div>
+    <ul>
+      <li><b>Caught:</b> strict validation checks the browser version of every run, and rejected all 2640 affected
+        exploratory runs.</li>
+      <li><b>Fix:</b> the installer writes the policy and reinstalls a moved install, and a campaign refuses to start
+        when a browser is not the pinned version.</li>
+      <li><b>Repeated:</b> the 2640 runs were repeated on 158.0, in one block after native and Chrome rather than
+        interleaved. Four cells shared with the main campaign control the block: their time ratios to it average
+        1.000 to 1.001 in every environment, with the same spread as the interleaved ones.</li>
+    </ul>
+    <div data-code="harness/browsers.py|# Firefox from archive.mozilla.org updates itself|4" data-title="The policy that keeps Firefox pinned"></div>
+
+    <h2 id="v2">Our own asymmetries: the v2 build</h2>
+    <p>After the first campaigns, a review of the measured code against the textbook, the cited papers and the lectures
+      found two asymmetries the study had caused itself (ADR 0069):</p>
+    <ul>
+      <li><b>A safety check only on one side of RQ2.</b> The shared-counter histograms indexed a table whose length the
+        compiler did not know, so every pixel paid a bounds check (compare and branch) that the local control did not.
+        The atomic/local ratio therefore included code that only the atomic side ran, and that the engines might
+        compile differently from LLVM.</li>
+      <li><b>Final work timed in some variants only.</b> The local histogram's merge was inside the timed region; the
+        private merge and the read-back of the shared counters were outside it.</li>
+    </ul>
+    <div class="why"><b>Why this would have fooled us.</b> RQ2 is a ratio of ratios, and it only cancels what is the
+      same on both sides. A check that ran on one side only, or a merge timed on one side only, would have been read
+      as a cost of synchronization in every engine.</div>
+    <p>The fix: fixed-size counter tables (no per-pixel check; LLVM then unrolls the loop by 8 itself), and every
+      histogram's timed run now ends with its final histogram. The checksums did not change.</p>
+    <div data-code="bench/src/workloads/histogram/atomic.rs|fn run(|10" data-title="Reading the counters back is now timed, like the local merge"></div>
+    <p>Then <b>every reported campaign was re-run on the corrected build</b>, tagged <code>measured/v3</code>. Every
+      number in this guide comes from it; the earlier build's campaigns are not reported as results.</p>
+    <details class="deeper"><summary>If you already know this: why builds are never mixed</summary>
+      <p>Builds are never mixed in one comparison because a change in code layout alone, with the same instructions,
+        can change timing by a few percent (Mytkowicz et al. 2009). A refactor of the measured path is accepted only
+        when a codegen diff shows the hot functions unchanged; otherwise it is a new build with a new tag, and earlier
+        campaigns stay valid only for their own build (ADR 0062, <a href="changing.html#hotpath">Touching the measured
+        code</a>).</p>
+    </details>
+    <div class="remember"><b>What to remember.</b> Confining, quieting and freezing a browser each needs its own check,
+      not just its own setting; and a ratio only cancels what is truly the same on both sides. Every one of these is now
+      checked on every run.</div>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // lineChart(series, opts): inline SVG lines with optional CI bands.
+  // series: [{name, cls, points: [{x, y, lo, hi}]}]; opts: {xs, ymin, ymax, log, ideal, ylabel, xlabel, height, ref}
+  function lineChart(series, opts) {
+    opts = opts || {};
+    var W = 640, H = opts.height || 300, L = 48, R = 14, T = 14, B = 38;
+    var xs = opts.xs, all = [];
+    series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.lo != null ? p.lo : p.y, p.hi != null ? p.hi : p.y); }); });
+    var ymin = opts.ymin != null ? opts.ymin : Math.min.apply(null, all);
+    var ymax = opts.ymax != null ? opts.ymax : Math.max.apply(null, all);
+    var log = !!opts.log;
+    function fy(v) {
+      var a = log ? Math.log(ymin) : ymin, b = log ? Math.log(ymax) : ymax, t = log ? Math.log(v) : v;
+      return T + (H - T - B) * (1 - (t - a) / (b - a));
+    }
+    var xmin = xs[0], xmax = xs[xs.length - 1];
+    function fx(v) { return L + (W - L - R) * (v - xmin) / (xmax - xmin || 1); }
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (opts.label || "chart") + '">';
+    var ticks = opts.yticks || (function () {
+      var out = [], n = 5; for (var i = 0; i <= n; i++) { var v = log ? Math.exp(Math.log(ymin) + (Math.log(ymax) - Math.log(ymin)) * i / n) : ymin + (ymax - ymin) * i / n; out.push(v); } return out;
+    })();
+    ticks.forEach(function (v) {
+      svg += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(v) + '" y2="' + fy(v) + '" stroke-opacity="0.6"/>';
+      svg += '<text x="' + (L - 6) + '" y="' + (fy(v) + 4) + '" text-anchor="end">' + (v === 0 ? "0" : UI.fmt(v, v >= 10 ? 0 : v >= 1 ? 1 : 2)) + '</text>';
+    });
+    xs.forEach(function (v) { svg += '<text x="' + fx(v) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + (opts.xfmt ? opts.xfmt(v) : v) + '</text>'; });
+    if (opts.xlabel) svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + opts.xlabel + '</text>';
+    if (opts.ylabel) svg += '<text x="12" y="' + ((T + H - B) / 2) + '" text-anchor="middle" transform="rotate(-90 12 ' + ((T + H - B) / 2) + ')">' + opts.ylabel + '</text>';
+    if (opts.ideal) svg += '<path class="ideal" d="M' + fx(xmin) + ' ' + fy(Math.max(ymin, xmin)) + ' L' + fx(Math.min(xmax, ymax)) + ' ' + fy(Math.min(xmax, ymax)) + '"/>';
+    if (opts.ref != null) svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(opts.ref) + '" y2="' + fy(opts.ref) + '" stroke="var(--faint)" stroke-dasharray="4 4"/>';
+    series.forEach(function (s) {
+      var pts = s.points.filter(function (p) { return p.y != null; });
+      if (!pts.length) return;
+      var band = pts.filter(function (p) { return p.lo != null; });
+      if (band.length) {
+        var d = band.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.hi); }).join(" ") + " " +
+          band.slice().reverse().map(function (p) { return "L" + fx(p.x) + " " + fy(p.lo); }).join(" ") + " Z";
+        svg += '<path d="' + d + '" fill="var(--' + s.cls + ')" fill-opacity="0.15" stroke="none"/>';
+      }
+      svg += '<path d="' + pts.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.y); }).join(" ") + '" fill="none" stroke="var(--' + s.cls + ')" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="6 4"' : '') + '/>';
+      pts.forEach(function (p) {
+        svg += '<circle cx="' + fx(p.x) + '" cy="' + fy(p.y) + '" r="3.2" fill="var(--' + s.cls + ')"><title>' + s.name + ', ' + (opts.xfmt ? opts.xfmt(p.x) : p.x) + ': ' + UI.fmt(p.y, 3) + (p.lo != null ? ' [' + UI.fmt(p.lo, 3) + ', ' + UI.fmt(p.hi, 3) + ']' : '') + '</title></circle>';
+      });
+    });
+    var wrap = UI.el("div");
+    wrap.innerHTML = svg + "</svg>";
+    var legend = UI.el("div", { class: "legend-row" });
+    series.forEach(function (s) { legend.appendChild(UI.el("span", { class: "chip " + s.cls, text: s.name })); });
+    if (opts.ideal) legend.appendChild(UI.el("span", { class: "chip", text: "dashed: ideal" }));
+    wrap.appendChild(legend);
+    return wrap;
+  }
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+  var $ = UI.$, el = UI.el;
+
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

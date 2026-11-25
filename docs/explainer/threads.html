@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - Threads, workers and fork-join</title>
+<meta name="description" content="How eight threads split one job, what a Web Worker is and how it becomes a WASM thread, what Rayon does, and the fixed price of starting and joining a parallel region, with the measured numbers.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .code pre.plain { padding: 10px 12px; white-space: pre; }
+  .pair { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 10px; }
+  .controls .lbl { font-size: var(--fs-xs); color: var(--muted); margin-right: 6px; }
+  #fj-svg { width: 100%; height: auto; display: block; }
+  #fj-svg text { font-family: var(--sans); font-size: 11px; fill: var(--ink); }
+  #fj-svg .muted { fill: var(--muted); }
+  .fj-work { fill: var(--accent); opacity: 0.75; }
+  .fj-fork { fill: var(--copy); }
+  .fj-axis { stroke: var(--edge); }
+  .fj-end { stroke: var(--ink); stroke-dasharray: 4 3; }
+  .lane { fill: var(--accent); opacity: 0.7; }
+  .lane.fork { fill: var(--copy); opacity: 1; }
+  .tick { stroke: var(--edge); }
+</style>
+</head>
+<body data-page="threads">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="words.html">Words of the project</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <p class="kicker">Concepts · 1 of 4</p>
+    <h1>Threads, workers and fork-join</h1>
+
+    <p class="lead">One worker takes an hour; eight workers should take about eight minutes. The catch is that
+      handing out the pieces and collecting them back takes time too, and that time is the same whether the job is
+      big or tiny. This page is about that handing out and collecting: what a thread is here, how the browser gets
+      them, and how much the start and the finish of a parallel job cost in each runtime.</p>
+
+    <div class="oneliner"><b>In one sentence:</b> a WASM thread is a Web Worker running the same module on the same
+      shared memory, and the fixed price of starting and joining a parallel region is what separates the runtimes
+      when the work is small.</div>
+
+    <h2 id="threads">Threads and Web Workers</h2>
+    <p>A <a href="machines.html#threads">thread</a> is one line of work inside a program; several threads of the same
+      program share the same memory, so they can all read the same image and write their own rows of the output
+      without copying anything. Natively, the program asks the operating system for threads and gets them.</p>
+    <p>A web page cannot ask for threads. What it has is the <span data-term="web-worker">Web Worker</span>: a second
+      script that runs at the same time as the page, but in its own memory, talking to the page by sending messages
+      (which copies the data). That is fine for small messages and useless for sharing a 67-million-byte image.</p>
+    <div class="analogy"><b>Picture it.</b> Native threads are eight cooks in one kitchen, all reaching into the same
+      fridge. Plain Web Workers are eight cooks in eight kitchens who can only pass each other notes under the door.
+      A WASM thread is a cook in a separate kitchen who nevertheless shares one fridge with the others, because the
+      building was built with a special permit for that.</div>
+    <p>The permit is a <span data-term="sharedarraybuffer">SharedArrayBuffer</span>: one block of memory that several
+      workers can see at once. The WebAssembly module's memory is one of those, so N workers running the same module on
+      it behave like N threads of one program. The three kinds side by side:</p>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th></th><th>OS thread (native Rayon)</th><th>Web Worker (plain JS)</th><th>WASM thread (this study, in the browser)</th></tr></thead>
+      <tbody>
+        <tr><td>Memory</td><td>the whole program's memory, shared</td><td>its own, nothing shared</td><td>a Web Worker whose WASM memory is one shared SharedArrayBuffer</td></tr>
+        <tr><td>Cost to share data</td><td>none</td><td>copy, or hand over ownership</td><td>none: same memory</td></tr>
+        <tr><td>Waiting for others</td><td>a <span data-term="futex">futex</span> (asking the operating system to sleep until woken)</td><td><code>Atomics.wait</code> (not on the main thread)</td><td><span data-term="atomics-wait-atomics-notify">Atomics.wait</span>, the WASM instruction <code>memory.atomic.wait32</code></td></tr>
+        <tr><td>Created by</td><td><code>ThreadPoolBuilder::build_global</code></td><td><code>new Worker(...)</code></td><td><span data-term="wasm-bindgen-rayon">wasm-bindgen-rayon</span>'s <code>init_thread_pool</code></td></tr>
+      </tbody>
+    </table></div>
+    <p>The pool of threads is started once, before any timed work, so that starting it is never part of a measurement:</p>
+    <details class="deeper"><summary>If you already know this: starting the pool in each environment</summary>
+      <div class="pair">
+        <div data-code="bench/src/pool.rs|pub fn start_global(threads: usize)|8" data-title="Native: an OS-thread pool"></div>
+        <div data-code="bench/src/wasm.rs|#[wasm_bindgen(js_name = startThreadPool)]|5" data-title="Browser: N Web Workers on shared memory"></div>
+      </div>
+      <p>Getting there needs a WASM build with the <span data-term="atomics-bulk-memory-mutable-globals">atomics target
+        features</span>, the standard library rebuilt with them (<span data-term="z-build-std">-Z build-std</span>), and a
+        page that is allowed to create a SharedArrayBuffer (<span data-term="cross-origin-isolation">cross-origin
+        isolated</span>). The page's main thread may not block, so a dedicated
+        <span data-term="coordinator-worker">coordinator worker</span> calls Rust and waits for the pool; see
+        <a href="environments.html#wasm">What WASM threads need</a>.</p>
+    </details>
+
+    <h2 id="rayon">Rayon and work stealing</h2>
+    <p><span data-term="rayon">Rayon</span> is the Rust library that runs loops in parallel. You write almost the same
+      loop as before, and Rayon splits the work across its threads. In the blur, the loop runs over the rows of the
+      output; Rayon hands groups of rows to the threads, and the loop only finishes when every row is done. That final
+      wait is the <b>join</b>, like <code>await Promise.all(...)</code> over a set of workers.</p>
+    <details class="deeper"><summary>If you already know this: the filter's parallel region</summary>
+      <div data-code="bench/src/workloads/gaussian.rs|impl Workload for GaussianBlur {|16" data-title="The filter's parallel region" data-highlight="par_chunks_mut|for_each"></div>
+    </details>
+    <p>Rayon does not cut the job into exactly N equal pieces and hope they finish together. It keeps splitting the
+      work in halves, every thread keeps a pile of pieces, and a thread whose pile runs out <b>steals</b> half of
+      another thread's pile (<span data-term="work-stealing">work stealing</span>).</p>
+    <div class="why"><b>Why steal instead of dividing evenly?</b> Because the threads do not run at the same speed:
+      one core of this PC is slower than the others, the browser's own threads borrow time from some cores, and some
+      rows may be cheaper than others. With fixed shares, everyone would wait for the slowest. With stealing, the fast
+      threads finish their pile and take over part of the slow one's, and the load balances itself. It is also why the
+      study never ties a thread to a particular core: the browser could not, and Rayon does not need it.</div>
+    <div class="def"><b>Fork-join.</b> The shape of every parallel call here: fork (wake N threads and give them
+      work), compute, join (wait for the last one). The caller continues only after the join.</div>
+
+    <h2 id="forkjoin">Fork-join and its cost</h2>
+    <p>Waking eight threads, giving them work and waiting for the last one is not free, and the price does not shrink
+      when the job is small. A parallel region that does almost nothing still pays it in full.</p>
+    <figure class="figure">
+      <svg viewBox="0 0 640 120" role="img" aria-label="Eight thread lanes: a fork segment, then work, then a join; the fork and join are the same width on a big job and a small job">
+        <g font-size="11">
+          <text x="10" y="14" fill="var(--muted)">big job: the fork and the join are a sliver</text>
+          <rect class="lane fork" x="10" y="20" width="14" height="30"/><rect class="lane" x="24" y="20" width="560" height="30"/><rect class="lane fork" x="584" y="20" width="14" height="30"/>
+          <text x="300" y="39" text-anchor="middle" fill="#fff">work</text>
+          <text x="10" y="74" fill="var(--muted)">small job: the same fork and join are most of the time</text>
+          <rect class="lane fork" x="10" y="80" width="14" height="30"/><rect class="lane" x="24" y="80" width="30" height="30"/><rect class="lane fork" x="54" y="80" width="14" height="30"/>
+          <text x="80" y="99" fill="var(--muted)">fork, work, join</text>
+        </g>
+      </svg>
+      <figcaption>The orange parts cost the same in both. Whether they matter depends on how much blue sits between them.</figcaption>
+    </figure>
+    <p>To know that price, every run measures it before the workload: a parallel region that does nothing at all
+      (wake every thread, then wait), repeated 20 times (<a href="protocol.html#calibration">fork-join
+      calibration</a>). What is left when there is no work is exactly the cost of the fork and the join. The typical
+      value in each runtime, in microseconds (a millionth of a second), at each thread count:</p>
+    <div id="fj-table"></div>
+    <p class="src" data-files="bench/src/calibration/empty_broadcast.rs, bench/src/calibration/empty_par_iter.rs"></p>
+    <details class="deeper"><summary>If you already know this: the probe, and how the table is computed</summary>
+      <div data-code="bench/src/calibration/empty_broadcast.rs|fn fork_join(|6" data-title="The empty broadcast: only wake-up and join are left"></div>
+      <p class="muted" style="font-size:var(--fs-sm)">The median over runs of each run's median of 20 warm calls, computed from the per-run calibration rows of <code>data/raw/campaign-v3</code> (all 30 runs of every configuration, 270 per environment and N) by <code>scripts/explainer_data.py</code>. <code>broadcast</code> runs an empty closure on every thread; <code>par_iter</code> is an empty parallel iterator. The browser clock ticks in 5 µs (Chrome) and 20 µs (Firefox), so small browser values are a tick or two.</p>
+    </details>
+    <p>Two things to see in the table. The browsers pay several times what native pays: at N = 8 about 7 times in
+      Firefox and 12 times in Chrome. And all three step up at N = 8, probably because the thread that coordinates
+      then has to share the 8 cores with the 8 workers.</p>
+    <p>Whether that matters depends on how much work sits between the fork and the join. Try it on the blur: pick a
+      runtime, an image size and a thread count, and see the fixed cost next to the work:</p>
+    <div class="card">
+      <div class="controls" id="fj-controls"></div>
+      <svg id="fj-svg" viewBox="0 0 640 260" role="img" aria-label="One parallel region: fork-join cost and work per thread"></svg>
+      <div class="stats" id="fj-stats"></div>
+      <p class="note muted" id="fj-note" style="font-size:var(--fs-sm)"></p>
+    </div>
+    <p class="src" data-src="campaign-v3-scaling, cutoff-table"></p>
+    <p>On the 8192 x 8192 image one pass takes milliseconds, so even Chrome's 110 µs is a few percent. On a
+      512 x 512 image, 256 times less work, the same fork-join is a large part of the region, and Chrome's speedup
+      at 8 threads falls well below native's.</p>
+    <div class="why"><b>Why does the main campaign use such a big image?</b> So that the question "do browser threads
+      scale?" is answered for the work itself, not for the price of the fork-join. A small image would have measured
+      mostly the fork-join, and said "the browser scales badly" when the truth is "the browser's fork-join is
+      expensive". Both facts are reported, in their own places: this page and
+      <a href="granularity.html">When parallelism pays</a>, which measures where the line is.</div>
+
+    <h2 id="grain">Grain size</h2>
+    <p>Inside one region, the work is cut into tasks, and a task has a small cost of its own: putting it on a pile,
+      taking it off, stealing it. Cut too fine and those small costs add up; cut too coarse and some threads sit idle
+      at the end with nothing left to steal. The best size is in the middle, and a sweep found it for each workload at
+      8 threads:</p>
+    <div id="grain-table"></div>
+    <p class="src" data-src="grain-best"></p>
+    <p>Two costs, two scales. The region's fork-join is tens of microseconds and is paid once per region. A task
+      inside a running region costs well under a microsecond for the blur and about half a microsecond to a
+      microsecond for the histogram. Rayon's own automatic splitting ends up within a few percent of the best fixed
+      size, so the main campaign's default was not a handicap. The full curve is in
+      <a href="granularity.html#grain">The grain U-curve</a>.</p>
+
+    <div class="remember"><b>What to remember.</b> In the browser a thread is a Web Worker on shared memory. Starting
+      and joining a parallel region has a fixed price, 7 to 12 times higher in the browsers than natively at 8
+      threads; it is a few percent of a big job and most of a tiny one. That is why the main campaign uses a big
+      image, and why a separate campaign measures where parallelism stops paying.</div>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var el = UI.el, $ = UI.$, D = UI.D, fmt = UI.fmt;
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var FJ = D.forkJoin || [];
+  function fj(env, n, probe) {
+    var r = FJ.filter(function (x) { return x.environment === env && x.threads === n && x.probe === (probe || "broadcast"); })[0];
+    return r ? r.median_us : null;
+  }
+
+  // --- fork-join table ---------------------------------------------------------------------
+  var ns = [1, 2, 4, 6, 7, 8];
+  var rows = [];
+  ENVS.forEach(function (e) {
+    rows.push({ env: e[1], probe: "broadcast", vals: ns.map(function (n) { return fj(e[0], n, "broadcast"); }) });
+    rows.push({ env: e[1], probe: "par_iter", vals: ns.map(function (n) { return fj(e[0], n, "par-iter"); }) });
+  });
+  $("#fj-table").appendChild(UI.table(rows, [{ label: "Environment", key: "env" }, { label: "Probe", key: "probe" }].concat(ns.map(function (n, i) {
+    return { label: "N = " + n + " (µs)", num: true, value: function (r) { return r.vals[i] == null ? "–" : fmt(r.vals[i], r.vals[i] < 10 ? 2 : 0); } };
+  }))));
+
+  // --- fork-join widget --------------------------------------------------------------------
+  var state = { env: "chrome", size: "large", n: 8 };
+  var SIZES = { small: { label: "512² small", ns: [1, 2, 4, 8] }, large: { label: "8192² large", ns: [1, 2, 4, 6, 7, 8] } };
+  function times(env, size, n) {
+    if (size === "large") {
+      var a = UI.row("campaign-v3-scaling", { environment: env, workload: "filter", threads: 1 });
+      var b = UI.row("campaign-v3-scaling", { environment: env, workload: "filter", threads: n });
+      return a && b ? { t1: a.center_ns / 1000, tn: b.center_ns / 1000, speedup: b.speedup } : null;
+    }
+    var c = UI.row("cutoff-table", { environment: env, workload: "filter", side: 512, threads: n });
+    return c ? { t1: c.t1_ns / 1000, tn: c.tn_ns / 1000, speedup: c.speedup } : null;
+  }
+  var ctl = $("#fj-controls"), nHost = el("span");
+  function group(label, host) { var g = el("span"); g.appendChild(el("span", { class: "lbl", text: label })); g.appendChild(host); ctl.appendChild(g); return host; }
+  var envHost = group("environment", el("span")), sizeHost = group("image", el("span")); group("threads N", nHost);
+  UI.segmented(envHost, ENVS.map(function (e) { return { label: e[1], value: e[0] }; }), function (v) { state.env = v; draw(); }, state.env);
+  UI.segmented(sizeHost, [{ label: SIZES.small.label, value: "small" }, { label: SIZES.large.label, value: "large" }], function (v) {
+    state.size = v; if (SIZES[v].ns.indexOf(state.n) < 0) state.n = 8; buildN(); draw();
+  }, state.size);
+  function buildN() {
+    nHost.innerHTML = "";
+    UI.segmented(nHost, SIZES[state.size].ns.map(function (n) { return { label: String(n), value: n }; }), function (v) { state.n = v; draw(); }, state.n);
+  }
+  buildN();
+
+  function draw() {
+    var svg = $("#fj-svg"), t = times(state.env, state.size, state.n), f = fj(state.env, state.n, "broadcast") || 0;
+    if (!t) { svg.innerHTML = ""; return; }
+    var n = state.n, ideal = t.t1 / n, W = 640, left = 70, right = 20, top = 22, lane = Math.min(24, 180 / n);
+    var scale = (W - left - right) / Math.max(t.tn, ideal + f);
+    var s = '<line class="fj-axis" x1="' + left + '" y1="' + (top - 6) + '" x2="' + left + '" y2="' + (top + n * lane + 4) + '"/>';
+    for (var i = 0; i < n; i++) {
+      var y = top + i * lane;
+      s += '<text class="muted" x="' + (left - 8) + '" y="' + (y + lane * 0.65) + '" text-anchor="end">thread ' + (i + 1) + '</text>';
+      s += '<rect class="fj-fork" x="' + left + '" y="' + (y + 2) + '" width="' + Math.max(1, f * scale) + '" height="' + (lane - 5) + '" rx="2"><title>fork-join ' + fmt(f) + ' µs</title></rect>';
+      s += '<rect class="fj-work" x="' + (left + f * scale) + '" y="' + (y + 2) + '" width="' + Math.max(1, ideal * scale) + '" height="' + (lane - 5) + '" rx="2"><title>T1 / N = ' + fmt(ideal) + ' µs</title></rect>';
+    }
+    var xEnd = left + t.tn * scale, yb = top + n * lane;
+    s += '<line class="fj-end" x1="' + xEnd + '" y1="' + (top - 8) + '" x2="' + xEnd + '" y2="' + (yb + 6) + '"/>';
+    s += '<text x="' + Math.min(xEnd, W - 180) + '" y="' + (yb + 22) + '">measured T_N = ' + fmt(t.tn) + ' µs</text>';
+    s += '<rect class="fj-fork" x="' + left + '" y="' + (yb + 34) + '" width="12" height="10"/><text class="muted" x="' + (left + 18) + '" y="' + (yb + 43) + '">empty fork-join (calibration)</text>';
+    s += '<rect class="fj-work" x="' + (left + 210) + '" y="' + (yb + 34) + '" width="12" height="10"/><text class="muted" x="' + (left + 228) + '" y="' + (yb + 43) + '">ideal share of the work, T1 / N</text>';
+    svg.setAttribute("viewBox", "0 0 " + W + " " + (yb + 56));
+    svg.innerHTML = s;
+    var st = $("#fj-stats"); st.innerHTML = "";
+    [[fmt(t.t1) + " µs", "T1, one thread"], [fmt(t.tn) + " µs", "T_N measured, N = " + n], [fmt(t.speedup, 2), "speedup T1 / T_N"], [fmt(f) + " µs", "one empty fork-join at N = " + n], [n > 1 ? fmt(100 * f / t.tn, 1) + " %" : "–", "fork-join / T_N"]].forEach(function (x) {
+      st.appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: x[0] }), el("div", { class: "k", text: x[1] })]));
+    });
+    $("#fj-note").textContent = "The dashed line is the measured iteration time. The gap between the end of the bars and the line is everything that is neither ideal work nor an empty fork-join: imbalance, memory bandwidth, the browser's own overhead per iteration. " +
+      (state.size === "small" ? "On 512² the fork-join is a large part of a ~" + fmt(t.tn) + " µs region." : "On 8192² the fork-join is a small part of a ~" + fmt(t.tn / 1000, 1) + " ms region.");
+  }
+  draw();
+
+  // --- grain table ---------------------------------------------------------------------------
+  var g = UI.rows("grain-best", { side: 8192 });
+  var lab = { native: "Native", chrome: "Chrome", firefox: "Firefox" };
+  $("#grain-table").appendChild(UI.table(g, [
+    { label: "Environment", value: function (r) { return lab[r.environment]; } },
+    { label: "Workload", key: "workload" },
+    { label: "Best task", value: function (r) { return r.best_grain + " " + (r.grain_unit === "rows" ? "rows" : "KB"); } },
+    { label: "Flat region", value: function (r) { return r.flat_from + " to " + r.flat_to + " " + (r.grain_unit === "rows" ? "rows" : "KB"); } },
+    { label: "Best time (µs)", num: true, value: function (r) { return fmt(r.best_us, 0); } },
+    { label: "Rayon adaptive / best", num: true, value: function (r) { return fmt(r.adaptive_over_best, 3); } },
+    { label: "Cost per extra task (ns)", num: true, value: function (r) { return r.task_cost_ns; } }
+  ]));
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

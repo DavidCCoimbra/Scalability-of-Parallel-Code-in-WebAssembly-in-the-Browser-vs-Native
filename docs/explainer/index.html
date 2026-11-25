@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - Start here</title>
+<meta name="description" content="The study in a short story, the whole project in one picture, what was found in words, how to read this guide, and where each grading criterion is shown.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .big { font-size: 1.15rem; line-height: 1.55; }
+  .parts { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .parts .card h3 { margin: 0 0 4px; font-size: 1rem; }
+  .parts .card p { font-size: var(--fs-sm); margin: 3px 0; }
+  .legend { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .legend .card p { font-size: var(--fs-sm); }
+  .legend .card .why, .legend .card .analogy, .legend .card .remember { font-size: var(--fs-sm); margin: 6px 0 0; }
+</style>
+</head>
+<body data-page="index">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <p class="kicker">Start · 1 of 2</p>
+    <h1>Start here</h1>
+
+    <p class="lead big">A web page can now run the same kind of heavy code a desktop program runs, and it can
+      use several of the computer's cores to do it. This study asks a simple question about that: when the
+      <b>same program</b> runs inside <b>Chrome</b>, inside <b>Firefox</b>, and <b>directly on the computer</b>,
+      does adding more cores help each of them the same way?</p>
+    <div class="oneliner"><b>In one sentence:</b> same source, same compiler, same settings, same machine, three
+      places to run: every difference we measure comes from where the code runs, not from the code.</div>
+
+    <h2 id="story">The study in a story</h2>
+    <p>Imagine one recipe and three kitchens. The recipe is a small program written in Rust, a language that can
+      be turned both into a normal desktop program and into <b>WebAssembly</b>, the form a browser can run. The
+      three kitchens are the computer itself ("native"), Chrome and Firefox. We give each kitchen the same two
+      dishes to make, first with one cook, then with two, four, up to eight, and we time every attempt.</p>
+    <p>The first dish is an <b>image blur</b>. Cut the picture into strips, one strip per cook, and nobody has to
+      talk to anybody. If eight cooks are not close to eight times faster here, it is the kitchen's fault.</p>
+    <p>The second dish is an <b>image histogram</b>: count how many pixels there are of each shade of grey. Done
+      the obvious way, every cook adds to the same shared tally sheet, and cooks keep bumping into each other.
+      Done the careful way, each cook keeps a private tally and they add them up at the end. The difference between
+      the two ways is the cost of cooks waiting for each other, what programmers call <b>synchronization</b>. We
+      can make the bumping worse or better by giving the picture fewer or more shades of grey.</p>
+    <p>Every attempt is repeated thirty times from a cold start, in a shuffled order, on one computer prepared so
+      that nothing else disturbs it. From the times we ask two things:</p>
+    <ul>
+      <li><b>RQ1.</b> Does the browser gain as much from extra cores as the native program does?</li>
+      <li><b>RQ2.</b> Does waiting for each other cost more in the browser than natively?</li>
+    </ul>
+    <p>New to cores, caches or timing? The six <a href="machines.html">Foundations</a> pages explain them before
+      the project does. If you already know them, skip straight to <a href="questions.html">Questions and
+      design</a>.</p>
+
+    <h2 id="map">The project in one picture</h2>
+    <p>Left to right is the order things happen. Click a box to read what it does and where it is explained.</p>
+    <div class="card">
+      <div id="map-svg" class="diagram"></div>
+      <div id="map-panel" class="panel" aria-live="polite"><p class="muted">Pick a box above.</p></div>
+    </div>
+
+    <h2 id="answers">What we found, in words</h2>
+    <p><b>RQ1.</b> Yes, when each cook has enough to do. On the blur, Chrome and Firefox gain from eight cores
+      almost exactly as much as the native program does. The browser is a fixed amount slower at everything, like
+      a kitchen with a slightly longer walk to the stove, but that amount does not grow as cooks are added. What
+      does cost the browser more is <i>handing out the work and collecting it</i>, which only matters when each
+      piece of work is tiny.</p>
+    <p><b>RQ2.</b> It depends on the browser. In Firefox, waiting for each other costs the same as natively, or
+      less. In Chrome it costs more when everyone crowds one tally, and, surprisingly, less when the tallies are
+      spread out. The reason turned out to be in the machine instructions Chrome's engine chose for "add one to
+      the shared tally": a "try, check, try again" loop where the others use a single step, and we could count
+      the retries happening.</p>
+    <p>We also hit, and fixed, three traps of measuring inside a browser: Chrome quietly used cores it was told
+      not to; Firefox's slow start made short runs look slow; and a browser we had pinned to one version updated
+      itself in the middle of the work.</p>
+    <details class="deeper"><summary>If you already know this: the two numbers behind the words</summary>
+      <p>Speedup of the filter at N = 8 (T<sub>1</sub> / T<sub>8</sub>, geometric mean of 30 runs):</p>
+      <div id="rq1-bars"></div>
+      <p class="src" data-src="campaign-v3-scaling"></p>
+      <p>The RQ2 metric at N = 8: the atomic/local time ratio in the browser over the same ratio natively
+        (1 = as native; above 1 = synchronization costs more than natively):</p>
+      <div id="rq2-bars"></div>
+      <p class="src" data-src="campaign-v3-contrasts"></p>
+      <p>Full results: <a href="rq1.html">RQ1</a>, <a href="rq2.html">RQ2</a>, <a href="why.html">Why Chrome</a>.</p>
+    </details>
+
+    <h2 id="how">How to read this guide</h2>
+    <p>Read it in the order of the menu. Each part only uses what the parts before it explained, and nothing
+      assumes you know Rust, statistics or how a chip works: the Foundations pages are there for that.</p>
+    <div class="parts">
+      <div class="card"><h3>0 · Start</h3><p>This page, and your first day with the code.</p></div>
+      <div class="card"><h3>1 · Foundations</h3><p>Processes and cores, memory and caches, compilers, measuring time, ratios, and how a study fools itself. No project numbers.</p></div>
+      <div class="card"><h3>2 · The study</h3><p>The questions, the two workloads, the three places the code runs, the project's own words.</p></div>
+      <div class="card"><h3>3 · Concepts</h3><p>Threads and fork-join, contention and padding, atomics in machine code, the Rust you need.</p></div>
+      <div class="card"><h3>4 · Method</h3><p>The machine, the harness, the protocol, how to read the numbers, and the statistics in detail.</p></div>
+      <div class="card"><h3>5 · Results</h3><p>RQ1, RQ2, why Chrome differs, the side experiments, when parallelism pays, problems found, threats.</p></div>
+      <div class="card"><h3>6 · Working on it</h3><p>How the pieces talk, every command, campaigns, data, reproducing the paper, changing things safely, debugging, the workflow.</p></div>
+      <div class="card"><h3>7 · The code</h3><p>How the code is organised, one run followed through it, where things are, the decisions.</p></div>
+    </div>
+
+    <h3>Two layers on every page</h3>
+    <p>Every page is written twice in one place. The plain text comes first and assumes nothing. Under it, boxes
+      like this one hold what a reader from the field wants:</p>
+    <details class="deeper"><summary>If you already know this: an example of the second layer</summary>
+      <p>Formulas, the full tables, the compiler flags, the algebra. A junior skips these; an expert opens them.
+        Nothing that was in the guide before is gone, it lives in one of these.</p>
+    </details>
+
+    <h3>What the boxes mean</h3>
+    <div class="legend">
+      <div class="card"><h3>Why</h3><p>Every decision gets the question a newcomer would ask, and what would go wrong without it.</p>
+        <div class="why"><b>Why 30 runs?</b> With 3, one slow run changes the answer.</div></div>
+      <div class="card"><h3>Picture it</h3><p>An everyday analogy for each hard idea, set apart so you know it is only a picture.</p>
+        <div class="analogy"><b>Picture it.</b> Cores are stoves; threads are cooks.</div></div>
+      <div class="card"><h3>A word where it is used</h3><p>Underlined words open a short definition; the <a href="glossary.html">glossary</a> has them all, with examples.</p>
+        <span class="def"><b>Example.</b> A new word is explained like this, the first time.</span></div>
+      <div class="card"><h3>What to remember</h3><p>The one thing to take from the page, at its end.</p>
+        <div class="remember"><b>What to remember.</b> Same code, three places.</div></div>
+      <div class="card"><h3>Source lines</h3><p>Every measured number has a "source" line under it, linking the table in <code>data/tables/</code> it was read from.</p></div>
+      <div class="card"><h3>Where in the code</h3><p>Code excerpts are read from the repository when the guide is built, with a link to the file and line. The "Code:" button opens them in VS Code.</p></div>
+    </div>
+    <p>The numbers are not typed into the pages: <code>make explainer</code> reads the <code>measured/v3</code>
+      tables and writes <code>assets/data.js</code>, and the pages draw from it. A made-up number for an example
+      always says so.</p>
+
+    <h2 id="criteria">For the grader: criterion by criterion</h2>
+    <p>The paper (<code>paper/final/paper.tex</code>) is graded on the criteria below. This table says where
+      each one is explained here, with the data and the code behind it.</p>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>Criterion</th><th>Where</th></tr></thead>
+      <tbody>
+        <tr><td>Motivation and the research questions</td><td><a href="questions.html#why">Why this matters</a>, <a href="questions.html#rqs">RQ1 and RQ2</a></td></tr>
+        <tr><td>Related work</td><td><a href="questions.html#related">What others measured</a></td></tr>
+        <tr><td>Methodology: workloads, padding, unit of analysis, CPU mask, turbo, warm-up, versions, order, tests</td><td><a href="workloads.html">The workloads</a>, <a href="machine.html">The machine</a>, <a href="protocol.html">Runs, warm-up and order</a>, <a href="stats.html">The statistics</a></td></tr>
+        <tr><td>Rigor: controls, repetitions, intervals, effect sizes, multiple comparisons, reproducibility</td><td><a href="protocol.html#thirty">30 runs</a>, <a href="stats.html#bootstrap">Bootstrap</a>, <a href="stats.html#holm">Holm</a>, <a href="stats.html#robust">Mann-Whitney and Cliff's delta</a>, <a href="reproduce.html">From raw runs to the paper</a></td></tr>
+        <tr><td>Results with uncertainty, figures, numbers matching the data</td><td><a href="rq1.html">RQ1</a>, <a href="rq2.html">RQ2</a>, <a href="extras.html">Exploratory campaigns</a>, <a href="granularity.html">When parallelism pays</a></td></tr>
+        <tr><td>Analysis: why, and the explicit answers</td><td><a href="why.html">Why Chrome</a>, <a href="rq1.html#answer">Answer to RQ1</a>, <a href="rq2.html#answer">Answer to RQ2</a></td></tr>
+        <tr><td>Threats to validity</td><td><a href="threats.html">Threats to validity</a>, <a href="pitfalls.html">Problems found and fixed</a></td></tr>
+      </tbody>
+    </table></div>
+    <p class="src" data-files="paper/final/paper.tex"></p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var el = UI.el, $ = UI.$;
+  var BOXES = [
+    { key: "bench", t: "bench/", s: "Rust workloads", page: "workloads.html", d: "One Rust crate holds the filter and the histograms. The same source builds a native binary and a WASM module, with the same compiler and flags." },
+    { key: "build", t: "Build", s: "native + WASM", page: "environments.html", d: "make builds the native runner and the WASM package (nightly Rust, build-std, atomics and simd128). The tag measured/v3 fixes the exact build; its hashes are recorded with every run." },
+    { key: "machine", t: "Machine", s: "8 P-cores, quiet", page: "machine.html", d: "One i9-14900KF under Linux: turbo and SMT off, governor performance, the 8 P-cores shielded for the measurement, the rest of the system on the E-cores." },
+    { key: "harness", t: "Harness", s: "fresh process", page: "harness.html", d: "The orchestrator launches each run as a fresh process: the native binary, or Chrome or Firefox with a fresh profile, a CPU mask and the configuration in the URL. The page posts its CSV to a local server." },
+    { key: "campaign", t: "Campaign", s: "30 runs, shuffled", page: "campaigns.html", d: "A campaign spec lists environments, workloads, thread counts and repetitions. The runs are interleaved in a seeded random order and can resume after a stop." },
+    { key: "analysis", t: "Analysis", s: "bootstrap, Holm", page: "reading.html", d: "One value per run (the median of its 10 measured iterations), the geometric mean over the 30 runs, speedup per environment, bootstrap intervals over runs, and Holm over the 10 primary contrasts." },
+    { key: "paper", t: "Paper", s: "RQ1, RQ2", page: "reproduce.html", d: "Tables in data/tables/ and figures in paper/figures/ feed paper/final/paper.tex. Every number has a file." }
+  ];
+  var W = 760, bw = 92, gap = (W - 20 - bw * BOXES.length) / (BOXES.length - 1);
+  var svg = '<svg viewBox="0 0 ' + W + ' 86" role="img" aria-label="The steps of the project, left to right">';
+  BOXES.forEach(function (b, i) {
+    var x = 10 + i * (bw + gap);
+    if (i) svg += '<path class="arrow" d="M' + (x - gap) + ' 40 h ' + (gap - 2) + '"/>';
+    svg += '<rect class="box" data-key="' + b.key + '" x="' + x + '" y="14" width="' + bw + '" height="52" rx="8"/>' +
+      '<text x="' + (x + bw / 2) + '" y="38" text-anchor="middle" font-size="13" font-weight="600">' + b.t + '</text>' +
+      '<text x="' + (x + bw / 2) + '" y="55" text-anchor="middle" font-size="10" style="fill:var(--muted)">' + b.s + '</text>';
+  });
+  $("#map-svg").innerHTML = svg + "</svg>";
+  var details = {};
+  BOXES.forEach(function (b) {
+    details[b.key] = function (panel) {
+      panel.appendChild(el("h3", { style: "margin-top:0", text: b.t }));
+      panel.appendChild(el("p", { text: b.d }));
+      panel.appendChild(el("p", {}, [el("a", { href: b.page, text: "Read: " + b.page.replace(".html", "") + " →" })]));
+    };
+  });
+  UI.clickable($("#map-svg"), $("#map-panel"), details).pick("harness");
+
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  $("#rq1-bars").appendChild(UI.bars([{ label: "Filter, N = 8", values: ENVS.map(function (e) {
+    var r = UI.row("campaign-v3-scaling", { environment: e[0], workload: "filter", threads: 8 });
+    return { name: e[1], label: e[1], value: r && r.speedup, cls: e[0] };
+  }) }], { max: 8, digits: 2 }));
+  var series = [1, 4, 16, 256].map(function (k) {
+    return { label: "k = " + k, values: ["chrome", "firefox"].map(function (env) {
+      var r = UI.row("campaign-v3-contrasts", { question: "RQ2", environment: env, k: k, threads: 8 });
+      return { name: env, label: env === "chrome" ? "Chrome" : "Firefox", value: r && r.effect, cls: env };
+    }) };
+  });
+  $("#rq2-bars").appendChild(UI.bars(series, { max: 2.4, digits: 2, unit: "×" }));
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

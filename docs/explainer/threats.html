@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - Threats to validity</title>
+<meta name="description" content="The three threats that matter most, in plain words, then the full list of what could make the results wrong, what controls each threat and what is left.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .chart { width: 100%; height: auto; display: block; }
+  .chart text { font-family: var(--sans); fill: var(--muted); font-size: 11px; }
+  .chart .axis { stroke: var(--edge); }
+  .chart .ideal { stroke: var(--faint); stroke-dasharray: 4 4; fill: none; }
+  .controls-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 10px 0; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+  .fig text { font-family: var(--sans); font-size: 12px; fill: var(--body); }
+  .fig .box { fill: var(--panel); stroke: var(--edge); }
+  .fig .hot { fill: var(--chrome-soft); stroke: var(--chrome); }
+  .fig .cool { fill: var(--native-soft); stroke: var(--native); }
+  .fig .arrow { stroke: var(--muted); fill: none; marker-end: url(#ah); }
+
+</style>
+</head>
+<body data-page="threats">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+<p class="kicker">Results · 7 of 7</p>
+    <h1>Threats to validity</h1>
+    <p class="lead">Every measurement can be wrong in ways its numbers do not show. A careful study ends by listing how
+      it could be wrong, what was done about each, and what is left. This page does that for this study, in plain
+      words first and then in full.</p>
+    <div class="oneliner"><b>In one sentence:</b> the known ways to be wrong are controlled or measured; what is left is
+      one machine, a possible crowding of the cores at N = 8 in Firefox, an explanation of Chrome that was observed but
+      not tested by changing something, and intervals that bound what "no difference" can mean.</div>
+    <p>The four kinds of threat below are explained with an example each in
+      <a href="validity.html">Four ways a study fools itself</a>.</p>
+
+    <h2 id="three">The three that matter most</h2>
+    <p>Three threats are left open, and one limit applies to every "no difference" in the study:</p>
+    <div class="grid two">
+      <div class="card"><h3>Only one machine</h3><p>Every number comes from one PC, one CPU, one operating system.
+        Another CPU, especially one whose cores share cache lines differently, could move the RQ2 numbers. The study
+        says what the machine is and does not claim more.</p></div>
+      <div class="card"><h3>Crowded cores at N = 8</h3><p>With 8 threads on 8 cores, the browser's own threads and the
+        worker that coordinates the run have nowhere else to go. A pilot was consistent with this costing Firefox
+        something at N = 8, but could not separate it from other effects, so Firefox's N = 8 results may include it.</p></div>
+      <div class="card"><h3>An explanation observed, not tested</h3><p>The counters show Chrome's loop retrying and
+        reading the line first. Nobody changed the loop and measured again, so the counters show the mechanism, not
+        proof that it is the whole cause. And why Chrome wins at k = 256 is not explained at all.</p></div>
+      <div class="card" style="border-color: var(--accent)"><h3>And one limit: "no difference" is not "the same"</h3><p>When a comparison finds no difference, it only
+        means the difference is smaller than the interval could see: within about ±4% for RQ1 and ±6.5% for RQ2. A
+        3% real difference would pass unnoticed.</p></div>
+    </div>
+    <div class="stats" id="w-widths"></div>
+    <p class="src" data-src="campaign-v3-contrasts"></p>
+
+    <h2 id="internal">Internal</h2>
+    <p><b>Could something other than the runtime explain the differences?</b> Other programs using the cores, the
+      browser starting up, a drifting clock, a different browser version: anything that changes the time but is not
+      what the study compares.</p>
+    <details class="deeper"><summary>The full list: threat, control, what is left</summary>
+      <div id="w-internal"></div>
+    </details>
+
+    <h2 id="construct">Construct</h2>
+    <p><b>Do the numbers measure what the questions ask?</b> A speedup that hides who is faster in seconds, a metric
+      that counts the wrong cost, a counter read as a cause: ways of measuring something real but not the thing
+      asked.</p>
+    <details class="deeper"><summary>The full list: threat, control, what is left</summary>
+      <div id="w-construct"></div>
+    </details>
+
+    <h2 id="external">External</h2>
+    <p><b>How far do the results carry beyond this setup?</b> One machine, two browser versions, two workloads, one
+      image size. The study was built for a fair comparison, not for a typical desktop.</p>
+    <details class="deeper"><summary>The full list: threat, control, what is left</summary>
+      <div id="w-external"></div>
+    </details>
+
+    <h2 id="conclusion">Conclusion</h2>
+    <p><b>Do the numbers support what is concluded from them?</b> Enough runs, the right unit of analysis, a bar
+      raised for testing ten things at once, and "not rejected" never read as "equal"
+      (<a href="reading.html#notproof">Not rejecting is not proof</a>).</p>
+    <details class="deeper"><summary>The full list: threat, control, what is left</summary>
+      <div id="w-conclusion"></div>
+    </details>
+    <p class="src" data-files="docs/adr/0080-threats-to-validity.md, paper/final/paper.tex"></p>
+    <div class="remember"><b>What to remember.</b> The results are solid for this machine and this setup, and honest
+      about their limits: one PC, a possible crowding at N = 8, an explanation seen but not tested, and a few percent
+      of difference that the intervals cannot see.</div>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // lineChart(series, opts): inline SVG lines with optional CI bands.
+  // series: [{name, cls, points: [{x, y, lo, hi}]}]; opts: {xs, ymin, ymax, log, ideal, ylabel, xlabel, height, ref}
+  function lineChart(series, opts) {
+    opts = opts || {};
+    var W = 640, H = opts.height || 300, L = 48, R = 14, T = 14, B = 38;
+    var xs = opts.xs, all = [];
+    series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.lo != null ? p.lo : p.y, p.hi != null ? p.hi : p.y); }); });
+    var ymin = opts.ymin != null ? opts.ymin : Math.min.apply(null, all);
+    var ymax = opts.ymax != null ? opts.ymax : Math.max.apply(null, all);
+    var log = !!opts.log;
+    function fy(v) {
+      var a = log ? Math.log(ymin) : ymin, b = log ? Math.log(ymax) : ymax, t = log ? Math.log(v) : v;
+      return T + (H - T - B) * (1 - (t - a) / (b - a));
+    }
+    var xmin = xs[0], xmax = xs[xs.length - 1];
+    function fx(v) { return L + (W - L - R) * (v - xmin) / (xmax - xmin || 1); }
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (opts.label || "chart") + '">';
+    var ticks = opts.yticks || (function () {
+      var out = [], n = 5; for (var i = 0; i <= n; i++) { var v = log ? Math.exp(Math.log(ymin) + (Math.log(ymax) - Math.log(ymin)) * i / n) : ymin + (ymax - ymin) * i / n; out.push(v); } return out;
+    })();
+    ticks.forEach(function (v) {
+      svg += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(v) + '" y2="' + fy(v) + '" stroke-opacity="0.6"/>';
+      svg += '<text x="' + (L - 6) + '" y="' + (fy(v) + 4) + '" text-anchor="end">' + (v === 0 ? "0" : UI.fmt(v, v >= 10 ? 0 : v >= 1 ? 1 : 2)) + '</text>';
+    });
+    xs.forEach(function (v) { svg += '<text x="' + fx(v) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + (opts.xfmt ? opts.xfmt(v) : v) + '</text>'; });
+    if (opts.xlabel) svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + opts.xlabel + '</text>';
+    if (opts.ylabel) svg += '<text x="12" y="' + ((T + H - B) / 2) + '" text-anchor="middle" transform="rotate(-90 12 ' + ((T + H - B) / 2) + ')">' + opts.ylabel + '</text>';
+    if (opts.ideal) svg += '<path class="ideal" d="M' + fx(xmin) + ' ' + fy(Math.max(ymin, xmin)) + ' L' + fx(Math.min(xmax, ymax)) + ' ' + fy(Math.min(xmax, ymax)) + '"/>';
+    if (opts.ref != null) svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(opts.ref) + '" y2="' + fy(opts.ref) + '" stroke="var(--faint)" stroke-dasharray="4 4"/>';
+    series.forEach(function (s) {
+      var pts = s.points.filter(function (p) { return p.y != null; });
+      if (!pts.length) return;
+      var band = pts.filter(function (p) { return p.lo != null; });
+      if (band.length) {
+        var d = band.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.hi); }).join(" ") + " " +
+          band.slice().reverse().map(function (p) { return "L" + fx(p.x) + " " + fy(p.lo); }).join(" ") + " Z";
+        svg += '<path d="' + d + '" fill="var(--' + s.cls + ')" fill-opacity="0.15" stroke="none"/>';
+      }
+      svg += '<path d="' + pts.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.y); }).join(" ") + '" fill="none" stroke="var(--' + s.cls + ')" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="6 4"' : '') + '/>';
+      pts.forEach(function (p) {
+        svg += '<circle cx="' + fx(p.x) + '" cy="' + fy(p.y) + '" r="3.2" fill="var(--' + s.cls + ')"><title>' + s.name + ', ' + (opts.xfmt ? opts.xfmt(p.x) : p.x) + ': ' + UI.fmt(p.y, 3) + (p.lo != null ? ' [' + UI.fmt(p.lo, 3) + ', ' + UI.fmt(p.hi, 3) + ']' : '') + '</title></circle>';
+      });
+    });
+    var wrap = UI.el("div");
+    wrap.innerHTML = svg + "</svg>";
+    var legend = UI.el("div", { class: "legend-row" });
+    series.forEach(function (s) { legend.appendChild(UI.el("span", { class: "chip " + s.cls, text: s.name })); });
+    if (opts.ideal) legend.appendChild(UI.el("span", { class: "chip", text: "dashed: ideal" }));
+    wrap.appendChild(legend);
+    return wrap;
+  }
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+  var $ = UI.$, el = UI.el;
+  function list(host, items) {
+    host.appendChild(UI.table(items, [
+      { label: "Threat", value: function (t) { return el("b", { text: t[0] }); } },
+      { label: "Control", value: function (t) { return t[1]; } },
+      { label: "Left", value: function (t) { return t[2]; } }
+    ]));
+  }
+  list($("#w-internal"), [
+    ["Foreign work on the measured cores", "Shield of the P-cores, quiet mode, foreign CPU time recorded per run and runs above 0.25 s excluded (ADRs 0028, 0042, 0051); none was.", "The L3 cache and memory bandwidth are shared with the E-cores."],
+    ["Browser processes outside the mask", "No session bus for the browsers; escaped processes recorded and required to be 0 (ADR 0045).", "Sampled once per run, at the end."],
+    ["Browser start-up work", "A 3 s start delay in every browser run (ADR 0048).", "Native has no delay; 3 s against 6 s differs by about 1%."],
+    ["Oversubscription at N = 8", "The browsers' own threads and the coordinating worker share the 8 cores; measured in a pilot.", "The pilot was consistent with oversubscription in Firefox but confounded, so Firefox's N = 8 primary contrasts may include it."],
+    ["Clock resolution", "8192² images, so every configuration is at least 100 times the browser clock (5 µs Chrome, 20 µs Firefox) (ADR 0041).", "Warm fork-join samples are close to the resolution."],
+    ["Warm-up and JIT tiers", "Warm-up W per workload, 1.5 times the worst observed, the same everywhere (ADR 0043).", "W comes from N = 1 and 8."],
+    ["Wrong results passing as fast ones", "A checksum per run, equal across environments and N; a conflict stops the analysis.", "None found."],
+    ["Drift and order", "One seeded random order over every run (ADR 0034); trends with the order reported before the analysis.", "Three of 162 configurations trend (about 1.1 expected by chance); kept."],
+    ["Browser version drift", "DisableAppUpdate policy, a version check before each campaign, strict validation per run (ADR 0071).", "The 2640 repeated Firefox runs ran in one block; their control covers only histogram cells, so the Firefox filter numbers of the weak, SIMD and E-core campaigns rest on it."],
+    ["Buffer placement", "Recorded per run (audit A2).", "Natively the filter's input and output share an offset modulo 4096, which understates its browser / native ratios by 1 to 2%."],
+    ["Degraded core and frequency", "Turbo off keeps every core at base clock; turbo and governor recorded per run.", "One core is slower, the same for every environment; the frequency itself is not logged."]
+  ]);
+  list($("#w-construct"), [
+    ["Relative speedup hides absolute differences", "The browser / native time ratio is always reported next to the speedup (ADR 0039).", "None."],
+    ["The RQ2 metric", "log T_atomic - log T_local within the same k removes the input's own cost (ADR 0026).", "The same source does not give the same atomic machine code in every engine; that is part of what RQ2 measures, and it is said."],
+    ["Hardware counters as the explanation", "A separate campaign on measured/v3, 30 runs per cell; retries read as the excess over N = 1, with Firefox (same module, same Rayon) as control (ADR 0072).", "The counters show the mechanism but no intervention tested it; cycles include spinning, so they measure time; why Chrome is faster at k = 256 is not isolated."],
+    ["Contention levels", "Padding keeps each counter on its own line, checked with perf c2c in WASM memory too (ADRs 0049, 0072).", "None known."]
+  ]);
+  list($("#w-external"), [
+    ["One machine", "An i9-14900KF, Ubuntu 26.04, one kernel.", "Other CPUs, especially other cache-coherence designs, may differ."],
+    ["Far from how a user's browser runs", "P-cores only, SMT and turbo off, chosen for reproducibility (ADRs 0001, 0002, 0025).", "A real desktop has turbo, SMT and other tabs."],
+    ["Two pinned browser versions, headless", "Chrome for Testing matches stable within about 1.3% (ADR 0050); headful differs by at most 0.3% (ADR 0046).", "Other versions may compile atomics differently."],
+    ["Two workloads, one image size", "The cutoff and grain campaigns cover smaller regions (ADRs 0064 to 0067).", "The results hold for large work per parallel region."]
+  ]);
+
+  var prim = UI.rows("campaign-v3-contrasts", { primary: "yes" });
+  function half(q) { return Math.max.apply(null, prim.filter(function (r) { return r.question === q; }).map(function (r) { return 100 * Math.max(r.primary_high / r.effect - 1, 1 - r.primary_low / r.effect); })); }
+  [["±" + UI.fmt(half("RQ1"), 1) + "%", "widest RQ1 primary interval (99.5%)"], ["±" + UI.fmt(half("RQ2"), 1) + "%", "widest RQ2 primary interval (99.5%)"], ["30", "runs per configuration"]].forEach(function (s) {
+    $("#w-widths").appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: s[0] }), el("div", { class: "k", text: s[1] })]));
+  });
+  list($("#w-conclusion"), [
+    ["Too few runs, pseudo-replication", "30 runs per configuration, the run as the unit of analysis, percentile bootstrap over runs (ADRs 0037, 0047).", "None."],
+    ["Many comparisons", "Holm over the 10 primary contrasts fixed before the campaign, with Bonferroni 99.5% intervals (ADR 0038).", "Exploratory results use uncorrected 95% intervals and are labelled."],
+    ["Reading 'not rejected' as 'equal'", "Intervals reported for every contrast.", "Non-rejection is bounded by those intervals (above), not proof of equality."],
+    ["Test choice", "Mann-Whitney U with Cliff's delta as a robustness check; it agrees with the bootstrap on all 10 primary contrasts.", "Several pilot thresholds were set after seeing pilot data, and are reported as such."],
+    ["SIMD baseline", "The SIMD builds are compared with the main campaign's filter.", "That baseline comes from another campaign."]
+  ]);
+
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - Reading the numbers</title>
+<meta name="description" content="How the study turns 30 runs into one number and a range: one value per run, an average that respects ratios, the bootstrap interval, why ten decisions get a stricter bar, and why not finding a difference is not proof there is none.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .ctl { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 12px; }
+  .ctl .lab { font-size: var(--fs-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-right: 6px; }
+  .plot text { font-family: var(--sans); fill: var(--muted); font-size: 11px; }
+  .plot .axis { stroke: var(--edge); }
+  input[type=range] { width: 220px; }
+  .steps4 { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); counter-reset: s; }
+  .steps4 .card { position: relative; padding-top: 28px; }
+  .steps4 .card::before { counter-increment: s; content: counter(s); position: absolute; top: 8px; left: 12px; width: 22px; height: 22px; border-radius: 50%; background: var(--accent); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+  .steps4 .card h3 { margin: 0 0 4px; font-size: 1rem; }
+  .steps4 .card p { font-size: var(--fs-sm); margin: 3px 0; }
+  .figure .lbl { font-size: 11px; fill: var(--muted); }
+</style>
+</head>
+<body data-page="reading">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="protocol.html">Runs, warm-up and order</a></li><li><a href="stats.html">The statistics, in detail</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <p class="kicker">Method · 4 of 5</p>
+    <h1>Reading the numbers</h1>
+
+    <p class="lead">Thirty runs give thirty slightly different times. The paper reports one time, with a
+      range around it, and says "yes" or "no" to ten questions. This page is how we get from the thirty to
+      the one, in plain words and with no formulas. The formulas, for anyone who wants them, are on
+      <a href="stats.html">The statistics, in detail</a>.</p>
+
+    <div class="oneliner"><b>In one sentence:</b> each run becomes one number; the 30 numbers become one
+      time, averaged in a way that treats "twice as fast" and "twice as slow" fairly; a range around it says
+      how sure we are; and the ten answers that matter are held to a stricter bar than everything else.</div>
+
+    <div class="steps4">
+      <div class="card"><h3>One value per run</h3><p>10 timed iterations become 1 number: the middle one.</p></div>
+      <div class="card"><h3>One time per configuration</h3><p>30 run values become 1 time: an average made for ratios.</p></div>
+      <div class="card"><h3>A range around it</h3><p>Re-draw the 30 runs many times to see how much the time could move.</p></div>
+      <div class="card"><h3>Ten decisions</h3><p>The ten answers that matter get a stricter bar, so they hold together.</p></div>
+    </div>
+
+    <h2 id="onevalue">One value per run</h2>
+    <p>Each run times the workload 10 times. Those 10 are not independent measurements, as
+      <a href="protocol.html#unit">The run is the unit</a> explains: they share everything the program start
+      decided. So the first thing the analysis does is collapse them into <b>one number per run</b>. Which
+      one? The <span data-term="median">median</span>: sort the 10 times, take the one in the middle.</p>
+    <div class="why"><b>Why the middle one, and not the average of the 10?</b> Because one odd iteration
+      should not drag the run. If a background interrupt makes one iteration take twice as long, the average
+      of the 10 moves up by 10 %, but the median does not move at all: the middle value is still in the middle.
+      The median is the honest "typical iteration" of that run. (If the words median and mean are new, the
+      page <a href="measuring.html#spread">Median, mean and spread</a> has them with pictures.)</div>
+    <p>From here on, every statistic works on <b>30 numbers per configuration</b>, one per run, and the
+      iterations are never looked at again.</p>
+
+    <h2 id="average">An average that respects ratios</h2>
+    <p>Now 30 run values have to become one time for the configuration. The usual average, add them up and
+      divide by 30, is not the one used. The study uses the <span data-term="geometric-mean">geometric
+      mean</span>, and the reason is that every answer in the study is a <b>ratio</b>: "8 threads are 7 times
+      faster", "Chrome takes 1.2 times native's time". Ratios have a symmetry that the usual average
+      breaks.</p>
+    <div class="analogy"><b>Picture it.</b> One run came out twice as slow as expected (ratio 2) and
+      another twice as fast (ratio 0.5). Common sense says these two cancel: on average, no change. The
+      usual average says (2 + 0.5) / 2 = 1.25, a 25 % slowdown. The geometric mean says 1, no change. Move
+      the two ratios below and watch both averages: only the geometric one lands on "no change" when the
+      two cancel.</div>
+    <div class="card">
+      <div class="ctl">
+        <label><span class="lab">ratio a</span><input type="range" id="gm-a" min="-2" max="2" step="0.05" value="1"> <output id="gm-a-out"></output></label>
+        <label><span class="lab">ratio b</span><input type="range" id="gm-b" min="-2" max="2" step="0.05" value="-1"> <output id="gm-b-out"></output></label>
+      </div>
+      <div id="gm-svg" class="plot"></div>
+      <div class="stats" id="gm-stats"></div>
+      <p class="muted" style="font-size:var(--fs-sm)">The sliders are free inputs, not data. The axis is a
+        log scale: equal distances are equal ratios, so 0.5 and 2 sit at the same distance from 1
+        (<a href="ratios.html#log">Why 2x and 0.5x are the same distance</a>).</p>
+    </div>
+    <div class="why"><b>Why does this matter for times, which are not ratios?</b> Two reasons. First, the
+      times only ever appear in the answers as ratios, and the ratio of two geometric means is the geometric
+      mean of the ratios, so the answer does not depend on whether you divide first or average first. With
+      the usual average it would. Second, run times are lopsided: a run can be much slower than typical (a
+      hiccup), never much faster than typical. The usual average is pulled toward the slow tail; the
+      geometric mean much less. The plan fixed this choice before the campaign ran
+      (<a href="../adr/0037-analysis-plan.md">ADR 0037</a>).</div>
+    <p>So: one configuration, one time, the geometric mean of its 30 run values. The speedup of 8 threads is
+      that time at N = 1 divided by that time at N = 8 (<a href="ratios.html#speedup">Speedup and
+      efficiency</a>).</p>
+
+    <h2 id="sure">How sure: the interval</h2>
+    <p>We have 30 runs. If we took 30 more, the geometric mean would come out a little different. How
+      different? That is what the <b>interval</b> says: the range in which the time would most probably land
+      if the whole thing were done again. A narrow interval means 30 runs were plenty; a wide one means the
+      configuration is noisy and the one number should be held loosely.</p>
+    <div class="why"><b>How can we know what 30 more runs would give, without taking them?</b> With a trick
+      called the <span data-term="bootstrap-percentile">bootstrap</span>. Pretend the 30 runs we have are the
+      whole world. Draw 30 of them at random, <i>with replacement</i> (so some get picked twice and some not
+      at all), and compute the geometric mean of that pretend sample. Do it again. And again, 10 000 times.
+      The 10 000 pretend means spread out; throw away the lowest 2.5 % and the highest 2.5 %, and what is
+      left is the 95 % interval. It assumes nothing about the shape of the data, which matters because run
+      times are lopsided (Efron and Tibshirani 1993).</div>
+    <p>Try it on the real run values. Each click draws one pretend sample (the dots it picked fill in) and
+      adds its mean to the pile below:</p>
+    <div class="card">
+      <div class="ctl"><span id="bs-seg"></span></div>
+      <div class="ctl">
+        <button class="btn primary" id="bs-one" type="button">Resample once</button>
+        <button class="btn" id="bs-auto" type="button">Resample 1000</button>
+        <button class="btn" id="bs-reset" type="button">Reset</button>
+      </div>
+      <div class="lab" style="font-size:var(--fs-xs);color:var(--muted)">The 30 runs (dots picked by the last resample are filled)</div>
+      <div id="bs-runs" class="plot"></div>
+      <div class="lab" style="font-size:var(--fs-xs);color:var(--muted);margin-top:10px">Geometric mean of each resample</div>
+      <div id="bs-hist" class="plot"></div>
+      <div class="stats" id="bs-stats"></div>
+      <p class="muted" style="font-size:var(--fs-sm)">Drawn live in your browser, so the interval moves a little
+        each time. The analysis draws 10 000 resamples with a fixed seed, so its intervals are the same to the
+        last digit on every rerun.</p>
+    </div>
+    <p class="src" data-files="data/raw/campaign-v3/, scripts/explainer_data.py"></p>
+    <p>Notice how much narrower the pile is than the spread of the dots. The dots are single runs; the pile is
+      averages of 30. Averages of 30 wobble far less than single runs, and the interval measures that wobble.
+      For the filter, the pile is a sliver: the time is known to within about 1 %. For the atomic histogram
+      at k = 1 it is wider, because single runs of that configuration differ a lot.</p>
+    <span class="def"><b>Half-width.</b> Half the width of the interval, as a percentage of the estimate.
+      "±4 %" means the true value is probably within 4 % above or below the number given. The study's main
+      answers have half-widths of a few percent (<a href="protocol.html#thirty">30 runs, 10 iterations</a>).</span>
+
+    <h2 id="decisions">Ten decisions, a stricter bar</h2>
+    <p>Most of the study describes: here is a speedup, here is its interval. But ten comparisons are the
+      study's actual <b>answers</b>, and for each the paper says yes or no: "Chrome's filter scales like
+      native" (yes or no), "synchronization costs Chrome more than native at k = 1" (yes or no). Those ten
+      were named before any data existed: RQ2 at N = 8 for the four values of k in both browsers (8), and
+      RQ1 for the filter at N = 8 in both browsers (2). They are the
+      <span data-term="primary-contrast">primary contrasts</span>; everything else is
+      <span data-term="exploratory">exploratory</span>, reported with its interval and no yes-or-no.</p>
+    <div class="why"><b>Why name them in advance?</b> Because with 162 configurations you can always find
+      something that looks like a difference, by luck alone. If we looked at everything and then picked the
+      striking ones to report as findings, we would be reporting the luck. Naming the ten before the campaign
+      (the <span data-term="analysis-plan-pre-registration">analysis plan</span>,
+      <a href="../adr/0037-analysis-plan.md">ADR 0037</a>) means the data could not choose its own test.</div>
+    <div class="why"><b>Why a stricter bar for them?</b> A 95 % interval is wrong about 5 % of the time: one
+      time in twenty, the true value is outside it. Ask ten questions that way and the chance that at least
+      one of the ten answers is a fluke climbs to about 40 %. That is too high for the answers the paper
+      stands on. So the ten get a bar that keeps the <i>whole set</i> at 95 %: each gets a 99.5 % interval
+      (<span data-term="bonferroni">Bonferroni</span>: 5 % shared ten ways), and the yes-or-no decisions use
+      a slightly smarter rule, <span data-term="holm">Holm</span>'s, that gives the same guarantee without
+      being needlessly strict on the clearest cases. In words: the smallest surprise has to clear the highest
+      bar, the next one a slightly lower bar, and so on down.</div>
+    <p>The ten, and what the bar decided (the effect is the ratio being tested; 1 means "same as native"):</p>
+    <div id="ten"></div>
+    <p class="src" data-src="campaign-v3-contrasts"></p>
+    <p>Eight of the ten cleared the bar. The two that did not, Chrome's filter and Firefox at k = 1, are the
+      next section.</p>
+
+    <h2 id="notproof">Not rejecting is not proof</h2>
+    <p>Firefox's synchronization cost at k = 1 came out at 0.99 times native's, with an interval from about
+      0.94 to 1.06. The bar was not cleared: we cannot say Firefox differs from native there. It is tempting
+      to read that as "Firefox equals native". It does not say that. It says "the difference, if any, is
+      somewhere between 6 % cheaper and 6 % more expensive, and we could not tell which". The same holds for
+      Chrome's filter speedup, 0.99 times native's with an interval from about 0.95 to 1.03.</p>
+    <div class="analogy"><b>Picture it.</b> You weigh two parcels on a kitchen scale that reads to the nearest
+      50 g, and both read 1 kg. You have not shown they weigh the same; you have shown they differ by less
+      than the scale can see. The interval is the scale's resolution. With more runs, the scale gets finer.</div>
+    <div class="why"><b>Why say it this carefully?</b> Because "no detectable difference" and "the same" lead
+      to different conclusions. The paper says the first, bounded by the interval: the Firefox filter and
+      Firefox's k = 1 cell are "within the interval of native", never "equal to native". Any reader who
+      wants a tighter bound knows exactly what it would take: more runs.</div>
+
+    <div class="remember"><b>What to remember.</b> One number per run (the median of 10), one time per
+      configuration (the geometric mean of 30), one interval per time (10 000 pretend re-draws of the 30),
+      and ten yes-or-no answers held to a bar that keeps all ten right 95 % of the time. A "no" means "could
+      not tell", never "the same".</div>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var el = UI.el, $ = UI.$, D = UI.D, fmt = UI.fmt;
+  var NAME = { native: "Native", chrome: "Chrome", firefox: "Firefox" };
+
+  // --- geometric mean sliders -----------------------------------------------------------------
+  var a = $("#gm-a"), b = $("#gm-b");
+  function drawGm() {
+    var va = Math.pow(2, Number(a.value)), vb = Math.pow(2, Number(b.value));
+    var am = (va + vb) / 2, gm = Math.sqrt(va * vb);
+    $("#gm-a-out").textContent = fmt(va, 2); $("#gm-b-out").textContent = fmt(vb, 2);
+    var W = 760, x = function (v) { return 30 + ((Math.log2(v) + 2) / 4) * (W - 60); };
+    var svg = '<svg viewBox="0 0 ' + W + ' 120" role="img" aria-label="Log axis with the two ratios and both averages">';
+    svg += '<line class="axis" x1="30" x2="' + (W - 30) + '" y1="60" y2="60"/>';
+    [0.25, 0.5, 1, 2, 4].forEach(function (v) { svg += '<line class="axis" x1="' + x(v) + '" x2="' + x(v) + '" y1="54" y2="66"/><text x="' + x(v) + '" y="84" text-anchor="middle">' + v + '</text>'; });
+    svg += '<text x="30" y="112">log axis: equal distances are equal ratios</text>';
+    [[va, "a"], [vb, "b"]].forEach(function (p) { svg += '<circle cx="' + x(p[0]) + '" cy="60" r="7" style="fill:var(--accent)"/><text x="' + x(p[0]) + '" y="44" text-anchor="middle" style="fill:var(--accent)">' + p[1] + '</text>'; });
+    svg += '<path d="M' + x(am) + ' 30 l-6 -10 h12 z" style="fill:var(--chrome)"/><text x="' + x(am) + '" y="14" text-anchor="middle" style="fill:var(--chrome)">usual average ' + fmt(am, 2) + '</text>';
+    svg += '<path d="M' + x(gm) + ' 70 l-6 10 h12 z" style="fill:var(--native)"/><text x="' + x(gm) + '" y="98" text-anchor="middle" style="fill:var(--native)">geometric ' + fmt(gm, 2) + '</text>';
+    $("#gm-svg").innerHTML = svg + "</svg>";
+    var st = $("#gm-stats"); st.innerHTML = "";
+    st.appendChild(el("div", { class: "stat" }, [el("div", { class: "v chrome-ink", text: fmt(am, 2) }), el("div", { class: "k", text: "usual average: (" + fmt(va, 2) + " + " + fmt(vb, 2) + ") / 2" })]));
+    st.appendChild(el("div", { class: "stat" }, [el("div", { class: "v native-ink", text: fmt(gm, 2) }), el("div", { class: "k", text: "geometric mean: the square root of " + fmt(va, 2) + " x " + fmt(vb, 2) })]));
+  }
+  [a, b].forEach(function (i) { i.addEventListener("input", drawGm); });
+  drawGm();
+
+  // --- bootstrap, live --------------------------------------------------------------------------
+  var M = D.runMedians || {}, runs = [], est = 0, samples = [], picked = [], timer = null;
+  var KEYS = ["native-filter-noise-n8", "chrome-filter-noise-n8", "firefox-filter-noise-n8", "native-hist-atomic-k1-n8", "chrome-hist-atomic-k1-n8"];
+  function geo(xs) { return Math.exp(xs.reduce(function (s, x) { return s + Math.log(x); }, 0) / xs.length); }
+  function pct(sorted, p) { var pos = (sorted.length - 1) * p, lo = Math.floor(pos), hi = Math.ceil(pos); return sorted[lo] + (sorted[hi] - sorted[lo]) * (pos - lo); }
+  function drawRuns() {
+    var W = 760, lo = Math.min.apply(null, runs), hi = Math.max.apply(null, runs), pad = (hi - lo) * 0.05 || 1;
+    var x = function (v) { return 20 + (v - lo + pad) / (hi - lo + 2 * pad) * (W - 40); };
+    var svg = '<svg viewBox="0 0 ' + W + ' 60" role="img" aria-label="The 30 per-run medians">';
+    svg += '<line class="axis" x1="20" x2="' + (W - 20) + '" y1="24" y2="24"/>';
+    runs.forEach(function (v, i) {
+      var n = picked.filter(function (p) { return p === i; }).length;
+      svg += '<circle cx="' + x(v).toFixed(1) + '" cy="24" r="' + (5 + 2 * n) + '" style="fill:' + (n ? "var(--accent)" : "transparent") + ';stroke:var(--accent);opacity:0.75"/>';
+    });
+    svg += '<text x="20" y="52">' + fmt(lo, 3) + ' ms</text><text x="' + (W - 20) + '" y="52" text-anchor="end">' + fmt(hi, 3) + ' ms</text>';
+    $("#bs-runs").innerHTML = svg + "</svg>";
+  }
+  function drawHist() {
+    var W = 760, H = 150, BINS = 36;
+    var spread = Math.max.apply(null, runs) - Math.min.apply(null, runs);
+    var lo = est - spread * 0.35, hi = est + spread * 0.35;
+    var counts = new Array(BINS).fill(0);
+    samples.forEach(function (s) { var i = Math.floor((s - lo) / (hi - lo) * BINS); if (i >= 0 && i < BINS) counts[i]++; });
+    var max = Math.max.apply(null, counts.concat([1])), bw = (W - 40) / BINS;
+    var x = function (v) { return 20 + (v - lo) / (hi - lo) * (W - 40); };
+    var svg = '<svg viewBox="0 0 ' + W + ' ' + (H + 30) + '" role="img" aria-label="Histogram of the resampled geometric means">';
+    if (samples.length > 20) {
+      var sorted = samples.slice().sort(function (p, q) { return p - q; }), l = pct(sorted, 0.025), h = pct(sorted, 0.975);
+      svg += '<rect x="' + x(l) + '" y="0" width="' + Math.max(1, x(h) - x(l)) + '" height="' + H + '" style="fill:var(--accent-soft)"/>';
+    }
+    counts.forEach(function (n, i) { if (n) svg += '<rect x="' + (20 + i * bw + 1) + '" y="' + (H - n / max * (H - 10)) + '" width="' + (bw - 2) + '" height="' + (n / max * (H - 10)) + '" style="fill:var(--accent)"/>'; });
+    svg += '<line x1="' + x(est) + '" x2="' + x(est) + '" y1="0" y2="' + H + '" style="stroke:var(--ink);stroke-dasharray:4 4"/>';
+    svg += '<line class="axis" x1="20" x2="' + (W - 20) + '" y1="' + H + '" y2="' + H + '"/>';
+    svg += '<text x="20" y="' + (H + 18) + '">' + fmt(lo, 3) + ' ms</text><text x="' + x(est) + '" y="' + (H + 18) + '" text-anchor="middle">estimate ' + fmt(est, 3) + '</text><text x="' + (W - 20) + '" y="' + (H + 18) + '" text-anchor="end">' + fmt(hi, 3) + ' ms</text>';
+    $("#bs-hist").innerHTML = svg + "</svg>";
+    var st = $("#bs-stats"); st.innerHTML = "";
+    var items = [[fmt(est, 3) + " ms", "geometric mean of the 30 runs"], [UI.int(samples.length), "resamples drawn"]];
+    if (samples.length > 20) {
+      var so = samples.slice().sort(function (p, q) { return p - q; });
+      items.push(["[" + fmt(pct(so, 0.025), 3) + ", " + fmt(pct(so, 0.975), 3) + "]", "95 % interval (ms): the middle 95 % of the resamples"]);
+    }
+    items.forEach(function (it) { st.appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: it[0] }), el("div", { class: "k", text: it[1] })])); });
+  }
+  function resample() {
+    picked = runs.map(function () { return Math.floor(Math.random() * runs.length); });
+    samples.push(geo(picked.map(function (i) { return runs[i]; })));
+  }
+  function stop() { if (timer) { clearInterval(timer); timer = null; } }
+  function setup(key) {
+    stop(); runs = M[key] || []; est = runs.length ? geo(runs) : 0; samples = []; picked = [];
+    if (!runs.length) { $("#bs-runs").textContent = "no data"; return; }
+    drawRuns(); drawHist();
+  }
+  function currentKey() { var bs = UI.$$("#bs-seg button"); for (var i = 0; i < bs.length; i++) if (bs[i].getAttribute("aria-pressed") === "true") return KEYS[i]; return KEYS[0]; }
+  UI.segmented($("#bs-seg"), [
+    { value: KEYS[0], label: "native filter N = 8" },
+    { value: KEYS[1], label: "Chrome filter N = 8" },
+    { value: KEYS[2], label: "Firefox filter N = 8" },
+    { value: KEYS[3], label: "native atomic k = 1" },
+    { value: KEYS[4], label: "Chrome atomic k = 1" }
+  ], setup);
+  $("#bs-one").addEventListener("click", function () { stop(); resample(); drawRuns(); drawHist(); });
+  $("#bs-reset").addEventListener("click", function () { setup(currentKey()); });
+  $("#bs-auto").addEventListener("click", function () {
+    stop();
+    if (UI.REDUCED) { for (var i = 0; i < 1000; i++) resample(); drawRuns(); drawHist(); return; }
+    var left = 1000;
+    timer = setInterval(function () { for (var i = 0; i < 25 && left > 0; i++, left--) resample(); drawRuns(); drawHist(); if (left <= 0) stop(); }, 30);
+  });
+  if (UI.STATIC) { for (var i = 0; i < 1000; i++) resample(); drawRuns(); drawHist(); }
+
+  // --- the ten decisions ------------------------------------------------------------------------
+  var primary = UI.rows("campaign-v3-contrasts", { primary: "yes" });
+  $("#ten").appendChild(UI.table(primary, [
+    { label: "Question", key: "question" },
+    { label: "Browser", value: function (r) { return el("span", { class: r.environment + "-ink", text: NAME[r.environment] }); } },
+    { label: "Cell", value: function (r) { return r.workload + (r.k !== "" ? ", k = " + r.k : "") + ", N = " + r.threads; } },
+    { label: "Effect", value: function (r) { return fmt(r.effect, 2); }, num: true },
+    { label: "99.5 % interval", value: function (r) { return "[" + fmt(r.primary_low, 2) + ", " + fmt(r.primary_high, 2) + "]"; }, num: true },
+    { label: "Differs from native?", value: function (r) { return r.rejected === "yes" ? "yes" : "could not tell"; } }
+  ]));
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

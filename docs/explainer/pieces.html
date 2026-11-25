@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - How the pieces talk</title>
+<meta name="description" content="The three programs of the project, the files, the one web request and the command lines that join them, who starts whom, and what differs on the Mac and on the PC.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  pre.cmd { background: var(--panel-2); border: 1px solid var(--edge); border-radius: 8px; padding: 10px 12px; overflow-x: auto; font-size: var(--fs-sm); }
+  .two { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .two .card h3 { margin: 0 0 4px; font-size: 1rem; }
+  .two .card p, .two .card li { font-size: var(--fs-sm); }
+  .steps li { margin: 6px 0; }
+  .t td:first-child code { white-space: nowrap; }
+</style>
+</head>
+<body data-page="pieces">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <p class="kicker">Working on it · 1 of 8</p>
+    <h1>How the pieces talk</h1>
+
+    <p class="lead">The project is three programs in three languages that never run inside each other.
+      A Rust program does the measuring. A Python program starts it, hundreds of times, in a controlled way.
+      A second set of Python programs reads what was written and turns it into tables. They talk through
+      files, one web request and one command line. This page is the map of those hand-offs.</p>
+    <div class="oneliner"><b>In one sentence:</b> <code>make</code> starts the Python orchestrator, which
+      starts one fresh process per run (the native binary, or a browser), the run writes a CSV of times (to
+      its standard output, or by posting it to a tiny local web server), the orchestrator writes the
+      context next to it, and the analysis reads only those files.</div>
+
+    <h2 id="picture">Processes, files and ports</h2>
+    <p>Every box below is a separate <a href="machines.html#program">process</a>: its own program start, its own
+      memory. Arrows are what one hands to the next. Click a box.</p>
+    <div class="card">
+      <div id="pieces-svg" class="diagram"></div>
+      <div id="pieces-panel" class="panel" aria-live="polite"><p class="muted">Pick a box above.</p></div>
+    </div>
+    <div class="why"><b>Why so many separate programs, and not one?</b> Because the thing being measured must
+      not be the thing doing the measuring. If the orchestrator lived inside the benchmark, its own work
+      (planning, writing files, waiting) would be inside the timed region, and worse, it would be inside it
+      <i>differently</i> natively and in a browser. So the Rust code times only itself, and everything
+      around it is another process on other cores (<a href="machine.html#quiet">Shield and quiet mode</a>).
+      The price is that the pieces have to agree on formats, and that is what this page lists.</div>
+    <div class="analogy"><b>Picture it.</b> A lab with a stopwatch inside the experiment, a technician who
+      sets up each trial and writes the label, and an analyst who only ever sees the labelled sheets. The
+      technician never touches the stopwatch; the analyst never enters the lab.</div>
+
+    <h2 id="boundaries">What crosses each boundary</h2>
+    <p>Each hand-off carries one small, fixed thing. Knowing them is most of knowing the project.</p>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>From</th><th>To</th><th>What crosses</th><th>Looks like</th></tr></thead>
+      <tbody>
+        <tr><td><code>make</code></td><td><code>python3 -m harness.campaign</code></td><td>The path of a spec file</td><td><code>SPEC=harness/campaigns/campaign-v3.json</code></td></tr>
+        <tr><td>orchestrator</td><td>native binary</td><td>A command line: the configuration as <code>key=value</code> pairs, under a CPU mask</td><td><code>taskset -c 0,2,... native workload=filter input=noise threads=8 ...</code></td></tr>
+        <tr><td>native binary</td><td>orchestrator</td><td>CSV text on standard output, one row per timed round</td><td><code>native,filter,noise,,8192,8192,...,measured,0,3990000,...</code></td></tr>
+        <tr><td>orchestrator</td><td>browser</td><td>A command line with a fresh profile, a CPU mask and a URL whose <b>query string</b> holds the same configuration</td><td><code>http://127.0.0.1:8000/?run=...&amp;workload=filter&amp;threads=8...</code></td></tr>
+        <tr><td>browser page</td><td>results server</td><td>One HTTP POST with the CSV text as its body</td><td><code>POST /results</code> on <code>127.0.0.1:8000</code></td></tr>
+        <tr><td>results server</td><td>disk</td><td><code>&lt;run&gt;.csv</code></td><td><code>data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.csv</code></td></tr>
+        <tr><td>orchestrator</td><td>disk</td><td><code>&lt;run&gt;.json</code>: the context (build, machine state, mask, times, CPU time) and one line in <code>campaign.jsonl</code></td><td><a href="data.html#json">The run record</a></td></tr>
+        <tr><td>disk</td><td>analysis</td><td>Only files. The analysis never talks to the harness.</td><td><code>python3 -m analysis.v0 data/raw/campaign-v3</code></td></tr>
+      </tbody>
+    </table></div>
+    <span class="def"><b>Query string.</b> The part of a web address after the <code>?</code>: pairs of
+      <code>name=value</code> joined by <code>&amp;</code>. The page reads it to know what to measure, the same
+      way the native program reads its command line. One parser in the Rust code reads both
+      (<a href="environments.html#same">same source, same flags</a>).</span>
+    <div class="why"><b>Why does the browser post the result instead of saving a file?</b> A web page cannot
+      write to disk. So a tiny web server (<code>harness/server.py</code>) serves the page and accepts the
+      result back; it is also what sends the two headers that let the page use shared memory
+      (<a href="environments.html#wasm">What WASM threads need</a>). It listens only on
+      <code>127.0.0.1</code>, the machine itself, never the network.</div>
+    <div data-code="harness/server.py|    def do_POST|12" data-title="The server stores what the page posts"></div>
+
+    <h2 id="who">Who starts whom</h2>
+    <ol class="steps">
+      <li><b>You</b> type <code>make campaign SPEC=...</code>. <code>make</code> builds the right variant, turns
+        quiet mode on, and starts the orchestrator under <code>systemd-inhibit</code> so the PC cannot sleep.</li>
+      <li><b>The orchestrator</b> (<code>harness.campaign</code>) reads the spec, shuffles the runs with the
+        spec's seed, checks the machine (strict campaigns), writes <code>campaign.json</code>, and starts the
+        results server once for the whole campaign.</li>
+      <li><b>Per run</b>, it starts one fresh process in its own
+        <span data-term="systemd-scope-slice">systemd scope</span>: the native binary, or Chrome or Firefox
+        with a fresh profile. It waits for the CSV (standard output, or the server), then writes the JSON.</li>
+      <li><b>The run</b> starts its thread pool, warms up, times its rounds, writes the CSV, and exits. A
+        browser run is a page and a coordinating worker; the pool is more workers started by the page
+        (<a href="harness.html#browser">A browser run</a>).</li>
+      <li><b>After the last run</b>, the orchestrator stops the server, prints the counts, and <code>make</code>
+        turns quiet mode off.</li>
+      <li><b>Later, by hand</b>, <code>make results</code> runs the analysis commands over the folder.</li>
+    </ol>
+    <div data-code="harness/campaign/executors.py|class NativeExecutor|14" data-title="One native run, started by the orchestrator"></div>
+    <p>Nothing is kept in memory between runs that cannot be rebuilt from the folder, which is why a
+      campaign can be stopped and continued (<a href="campaigns.html#resume">Sessions, status and resume</a>).</p>
+
+    <h2 id="onemachine">On the Mac and on the PC</h2>
+    <div class="two">
+      <div class="card"><h3>On the Mac</h3>
+        <p>Every box runs, but with no CPU mask, no scope, no machine check (<code>"strict": false</code>
+          specs, <code>make quick-*</code>, <code>make mini</code>). The pieces talk exactly the same way, so
+          a change to a format shows up here first. The times are not results.</p></div>
+      <div class="card"><h3>On the PC</h3>
+        <p>The same boxes, plus the ones that hold the machine still: the shield keeps everything but the
+          run off the 8 measured cores, each run gets its own scope so its CPU time and any escaped browser
+          process are counted, and a strict campaign refuses to start if any of that is missing
+          (<a href="machine.html#checked">Checked on every run</a>).</p></div>
+    </div>
+    <div class="remember"><b>What to remember.</b> Three programs, four hand-offs: a spec path, a command line
+      or URL, a CSV, a JSON. The Rust code never knows about campaigns; the analysis never knows about
+      browsers. Change a format in one place and look for the two readers of it.</div>
+    <p class="src" data-files="harness/README.md, harness/campaign/README.md, harness/server.py, harness/campaign/executors.py, bench/src/config.rs"></p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+
+  var el = UI.el, $ = UI.$;
+  var W = 760;
+  var B = [
+    { key: "make", x: 10, y: 10, w: 110, h: 46, t: "make", s: "SPEC=...", d: "Builds the spec's variant, turns quiet mode on, starts the orchestrator under systemd-inhibit. It is the only thing you type." },
+    { key: "orch", x: 160, y: 10, w: 150, h: 46, t: "orchestrator", s: "harness.campaign", d: "One Python process for the whole campaign: shuffles the runs with the seed, checks the machine, starts the results server, then starts one fresh process per run and writes each run's context JSON and journal line." },
+    { key: "server", x: 160, y: 116, w: 150, h: 46, t: "results server", s: "127.0.0.1:8000", d: "harness/server.py: serves bench/www with the two isolation headers and accepts POST /results, which it writes as <run>.csv. Started once per campaign, stopped at the end." },
+    { key: "native", x: 360, y: 10, w: 130, h: 46, t: "native binary", s: "stdout", d: "One fresh process per run, under taskset and its own systemd scope. Reads its configuration from the command line, prints the CSV to standard output, exits." },
+    { key: "browser", x: 360, y: 116, w: 130, h: 46, t: "browser", s: "page + workers", d: "One fresh Chrome or Firefox per run, fresh profile, under the same mask. The page reads the query string, a coordinating worker runs the measurement, and the page POSTs the CSV to the server." },
+    { key: "files", x: 540, y: 63, w: 110, h: 46, t: "files", s: "data/raw/<name>/", d: "<run>.csv from the run, <run>.json from the orchestrator, campaign.json and campaign.jsonl. Never edited by hand." },
+    { key: "analysis", x: 690, y: 63, w: 60, h: 46, t: "analysis", s: "tables", d: "python3 -m analysis.* reads the folder and writes data/tables. It never talks to the harness: files only." }
+  ];
+  var A = [["make", "orch"], ["orch", "server"], ["orch", "native"], ["orch", "browser"], ["native", "files"], ["server", "files"], ["browser", "server"], ["orch", "files"], ["files", "analysis"]];
+  var svg = '<svg viewBox="0 0 ' + W + ' 172" role="img" aria-label="Processes, files and ports">';
+  function c(b) { return { x: b.x + b.w / 2, y: b.y + b.h / 2 }; }
+  A.forEach(function (a) {
+    var p = c(B.find(function (b) { return b.key === a[0]; })), q = c(B.find(function (b) { return b.key === a[1]; }));
+    svg += '<path class="arrow" d="M' + p.x + ' ' + p.y + ' L' + q.x + ' ' + q.y + '"/>';
+  });
+  B.forEach(function (b) {
+    svg += '<rect class="box" data-key="' + b.key + '" x="' + b.x + '" y="' + b.y + '" width="' + b.w + '" height="' + b.h + '" rx="8"/>' +
+      '<text x="' + (b.x + b.w / 2) + '" y="' + (b.y + 20) + '" text-anchor="middle" font-size="12" font-weight="600">' + b.t + '</text>' +
+      '<text x="' + (b.x + b.w / 2) + '" y="' + (b.y + 36) + '" text-anchor="middle" font-size="10" style="fill:var(--muted)">' + b.s + '</text>';
+  });
+  $("#pieces-svg").innerHTML = svg + "</svg>";
+  var details = {};
+  B.forEach(function (b) { details[b.key] = function (panel) { panel.appendChild(el("h3", { style: "margin-top:0", text: b.t })); panel.appendChild(el("p", { text: b.d })); }; });
+  UI.clickable($("#pieces-svg"), $("#pieces-panel"), details).pick("orch");
+
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

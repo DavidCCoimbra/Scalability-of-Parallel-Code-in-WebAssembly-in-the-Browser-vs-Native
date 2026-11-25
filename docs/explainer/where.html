@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - Where is it done?</title>
+<meta name="description" content="Two lookup tables with a filter: where in the code each part of the study is done, with the page that explains it, and what to look at when something breaks, with the check that caught it.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .filter-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0; }
+  .filter-row input { height: 40px; border-radius: 8px; border: 1px solid var(--edge); background: var(--panel); color: var(--ink); padding: 0 12px; font: inherit; width: min(360px, 100%); }
+  table.where td:first-child { font-weight: 600; color: var(--ink); width: 30%; }
+  table.where td:first-child small { display: block; font-weight: 400; color: var(--muted); font-size: var(--fs-xs); margin-top: 2px; }
+  table.where td:nth-child(2) { font-family: var(--mono); font-size: var(--fs-xs); }
+  table.where td:nth-child(2) a { word-break: break-all; }
+</style>
+</head>
+<body data-page="where">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="words.html">Words of the project</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <p class="kicker">The code · 3 of 4</p>
+    <h1>Where is it done?</h1>
+
+    <p class="lead">Two lookup tables, for when you know what you are looking for but not which file holds
+      it. The first answers "where in the code is this done?" with the file to open and the page that
+      explains it. The second starts from something that went wrong ("the campaign refuses to start", "a
+      checksum conflict") and says which check caught it and where to look.</p>
+
+    <div class="oneliner"><b>In one sentence:</b> every part of the study has one home in the code, and
+      every failure is caught by a named check; these tables map both.</div>
+
+    <div class="analogy"><b>Picture it.</b> The index at the back of a textbook, and the troubleshooting
+      page at the back of a manual. Neither explains anything; both tell you which page does.</div>
+
+    <p>Type a word in the box to filter both tables. Rows whose name uses a technical term carry a one-line
+      gloss under it; the glossary and the linked page have the rest.</p>
+
+    <div class="filter-row">
+      <label for="where-filter" class="sr">Filter</label>
+      <input id="where-filter" type="search" placeholder="Filter both tables, for example: checksum">
+      <span id="where-count" class="muted"></span>
+    </div>
+
+    <h2 id="questions">Where is it done?</h2>
+    <div id="questions-table"></div>
+
+    <h2 id="symptoms">Something broke: where to look</h2>
+    <p>Most failures stop a run or a campaign with a message, on purpose: a run that would give a wrong
+      number fails instead, and is counted. Tests run with <code>make test</code> (Rust, Python) and
+      <code>make lint</code>; CI runs both on every PR. For the step-by-step, from <code>make status</code>
+      to re-running one id by hand, see <a href="debugging.html">Debugging a run</a>.</p>
+    <div class="why"><b>Why does so much fail on purpose?</b> A benchmark's worst outcome is not a crash
+      but a wrong number that looks right. A run at the wrong N, on the wrong cores, or with a wrong
+      checksum would sit in the table like any other and move a result. So every check that can tell
+      refuses the run, writes an error file, and the data check counts it; nothing is dropped quietly.</div>
+    <div id="symptoms-table"></div>
+
+    <div class="remember"><b>What to remember.</b> If you are asking "where is X", the first table has the
+      file and the page. If you are asking "why did it stop", the second table names the check, and the
+      check is on your side.</div>
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var el = UI.el, $ = UI.$, $$ = UI.$$;
+  // [what, files, page, gloss (one plain line, optional)]
+  var Q = [
+    ["The workloads (filter, histograms, sort)", "bench/src/workloads/gaussian.rs, bench/src/workloads/histogram/atomic.rs, bench/src/workloads/histogram/local.rs", "workloads.html"],
+    ["The timed region: what is inside the clock", "bench/src/measurement/measure.rs", "trace.html#native", "The lines between the two clock reads; only the workload's run() is there."],
+    ["Warm-up and measured iterations", "bench/src/measurement/measure.rs, bench/src/measurement/plan.rs", "protocol.html#warmup", "The first W repetitions are done but not used, because a program is slower the first few times."],
+    ["The checksum and the input fingerprint", "bench/src/workloads/checksum.rs, bench/src/workloads/fnv1a.rs, bench/src/input/gray_image.rs", "workloads.html#inputs", "One number that summarises a result (or an input), so two results can be compared at a glance."],
+    ["The input images (noise, few_colors(k))", "bench/src/input/generators.rs, bench/src/input/split_mix64.rs", "workloads.html#inputs"],
+    ["Padding of the shared counters", "bench/src/workloads/histogram/padded_counter.rs, bench/src/workloads/histogram/counter_table.rs", "caches.html#falsesharing", "Empty space after each counter so that no two counters share a 64-byte block of memory."],
+    ["The fork-join calibration", "bench/src/calibration/fork_join.rs, bench/src/calibration/empty_broadcast.rs, bench/src/calibration/empty_par_iter.rs", "protocol.html#calibration", "Timing an empty parallel call: the fixed cost of handing out work and waiting for it."],
+    ["The CSV schema of a run", "bench/src/results/record.rs, bench/src/results/README.md", "harness.html#csv"],
+    ["Native entry: flags and the Rayon pool", "bench/src/bin/native/main.rs, bench/src/bin/native/args.rs, bench/src/pool.rs", "trace.html#native"],
+    ["WASM entry: exports and the browser clock", "bench/src/wasm.rs, bench/src/wasm/performance_clock.rs", "environments.html#wasm"],
+    ["The browser page and the coordinator worker", "bench/www/main.js, bench/www/worker.js, bench/www/coordinator_worker.js", "harness.html#browser", "The helper thread that is allowed to wait, which the page's main thread is not."],
+    ["WASM build flags (atomics, simd128, build-std)", "bench/.cargo/config.toml, bench/rust-toolchain.toml, bench/build-wasm.sh", "environments.html#same"],
+    ["The campaign order (shuffle with a seed)", "harness/campaign/plan.py, harness/campaign/spec.py", "protocol.html#order", "The list of runs is shuffled once; the seed lets anyone shuffle it the same way again."],
+    ["Resume after a stop, the journal", "harness/campaign/journal.py, harness/campaign/runner.py", "campaigns.html#resume", "A log of every run done, so a campaign stopped halfway continues from where it was."],
+    ["Campaign progress", "harness/campaign/status/", "campaigns.html#resume"],
+    ["Launching a browser (profile, flags, teardown)", "harness/launcher/launcher.py, harness/launcher/commands.py", "harness.html#browser"],
+    ["Running the native binary", "harness/native/run.py", "harness.html#native"],
+    ["CPU mask, run scope, foreign CPU time", "harness/shield/confinement.py, harness/shield/", "machine.html#quiet", "Which cores a run may use; the group Linux keeps of its processes; CPU time other programs spent on those cores meanwhile."],
+    ["The results server (COOP/COEP)", "harness/server.py", "harness.html#server", "The two security headers a page needs before the browser allows memory shared between threads."],
+    ["Machine check: turbo, governor, SMT, mask", "harness/environment/check.py", "machine.html#checked"],
+    ["Quiet mode and the machine setup scripts", "harness/env/quiet.sh, harness/env/setup.sh", "machine.html#quiet"],
+    ["Pinned browser builds", "harness/browsers.py, harness/browsers.json", "environments.html#browsers", "One exact version of each browser, downloaded and checked, so every run uses the same one."],
+    ["The context saved with every run, strict validation", "harness/context/record.py, harness/context/validation.py", "harness.html#csv", "A run is accepted only if its record shows the right cores, clock settings and browser version."],
+    ["Joining runs into one table", "harness/collect.py", "trace.html#analysis"],
+    ["One value per run (median)", "analysis/runs.py, analysis/stats/summary.py", "reading.html#onevalue"],
+    ["Speedup, efficiency and their intervals", "analysis/scaling/table.py, analysis/v0.py", "stats.html#speedup"],
+    ["Bootstrap intervals and p-values", "analysis/stats/bootstrap.py", "reading.html#sure"],
+    ["The RQ1 and RQ2 contrasts, Holm", "analysis/results.py, analysis/inference/contrast.py, analysis/stats/holm.py", "reading.html#decisions"],
+    ["Mann-Whitney and Cliff's delta", "analysis/robustness.py, analysis/stats/mann_whitney.py, analysis/stats/cliff.py", "stats.html#robust"],
+    ["Karp-Flatt serial fraction", "analysis/karp_flatt.py, analysis/scaling/karp_flatt.py", "stats.html#karp"],
+    ["The data check before analysis", "analysis/datacheck.py, analysis/quality/", "campaigns.html#quality"],
+    ["Cutoff and grain campaigns", "analysis/cutoff.py, analysis/grain.py, analysis/scaling/fork_join.py", "granularity.html"],
+    ["Hardware counters per atomic add", "scripts/perf-counters.sh, analysis/extras/perf_counters.py", "why.html#retries", "Counts the CPU keeps of its own events, read with the Linux tool perf."],
+    ["Figures of the paper", "analysis/figures/", "reproduce.html"],
+    ["Every command", "Makefile, make/", "commands.html"],
+    ["This guide's numbers", "scripts/explainer_data.py, docs/explainer/assets/data.js", "reproduce.html#explainer"]
+  ];
+  // [symptom, where to look, explanation, gloss (optional)]
+  var S = [
+    ["The campaign refuses to start: environment check failed", "harness/environment/check.py, data/raw/<campaign>/sysinfo/", "A strict campaign checks turbo, governor, SMT and the P-core mask on every start and resume, and writes what it found to sysinfo/. Run make env-setup on the PC, then start again.", "The machine is not in the slowed-down, held-still state the study measures on."],
+    ["The campaign refuses to start: unpinned browser", "harness/campaign/runner.py, harness/browsers.json", "The installed Chrome or Firefox is not the pinned version (Firefox can update itself). Reinstall the pinned build with make browsers."],
+    ["A run fails with a checksum error", "bench/src/measurement/measure.rs, data/raw/<campaign>/failed/", "An iteration gave a different checksum from the first: the workload computed a wrong result. The run fails instead of timing it; its error file is kept."],
+    ["The analysis stops on a checksum conflict", "harness/collect.py", "Two runs of the same workload, input and size gave different checksums (across environments or thread counts). Nothing is written until it is explained."],
+    ["A WASM run fails: memory grew while measuring", "bench/src/run/memory_tracker.rs", "Linear memory grew during the measured phase, so an allocation happened in the timed region. Allocation must stay in prepare or before the run.", "The program asked for more memory in the middle of a timed step, which would add to the time."],
+    ["The page reports: not cross-origin isolated", "harness/server.py, bench/www/main.js", "SharedArrayBuffer needs the COOP and COEP headers; the page was not served by server.py, or the headers were removed.", "The page was opened without the two security headers that allow shared memory."],
+    ["A browser run times out", "data/raw/<campaign>/<run>.browser.log, harness/launcher/launcher.py", "No result before the spec's timeout. The browser log is kept for runs that did not finish."],
+    ["A run is rejected by strict validation", "harness/context/validation.py, analysis/inference/exclusion.py", "Its context shows a wrong mask, turbo on, SMT on, escaped processes or another browser version. Excluded runs are counted in the data check, never silently dropped.", "The run happened, but its record shows the conditions were not the right ones, so it is set aside and counted."],
+    ["Runs above the foreign CPU threshold", "analysis/quality/foreign_cpu.py, data/tables/<campaign>/<campaign>-quality.md", "More than 0.25 s of CPU time from other processes on the measured cores during the run (ADR 0051): the shield or quiet mode did not hold.", "Some other program used the measured cores while the run was going."],
+    ["A configuration under 100 times the clock resolution", "analysis/quality/clock.py", "Iterations too short for the browser's coarse performance.now(); the sample would be mostly quantisation error (ADR 0041).", "The browser's clock only ticks every few microseconds; a time much shorter than 100 ticks is mostly rounding."],
+    ["Run values trend with the execution order", "analysis/quality/order_drift.py", "Spearman |rho| > 0.5 between run order and run value: something drifted during the campaign. Reported in the data check; with 30 runs about 1 in 140 configurations shows it by chance.", "Later runs got steadily slower or faster, which suggests the machine changed during the day."],
+    ["A refactor of bench/ changed the measured code", "scripts/codegen_diff.sh, scripts/codegen_diff.py", "Builds the base and the working tree and compares every function; a hot function that differs means the change is not codegen-neutral and needs a new build tag (ADR 0062).", "The machine code of the timed functions is compared before and after an edit; if it changed, the numbers are not comparable."],
+    ["The filter is no longer vectorized", "scripts/check_simd.py", "CI checks that blur_interior uses packed 16-bit SIMD in both the native binary and bench.wasm (ADR 0017).", "The compiler stopped using the instructions that process 8 pixels at once."],
+    ["Browser results differ from native in CI", "harness/browser_check/", "The CI correctness check runs small cases in both browsers and compares the checksums with native (ADR 0024)."],
+    ["An ADR or a page has an em dash, or an ADR is malformed", "scripts/check_no_em_dash.py, scripts/check_adrs.py", "make lint and CI refuse it."],
+    ["This guide shows old numbers or a missing excerpt", "scripts/explainer_data.py", "Run python3 -m scripts.explainer_data; it fails if an excerpt's first line is no longer found in its file."]
+  ];
+  function files(list) {
+    var td = el("span");
+    list.split(",").map(function (f) { return f.trim(); }).forEach(function (f, i) {
+      if (i) td.appendChild(document.createTextNode(", "));
+      if (f.indexOf("<") >= 0) td.appendChild(el("code", { text: f }));
+      else td.appendChild(UI.repoLink(f));
+    });
+    return td;
+  }
+  function named(name, gloss) {
+    var cell = el("span", { text: name });
+    if (gloss) cell.appendChild(el("small", { text: gloss }));
+    return cell;
+  }
+  function tableOf(rows, heads, cells) {
+    var t = el("table", { class: "t where" }), tr = el("tr");
+    heads.forEach(function (h) { tr.appendChild(el("th", { text: h })); });
+    t.appendChild(el("thead", {}, [tr]));
+    var tb = el("tbody");
+    rows.forEach(function (r) {
+      var row = el("tr");
+      cells(r).forEach(function (c) {
+        var td = el("td");
+        if (c instanceof Node) td.appendChild(c); else td.textContent = c;
+        row.appendChild(td);
+      });
+      tb.appendChild(row);
+    });
+    t.appendChild(tb);
+    return el("div", { class: "scroll-x" }, [t]);
+  }
+  $("#questions-table").appendChild(tableOf(Q, ["What", "Files", "Explained in"], function (r) {
+    var page = UI.PAGES.filter(function (p) { return p.file === r[2].split("#")[0]; })[0];
+    return [named(r[0], r[3]), files(r[1]), el("a", { href: r[2], text: page ? page.title : r[2] })];
+  }));
+  $("#symptoms-table").appendChild(tableOf(S, ["Symptom", "Where to look", "What it means"], function (r) {
+    return [named(r[0], r[3]), files(r[1]), r[2]];
+  }));
+  var box = $("#where-filter"), count = $("#where-count");
+  function filter() {
+    var q = box.value.trim().toLowerCase(), n = 0, total = 0;
+    $$("table.where tbody tr").forEach(function (tr) {
+      total++;
+      var show = !q || tr.textContent.toLowerCase().indexOf(q) >= 0;
+      tr.hidden = !show;
+      if (show) n++;
+    });
+    count.textContent = n + " of " + total + " rows";
+  }
+  box.addEventListener("input", filter);
+  filter();
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

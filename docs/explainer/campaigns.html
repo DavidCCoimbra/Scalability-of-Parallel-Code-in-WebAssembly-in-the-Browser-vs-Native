@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - Campaigns, specs and resume</title>
+<meta name="description" content="A campaign spec field by field, every campaign of the study with its build and run count, how a campaign is planned, resumed and watched, and the data check before any analysis.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .t td { vertical-align: top; }
+  .t td:first-child code { white-space: nowrap; }
+  pre.out { padding: 10px 12px; overflow-x: auto; background: var(--panel-2); border: 1px solid var(--edge); border-radius: 8px; font-size: var(--fs-sm); }
+</style>
+</head>
+<body data-page="campaigns">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="words.html">Words first</a></li><li><a href="setup.html">Install and first run</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <p class="kicker">Working on it · 3 of 8</p>
+    <h1>Campaigns, specs and resume</h1>
+
+    <p class="lead">A <b>campaign</b> is one set of measurements decided in advance: which runtimes,
+      which workloads, which thread counts, how many runs. It is written down as a JSON file, the
+      <b>spec</b>, before anything runs, and the harness runs exactly that and nothing else.</p>
+
+    <div class="oneliner"><b>In one sentence:</b> a spec fixes every parameter and a random seed, the
+      harness turns it into a shuffled list of runs, and stopping and restarting never changes that list:
+      it only continues it.</div>
+
+    <h2 id="what">What a campaign is</h2>
+    <p>A <b>run</b> is one program start that measures one configuration (one runtime, one workload, one
+      thread count) ten times and writes a CSV. A <b>campaign</b> is a list of runs decided before any of them
+      starts: every configuration the question needs, thirty times each, in a shuffled order. The list is
+      written as a small JSON file, the <b>spec</b>, and the harness runs exactly that list.</p>
+    <div class="analogy"><b>Picture it.</b> A clinical trial writes down, before the first patient, who gets
+      what and in which order, then follows the sheet. Deciding as you go is how you end up measuring your
+      own expectations. The spec is the sheet.</div>
+    <div class="why"><b>Why shuffle, and why record the seed?</b> A machine drifts over thirteen hours: it
+      warms, a background job wakes, a cache fills. If every native run came first and every Firefox run
+      last, the drift would look like a difference between native and Firefox. Shuffled, the drift falls on
+      all three alike and becomes noise instead of a bias (<a href="measuring.html#fair">A fair
+      comparison</a>). The seed is recorded so the same shuffle can be rebuilt and a stopped campaign
+      continues the same list (<a href="#resume">Sessions and resume</a>).</div>
+    <div class="why"><b>Why thirty runs, and why a fresh process each time?</b> One run can be unlucky; thirty
+      give a spread you can see and an interval you can report. A fresh process each time makes the thirty
+      independent: nothing one run warmed up or cached helps the next (<a href="protocol.html#unit">The run
+      is the unit</a>, <a href="protocol.html#thirty">30 runs, 10 iterations</a>).</div>
+
+    <h2 id="spec">A campaign spec</h2>
+    <p>This is the spec of the main campaign on the final build, as it is in the repository:</p>
+    <div data-code="harness/campaigns/campaign-v3.json|^{|86" data-title="The main campaign of measured/v3"></div>
+    <p>The keys you will change are <code>name</code>, <code>orderSeed</code>, <code>environments</code>,
+      <code>workloads</code>, <code>threads</code> and <code>repetitions</code>. The rest is the protocol and
+      stays as it is unless an ADR changes it.</p>
+<details class="deeper"><summary>If you already know this: every key, what it changes, and its ADR</summary>
+    <p>Each key, and what it changes:</p>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>Key</th><th>Meaning</th><th>In campaign-v3</th></tr></thead>
+      <tbody>
+        <tr><td><code>name</code></td><td>The campaign's name: the results go to <code>data/raw/&lt;name&gt;</code> and every run id starts with it</td><td><code>campaign-v3</code></td></tr>
+        <tr><td><code>orderSeed</code></td><td>Seed of the shuffle that orders the runs; recorded, so the order can be rebuilt (ADR 0034)</td><td>20261109</td></tr>
+        <tr><td><code>environments</code></td><td>Any of <code>native</code>, <code>chrome</code>, <code>firefox</code></td><td>all three</td></tr>
+        <tr><td><code>workloads</code></td><td>One entry per workload and input: <code>workload</code>, <code>input</code> (<code>noise</code> or <code>few</code>), <code>k</code> for <code>few</code>, its own <code>warmup</code>, and optionally <code>passes</code>, <code>grain</code>, <code>pitch</code>, <code>palette</code></td><td>the filter, and both histograms at k = 1, 4, 16, 256</td></tr>
+        <tr><td><code>threads</code></td><td>The thread counts N (ADR 0044)</td><td>1, 2, 4, 6, 7, 8</td></tr>
+        <tr><td><code>repetitions</code></td><td>Runs per configuration; each run is a fresh process or browser (ADR 0047)</td><td>30</td></tr>
+        <tr><td><code>width</code>, <code>height</code></td><td>Image size (ADR 0041)</td><td>8192 × 8192</td></tr>
+        <tr><td><code>heightPerThread</code></td><td>Weak scaling only: the height grows with N (ADR 0055)</td><td>absent</td></tr>
+        <tr><td><code>warmup</code></td><td>Default warm-up iterations, for a workload without its own (ADR 0043)</td><td>5</td></tr>
+        <tr><td><code>iterations</code></td><td>Measured iterations per run (ADR 0047)</td><td>10</td></tr>
+        <tr><td><code>calibration</code></td><td>Fork-join calibration samples per probe, warm and cold (ADR 0030)</td><td>20</td></tr>
+        <tr><td><code>cpus</code></td><td>The CPU mask of every run: the 8 P-cores (ADR 0001, 0045)</td><td><code>0,2,4,6,8,10,12,14</code></td></tr>
+        <tr><td><code>harnessCpus</code></td><td>Where the harness itself runs: the E-cores (ADR 0028)</td><td><code>16-31</code></td></tr>
+        <tr><td><code>hybrid</code></td><td>The P+E mask of the hybrid campaign, N up to 20 (ADR 0059)</td><td>absent (false)</td></tr>
+        <tr><td><code>scopeUser</code></td><td>Each run in its own systemd scope as this user, so its CPU time and escaped processes are counted (ADR 0045)</td><td><code>$USER</code></td></tr>
+        <tr><td><code>headless</code></td><td>Browsers without a window (ADR 0046)</td><td>true</td></tr>
+        <tr><td><code>startDelayMs</code></td><td>Wait between the page loading and the run starting, so the browser's start-up work is over (ADR 0048)</td><td>3000</td></tr>
+        <tr><td><code>timeoutSeconds</code></td><td>A run longer than this is killed and recorded as failed</td><td>900</td></tr>
+        <tr><td><code>discardFirstLaunch</code></td><td>One extra launch per browser and session, not kept: the first launch on a machine is much slower (ADR 0034)</td><td>true</td></tr>
+        <tr><td><code>strict</code></td><td>Refuse to start unless the machine is prepared and the browsers are the pinned versions; validate every run's context (ADR 0040, 0071)</td><td>true</td></tr>
+        <tr><td><code>build</code></td><td>Build variant: <code>baseline</code>, <code>scalar</code> or <code>avx2</code> (ADR 0057)</td><td>absent (baseline)</td></tr>
+        <tr><td><code>passes</code></td><td><code>run</code> calls per timed sample, for small images (ADR 0064)</td><td>absent (1)</td></tr>
+        <tr><td><code>comment</code></td><td>Free text, ignored by the harness</td><td>absent</td></tr>
+      </tbody>
+    </table></div>
+</details>
+    <p>From this spec the harness plans 3 environments × 9 workloads × 6 thread counts × 30 repetitions
+      = <b>4860 runs</b>, plus the discarded first launches. A run id names one of them:
+      <code>campaign-v3-2666-chrome-filter-noise-n8-r27</code> is the 171st in the order, Chrome, the
+      filter on noise, N = 8, repetition 27.</p>
+    <div data-code="harness/campaign/plan.py|def discarded_runs|8" data-title="The discarded first launches"></div>
+    <p class="src" data-files="harness/campaigns/campaign-v3.json, harness/campaign/spec.py, harness/campaign/plan.py, harness/campaign/README.md"></p>
+
+    <h2 id="resume">Sessions, status and resume</h2>
+    <p>A campaign of thousands of runs takes hours (the main one about 13), so it must survive a stop:
+      a crash, a reboot, a Ctrl-C. The harness never keeps state in memory that it cannot rebuild from the
+      results folder.</p>
+    <ol>
+      <li><b>Plan.</b> The spec and its seed give the same shuffled list of runs every time. Native,
+        Chrome and Firefox are interleaved, so a slow drift of the machine falls on all three alike.</li>
+      <li><b>Session.</b> The first start writes <code>campaign.json</code>: the spec, the build identity
+        (commit, the SHA-256 of the native binary and of the WASM module, the browser versions) and the
+        plan. A later start is a new session: it checks that the spec and the build are the same and refuses
+        otherwise, so one campaign never mixes builds.</li>
+      <li><b>Skip what is done.</b> For each planned run, in order, the harness looks for its files. A run
+        with a result is skipped; a run with an <code>.error.json</code> counts as failed and is run again
+        only with <code>--retry-failed</code> (the old files move to <code>failed/</code>).</li>
+      <li><b>Log.</b> Every run appends one line to <code>campaign.jsonl</code>: its id, configuration,
+        status, duration and problems.</li>
+    </ol>
+    <div data-code="harness/campaign/journal.py|def resumed|9" data-title="A new session refuses another spec or another build"></div>
+    <div data-code="harness/campaign/runner.py|class Campaign|63" data-title="The session, from the check to the log"></div>
+    <p><code>make status SPEC=...</code> reads only <code>campaign.json</code> and
+      <code>campaign.jsonl</code>, never the machine, so it is safe in a second terminal during a
+      measurement. Its ETA is the mean duration of the logged runs times the runs left.</p>
+    <p>One journal line, for a discarded first launch:</p>
+    <pre class="out">{"position": -1, "runId": "campaign-v3-discard1-chrome-filter-noise-n1-r0", "environment": "chrome",
+ "workload": "filter", "input": "noise", "k": null, "warmup": 15, "threads": 1, "repetition": 0,
+ "query": "workload=filter&amp;input=noise&amp;threads=1&amp;width=8192&amp;height=8192&amp;warmup=15&amp;iters=10&amp;calibration=20",
+ "status": "done", "seconds": 9.967, "problems": ["orderPosition unavailable"], "discarded": true, ...}</pre>
+    <p class="src" data-files="harness/campaign/runner.py, harness/campaign/journal.py, harness/campaign/status/README.md, data/raw/campaign-v3/campaign.jsonl"></p>
+
+    <h2 id="quality">The data check</h2>
+    <div class="why"><b>Why check the data before looking at it?</b> Because a person who has seen the
+      result will find reasons to drop the runs that disagree with it. The check runs the same rules on every
+      campaign, written before the first one (ADR 0051), and reports; it never decides what the answer is.
+      A campaign it blocks is re-run or excluded with an ADR, not patched.</div>
+    <p>When a campaign ends, and before any statistic is looked at, <code>python3 -m analysis.datacheck</code>
+      writes a short quality report (ADR 0051). It removes nothing: the analysis plan fixed in advance
+      which runs are excluded (D7), and the check only says whether the data can be analysed.</p>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>Line of the report</th><th>What it catches</th><th>What happens</th></tr></thead>
+      <tbody>
+        <tr><td>Runs done, missing, failed</td><td>Planned runs with no result</td><td>Blocks the analysis</td></tr>
+        <tr><td>Checksum conflicts</td><td>Two runs of the same configuration with different outputs: the code computed something different</td><td>Blocks the analysis</td></tr>
+        <tr><td>Strict validation</td><td>A run whose context breaks a rule: a dirty commit, a governor other than performance, turbo or SMT on, a mask that is not the P-cores, the shield letting other units onto the measured CPUs, browser processes that escaped the run scope, an unpinned browser, or a value that could not be read</td><td>Excluded by <code>--strict</code> (exclusion 2)</td></tr>
+        <tr><td>Foreign CPU above 0.25 s</td><td>Something else ran on the measured cores during the run. 0.25 s is twice the largest value seen in 1638 pilot runs</td><td>Excluded (exclusion 3)</td></tr>
+        <tr><td>Under 100 times the clock resolution</td><td>A configuration too short for the browser's coarse clock</td><td>Warning</td></tr>
+        <tr><td>Order trend</td><td>A configuration whose run values follow the execution order (Spearman |ρ| &gt; 0.5, at least 10 runs): drift of the machine</td><td>Reported; with 30 runs about 0.7 % of configurations pass this by chance</td></tr>
+        <tr><td>Mixed settings</td><td>Runs of one configuration with different width, height, pitch, palette or passes</td><td>Blocks the analysis</td></tr>
+      </tbody>
+    </table></div>
+    <p>The report of the main campaign:</p>
+    <pre class="out">- Runs done: 4860; missing: 0; failed: 0 {}
+- Runs replaced by a re-run (kept in `excluded/`): 0
+- Checksum conflicts: 0
+- Runs failing strict validation: 0 {}; reasons: {}
+- Runs above the foreign CPU threshold (0.25 s): 0 {}
+- Configurations under 100 times the clock resolution: 0
+- Configurations whose valid run values trend with the execution order (|rho| &gt; 0.5, at least 10 runs): 3
+  - chrome hist-atomic k1 N=8: rho = -0.56 over 30 runs
+  - chrome hist-atomic k16 N=4: rho = -0.62 over 30 runs
+  - firefox hist-local k4 N=4: rho = -0.62 over 30 runs
+- Configurations mixing width, height, pitch, palette, passes: 0
+- Blocking the analysis (checksum conflicts, missing or failed runs, mixed settings): no</pre>
+    <p>Three trending configurations out of 162: about one would be expected with no trend at all, and
+      none is in the RQ1 filter cells. Every reported campaign has its report next to its tables, as
+      <code>data/tables/&lt;campaign&gt;/&lt;campaign&gt;-quality.md</code>.</p>
+    <p class="src" data-files="data/tables/campaign-v3/campaign-v3-quality.md, analysis/datacheck.py, analysis/quality/report.py, docs/adr/0051-foreign-cpu-threshold-and-data-check.md"></p>
+
+    <h2 id="list">Every campaign of the study</h2>
+    <p>Every result in the paper and in this guide comes from a campaign on the build tagged
+      <code>measured/v3</code> (commit <code>c8ea7157</code>; the perf campaign ran on a later commit with
+      the same <code>bench/</code> code and the same artifact hashes). The earlier campaigns of the
+      first build stay in the repository, valid for their own build, but builds are never mixed in one
+      comparison (ADR 0062, 0069). Pilots only sized the design.</p>
+    <details class="deeper"><summary>If you already know this: every spec, its runs, its status and its ADR</summary>
+<div class="scroll-x"><table class="t">
+      <thead><tr><th>Spec</th><th>What it measures</th><th>Runs</th><th>Status</th><th>ADR</th></tr></thead>
+      <tbody>
+        <tr><th colspan="5">Reported: build measured/v3</th></tr>
+        <tr><td><code>campaign-v3</code></td><td>The main campaign: RQ1 and RQ2</td><td>4860</td><td><span class="chip native">reported</span></td><td>0069</td></tr>
+        <tr><td><code>extras-v3</code></td><td>Private, shared and packed atomics, the local control, two sorts</td><td>5400</td><td><span class="chip native">reported</span></td><td>0052, 0053</td></tr>
+        <tr><td><code>weak-v3</code></td><td>Weak scaling, 1024 rows per thread</td><td>1080</td><td><span class="chip native">reported</span></td><td>0055</td></tr>
+        <tr><td><code>simd-scalar-v3</code>, <code>simd-avx2-v3</code></td><td>The filter without SIMD, and native with AVX2</td><td>540 + 180</td><td><span class="chip native">reported</span></td><td>0057</td></tr>
+        <tr><td><code>hybrid-v3</code></td><td>P-cores plus E-cores, N up to 20</td><td>900</td><td><span class="chip native">reported</span></td><td>0059</td></tr>
+        <tr><td><code>cutoff-{512,1024,2048,4096,8192}-v3</code>, <code>cutoff-control-{512,2048}-v3</code></td><td>Speedup against the work per parallel region, repeated passes per sample</td><td>5 × 720 + 2 × 240 = 4080</td><td><span class="chip native">reported</span></td><td>0064</td></tr>
+        <tr><td><code>grain-1024-v3</code>, <code>grain-8192-v3</code></td><td>Fixed task sizes: the grain U-curve</td><td>1620 + 2430 = 4050</td><td><span class="chip native">reported</span></td><td>0066</td></tr>
+        <tr><td><code>perf-v3</code></td><td>Hardware counters of the atomic histogram, k = 1 and 256, N = 1 and 8</td><td>360</td><td><span class="chip native">reported</span></td><td>0072</td></tr>
+        <tr><th colspan="5">First build: kept, not reported</th></tr>
+        <tr><td><code>campaign</code>, <code>extras</code>, <code>weak</code>, <code>simd-*</code>, <code>hybrid</code>, <code>cutoff-*</code>, <code>grain-*</code></td><td>The same designs on the earlier builds; replaced by their <code>-v3</code> copies after the bottleneck audit found asymmetries in the measured code</td><td>same counts</td><td><span class="chip">superseded</span></td><td>0062, 0069</td></tr>
+        <tr><th colspan="5">Pilots: sized the design</th></tr>
+        <tr><td><code>pilot-size-*</code></td><td>Image size against the browser clock resolution</td><td>4 × 54</td><td><span class="chip copy">pilot</span></td><td>0041</td></tr>
+        <tr><td><code>pilot-warmup</code>, <code>pilot-warmup-ff-k1</code>, <code>pilot-warmup-extras</code></td><td>Warm-up iterations W per workload</td><td>108 + 10 + 72</td><td><span class="chip copy">pilot</span></td><td>0043, 0053</td></tr>
+        <tr><td><code>pilot-threads-*</code>, <code>pilot-oversubscription</code></td><td>Thread counts</td><td>342 + 90</td><td><span class="chip copy">pilot</span></td><td>0044</td></tr>
+        <tr><td><code>pilot-mask-p</code>, <code>pilot-mask-pe</code></td><td>P-cores against P+E-cores</td><td>120 + 120</td><td><span class="chip copy">pilot</span></td><td>0045</td></tr>
+        <tr><td><code>pilot-headless</code>, <code>pilot-headful</code></td><td>Headless against headful</td><td>40 + 40</td><td><span class="chip copy">pilot</span></td><td>0046</td></tr>
+        <tr><td><code>pilot-runs-rq1</code>, <code>pilot-runs-rq2</code></td><td>Runs per configuration</td><td>180 + 720</td><td><span class="chip copy">pilot</span></td><td>0047</td></tr>
+        <tr><td><code>pilot-delay-*</code></td><td>Start delay</td><td>40 + 40 + 32 + 32</td><td><span class="chip copy">pilot</span></td><td>0048</td></tr>
+        <tr><td><code>pilot-pad128</code>, <code>pilot-pad64</code></td><td>Padding of the shared counters</td><td>80 + 80</td><td><span class="chip copy">pilot</span></td><td>0049</td></tr>
+        <tr><td><code>pilot-chrome-{cft155,cft157,stable157}</code></td><td>Chrome for Testing against stable Chrome</td><td>3 × 40</td><td><span class="chip copy">pilot</span></td><td>0050</td></tr>
+        <tr><th colspan="5">End-to-end checks and quick checks: never results</th></tr>
+        <tr><td><code>smoke</code>, <code>mini</code></td><td>Every workload at 1024², 2 runs; strict and not strict</td><td>-</td><td><span class="chip">check</span></td><td>0034, 0040</td></tr>
+        <tr><td><code>quick-*</code></td><td>Tiny copies of each campaign, run by <code>make quick*</code></td><td>-</td><td><span class="chip">check</span></td><td>-</td></tr>
+      </tbody>
+    </table></div>
+</details>
+    <div class="stats" id="totals"></div>
+    <div class="callout"><b>The Firefox repeat in the exploratory campaigns.</b> During the first pass
+      of <code>extras-v3</code>, <code>weak-v3</code>, <code>simd-scalar-v3</code> and <code>hybrid-v3</code>
+      the pinned Firefox updated itself to 160.0. Its 2640 runs were moved to <code>excluded/</code> and
+      repeated on 158.0 in one block, after native and Chrome; since then a strict campaign refuses to
+      start with an unpinned browser (ADR 0071). See <a href="pitfalls.html#update">A pinned Firefox
+      updates itself</a>.</div>
+    <p class="src" data-files="harness/campaigns/README.md, docs/adr/0069-v2-build.md, docs/adr/0071-firefox-pin-guard.md"></p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var el = UI.el, $ = UI.$;
+  var REPORTED = [["campaign-v3", 4860], ["extras-v3", 5400], ["weak-v3", 1080], ["simd", 720], ["hybrid-v3", 900], ["cutoff", 4080], ["grain", 4050], ["perf-v3", 360]];
+  var total = REPORTED.reduce(function (a, c) { return a + c[1]; }, 0);
+  [[UI.int(total), "runs in the reported campaigns"], [UI.int(4860), "runs in the main campaign"], ["30", "runs per configuration, every campaign"], ["0", "failed or conflicting runs in the main campaign"]].forEach(function (s) {
+    $("#totals").appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: s[0] }), el("div", { class: "k", text: s[1] })]));
+  });
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

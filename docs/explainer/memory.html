@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - Memory and caches: why distance matters</title>
+<meta name="description" content="Why RAM is slow, what a cache is, why data moves in 64-byte lines, and what happens when two cores want the same line.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .figure svg text { font-family: inherit; fill: var(--ink); }
+  .figure svg .box { fill: var(--panel); stroke: var(--edge); stroke-width: 1.5; }
+  .figure svg .hot { fill: var(--chrome-soft); stroke: var(--chrome); stroke-width: 1.5; }
+  .figure svg .cool { fill: var(--native-soft); stroke: var(--native); stroke-width: 1.5; }
+  .figure svg .ok { fill: color-mix(in srgb, var(--good) 15%, var(--panel)); stroke: var(--good); stroke-width: 1.5; }
+  .figure svg .muted { fill: var(--muted); }
+  .figure svg .line { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+  .figure svg .arrow { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#ah); }
+  .figure svg .acc { fill: var(--accent); }
+</style>
+</head>
+<body data-page="memory">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <p class="kicker">Foundations · 2 of 6</p>
+    <h1>Memory and caches: why distance matters</h1>
+
+    <p class="lead">A core can add two numbers in a fraction of a billionth of a second. Fetching one of those
+      numbers from the computer's main memory takes a hundred times longer. Everything about speed on a modern
+      chip comes from hiding that gap, and the histogram in this study lives or dies on it.</p>
+    <div class="oneliner"><b>In one sentence:</b> main memory is far away, so each core keeps a small copy of
+      what it is using close by, in boxes of 64 bytes; when two cores want to write the same box, it has to travel
+      between them, and that trip is what "contention" costs.</div>
+
+    <h2 id="far">RAM is far away</h2>
+    <p>The chip's main memory (<b>RAM</b>) is big, gigabytes, but it sits outside the core, at the end of a long
+      wire. Asking it for a number and getting the answer back takes roughly a hundred steps of the core's clock.
+      For a core that could have done a hundred additions in that time, that is an eternity.</p>
+    <div class="analogy"><b>Picture it.</b> The cook's counter is small and right in front of them. The pantry
+      is big and down the hall. If every pinch of salt meant a walk to the pantry, nothing would ever get cooked.</div>
+
+    <h2 id="caches">Caches: small, near, fast</h2>
+    <p>So each core has a few small, very fast memories of its own next to it, called <b>caches</b>. When the core
+      needs a number, it looks in the nearest cache first (L1, tiny and almost instant), then a bigger one (L2),
+      then one shared by all the cores (L3, bigger and slower), and only then goes to RAM. Whatever it brings
+      back, it keeps in the caches, in case it is needed again soon. Most of the time it is.</p>
+    <figure class="figure"><svg viewBox="0 0 520 150" role="img" aria-label="Each core has L1 and L2 caches, all share L3, and RAM is farther"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
+      <g font-size="11">
+      <rect class="cool" x="20" y="15" width="90" height="36" rx="6"/><text x="65" y="37" text-anchor="middle" font-weight="600">core</text>
+      <rect class="box" x="20" y="58" width="90" height="26" rx="6"/><text x="65" y="75" text-anchor="middle">L1 · tiny, 1 ns</text>
+      <rect class="box" x="20" y="90" width="90" height="26" rx="6"/><text x="65" y="107" text-anchor="middle">L2 · small</text>
+      <rect class="cool" x="130" y="15" width="90" height="36" rx="6"/><text x="175" y="37" text-anchor="middle" font-weight="600">core</text>
+      <rect class="box" x="130" y="58" width="90" height="26" rx="6"/><text x="175" y="75" text-anchor="middle">L1</text>
+      <rect class="box" x="130" y="90" width="90" height="26" rx="6"/><text x="175" y="107" text-anchor="middle">L2</text>
+      <text x="245" y="70" text-anchor="middle" class="muted">…</text>
+      <rect class="box" x="20" y="124" width="250" height="22" rx="6"/><text x="145" y="139" text-anchor="middle">L3 · shared by every core</text>
+      <path class="arrow" d="M280 135 H 335"/>
+      <rect class="box" x="345" y="15" width="155" height="131" rx="8"/><text x="422" y="60" text-anchor="middle" font-weight="600">RAM</text><text x="422" y="80" text-anchor="middle" class="muted">gigabytes</text><text x="422" y="98" text-anchor="middle" class="muted">about 100 ns away</text>
+      </g>
+    </svg><figcaption>Near, small and fast on the left; far, big and slow on the right. The core always tries the left first.</figcaption></figure>
+    <div class="analogy"><b>Picture it.</b> The L1 cache is the cook's counter: a dozen things, within reach. L2
+      is the shelf behind them. L3 is the walk-in fridge the whole kitchen shares. RAM is the pantry down the hall.
+      A good cook brings what they need to the counter once and keeps it there.</div>
+
+    <h2 id="lines">Data moves in lines of 64 bytes</h2>
+    <p>Caches do not move one byte at a time. They move fixed boxes of <b>64 bytes</b>, called <b>cache
+      lines</b>. Ask for one byte and the whole line it sits in comes along, because fetching 64 bytes costs
+      about the same as fetching 1, and the neighbours are probably wanted next.</p>
+    <div class="analogy"><b>Picture it.</b> Nobody walks to the pantry for one egg. You bring the carton. The
+      carton is the cache line.</div>
+    <p>This has a consequence that matters for the study: two different numbers that happen to live in the same
+      64 bytes <b>travel together</b>, whether you want them to or not. Eight small counters, 8 bytes each, fit in one
+      line. <a href="caches.html#falsesharing">Contention and padding</a> shows why that is a problem and how the
+      project avoids it.</p>
+
+    <h2 id="sharing">Two cores, one line</h2>
+    <p>Each core has its own caches, so the same line can be in several caches at once. That is fine while
+      everyone only <b>reads</b> it. The moment one core wants to <b>write</b> it, the rule is: only one core may
+      hold a line for writing, and every other copy is thrown away. The writer has to fetch the line to itself
+      first, and the next core that wants to write has to fetch it back.</p>
+    <figure class="figure"><svg viewBox="0 0 520 120" role="img" aria-label="A line held by core A must travel to core B before B can write it">
+      <g font-size="11">
+      <rect class="cool" x="30" y="20" width="120" height="80" rx="8"/><text x="90" y="42" text-anchor="middle" font-weight="600">core A</text>
+      <rect class="hot" x="50" y="55" width="80" height="30" rx="5"/><text x="90" y="74" text-anchor="middle">the line</text>
+      <path class="arrow" d="M160 70 H 350"/><text x="255" y="60" text-anchor="middle" class="muted">travels, about 100 ns</text>
+      <rect class="cool" x="370" y="20" width="120" height="80" rx="8"/><text x="430" y="42" text-anchor="middle" font-weight="600">core B</text>
+      <rect class="box" x="390" y="55" width="80" height="30" rx="5" stroke-dasharray="4 3"/><text x="430" y="74" text-anchor="middle" class="muted">wants to write</text>
+      </g>
+    </svg><figcaption>Core B cannot write until the line arrives. If A wants it back next, it travels again.</figcaption></figure>
+    <div class="analogy"><b>Picture it.</b> One shared notebook. Anyone may read it. To write in it you must hold
+      it, and only one person can hold it. If eight people each want to add a line, the notebook goes round the
+      table, and each person waits for it. That waiting is <b>contention</b>.</div>
+    <p>The trip takes about as long as a fetch from RAM, roughly 100 steps of the clock. An addition that could
+      have taken 1 step now takes 100, because the line was last written by someone else. This single fact
+      explains why the study's shared-counter histogram gets <i>slower</i> with more threads
+      (<a href="rq2.html">RQ2</a>), and why the project counts exactly how many of these trips each add costs
+      (<a href="why.html#readfirst">Why Chrome</a>).</p>
+
+    <h2 id="remember">What to remember</h2>
+    <div class="remember"><b>What to remember.</b> RAM is far, caches are near. Data moves in 64-byte lines, so
+      neighbours travel together. Many cores may read a line, only one may write it, and when the writer changes,
+      the line travels, which costs about a hundred times more than the write itself.</div>
+    <p>Used by: <a href="caches.html">Contention and padding</a>, <a href="atomics.html">Atomics in machine
+      code</a>, <a href="why.html">Why Chrome</a>. Next foundation: <a href="compilers.html">From source to
+      machine code</a>.</p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // nothing page-specific
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

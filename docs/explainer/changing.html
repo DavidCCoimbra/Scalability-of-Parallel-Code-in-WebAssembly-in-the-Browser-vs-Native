@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - Change something safely</title>
+<meta name="description" content="The rules of the repository with the reason behind each, and recipes to add a workload, a campaign or an analysis, and to touch the measured code.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  pre.cmd { background: var(--panel-2); border: 1px solid var(--edge); border-radius: 8px; padding: 10px 12px; overflow-x: auto; font-size: var(--fs-sm); }
+  .two { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .two .card h3 { margin: 0 0 4px; font-size: 1rem; }
+  .two .card p, .two .card li { font-size: var(--fs-sm); }
+  .steps li { margin: 6px 0; }
+  .t td:first-child code { white-space: nowrap; }
+</style>
+</head>
+<body data-page="changing">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <p class="kicker">Working on it · 6 of 8</p>
+    <h1>Change something safely</h1>
+
+    <p class="lead">You will want to change something: a workload, a campaign, a statistic, a comment. Most
+      changes are ordinary. A few touch the one thing that must not move without a record: the code that is
+      timed. This page gives the rules, the reason behind each one, and a recipe for the three common
+      additions.</p>
+    <div class="oneliner"><b>In one sentence:</b> raw data is never edited, tables are always regenerated, the
+      measured code changes only with an ADR and a codegen diff, and everything else follows the style the
+      type checker and the tests enforce.</div>
+
+    <h2 id="rules">The rules and why</h2>
+    <p>Each rule below exists because of a way the study could have gone wrong. The box says what that way is.</p>
+    <div class="why"><b>Never edit a file in <code>data/raw/</code>.</b> A run is what the machine wrote at
+      that moment. If a wrong-looking number is "fixed" by hand, nothing can tell it from a real one later,
+      and the whole table it feeds is suspect. A wrong run is excluded by a rule written before the analysis
+      (<a href="campaigns.html#quality">The data check</a>), or re-run and the old one moved to
+      <code>excluded/</code> with an ADR saying why.</div>
+    <div class="why"><b>Every table is regenerated, never hand-edited.</b> <code>data/tables/</code> can be
+      deleted and remade with <code>make all-results</code>. If a number in the paper and a number in a table
+      ever disagree, one <code>make</code> shows which one moved (<a href="reproduce.html">From raw runs to the
+      paper</a>).</div>
+    <div class="why"><b>Never mix runs of two builds in one comparison.</b> The compiler lays out code
+      differently after almost any change, and the layout alone can move a time by a few percent
+      (<a href="pitfalls.html#v2">Our own asymmetries</a>). Two builds compared against each other would measure
+      the change, not the runtime. Every reported campaign ran on the build tagged <code>measured/v3</code>,
+      and every run records the binary's hash (<a href="environments.html#builds">Builds and tags</a>).</div>
+    <div class="why"><b>The measured code changes only with an ADR and a codegen diff.</b> The timed region,
+      the workload kernels and the checksum are the experiment. A refactor there must leave the machine code
+      the same (<span data-term="codegen-neutral">codegen-neutral</span>) or it makes a new build. See
+      <a href="#hotpath">Touching the measured code</a>.</div>
+    <div class="why"><b><code>mypy --strict</code>, and types for domain things.</b> The harness and the
+      analysis are Python that runs unattended for 13 hours. A typo in a key name found at run 3000 of 4860
+      costs an afternoon; the type checker finds it before the campaign starts. Enums and dataclasses
+      (<code>Workload</code>, <code>PlannedRun</code>, <code>Interval</code>) instead of strings and tuples
+      mean a wrong value cannot even be built.</div>
+    <div class="why"><b>One struct per file, one concept per module, a README with a Mermaid flowchart per
+      folder.</b> The reader of this project is someone who has never seen it (you, today). A file that holds
+      one thing can be opened from a question ("where is the padding?") and read whole. The README answers
+      "which file holds what" before you open any (<a href="code.html">How the code is organised</a>).</div>
+    <div class="why"><b>Named constants, comments only for a why.</b> <code>CACHE_LINE_BYTES</code> can be
+      searched for; <code>128</code> cannot. A comment that repeats the code goes stale the first time the code
+      changes; a comment that says why (and which ADR) does not.</div>
+    <div class="why"><b>No em dash anywhere, and the paper in English.</b> Small, but checked by CI
+      (<code>scripts/check_no_em_dash.py</code>): the author's rule, applied to every file so no one has to
+      remember it.</div>
+
+    <h2 id="workload">Add a workload</h2>
+    <p>A workload is a struct that implements one small trait: <code>prepare</code> outside the clock,
+      <code>run</code> inside it, <code>checksum</code> over the result.</p>
+    <div data-code="bench/src/workloads/workload.rs|pub trait Workload|10" data-title="The trait"></div>
+    <ol class="steps">
+      <li><b>Write it</b> in <code>bench/src/workloads/</code>, one file. Keep allocation in
+        <code>prepare</code> or the constructor: the WASM allocator takes a global lock, and a lock inside the
+        timed region would be a synchronization cost that is not the one under study.</li>
+      <li><b>Name it</b> in <code>WorkloadKind</code> (<code>bench/src/experiment/workload_kind.rs</code>): the
+        enum variant, its string name, its capabilities (can it repeat identically for <code>passes</code>, does
+        it take a grain or a pitch) and its line in <code>build_with</code>.</li>
+      <li><b>Mirror the name</b> in the harness: the <code>Workload</code> enum of
+        <code>harness/campaign/workload.py</code> and its capabilities, so a spec can name it and the harness
+        can refuse what it cannot do.</li>
+      <li><b>Give it a checksum that means something.</b> The checksum is hashed from the final result only.
+        Two environments or two thread counts that produce different checksums are wrong, and
+        <code>analysis.datacheck</code> blocks the analysis.</li>
+      <li><b>Add it to the CI cases</b> (<code>harness/browser_check/cases.py</code>): CI runs every workload
+        small in headless Chrome and Firefox and compares the checksums with native. A workload that is not
+        there is not checked in a browser.</li>
+      <li><b>Add a quick spec</b> (<code>harness/campaigns/quick-*.json</code>, a <code>make quick-*</code>
+        target) so anyone can watch it run on a laptop in a minute. Then a real spec, if it is to be measured.</li>
+      <li><b>Run</b> <code>make test</code> (Rust tests, Python tests, lint) and <code>make quick-rq1</code>
+        style check for your workload.</li>
+    </ol>
+    <div data-code="bench/src/experiment/workload_kind.rs|    pub fn build_with|12" data-title="Where a name becomes a workload"></div>
+
+    <h2 id="campaign">Add a campaign</h2>
+    <ol class="steps">
+      <li><b>Copy the closest spec</b> in <code>harness/campaigns/</code> (<a href="campaigns.html#spec">every
+        key explained</a>). Give it a new <code>name</code> (the results folder) and a new
+        <code>orderSeed</code> (any integer; it is recorded, so the order can be rebuilt).</li>
+      <li><b>Keep the protocol</b> unless the question needs otherwise: 30 repetitions, the P-core mask, the
+        warm-up per workload, <code>"strict": true</code> on the PC. Changing a protocol value is a design
+        decision: write the ADR first (<a href="workflow.html#adr">When a decision needs an ADR</a>).</li>
+      <li><b>Add a row</b> to <code>harness/campaigns/README.md</code> with its ADR, and if it is a sequence
+        of specs, a target in <code>make/campaign.mk</code> like <code>cutoff-campaigns</code>.</li>
+      <li><b>Try it small</b> first: a <code>quick-</code> copy with 3 repetitions and 4096², run on the Mac.</li>
+      <li><b>Measure on the PC</b>: <code>make env-setup</code>, then <code>make campaign SPEC=...</code>,
+        <code>make status</code> from another terminal. Nothing else may run on the PC meanwhile.</li>
+      <li><b>Add the results target</b> in <code>make/results.mk</code>: the data check first, then the
+        tables into <code>data/tables/&lt;name&gt;/</code>; add it to <code>all-results</code>.</li>
+    </ol>
+    <div class="why"><b>Why a file and not command-line flags?</b> Because the file is committed. Months
+      later the spec says exactly what ran, the harness stores it inside <code>campaign.json</code> next to
+      the runs, and a restart checks that nothing in it changed (<a href="campaigns.html#resume">Sessions and
+      resume</a>). A flag typed in a terminal is gone when the terminal closes.</div>
+
+    <h2 id="analysis">Add an analysis</h2>
+    <ol class="steps">
+      <li>A command is a top-level module in <code>analysis/</code> run as <code>python3 -m
+        analysis.&lt;name&gt; data/raw/&lt;campaign&gt; --output ...</code>; the statistics it uses live in the
+        subpackages (<code>stats/</code>, <code>scaling/</code>, <code>inference/</code>). Reuse them: the
+        bootstrap, Holm and the run summaries are there, with their seed and settings fixed by the analysis
+        plan.</li>
+      <li>Read the raw folder through <code>analysis.campaign</code> and <code>analysis.runs</code>, never the
+        CSVs by hand: they apply the same exclusions as every other table.</li>
+      <li>Write a CSV table and, for a statistic with settings, a <code>.json</code> sidecar with them and the
+        commit (<a href="reproduce.html#chain">Why the tables carry a sidecar</a>).</li>
+      <li>A unit test in <code>analysis/tests/</code> on a tiny made-up campaign; a row in
+        <code>analysis/README.md</code>; the command in a <code>make *-results</code> target.</li>
+      <li>If the pages of this guide should show it: <code>make explainer</code> picks up every CSV in
+        <code>data/tables/*-v3/</code> automatically (<a href="reproduce.html#explainer">This guide's numbers</a>).</li>
+    </ol>
+    <div class="why"><b>Why was the analysis plan written before the campaign?</b> With 162 configurations
+      and many statistics to choose from, something would come out "significant" by luck, and it is human to
+      prefer the test that does. The plan (<code>docs/adr/0037-analysis-plan.md</code>, ADR 0037) fixed the
+      tests, the 10 primary contrasts and the exclusions first. A new analysis is welcome, but it is
+      exploratory until a plan says otherwise (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>).</div>
+
+    <h2 id="hotpath">Touching the measured code</h2>
+    <p>The timed region (<code>bench/src/measurement/</code>), the workload kernels and the checksum are the
+      experiment itself. Changing them is allowed, with a record:</p>
+    <ol class="steps">
+      <li><b>Write the ADR first</b>: what changes, why, and what it could do to the comparison.</li>
+      <li><b>Run the codegen diff</b>: <code>bash scripts/codegen_diff.sh [BASE_REF]</code> builds the base
+        and your tree at the same path, every variant, and reports which functions' machine code differ.
+        Put the list of hot functions that changed in the ADR.</li>
+      <li><b>Neutral?</b> If no hot function changed, it is a readability refactor and the build stays the
+        same (ADR 0062).</li>
+      <li><b>Not neutral?</b> It is a new build: tag it (<code>measured/v3</code>), and every campaign to be
+        compared with another must be re-run on it. The v2 build re-ran 8100 exploratory runs and the main
+        4860 for this reason (ADR 0069).</li>
+    </ol>
+    <div class="why"><b>Why so careful about a few instructions?</b> Because the study's differences are a
+      few percent, and the layout of the code in memory alone moves times by that much. Mytkowicz and
+      others showed in 2009 that changing the link order or an environment variable can swing a benchmark more
+      than the optimization being tested. A one-line change in the loop is a change to the experiment, and
+      the only honest way to keep comparing is to re-measure everything on the new build.</div>
+    <div class="remember"><b>What to remember.</b> Raw data is read-only, tables are disposable, the timed code
+      is the experiment. Add a workload through the trait and the two name lists; add a campaign through a
+      spec file; add an analysis through a command that reuses the plan's statistics. When in doubt, write
+      the ADR.</div>
+    <p class="src" data-files="CLAUDE.md, scripts/codegen_diff.sh, docs/adr/0062-bench-refactor-codegen-neutral.md, docs/adr/0069-v2-build.md, docs/adr/0037-analysis-plan.md, harness/campaign/workload.py, harness/browser_check/cases.py"></p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // nothing page-specific
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

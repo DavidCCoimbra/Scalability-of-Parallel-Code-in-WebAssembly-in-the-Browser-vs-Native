@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - Runs, warm-up and order</title>
+<meta name="description" content="Why the run, not the iteration, is what we count; why each run warms up first; why 30 runs of 10 iterations; why the runs are shuffled; and the empty parallel regions timed inside every run.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .strip text { font-family: var(--sans); fill: var(--muted); font-size: 11px; }
+  .strip .axis { stroke: var(--edge); stroke-width: 1; }
+  .layers { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .layers .card h3 { margin: 0 0 4px; font-size: 1rem; }
+  .layers .card p { font-size: var(--fs-sm); margin: 3px 0; }
+  .figure .lbl { font-size: 11px; fill: var(--muted); }
+</style>
+</head>
+<body data-page="protocol">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="harness.html">From make to a CSV row</a></li><li><a href="reading.html">Reading the numbers</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <p class="kicker">Method · 3 of 5</p>
+    <h1>Runs, warm-up and order</h1>
+
+    <p class="lead">Timing a program once tells you very little: the next time it will take a different
+      time (<a href="measuring.html">Measuring time: why one run is not enough</a>). This page is the set of
+      rules that decide <b>how many times</b> to measure, <b>which</b> measurements to keep, and <b>in what
+      order</b> to take them, so that the numbers mean what we say they mean.</p>
+
+    <div class="oneliner"><b>In one sentence:</b> repeat whole program starts, not just loops inside one
+      program; throw away the first iterations of each; take 30 starts per configuration; and shuffle all the
+      starts of all three environments together, so that a slowly changing machine cannot favour one of
+      them.</div>
+
+    <h2 id="unit">The run is the unit</h2>
+    <p>Inside one run, the workload is timed 10 times in a row. Those 10 times mostly agree. It is tempting to
+      treat them as 10 measurements. They are not, and understanding why is the key to this whole page.</p>
+    <div class="layers">
+      <div class="card"><h3>Iterations, inside one run</h3><p>Same process, same compiled code, same memory
+        layout, warm caches. Everything a program start decides, these 10 share. If the start happened to be a
+        slow one, all 10 are slow together. They are 10 looks at <b>one</b> situation.</p></div>
+      <div class="card"><h3>Runs, between starts</h3><p>A fresh process or a fresh browser re-draws everything
+        a start decides: which machine code the browser's compiler produced this time, where the buffers
+        landed in memory, which cores the threads got. Each run is a <b>new</b> situation. Only runs are
+        independent (<a href="../adr/0005-fresh-process-per-run.md">ADR 0005</a>).</p></div>
+    </div>
+    <div class="analogy"><b>Picture it.</b> To know how long your commute takes, you would not time it once and
+      then look at your watch 10 times during that one trip. You would make the trip on 30 different days. The
+      10 looks at the watch are iterations; the 30 days are runs.</div>
+    <div class="why"><b>Why does it matter which one we count?</b> Because the number of measurements decides
+      how sure we claim to be. With 30 runs of 10 iterations, counting iterations would say "300 measurements,
+      very sure"; counting runs says "30 measurements, fairly sure". The 300 would be a lie, because the 10
+      inside a run are not 10 pieces of new information. That mistake has a name,
+      <span data-term="pseudo-replication">pseudo-replication</span>, and it is the most common error in
+      benchmark papers (Georges et al. 2007; Kalibera and Jones 2013). The study avoids it by reducing each
+      run to <b>one</b> number first, the <span data-term="median">median</span> of its 10 iterations (the
+      middle one when sorted), and doing every statistic over those 30 numbers.</div>
+    <p>Here are the 30 run values of one configuration, each dot one run (pick a configuration):</p>
+    <div class="card">
+      <div id="strip-seg"></div>
+      <div id="strip" class="strip" style="margin-top:10px"></div>
+      <div class="stats" id="strip-stats"></div>
+    </div>
+    <p class="src" data-files="data/raw/campaign-v3/, analysis/runs.py"></p>
+    <p>For the filter, the 30 runs sit within a few percent of each other. For the atomic histogram at k = 1
+      they spread over about a quarter of their value, and in clusters: how the 8 threads of one particular
+      start happen to take turns on the one hot counter differs from start to start. No number of iterations
+      inside one run could show that spread; only new starts can. That is the whole argument for the run as
+      the unit, drawn.</p>
+    <details class="deeper"><summary>If you already know this: the spread of every summarized configuration</summary>
+      <p>Per configuration: the median of the 30 run values, the smallest and largest, the interquartile range
+        over the median, and the largest over the median.</p>
+      <div id="dist"></div>
+      <p class="src" data-src="campaign-v3-distributions"></p>
+    </details>
+
+    <h2 id="warmup">Warm-up inside the run</h2>
+    <p>The first iterations of a run are slow. In a browser, the engine is still turning the WebAssembly into
+      fast machine code, in stages, while the program already runs
+      (<span data-term="jit-tier-up">tier-up</span>; see <a href="compilers.html#jit">Engines and JIT</a>).
+      Natively, the first pass touches memory that was never used before, and the caches are cold. These
+      iterations are timed, so you can see them in the CSV, but they are not used: they are the
+      <span data-term="warm-up-w">warm-up</span>, W iterations before the 10 measured ones.</p>
+    <div class="why"><b>Why not just skip one iteration?</b> Because how long the start-up effect lasts
+      depends on the workload and on the environment. Firefox kept recompiling one histogram function for
+      dozens of iterations. If W were too small, the measured iterations of that cell would still be slow,
+      and Firefox would look worse than it is. If W were huge, campaigns would take days for nothing. So W was
+      chosen per workload, from pilot runs with no warm-up and 100 iterations: find the iteration where each
+      run settles, take the largest over every environment and thread count, multiply by 1.5 for safety,
+      and never go below 5 (<a href="../adr/0043-warm-up-per-workload.md">ADR 0043</a>). The same W is then
+      used in native, Chrome and Firefox, so the environments compared within a workload get the same
+      procedure. That choice came from pilot data, which is fine for a <i>design decision</i>; pilot data
+      never appears as a result.</div>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>Workload</th><th class="n">W</th><th>What the warm-up pilot saw (2 runs per cell, no warm-up, 100 iterations)</th></tr></thead>
+      <tbody>
+        <tr><td>filter</td><td class="n">15</td><td>The first iteration is the most expensive everywhere, natively too (the first write to the output buffer); steady after 2 or 3.</td></tr>
+        <tr><td>hist-atomic, every k</td><td class="n">5</td><td>Steady after at most 2 iterations; 5 is the floor of the rule.</td></tr>
+        <tr><td>hist-local, k = 1</td><td class="n">71</td><td>Firefox at N = 8 runs about 15 % slower for its first 26 to 47 iterations, consistent with a late tier-up of the hot function.</td></tr>
+        <tr><td>hist-local, k = 4</td><td class="n">21</td><td>Firefox at N = 1 settles after 10 to 20 iterations.</td></tr>
+        <tr><td>hist-local, k = 16 and 256</td><td class="n">15</td><td>The same, a little earlier.</td></tr>
+      </tbody>
+    </table></div>
+    <p class="src" data-files="harness/campaigns/campaign-v3.json, analysis/warmup.py, paper/figures/warmup-n1.pdf, paper/figures/warmup-n8.pdf"></p>
+    <p>Two more things happen before the clock starts. The pool of worker threads is built. And in the
+      browser, the page first waits 3 seconds, the <span data-term="start-delay">start delay</span>.</p>
+    <div class="why"><b>Why wait 3 seconds?</b> A browser keeps doing things of its own for a while after it
+      opens: loading extensions, checking files, warming its own caches. In a pilot, Firefox was still doing
+      that during the first short iterations and made them up to 32 % slower. Three seconds lets the browser
+      finish being a browser before the page starts being a benchmark
+      (<a href="../adr/0048-start-delay.md">ADR 0048</a>).</div>
+    <div class="why"><b>Why is the first browser run of each session thrown away?</b> The first launch of a
+      browser after the machine was prepared is much slower than every later one (likely because its files
+      are read from disk for the first time). If it counted, one run of one configuration would be an
+      outlier for a reason that is not the runtime. So that launch is run and discarded, in every session,
+      and the first <i>counted</i> run is like all the others (<span data-term="discarded-first-launch">discarded
+      first launch</span>, <a href="../adr/0034-campaign-orchestrator.md">ADR 0034</a>,
+      <a href="../adr/0040-campaign-enforces-the-environment.md">ADR 0040</a>).</div>
+
+    <h2 id="thirty">30 runs, 10 iterations</h2>
+    <p>Each configuration (one environment, one workload, one N) is measured by 30 runs, each with 10 measured
+      iterations (<a href="../adr/0047-runs-and-iterations.md">ADR 0047</a>). The main campaign is 3
+      environments, 9 workload settings and 6 thread counts (N in {1, 2, 4, 6, 7, 8}), times 30: 4860 runs.</p>
+    <div class="why"><b>Why 30, and not 5 or 100?</b> More runs make the estimate more precise, but each one
+      costs machine time, and the gain shrinks: going from 5 to 30 narrows the uncertainty a lot; going from
+      30 to 100 narrows it only a little more. Thirty is the course's rule, and a pilot checked that 30 gives
+      the precision the questions need: the intervals below are within a few percent of the estimate. More
+      iterations <i>per run</i> would not have helped at all, because what varies is between runs, not inside
+      them.</div>
+    <p>Here is the precision those 30 runs bought, for the 10 comparisons that decide the study's answers.
+      The <a href="reading.html#sure">interval</a> is the range the true value is probably in; the half-width
+      is how far its edges are from the estimate, as a percentage. (These are the stricter 99.5 % intervals
+      explained on <a href="reading.html#decisions">Ten decisions, a stricter bar</a>.)</p>
+    <div id="precision"></div>
+    <p class="src" data-src="campaign-v3-contrasts"></p>
+
+    <h2 id="order">Random interleaved order</h2>
+    <p>The 4860 runs took many hours. Over that time, a machine drifts: it warms up, a background job wakes
+      up, memory fragments. Now imagine all the native runs were taken first and all the Firefox runs last.
+      Any slow change of the machine would land on Firefox and not on native, and would look like a
+      difference between the two environments. It would be invisible, and it would be wrong.</p>
+    <div class="why"><b>Why shuffle, and why with a seed?</b> The campaign builds the full list of runs
+      (every environment, workload, N and repetition) and shuffles it once, so native, Chrome and Firefox runs
+      are mixed throughout. Drift still happens, but it now falls on all three alike: it becomes noise, which
+      the intervals account for, instead of a bias, which nothing would catch. The shuffle uses a recorded
+      <span data-term="order-seed">seed</span> (20261109 for the main campaign), so the same order can be
+      rebuilt later: a stopped campaign resumes at exactly the position it stopped, and anyone can reproduce
+      the sequence (<a href="../adr/0034-campaign-orchestrator.md">ADR 0034</a>).</div>
+    <p>After the campaign, the data check looks for drift that slipped through anyway: in each configuration,
+      do the run values trend with the run's position in the order? Three of the 162 configurations showed a
+      trend, about what chance alone would produce, and all three were kept: the one that is a primary cell
+      gives an RQ2 effect of 2.26 over its first 15 runs and 1.94 over its last 15 (from the paper), both far
+      from 1, so the conclusion does not depend on the drift.</p>
+    <details class="deeper"><summary>If you already know this: the plan, the seed and the drift check</summary>
+      <div data-code="harness/campaign/plan.py|def plan(spec: CampaignSpec)|14" data-title="The shuffled plan"></div>
+      <p>The drift check is <span data-term="spearman-s-rho">Spearman's rho</span> between a run's order
+        position and its value, flagged at |rho| above 0.5 with at least 10 runs. With 30 runs and no drift
+        that happens by chance about 0.7 % of the time, so about 1.1 of the 162 configurations are expected
+        (<a href="../adr/0051-foreign-cpu-threshold-and-data-check.md">ADR 0051</a>).</p>
+      <div data-code="data/tables/campaign-v3/campaign-v3-quality.md|Configurations whose valid run values trend|4" data-title="From the data check of the main campaign"></div>
+    </details>
+
+    <h2 id="calibration">Fork-join calibration</h2>
+    <p>Starting a parallel region has a cost of its own: the worker threads must be told there is work, and
+      the thread that asked must wait until all of them are done. That is the
+      <span data-term="fork-join">fork-join</span> cost (<a href="threads.html#forkjoin">Fork-join and its
+      cost</a>). To know how big it is, every run times a few parallel regions with <b>nothing</b> inside
+      them, before its warm-up: what remains is the pure price of starting and joining
+      (<a href="../adr/0030-fork-join-calibration.md">ADR 0030</a>).</p>
+    <div class="why"><b>Why measure it at all, if the workload's time already includes it?</b> Because
+      without a separate number we could not tell a slow workload from a slow start. If the browsers scale
+      worse on small images, is the parallel code slower, or is the fixed cost of each region bigger? The
+      calibration answers that: it is the fixed cost. Nothing is subtracted from the measured times; the
+      calibration describes, it does not correct.</div>
+    <p>Two kinds of sample, 20 of each in every run:</p>
+    <ul>
+      <li><b>warm</b>: back to back, so the workers are still awake and looking for work;</li>
+      <li><b>cold</b>: each after a pause at least as long as the workload's checksum, so the workers have gone
+        to sleep, as they have before every measured iteration. Cold minus warm is the cost of waking them.</li>
+    </ul>
+    <p>The warm one, as the median over runs of each run's median of its 20 samples, in microseconds
+      (millionths of a second):</p>
+    <div id="fj-table"></div>
+    <div id="fj-bars"></div>
+    <p class="src" data-files="data/raw/campaign-v3/, bench/src/calibration.rs, scripts/explainer_data.py"></p>
+    <p>At N = 8 the browsers pay about 110 µs (Chrome) and 60 µs (Firefox) against 8.8 µs natively. Against
+      a filter iteration of several milliseconds that is nothing; against a small parallel region it is
+      everything. That is the subject of <a href="granularity.html">When parallelism pays</a>.</p>
+    <details class="deeper"><summary>If you already know this: the step at N = 8, the clock ticks and the code</summary>
+      <p>All three environments step up at N = 8, likely because the coordinating thread then shares the 8
+        cores with N workers. Below N = 8 the browser values are one or two ticks of their coarse clocks
+        (<span data-term="performance-now">performance.now()</span> steps by 5 µs in Chrome and 20 µs in
+        Firefox), so a 0 there means "under one tick", not free.</p>
+      <div data-code="bench/src/calibration.rs|pub fn calibrate_probes|12" data-title="The calibration inside every run"></div>
+    </details>
+
+    <div class="remember"><b>What to remember.</b> One number per run, 30 runs per configuration, the first
+      iterations of each run thrown away, and all the runs of all three environments shuffled together. Each
+      rule exists because without it the numbers would look just as precise and be wrong.</div>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var el = UI.el, $ = UI.$, D = UI.D, fmt = UI.fmt;
+  var ENV_NAME = { native: "Native", chrome: "Chrome", firefox: "Firefox" };
+
+  // --- strip of the 30 run values ---------------------------------------------------------------
+  var M = D.runMedians || {};
+  var CONFIGS = [
+    { value: "filter-noise-n8", label: "filter, N = 8" },
+    { value: "filter-noise-n1", label: "filter, N = 1" },
+    { value: "hist-atomic-k1-n8", label: "atomic, k = 1, N = 8" }
+  ];
+  function geo(xs) { return Math.exp(xs.reduce(function (s, x) { return s + Math.log(x); }, 0) / xs.length); }
+  function drawStrip(config) {
+    var rows = ["native", "chrome", "firefox"].map(function (e) { return { env: e, xs: M[e + "-" + config] || [] }; });
+    var all = rows.reduce(function (a, r) { return a.concat(r.xs); }, []);
+    if (!all.length) { $("#strip").textContent = "no data"; return; }
+    var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all), pad = (hi - lo) * 0.05 || 1;
+    lo -= pad; hi += pad;
+    var W = 760, x0 = 80, span = W - x0 - 20;
+    function x(v) { return x0 + (v - lo) / (hi - lo) * span; }
+    var svg = '<svg viewBox="0 0 ' + W + ' 150" role="img" aria-label="The 30 per-run medians per environment">';
+    rows.forEach(function (r, i) {
+      var y = 24 + i * 38;
+      svg += '<line class="axis" x1="' + x0 + '" x2="' + (W - 20) + '" y1="' + y + '" y2="' + y + '"/>';
+      svg += '<text x="0" y="' + (y + 4) + '">' + ENV_NAME[r.env] + '</text>';
+      r.xs.forEach(function (v) { svg += '<circle cx="' + x(v).toFixed(1) + '" cy="' + y + '" r="4.5" style="fill:var(--' + r.env + ');opacity:0.65"><title>' + fmt(v, 3) + ' ms</title></circle>'; });
+    });
+    var ticks = 5;
+    for (var t = 0; t <= ticks; t++) {
+      var v = lo + (hi - lo) * t / ticks;
+      svg += '<text x="' + x(v) + '" y="140" text-anchor="middle">' + fmt(v, v < 10 ? 2 : v < 100 ? 1 : 0) + ' ms</text>';
+    }
+    $("#strip").innerHTML = svg + "</svg>";
+    var stats = $("#strip-stats");
+    stats.innerHTML = "";
+    rows.forEach(function (r) {
+      if (!r.xs.length) return;
+      var g = geo(r.xs), min = Math.min.apply(null, r.xs), max = Math.max.apply(null, r.xs);
+      stats.appendChild(el("div", { class: "stat" }, [
+        el("div", { class: "v " + r.env + "-ink", text: fmt(g, g < 100 ? 3 : 1) + " ms" }),
+        el("div", { class: "k", text: ENV_NAME[r.env] + ": geometric mean of " + r.xs.length + " runs; the dots span " + fmt(100 * (max - min) / g, 1) + " % of it" })
+      ]));
+    });
+  }
+  UI.segmented($("#strip-seg"), CONFIGS, drawStrip);
+
+  // --- distributions ------------------------------------------------------------------------------
+  $("#dist").appendChild(UI.table(UI.rows("campaign-v3-distributions"), [
+    { label: "Environment", value: function (r) { return el("span", { class: r.environment + "-ink", text: ENV_NAME[r.environment] }); } },
+    { label: "Workload", value: function (r) { return r.workload + (r.k !== "" ? ", k = " + r.k : ""); } },
+    { label: "N", key: "threads", num: true },
+    { label: "Median (ms)", value: function (r) { return fmt(r.median_ms, 3); }, num: true },
+    { label: "Min", value: function (r) { return fmt(r.min_ms, 3); }, num: true },
+    { label: "Max", value: function (r) { return fmt(r.max_ms, 3); }, num: true },
+    { label: "IQR / median", value: function (r) { return fmt(100 * r.iqr_over_median, 2) + " %"; }, num: true },
+    { label: "Max / median", value: function (r) { return fmt(r.max_over_median, 3); }, num: true }
+  ]));
+
+  // --- precision of the primary contrasts --------------------------------------------------------------
+  var primary = UI.rows("campaign-v3-contrasts", { primary: "yes" });
+  $("#precision").appendChild(UI.table(primary, [
+    { label: "Question", key: "question" },
+    { label: "Browser", value: function (r) { return el("span", { class: r.environment + "-ink", text: ENV_NAME[r.environment] }); } },
+    { label: "Workload", value: function (r) { return r.workload + (r.k !== "" ? ", k = " + r.k : ""); } },
+    { label: "Effect", value: function (r) { return fmt(r.effect, 3); }, num: true },
+    { label: "99.5 % interval", value: function (r) { return "[" + fmt(r.primary_low, 3) + ", " + fmt(r.primary_high, 3) + "]"; }, num: true },
+    { label: "Half-width", value: function (r) { return "±" + fmt(100 * (r.primary_high - r.primary_low) / 2 / r.effect, 1) + " %"; }, num: true }
+  ]));
+
+  // --- fork-join -------------------------------------------------------------------------------------------
+  var FJ = (D.forkJoin || []).filter(function (r) { return r.probe === "broadcast"; });
+  var Ns = [1, 2, 4, 6, 7, 8];
+  function fj(env, n) { var r = FJ.filter(function (x) { return x.environment === env && x.threads === n; })[0]; return r ? r.median_us : null; }
+  $("#fj-table").appendChild(UI.table(["native", "chrome", "firefox"].map(function (e) { return { env: e }; }), [
+    { label: "Environment", value: function (r) { return el("span", { class: r.env + "-ink", text: ENV_NAME[r.env] }); } }
+  ].concat(Ns.map(function (n) {
+    return { label: "N = " + n, value: function (r) { return fmt(fj(r.env, n), 1); }, num: true };
+  }))));
+  $("#fj-bars").appendChild(UI.bars([{ label: "Warm broadcast, N = 8", values: ["native", "chrome", "firefox"].map(function (e) {
+    return { name: ENV_NAME[e], label: ENV_NAME[e], value: fj(e, 8), cls: e };
+  }) }], { digits: 1, unit: " µs" }));
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

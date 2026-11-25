@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - RQ2: synchronization</title>
+<meta name="description" content="How much shared atomic counters widen or narrow the gap between the browser and native, worked with the real numbers first, then the four contention levels and the ten tests.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .chart { width: 100%; height: auto; display: block; }
+  .chart text { font-family: var(--sans); fill: var(--muted); font-size: 11px; }
+  .chart .axis { stroke: var(--edge); }
+  .chart .ideal { stroke: var(--faint); stroke-dasharray: 4 4; fill: none; }
+  .controls-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 10px 0; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+  .fig text { font-family: var(--sans); font-size: 12px; fill: var(--body); }
+  .fig .box { fill: var(--panel); stroke: var(--edge); }
+  .fig .hot { fill: var(--chrome-soft); stroke: var(--chrome); }
+  .fig .cool { fill: var(--native-soft); stroke: var(--native); }
+  .fig .arrow { stroke: var(--muted); fill: none; marker-end: url(#ah); }
+
+</style>
+</head>
+<body data-page="rq2">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+<p class="kicker">Results · 2 of 7</p>
+    <h1>RQ2: synchronization</h1>
+    <p class="lead">The second question: when threads have to agree on something, does the browser pay more for that
+      agreement than native code does? The histogram is built twice from the same pixels, once with a shared tally
+      that every thread adds to (<b>atomic</b> counters), once with a private tally per piece of work merged at the
+      end (<b>local</b> counters, nothing shared). The difference between the two is the price of sharing.</p>
+    <div class="oneliner"><b>In one sentence:</b> sharing costs Chrome more than it costs native code when every
+      thread hits the same few counters, and less when the sharing is spread over many counters; Firefox never pays
+      more than native.</div>
+
+    <h2 id="metric">The metric, with the real numbers</h2>
+    <p>Two runtimes cannot be compared by the atomic histogram's time alone: the browser is already slower at
+      everything (<a href="rq1.html#ratio">Browser over native</a>). So the study asks a sharper question in three
+      steps, here with the measured times at N = 8 and k = 1 (every pixel adds to <i>one</i> counter):</p>
+    <div id="w-worked"></div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+    <ol>
+      <li><b>Inside native:</b> how many times slower is sharing than not sharing? Atomic time divided by local
+        time, <span id="w-nat-ratio"></span> times.</li>
+      <li><b>Inside Chrome:</b> the same division, <span id="w-chr-ratio"></span> times.</li>
+      <li><b>Chrome's price over native's price:</b> <span id="w-chr-eff"></span>. That number is the answer for
+        this cell: <b>1 would mean Chrome pays for sharing exactly what native pays; 2 means twice as much.</b></li>
+    </ol>
+    <div class="why"><b>Why a ratio of a ratio, and not just "Chrome's atomic histogram is slower"?</b> Because it is
+      slower at the local histogram too. If we compared atomic times directly, we would count the browser's general
+      slowness as a cost of sharing, and conclude that sharing hurts the browser even when it does not. Dividing by
+      each runtime's own no-sharing time first cancels that out: what remains is the price of sharing alone. See
+      <a href="ratios.html#ratioofratios">A ratio of ratios</a>, and ADR 0026.</div>
+    <p>Now the same three steps at every N and every k. <span data-term="k">k</span> is how many different
+      counters the pixels are spread over: k = 1 is everyone on one counter, k = 256 is spread out
+      (<a href="caches.html#contention">Contention</a>).</p>
+    <div class="controls-row"><span class="muted">k:</span><span id="w-k"></span></div>
+    <div class="grid two">
+      <div class="card"><h3 style="font-size:1rem">Step 1 and 2: atomic time / local time, per runtime</h3><div id="w-ratio"></div></div>
+      <div class="card"><h3 style="font-size:1rem">Step 3: browser's price / native's price</h3><div id="w-effect"></div></div>
+    </div>
+    <p class="src" data-src="campaign-v3-scaling, campaign-v3-contrasts"></p>
+    <p>Left: at k = 1 sharing makes the histogram tens of times slower with 8 threads, in <i>every</i> runtime;
+      that is the hardware, not the browser (<a href="caches.html">Contention and padding</a>). Right: the
+      comparison RQ2 is about. Above the dashed line at 1, the browser pays more than native for sharing; below,
+      less. The band is the 95% interval.</p>
+    <div class="def"><b>Shared atomics do not scale anywhere.</b> At k = 1 to 16 the atomic histogram is slower with 8
+      threads than with one, in every runtime (speedups below 1). Contention is the same hardware problem natively
+      and in the browser; RQ2 asks only whether the browser makes it worse.</div>
+    <div id="w-speedups"></div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+    <details class="deeper"><summary>If you already know this: the metric as the paper writes it</summary>
+      <p>For each environment, k and N: r = log T<sub>atomic</sub> - log T<sub>local</sub>, the price of sharing on a
+        log scale. Then <span data-term="r-delta-r">Δr</span> = r<sub>browser</sub> - r<sub>native</sub>, and the
+        guide shows exp(Δr), the ratio of ratios above. The log form makes the two ratios subtract, keeps 2x and
+        0.5x symmetric, and matches the geometric means the times are summarized with
+        (<a href="stats.html#rq2metric">The RQ2 metric</a>, ADR 0026). The left chart above is on a log scale for the
+        same reason.</p>
+    </details>
+
+    <h2 id="primary">The 10 primary contrasts</h2>
+    <p>Before any data was collected, the study named the ten comparisons that would decide the answers
+      (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>): the filter's speedup ratio for RQ1, one
+      per browser, and the "price over native's price" at N = 8 for RQ2, one per browser and per k. Here they are,
+      with the decision each one reached:</p>
+    <div id="w-primary-plain"></div>
+    <p class="src" data-src="campaign-v3-contrasts"></p>
+    <p>"Different from native" means the interval does not contain 1 after the correction for testing ten things at
+      once. Chrome is different at every k: worse at k = 1, 4 and 16, better at 256. Firefox is never worse: no detectable difference at k = 1, and cheaper than native from k = 4 on.</p> <div class="def"><b>The same ten decisions on two builds.</b> The study was first measured on an earlier build, <code>measured/v2</code>, and measured again on <code>measured/v3</code> with every campaign repeated (<a href="session.html">The session of a build</a>). The ten contrasts are rejected or not rejected exactly as before, with effects of the same sign. A result that comes back when everything is run again is worth more than one seen once.</div>
+    <div class="stats" id="w-primary-stats"></div>
+    <details class="deeper"><summary>If you already know this: the full table, Holm, Cliff's δ and the pairing check</summary>
+      <p>Fixed in the analysis plan (ADR 0037): at N = 8, the filter's speedup ratio for RQ1 (2 contrasts) and exp(Δr)
+        for each browser and each k for RQ2 (8 contrasts). They are tested together with bootstrap p-values and
+        <span data-term="holm">Holm</span> at α = 0.05, and shown with 99.5% (<span data-term="bonferroni">Bonferroni</span>)
+        intervals.</p>
+      <div id="w-primary"></div>
+      <p class="src" data-src="campaign-v3-contrasts, campaign-v3-robustness"></p>
+      <p>As a robustness check, Mann-Whitney U with <span data-term="cliff-s-delta">Cliff's δ</span> compares the
+        per-run atomic/local ratios of the browser and native. It reaches the same Holm decision as the bootstrap for all 10 contrasts; the last column is the share of 1000 random pairings of runs that give the same decision (only Chrome's filter falls below 1, at 0.999). The plan's three sensitivity checks (per-run mean, median centre, no exclusion by foreign CPU time) keep all 10 decisions too (<code>campaign-v3-sensitivity.csv</code>). <a href="stats.html#robust">Mann-Whitney and Cliff's delta</a>.</p>
+    </details>
+
+    <h2 id="n1">Already at N = 1</h2>
+    <p>Here is a clue to where Chrome's extra cost comes from. With one thread there is nobody to share with, so
+      the price of "sharing" should be the same everywhere. It is not:</p>
+    <div class="card"><div id="w-n1"></div></div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+    <p>At k = 1 the atomic histogram costs Chrome <span id="w-n1-chr"></span> times its local histogram, against
+      <span id="w-n1-nat"></span> times natively, with a single thread. So part of Chrome's extra cost is not about threads fighting at all: it is the atomic operation itself, which Chrome's engine turns into slower machine code. The exploratory <a href="extras.html#private">private atomics</a> are consistent with it with no sharing at all, and <a href="why.html">Why Chrome</a> shows the code and the two tests that pin the cause down.</p>
+
+    <h2 id="answer">The answer to RQ2</h2>
+    <div id="w-answer"></div>
+    <p class="src" data-src="campaign-v3-contrasts"></p>
+    <p><b>Synchronization changes the gap, and how depends on the engine.</b> Relative to the no-sharing control,
+      shared atomics cost Chrome 1.4 to 2.3 times what they cost natively when the sharing is concentrated on a few counters (k = 1 to 16), and 0.42 times when it is spread over 256 counters, where Chrome's atomic histogram even scales (speedup 1.96, against native's 0.92 and Firefox's 0.97). Firefox is never worse than native: no detectable difference at k = 1, cheaper from k = 4 on.</p> <p>Two things the number hides, both shown by its two factors below. Firefox's values under 1 at k = 16 and 256 do not come from cheaper atomics: its atomic times are the native ones, and its <i>local</i> histogram scales more than native's, which makes the denominator smaller (<a href="explains.html#q8">question 8</a>). And Chrome's effect in both directions follows one thing, the instructions its optimizing compiler emits for the add (<a href="why.html#probe">the probe</a>).</p> <div id="w-factors"></div> <p class="src" data-src="campaign-v3-rq2-decomposition"></p>
+    <div class="remember"><b>What to remember.</b> Sharing between threads is expensive everywhere. Chrome pays more than twice native's price when everyone hits the same counter, and less than half when the sharing is spread out.
+      Firefox pays what native pays. The reason is the machine code each engine produces for the atomic add: the
+      next page.</div>
+    <details class="deeper"><summary>If you already know this: why memory order is not the explanation</summary>
+      <p>WASM atomics are always sequentially consistent, which a reader may suspect as the cause. It is not: on x86
+        a locked read-modify-write costs about the same whatever its ordering, so <code>Relaxed</code> and
+        <code>SeqCst</code> compile to the same instruction on these targets (<a href="atomics.html#order">Memory
+        order, for the record</a>). The reason is the code each engine generates around the operation.</p>
+    </details>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // lineChart(series, opts): inline SVG lines with optional CI bands.
+  // series: [{name, cls, points: [{x, y, lo, hi}]}]; opts: {xs, ymin, ymax, log, ideal, ylabel, xlabel, height, ref}
+  function lineChart(series, opts) {
+    opts = opts || {};
+    var W = 640, H = opts.height || 300, L = 48, R = 14, T = 14, B = 38;
+    var xs = opts.xs, all = [];
+    series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.lo != null ? p.lo : p.y, p.hi != null ? p.hi : p.y); }); });
+    var ymin = opts.ymin != null ? opts.ymin : Math.min.apply(null, all);
+    var ymax = opts.ymax != null ? opts.ymax : Math.max.apply(null, all);
+    var log = !!opts.log;
+    function fy(v) {
+      var a = log ? Math.log(ymin) : ymin, b = log ? Math.log(ymax) : ymax, t = log ? Math.log(v) : v;
+      return T + (H - T - B) * (1 - (t - a) / (b - a));
+    }
+    var xmin = xs[0], xmax = xs[xs.length - 1];
+    function fx(v) { return L + (W - L - R) * (v - xmin) / (xmax - xmin || 1); }
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (opts.label || "chart") + '">';
+    var ticks = opts.yticks || (function () {
+      var out = [], n = 5; for (var i = 0; i <= n; i++) { var v = log ? Math.exp(Math.log(ymin) + (Math.log(ymax) - Math.log(ymin)) * i / n) : ymin + (ymax - ymin) * i / n; out.push(v); } return out;
+    })();
+    ticks.forEach(function (v) {
+      svg += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(v) + '" y2="' + fy(v) + '" stroke-opacity="0.6"/>';
+      svg += '<text x="' + (L - 6) + '" y="' + (fy(v) + 4) + '" text-anchor="end">' + (v === 0 ? "0" : UI.fmt(v, v >= 10 ? 0 : v >= 1 ? 1 : 2)) + '</text>';
+    });
+    xs.forEach(function (v) { svg += '<text x="' + fx(v) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + (opts.xfmt ? opts.xfmt(v) : v) + '</text>'; });
+    if (opts.xlabel) svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + opts.xlabel + '</text>';
+    if (opts.ylabel) svg += '<text x="12" y="' + ((T + H - B) / 2) + '" text-anchor="middle" transform="rotate(-90 12 ' + ((T + H - B) / 2) + ')">' + opts.ylabel + '</text>';
+    if (opts.ideal) svg += '<path class="ideal" d="M' + fx(xmin) + ' ' + fy(Math.max(ymin, xmin)) + ' L' + fx(Math.min(xmax, ymax)) + ' ' + fy(Math.min(xmax, ymax)) + '"/>';
+    if (opts.ref != null) svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(opts.ref) + '" y2="' + fy(opts.ref) + '" stroke="var(--faint)" stroke-dasharray="4 4"/>';
+    series.forEach(function (s) {
+      var pts = s.points.filter(function (p) { return p.y != null; });
+      if (!pts.length) return;
+      var band = pts.filter(function (p) { return p.lo != null; });
+      if (band.length) {
+        var d = band.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.hi); }).join(" ") + " " +
+          band.slice().reverse().map(function (p) { return "L" + fx(p.x) + " " + fy(p.lo); }).join(" ") + " Z";
+        svg += '<path d="' + d + '" fill="var(--' + s.cls + ')" fill-opacity="0.15" stroke="none"/>';
+      }
+      svg += '<path d="' + pts.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.y); }).join(" ") + '" fill="none" stroke="var(--' + s.cls + ')" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="6 4"' : '') + '/>';
+      pts.forEach(function (p) {
+        svg += '<circle cx="' + fx(p.x) + '" cy="' + fy(p.y) + '" r="3.2" fill="var(--' + s.cls + ')"><title>' + s.name + ', ' + (opts.xfmt ? opts.xfmt(p.x) : p.x) + ': ' + UI.fmt(p.y, 3) + (p.lo != null ? ' [' + UI.fmt(p.lo, 3) + ', ' + UI.fmt(p.hi, 3) + ']' : '') + '</title></circle>';
+      });
+    });
+    var wrap = UI.el("div");
+    wrap.innerHTML = svg + "</svg>";
+    var legend = UI.el("div", { class: "legend-row" });
+    series.forEach(function (s) { legend.appendChild(UI.el("span", { class: "chip " + s.cls, text: s.name })); });
+    if (opts.ideal) legend.appendChild(UI.el("span", { class: "chip", text: "dashed: ideal" }));
+    wrap.appendChild(legend);
+    return wrap;
+  }
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+  var $ = UI.$, el = UI.el;
+  var KS = [1, 4, 16, 256];
+  function T(env, wl, k, n) { var r = UI.row("campaign-v3-scaling", { environment: env, workload: wl, k: k, threads: n }); return r ? r.center_ns : null; }
+  function ratio(env, k, n) { var a = T(env, "hist-atomic", k, n), l = T(env, "hist-local", k, n); return a && l ? a / l : null; }
+  function ms(v) { return UI.fmt(v / 1e6, 1) + " ms"; }
+
+  // The worked example: the four real times at N = 8, k = 1.
+  var natR = ratio("native", 1, 8), chrR = ratio("chrome", 1, 8);
+  $("#w-worked").appendChild(UI.table([
+    { what: "Atomic histogram (shared tally)", native: T("native", "hist-atomic", 1, 8), chrome: T("chrome", "hist-atomic", 1, 8) },
+    { what: "Local histogram (nothing shared)", native: T("native", "hist-local", 1, 8), chrome: T("chrome", "hist-local", 1, 8) },
+    { what: "Price of sharing: atomic / local", native: natR, chrome: chrR, ratio: true }
+  ], [
+    { label: "N = 8, k = 1", key: "what" },
+    { label: "Native", num: true, value: function (r) { return r.ratio ? UI.fmt(r.native, 1) + "×" : ms(r.native); } },
+    { label: "Chrome", num: true, value: function (r) { return r.ratio ? UI.fmt(r.chrome, 1) + "×" : ms(r.chrome); } }
+  ]));
+  $("#w-nat-ratio").textContent = UI.fmt(natR, 1);
+  $("#w-chr-ratio").textContent = UI.fmt(chrR, 1);
+  $("#w-chr-eff").textContent = UI.fmt(chrR, 1) + " / " + UI.fmt(natR, 1) + " = " + UI.fmt(chrR / natR, 2);
+
+  UI.segmented($("#w-k"), KS.map(function (k) { return { value: k, label: "k = " + k }; }), function (k) {
+    var h1 = $("#w-ratio"), h2 = $("#w-effect");
+    h1.innerHTML = ""; h2.innerHTML = "";
+    var all = [];
+    var s1 = ENVS.map(function (e) {
+      return { name: e[1], cls: e[0], points: THREADS.map(function (n) { var v = ratio(e[0], k, n); all.push(v); return { x: n, y: v }; }) };
+    });
+    var lo = Math.min.apply(null, all) * 0.8, hi = Math.max.apply(null, all) * 1.25;
+    h1.appendChild(lineChart(s1, { xs: THREADS, ymin: lo, ymax: hi, log: true, xlabel: "threads N", ylabel: "atomic / local (log scale)", label: "Atomic over local time, k = " + k }));
+    var effs = [];
+    var s2 = ["chrome", "firefox"].map(function (env) {
+      return { name: envName(env), cls: env, points: THREADS.map(function (n) {
+        var r = UI.row("campaign-v3-contrasts", { question: "RQ2", environment: env, k: k, threads: n });
+        if (r) effs.push(r.low, r.high);
+        return r ? { x: n, y: r.effect, lo: r.low, hi: r.high } : { x: n, y: null };
+      }) };
+    });
+    effs.push(1);
+    h2.appendChild(lineChart(s2, { xs: THREADS, ymin: Math.min.apply(null, effs) * 0.9, ymax: Math.max.apply(null, effs) * 1.1, log: true, ref: 1, xlabel: "threads N", ylabel: "browser price / native price", label: "exp(delta r) against N, k = " + k }));
+  });
+
+  $("#w-speedups").appendChild(UI.table(KS.map(function (k) {
+    var o = { k: k };
+    ENVS.forEach(function (e) { var r = UI.row("campaign-v3-scaling", { environment: e[0], workload: "hist-atomic", k: k, threads: 8 }); o[e[0]] = r ? UI.fmt(r.speedup, 2) : "-"; });
+    return o;
+  }), [
+    { label: "Atomic histogram, speedup at N = 8", value: function (r) { return "k = " + r.k; } },
+    { label: "Native", key: "native", num: true }, { label: "Chrome", key: "chrome", num: true }, { label: "Firefox", key: "firefox", num: true }
+  ]));
+
+  var prim = UI.rows("campaign-v3-contrasts", { primary: "yes" });
+  function verdict(r) {
+    if (r.rejected !== "yes") return "no detectable difference";
+    if (r.question === "RQ1") return r.effect > 1 ? "scales better than native" : "scales worse than native";
+    return r.effect > 1 ? "pays more than native" : "pays less than native";
+  }
+  $("#w-primary-plain").appendChild(UI.table(prim, [
+    { label: "Question", key: "question" },
+    { label: "Browser", value: function (r) { return envName(r.environment); } },
+    { label: "Cell", value: function (r) { return r.workload === "filter" ? "filter speedup, N = 8" : "k = " + r.k + ", N = 8"; } },
+    { label: "Browser / native", num: true, value: function (r) { return UI.fmt(r.effect, 2) + "×"; } },
+    { label: "Decision", value: function (r) { var b = el("b", { text: verdict(r) }); b.style.color = r.rejected === "yes" ? (r.effect > 1 && r.question === "RQ2" ? "var(--bad)" : "var(--good)") : "var(--muted)"; return b; } }
+  ]));
+  $("#w-primary").appendChild(UI.table(prim, [
+    { label: "Question", key: "question" },
+    { label: "Browser", value: function (r) { return envName(r.environment); } },
+    { label: "Cell", value: function (r) { return r.workload === "filter" ? "filter" : "k = " + r.k; } },
+    { label: "Effect", num: true, value: function (r) { return UI.fmt(r.effect, 3); } },
+    { label: "99.5% CI", num: true, value: function (r) { return "[" + UI.fmt(r.primary_low, 3) + ", " + UI.fmt(r.primary_high, 3) + "]"; } },
+    { label: "Holm p", num: true, value: function (r) { return UI.fmt(r.holm_p, 3); } },
+    { label: "Rejected", value: function (r) { var b = el("b", { text: r.rejected }); if (r.rejected === "yes") b.style.color = "var(--accent)"; return b; } },
+    { label: "Cliff's δ", num: true, value: function (r) { var q = UI.row("campaign-v3-robustness", { question: r.question, environment: r.environment, k: r.k, threads: 8 }); return q ? UI.fmt(q.cliffs_delta, 2) : "-"; } },
+    { label: "Same decision", num: true, value: function (r) { var q = UI.row("campaign-v3-robustness", { question: r.question, environment: r.environment, k: r.k, threads: 8 }); return q ? Math.round(100 * q.same_decision_share) + "%" : "-"; } }
+  ]));
+  var rej = prim.filter(function (r) { return r.rejected === "yes"; }).length;
+  [[String(prim.length), "comparisons decided in advance"], [String(rej), "show a real difference"], [String(UI.rows("campaign-v3-robustness").filter(function (q) { return q.agree === "yes"; }).length) + " / " + UI.rows("campaign-v3-robustness").length, "confirmed by a second test"]].forEach(function (s) {
+    $("#w-primary-stats").appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: s[0] }), el("div", { class: "k", text: s[1] })]));
+  });
+
+  $("#w-n1").appendChild(UI.bars(KS.map(function (k) {
+    return { label: "k = " + k, values: ENVS.map(function (e) { return { name: e[1], label: e[1], value: ratio(e[0], k, 1), cls: e[0] }; }) };
+  }), { digits: 2, unit: "×" }));
+  $("#w-n1-chr").textContent = UI.fmt(ratio("chrome", 1, 1), 1);
+  $("#w-n1-nat").textContent = UI.fmt(ratio("native", 1, 1), 1);
+
+  $("#w-answer").appendChild(UI.bars(KS.map(function (k) {
+    return { label: "k = " + k, values: ["chrome", "firefox"].map(function (env) {
+      var r = UI.row("campaign-v3-contrasts", { question: "RQ2", environment: env, k: k, threads: 8 });
+      return { name: envName(env), label: envName(env), value: r && r.effect, cls: env };
+    }) };
+  }), { max: 2.4, digits: 2, unit: "× native's price" }));
+
+  // The two factors of each primary RQ2 ratio (ADR 0078): the atomic and the local time, browser over native.
+  (function () {
+    var rows = [];
+    ["chrome", "firefox"].forEach(function (env) {
+      [1, 4, 16, 256].forEach(function (k) {
+        function q(name) { return UI.row("campaign-v3-rq2-decomposition", { environment: env, k: k, threads: 8, quantity: name }); }
+        rows.push({ env: env, k: k, rq2: q("rq2"), atomic: q("atomic"), local: q("local") });
+      });
+    });
+    $("#w-factors").appendChild(UI.table(rows, [
+      { label: "Browser", value: function (r) { return envName(r.env); } },
+      { label: "k", key: "k", num: true },
+      { label: "Atomic time, browser / native", num: true, value: function (r) { return UI.fmt(r.atomic.ratio, 2); } },
+      { label: "Local time, browser / native", num: true, value: function (r) { return UI.fmt(r.local.ratio, 2); } },
+      { label: "The RQ2 number (first / second)", num: true, value: function (r) { return UI.fmt(r.rq2.ratio, 2); } }
+    ]));
+  })();
+
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

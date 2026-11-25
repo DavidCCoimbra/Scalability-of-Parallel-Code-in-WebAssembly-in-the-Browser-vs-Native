@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - Exploratory campaigns</title>
+<meta name="description" content="Five follow-up questions to the main results: is it the instruction or the sharing, does padding matter, does it hold with more work, without SIMD, with slow cores added.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .chart { width: 100%; height: auto; display: block; }
+  .chart text { font-family: var(--sans); fill: var(--muted); font-size: 11px; }
+  .chart .axis { stroke: var(--edge); }
+  .chart .ideal { stroke: var(--faint); stroke-dasharray: 4 4; fill: none; }
+  .controls-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 10px 0; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+  .fig text { font-family: var(--sans); font-size: 12px; fill: var(--body); }
+  .fig .box { fill: var(--panel); stroke: var(--edge); }
+  .fig .hot { fill: var(--chrome-soft); stroke: var(--chrome); }
+  .fig .cool { fill: var(--native-soft); stroke: var(--native); }
+  .fig .arrow { stroke: var(--muted); fill: none; marker-end: url(#ah); }
+
+</style>
+</head>
+<body data-page="extras">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+<p class="kicker">Results · 4 of 7</p>
+    <h1>Exploratory campaigns</h1>
+    <p class="lead">The main campaign answered RQ1 and RQ2 with ten comparisons decided in advance. Those answers raise
+      follow-up questions, and these campaigns ask them. Same build (<code>measured/v3</code>), same protocol, 30 runs
+      per configuration; only the questions are new.</p>
+    <div class="oneliner"><b>In one sentence:</b> part of Chrome's extra cost is the atomic instruction itself even with
+      nothing shared, its advantage at k = 256 needs the padding, and the RQ1 picture holds when the work grows with
+      the threads, when SIMD is removed, and when slow cores are added.</div>
+    <div class="why"><b>Why "exploratory", and why it matters for how you read the numbers.</b> The ten main comparisons
+      were named before any data existed, and tested with a bar raised for testing ten things at once. These were
+      not. If you look at enough numbers, some will look surprising by chance alone, so a result here describes and
+      explains; it does not decide. The intervals are plain 95% ones with no correction
+      (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>).</div>
+
+    <h2 id="questions">Five questions</h2>
+    <ol>
+      <li><b>Is Chrome's extra cost about threads sharing a counter, or about the atomic instruction itself?</b> Give
+        each thread its own counters, so nothing is shared, and see what remains.</li>
+      <li><b>Does the padding between counters matter?</b> Remove it, so counters share cache lines, and see what
+        changes.</li>
+      <li><b>Does the browser keep up when the work grows with the threads?</b> Instead of a fixed image, give each
+        thread the same amount of image (weak scaling).</li>
+      <li><b>Is the browser gap caused by the SIMD instructions?</b> Build the filter without SIMD on both sides, and
+        natively with wider SIMD, and compare the gaps.</li>
+      <li><b>What happens with slow cores added?</b> Let the runtimes use the 16 efficiency cores too, up to 20
+        threads.</li>
+    </ol>
+
+    <h2 id="private">Private and packed atomics</h2>
+    <p><b>Questions 1 and 2.</b> The extras campaign (5400 runs, k = 1 and 256, N as before) adds two variants of the
+      atomic histogram next to the shared and the local ones:</p>
+    <ul>
+      <li><b>private</b>: every thread gets its own padded table of atomic counters, merged at the end. The same atomic
+        instruction runs for every pixel, but no two threads ever touch the same counter. If Chrome still pays extra
+        here, the instruction itself is the cost.</li>
+      <li><b>packed</b>: the shared table without padding, eight 8-byte counters per 64-byte cache line, so counters
+        that are different numbers still share a line (<span data-term="false-sharing">false sharing</span>). If
+        Chrome's advantage at k = 256 disappears here, it depends on the padding.</li>
+    </ul>
+    <div data-code="bench/src/workloads/histogram/extras/private.rs|let own =|3" data-title="Private atomics: each worker adds to its own table"></div>
+    <p><b>Answer 1: it is partly the instruction.</b> Private atomics, with nothing shared, scale like the local
+      control, but still cost Chrome 1.83 to 1.85 times native at k = 1 and 1.08 to 1.09 at k = 256, at every N
+      including N = 1. Firefox matches native. So of Chrome's 2.16 at k = 1 with real sharing, 1.85 is the atomic
+      sequence itself and the rest is the sharing (<a href="why.html#code">the machine code</a>).</p>
+    <p><b>Answer 2: yes, it depends on the padding.</b> Packed counters at k = 256 slow the atomic histogram by 1.18
+      times natively, 1.25 in Firefox and <b>3.45 in Chrome</b>. Chrome's advantage under spread contention needs every
+      counter on its own line.</p>
+    <div class="controls-row"><span class="muted">k:</span><span id="w-k"></span></div>
+    <div id="w-table"></div>
+    <p class="src" data-src="extras-v3-scaling"></p>
+    <div class="controls-row"><span class="muted">Chrome / native time against N:</span><span id="w-variant"></span></div>
+    <div class="card"><div id="w-private"></div></div>
+    <p class="src" data-src="extras-v3-scaling"></p>
+    <details class="deeper"><summary>If you already know this: the reproduction check and the sort</summary>
+      <p>The cells this campaign shares with the primary one reproduce it (time ratios 0.95 to 1.05, geometric mean
+        1.00), which is the control for comparing the two. The campaign also carries a parallel sort as a third kind
+        of workload: it scales similarly in all three (stable 7.8, unstable 6.2 to 6.4 at N = 8), see the table's
+        "sort" tab.</p>
+    </details>
+
+    <h2 id="weak">Weak scaling</h2>
+    <p><b>Question 3.</b> So far every run used the same 8192 x 8192 image however many threads it had (strong
+      scaling). <span data-term="weak-scaling">Weak scaling</span> is the other way to add threads: grow the image
+      with them, 8192 × 1024·N pixels, so each thread always has the same amount of work. Ideally the time then stays
+      the same whatever N is, and the weak efficiency T<sub>1</sub>/T<sub>N</sub> stays at 1 (1080 runs).</p>
+    <div class="controls-row"><span class="muted">Workload:</span><span id="w-weak-wl"></span></div>
+    <div class="card"><div id="w-weak"></div></div>
+    <p class="src" data-src="weak-v3-scaling"></p>
+    <p><b>Answer 3: yes.</b> The filter's weak efficiency at N = 8 is 0.86, 0.85 and 0.91 (native, Chrome, Firefox),
+      the local histogram's 0.99 to 1.00, within 3 points of what strong scaling gave. Browser / native time stays flat
+      in Chrome (1.16 to 1.21) and falls from 1.36 to 1.27 in Firefox: the browser gap does not grow with N here
+      either.</p>
+    <div class="why"><b>Why ask the question twice?</b> Strong scaling can hide a problem: with a fixed image, each
+      thread's share gets smaller as N grows, so a per-thread cost could be masked by the shrinking work. Weak scaling
+      keeps the share fixed. Getting the same answer both ways is what makes RQ1's answer solid.</div>
+
+    <h2 id="simd">SIMD builds</h2>
+    <p><b>Question 4.</b> The filter normally processes several pixels per instruction with 128-bit
+      <span data-term="simd">SIMD</span> on both sides (SSE2 natively, simd128 in WASM). If the browser's SIMD path
+      were worse than native's, that alone could explain the gap. Two more builds changed only this (720 runs):
+      <b>scalar</b> (no SIMD on either side) and native <b>AVX2</b> (256-bit, native only, deliberately breaking
+      the same-flags rule to see the effect of faster code).</p>
+    <div class="controls-row"><span class="muted">Show:</span><span id="w-simd-what"></span></div>
+    <div class="card"><div id="w-simd"></div></div>
+    <p class="src" data-src="simd-v3-variants"></p>
+    <p><b>Answer 4: no, SIMD is not the cause.</b> Without SIMD the filter at N = 1 is 3.8 to 4.9 times slower, and the
+      browser gap is <i>larger</i>, not smaller (Chrome 1.47 to 1.50, Firefox 1.58 to 1.60, flat across N). The gap
+      comes from somewhere else.</p>
+    <details class="deeper"><summary>If you already know this: the faster the code, the worse it scales</summary>
+      <ul>
+        <li>Efficiency at N = 8 rises to 0.97 to 0.98 without SIMD, and drops to 0.73 with AVX2.</li>
+        <li>The excess time T<sub>8</sub> - T<sub>1</sub>/8 grows natively with the code's speed (211, 391 and 728 µs
+          for scalar, baseline and AVX2), as when cores share memory bandwidth. In the browsers it stays about constant
+          (Chrome 546 and 494, Firefox 330 and 316 µs), consistent with a fixed per-iteration overhead, of which
+          fork-join is a fifth to a third.</li>
+      </ul>
+    </details>
+
+    <h2 id="hybrid">P-cores plus E-cores</h2>
+    <p><b>Question 5.</b> The i9-14900KF has, besides the 8 fast cores every other campaign uses, 16 slower
+      <span data-term="e-core">E-cores</span>. This campaign (900 runs) lets the runtimes use the 8 P-cores plus 12
+      E-cores, N up to 20, to see whether work stealing copes with cores of unequal speed in every runtime.</p>
+    <div class="controls-row"><span class="muted">Workload:</span><span id="w-hyb-wl"></span></div>
+    <div class="card"><div id="w-hybrid"></div></div>
+    <p class="src" data-src="hybrid-v3-scaling, campaign-v3-scaling"></p>
+    <p><b>Answer 5: it works in all three.</b> The E-cores gain the filter 10 to 16% in every environment over the
+      main campaign's P-only N = 8, with browser / native 1.16 to 1.35. Work stealing balances unequal cores in all
+      three runtimes.</p>
+    <details class="deeper"><summary>If you already know this: speedups above N on the local histogram</summary>
+      <p>The local histogram at k = 1 reaches speedups above N (Chrome 29.4 at N = 20). That is not
+        <span data-term="superlinear">super-linear</span> parallelism: the single-thread baseline is a store-forwarding
+        chain on one counter (<a href="atomics.html#forwarding">Store forwarding at k = 1</a>), and ADR 0061 traces the
+        excess to that loop running faster per core on an E-core than on a P-core. The evidence is a single-core probe
+        on the earlier build (<code>data/earlier/probes/ecore-workloads.txt</code>), not repeated on <code>measured/v3</code>,
+        so it is given as the likely reason and without numbers.</p>
+    </details>
+    <div class="remember"><b>What to remember.</b> Chrome's atomic add is slow on its own, and its one advantage needs
+      the padding. The RQ1 answer survives three changes of angle: more work with more threads, no SIMD, and slow
+      cores added.</div>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // lineChart(series, opts): inline SVG lines with optional CI bands.
+  // series: [{name, cls, points: [{x, y, lo, hi}]}]; opts: {xs, ymin, ymax, log, ideal, ylabel, xlabel, height, ref}
+  function lineChart(series, opts) {
+    opts = opts || {};
+    var W = 640, H = opts.height || 300, L = 48, R = 14, T = 14, B = 38;
+    var xs = opts.xs, all = [];
+    series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.lo != null ? p.lo : p.y, p.hi != null ? p.hi : p.y); }); });
+    var ymin = opts.ymin != null ? opts.ymin : Math.min.apply(null, all);
+    var ymax = opts.ymax != null ? opts.ymax : Math.max.apply(null, all);
+    var log = !!opts.log;
+    function fy(v) {
+      var a = log ? Math.log(ymin) : ymin, b = log ? Math.log(ymax) : ymax, t = log ? Math.log(v) : v;
+      return T + (H - T - B) * (1 - (t - a) / (b - a));
+    }
+    var xmin = xs[0], xmax = xs[xs.length - 1];
+    function fx(v) { return L + (W - L - R) * (v - xmin) / (xmax - xmin || 1); }
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (opts.label || "chart") + '">';
+    var ticks = opts.yticks || (function () {
+      var out = [], n = 5; for (var i = 0; i <= n; i++) { var v = log ? Math.exp(Math.log(ymin) + (Math.log(ymax) - Math.log(ymin)) * i / n) : ymin + (ymax - ymin) * i / n; out.push(v); } return out;
+    })();
+    ticks.forEach(function (v) {
+      svg += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(v) + '" y2="' + fy(v) + '" stroke-opacity="0.6"/>';
+      svg += '<text x="' + (L - 6) + '" y="' + (fy(v) + 4) + '" text-anchor="end">' + (v === 0 ? "0" : UI.fmt(v, v >= 10 ? 0 : v >= 1 ? 1 : 2)) + '</text>';
+    });
+    xs.forEach(function (v) { svg += '<text x="' + fx(v) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + (opts.xfmt ? opts.xfmt(v) : v) + '</text>'; });
+    if (opts.xlabel) svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + opts.xlabel + '</text>';
+    if (opts.ylabel) svg += '<text x="12" y="' + ((T + H - B) / 2) + '" text-anchor="middle" transform="rotate(-90 12 ' + ((T + H - B) / 2) + ')">' + opts.ylabel + '</text>';
+    if (opts.ideal) svg += '<path class="ideal" d="M' + fx(xmin) + ' ' + fy(Math.max(ymin, xmin)) + ' L' + fx(Math.min(xmax, ymax)) + ' ' + fy(Math.min(xmax, ymax)) + '"/>';
+    if (opts.ref != null) svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(opts.ref) + '" y2="' + fy(opts.ref) + '" stroke="var(--faint)" stroke-dasharray="4 4"/>';
+    series.forEach(function (s) {
+      var pts = s.points.filter(function (p) { return p.y != null; });
+      if (!pts.length) return;
+      var band = pts.filter(function (p) { return p.lo != null; });
+      if (band.length) {
+        var d = band.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.hi); }).join(" ") + " " +
+          band.slice().reverse().map(function (p) { return "L" + fx(p.x) + " " + fy(p.lo); }).join(" ") + " Z";
+        svg += '<path d="' + d + '" fill="var(--' + s.cls + ')" fill-opacity="0.15" stroke="none"/>';
+      }
+      svg += '<path d="' + pts.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.y); }).join(" ") + '" fill="none" stroke="var(--' + s.cls + ')" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="6 4"' : '') + '/>';
+      pts.forEach(function (p) {
+        svg += '<circle cx="' + fx(p.x) + '" cy="' + fy(p.y) + '" r="3.2" fill="var(--' + s.cls + ')"><title>' + s.name + ', ' + (opts.xfmt ? opts.xfmt(p.x) : p.x) + ': ' + UI.fmt(p.y, 3) + (p.lo != null ? ' [' + UI.fmt(p.lo, 3) + ', ' + UI.fmt(p.hi, 3) + ']' : '') + '</title></circle>';
+      });
+    });
+    var wrap = UI.el("div");
+    wrap.innerHTML = svg + "</svg>";
+    var legend = UI.el("div", { class: "legend-row" });
+    series.forEach(function (s) { legend.appendChild(UI.el("span", { class: "chip " + s.cls, text: s.name })); });
+    if (opts.ideal) legend.appendChild(UI.el("span", { class: "chip", text: "dashed: ideal" }));
+    wrap.appendChild(legend);
+    return wrap;
+  }
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+  var $ = UI.$, el = UI.el;
+  function S(env, wl, k, n) { return UI.row("extras-v3-scaling", { environment: env, workload: wl, k: k, threads: n }); }
+  var VARIANTS = [["hist-local", "local"], ["hist-atomic-private", "private"], ["hist-atomic", "shared"], ["hist-atomic-packed", "packed"]];
+
+  UI.segmented($("#w-k"), [{ value: 1, label: "k = 1" }, { value: 256, label: "k = 256" }, { value: "", label: "sort" }], function (k) {
+    var host = $("#w-table"); host.innerHTML = "";
+    var list = k === "" ? [["sort", "sort (stable)"], ["sort-unstable", "sort (unstable)"]] : VARIANTS;
+    host.appendChild(UI.table(list, [
+      { label: "N = 8", value: function (v) { return v[1]; } },
+      { label: "Native S", num: true, value: function (v) { var r = S("native", v[0], k, 8); return UI.fmt(r.speedup, 2); } },
+      { label: "Chrome S", num: true, value: function (v) { var r = S("chrome", v[0], k, 8); return UI.fmt(r.speedup, 2); } },
+      { label: "Chrome T / native", num: true, value: function (v) { return UI.fmt(S("chrome", v[0], k, 8).center_ns / S("native", v[0], k, 8).center_ns, 2); } },
+      { label: "Firefox S", num: true, value: function (v) { var r = S("firefox", v[0], k, 8); return UI.fmt(r.speedup, 2); } },
+      { label: "Firefox T / native", num: true, value: function (v) { return UI.fmt(S("firefox", v[0], k, 8).center_ns / S("native", v[0], k, 8).center_ns, 2); } }
+    ]));
+  });
+
+  UI.segmented($("#w-variant"), [{ value: 1, label: "k = 1" }, { value: 256, label: "k = 256" }], function (k) {
+    var host = $("#w-private"); host.innerHTML = "";
+    var cls = { "hist-local": "native", "hist-atomic-private": "chrome", "hist-atomic": "firefox", "hist-atomic-packed": "copy" };
+    var series = VARIANTS.map(function (v) {
+      return { name: v[1], cls: cls[v[0]], dash: v[0] === "hist-local", points: THREADS.map(function (n) {
+        var c = S("chrome", v[0], k, n), nat = S("native", v[0], k, n);
+        return { x: n, y: c && nat ? c.center_ns / nat.center_ns : null };
+      }) };
+    });
+    var all = []; series.forEach(function (s) { s.points.forEach(function (p) { if (p.y) all.push(p.y); }); }); all.push(1);
+    host.appendChild(lineChart(series, { xs: THREADS, ymin: Math.min.apply(null, all) * 0.9, ymax: Math.max.apply(null, all) * 1.1, log: true, ref: 1, xlabel: "threads N", ylabel: "Chrome / native", label: "Chrome over native time by histogram variant, k = " + k }));
+  });
+
+  UI.segmented($("#w-weak-wl"), [{ value: "filter", label: "Filter" }, { value: "hist-local", label: "Local k = 1" }], function (wl) {
+    var host = $("#w-weak"); host.innerHTML = "";
+    var series = ENVS.map(function (e) {
+      return { name: e[1], cls: e[0], points: THREADS.map(function (n) {
+        var r = UI.row("weak-v3-scaling", { environment: e[0], workload: wl, threads: n });
+        return r ? { x: n, y: r.weak_efficiency, lo: r.weak_efficiency_low, hi: r.weak_efficiency_high } : { x: n, y: null };
+      }) };
+    });
+    host.appendChild(lineChart(series, { xs: THREADS, ymin: 0.7, ymax: 1.05, yticks: [0.7, 0.8, 0.9, 1], ref: 1, xlabel: "threads N", ylabel: "weak efficiency T1/TN", label: "Weak efficiency against N" }));
+  });
+
+  var BUILDS = [["scalar", "scalar"], ["baseline", "SIMD 128 (baseline)"], ["avx2", "AVX2 (native only)"]];
+  function V(b, env, n) { return UI.row("simd-v3-variants", { build: b, environment: env, threads: n }); }
+  UI.segmented($("#w-simd-what"), [{ value: "over_native", label: "browser / native" }, { value: "efficiency", label: "efficiency" }, { value: "excess", label: "excess time T8 - T1/8" }], function (what) {
+    var host = $("#w-simd"); host.innerHTML = "";
+    if (what === "efficiency") {
+      var series = [];
+      BUILDS.forEach(function (b, i) {
+        ENVS.forEach(function (e) {
+          if (!V(b[0], e[0], 1)) return;
+          series.push({ name: e[1] + ", " + b[1], cls: e[0], dash: b[0] === "scalar", points: THREADS.map(function (n) { var r = V(b[0], e[0], n); return { x: n, y: r && r.efficiency }; }) });
+        });
+      });
+      host.appendChild(lineChart(series, { xs: THREADS, ymin: 0.7, ymax: 1.02, yticks: [0.7, 0.8, 0.9, 1], xlabel: "threads N", ylabel: "efficiency", label: "Filter efficiency by build" }));
+      host.appendChild(el("p", { class: "muted", style: "font-size:var(--fs-sm)", text: "Dashed: scalar build. The lowest native line is AVX2." }));
+    } else if (what === "over_native") {
+      host.appendChild(lineChart(["chrome", "firefox"].reduce(function (acc, env) {
+        return acc.concat([["baseline", "SIMD"], ["scalar", "scalar"]].map(function (b) {
+          return { name: envName(env) + ", " + b[1], cls: env, dash: b[0] === "scalar", points: THREADS.map(function (n) { var r = V(b[0], env, n); return { x: n, y: r && r.over_native }; }) };
+        }));
+      }, []), { xs: THREADS, ymin: 1, ymax: 1.7, yticks: [1, 1.2, 1.4, 1.6], xlabel: "threads N", ylabel: "time / native", label: "Browser over native time by build" }));
+      host.appendChild(el("p", { class: "muted", style: "font-size:var(--fs-sm)", text: "Dashed: scalar build, where the browser gap is larger." }));
+    } else {
+      host.appendChild(UI.bars(BUILDS.map(function (b) {
+        return { label: b[1], values: ENVS.filter(function (e) { return V(b[0], e[0], 8); }).map(function (e) { return { name: e[1], label: e[1], value: V(b[0], e[0], 8).excess_ns / 1000, cls: e[0] }; }) };
+      }), { digits: 0, unit: " µs" }));
+    }
+  });
+
+  var HN = [1, 8, 12, 16, 20];
+  UI.segmented($("#w-hyb-wl"), [{ value: "filter", label: "Filter" }, { value: "hist-local", label: "Local k = 1" }], function (wl) {
+    var host = $("#w-hybrid"); host.innerHTML = "";
+    var series = ENVS.map(function (e) {
+      return { name: e[1], cls: e[0], points: HN.map(function (n) {
+        var r = UI.row("hybrid-v3-scaling", { environment: e[0], workload: wl, threads: n });
+        return r ? { x: n, y: r.speedup, lo: r.speedup_low, hi: r.speedup_high } : { x: n, y: null };
+      }) };
+    });
+    var max = wl === "filter" ? 10 : 32;
+    host.appendChild(lineChart(series, { xs: HN, ymin: 0, ymax: max, xlabel: "threads N (above 8: E-cores added)", ylabel: "speedup", label: "Speedup with E-cores" }));
+    if (wl === "filter") {
+      host.appendChild(UI.table(ENVS, [
+        { label: "Filter", value: function (e) { return e[1]; } },
+        { label: "Main campaign N = 8, ms", num: true, value: function (e) { return UI.fmt(UI.row("campaign-v3-scaling", { environment: e[0], workload: "filter", threads: 8 }).center_ns / 1e6, 2); } },
+        { label: "P + E, N = 20, ms", num: true, value: function (e) { return UI.fmt(UI.row("hybrid-v3-scaling", { environment: e[0], workload: "filter", threads: 20 }).center_ns / 1e6, 2); } },
+        { label: "Gain", num: true, value: function (e) { return UI.fmt(UI.row("campaign-v3-scaling", { environment: e[0], workload: "filter", threads: 8 }).center_ns / UI.row("hybrid-v3-scaling", { environment: e[0], workload: "filter", threads: 20 }).center_ns, 3) + "×"; } }
+      ]));
+    }
+  });
+
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - The statistics, in detail</title>
+<meta name="description" content="Every statistic of the analysis with its formula, a live example on the measured/v3 data and the code: speedup and efficiency, the geometric mean, bootstrap intervals, the RQ2 metric, Holm over the primary contrasts, Mann-Whitney and Cliff's delta, and Karp-Flatt.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .ctl { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin-bottom: 12px; }
+  .ctl .lab { font-size: var(--fs-xs); color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; margin-right: 6px; }
+  .eqs { list-style: none; padding: 0; margin: 8px 0; }
+  .eqs li { padding: 6px 0; border-bottom: 1px dashed var(--edge); font-variant-numeric: tabular-nums; }
+  .eqs li:last-child { border-bottom: 0; }
+  .eqs .m { color: var(--muted); font-size: var(--fs-sm); }
+  .formula { font-family: var(--mono, monospace); background: var(--panel-2); border: 1px solid var(--edge); border-radius: 8px; padding: 10px 14px; overflow-x: auto; font-size: var(--fs-sm); white-space: pre; }
+  .flow { font-family: var(--mono, monospace); background: var(--panel); border: 1px solid var(--accent); border-radius: var(--radius); padding: 12px 14px; overflow-x: auto; font-size: var(--fs-sm); white-space: pre; }
+  .flow b { color: var(--accent); }
+</style>
+</head>
+<body data-page="stats">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="reading.html">Reading the numbers</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <p class="kicker">Method · 5 of 5</p>
+    <h1>The statistics, in detail</h1>
+
+    <p class="lead">Every statistic in <code>analysis/</code>, in the order the data flows through them,
+      each with the idea, the formula, a live example on the <code>measured/v3</code> data and the code. If
+      formulas are not your thing, <a href="reading.html">Reading the numbers</a> says the same in words;
+      this page is for checking that the words are true.</p>
+
+    <div class="oneliner"><b>In one sentence:</b> one median per run, a geometric mean per configuration,
+      ratios on a log scale, bootstrap intervals over runs, and a correction for the 10 tests that decide the
+      answers; all of it fixed in an analysis plan before the campaign ran
+      (<code>docs/adr/0037-analysis-plan.md</code>, <a href="../adr/0037-analysis-plan.md">ADR 0037</a>).</div>
+
+    <p>The spine of the page. Every section below is one arrow of it:</p>
+    <div class="flow">10 measured iterations   <b>--median--></b>            1 value per run              (<a href="#speedup">1</a>)
+30 run values            <b>--geometric mean--></b>    T per configuration          (<a href="#geomean">2</a>)
+                                                   --> speedup, efficiency, ratios  (<a href="#speedup">1</a>, <a href="#rq2metric">4</a>, <a href="#karp">7</a>)
+30 run values            <b>--resample 10 000x--></b>  intervals, p-values          (<a href="#bootstrap">3</a>)
+10 primary p-values      <b>--Holm--></b>              10 decisions                 (<a href="#holm">5</a>)
+the same 10, by ranks    <b>--Mann-Whitney--></b>      the decisions re-checked     (<a href="#robust">6</a>)</div>
+
+    <h2 id="speedup">Speedup and efficiency</h2>
+    <p><span data-term="strong-scaling">Strong scaling</span>: the same 8192 x 8192 image for every N.
+      <span data-term="speedup-relative">Speedup</span> is how many times faster N threads are than 1 thread
+      <b>of the same environment</b>; <span data-term="efficiency">efficiency</span> is that speedup divided
+      by N, so 1 means every thread pulled its full weight (<a href="../adr/0003-strong-scaling.md">ADR 0003</a>;
+      the words are introduced on <a href="ratios.html#speedup">Ratios, speedup and the log scale</a>). T is
+      the geometric mean of the 30 run values, each the median of its 10 measured iterations.</p>
+    <div class="formula">S(N) = T(1) / T(N)          E(N) = S(N) / N        (E = 1 is perfect)</div>
+    <p>Pick a cell and watch the two numbers computed from the published times:</p>
+    <div class="card">
+      <div class="ctl"><span><span class="lab">Environment</span><span id="c-env"></span></span>
+        <span><span class="lab">Workload</span><span id="c-w"></span></span></div>
+      <div class="ctl"><span><span class="lab">k</span><span id="c-k"></span></span>
+        <span><span class="lab">N</span><span id="c-n"></span></span></div>
+      <ol class="eqs" id="c-steps"></ol>
+      <div id="c-bars"></div>
+      <p class="muted" id="c-note" style="font-size:var(--fs-sm)"></p>
+    </div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+    <div class="why"><b>Why is speedup never read alone?</b> A speedup hides a slow start: a browser that
+      is slow at N = 1 has more room to gain and can look as if it scales better than native while being
+      slower at every N. So every speedup is read next to the absolute time ratio browser / native at the
+      same N (<a href="../adr/0039-absolute-times-and-clock-check.md">ADR 0039</a>), shown on
+      <a href="rq1.html#ratio">Browser over native</a>.</div>
+    <details class="deeper"><summary>The code: speedup with its bootstrap interval</summary>
+      <div data-code="analysis/scaling/table.py|def speedup_of(|5" data-title="Speedup with its bootstrap interval"></div>
+      <div data-code="analysis/stats/summary.py|RUN_SUMMARY = |2" data-title="The two summaries the plan fixed (D1, D2)"></div>
+    </details>
+
+    <h2 id="geomean">Geometric mean</h2>
+    <p>Why the geometric mean and not the arithmetic one, in words and with the sliders, is on
+      <a href="reading.html#average">An average that respects ratios</a>. The formula:</p>
+    <div class="formula">GM(x1..xn) = (x1 · x2 · ... · xn)^(1/n) = exp( mean( ln x1, ..., ln xn ) )</div>
+    <details class="deeper"><summary>If you already know this: the three properties the plan relied on</summary>
+      <ul>
+        <li>The ratio of two geometric means is the geometric mean of the ratios, so a speedup from geometric
+          means agrees with one computed on logs, run by run (plan decision D2).</li>
+        <li>Times are right-skewed (a few slow runs, never a few impossibly fast ones); on a log scale they are
+          much less so, and the geometric mean is the arithmetic mean on that scale.</li>
+        <li>Each run is first summarized by the <span data-term="median">median</span> of its 10 iterations
+          (D1), so one slow iteration barely moves it; the geometric mean then averages medians.</li>
+      </ul>
+    </details>
+
+    <h2 id="bootstrap">Bootstrap intervals</h2>
+    <p>The idea, and the live widget where you can draw resamples from the real runs, is on
+      <a href="reading.html#sure">How sure: the interval</a>. Here is what the analysis does exactly:
+      <span data-term="bootstrap-percentile">percentile bootstrap</span>, 10 000 resamples, seed 0x5EED
+      (24301), 95 % interval from the 2.5th and 97.5th percentiles of the resampled statistics
+      (Efron and Tibshirani 1993). No normality assumption.</p>
+    <div class="formula">for b in 1..10000:
+    draw 30 runs with replacement from the 30 (each group on its own)
+    statistic_b = the statistic on that draw (a geometric mean, a ratio of them, ...)
+interval = [ percentile 2.5 of statistic_1..10000 , percentile 97.5 ]</div>
+    <div class="why"><b>Why resample each group on its own?</b> A speedup compares the N = 1 runs with the
+      N = 8 runs; a RQ2 contrast compares four groups. The runs of different configurations are different
+      processes, started at different times: there is no pairing between the 3rd run of one and the 3rd run
+      of the other. So each group is resampled independently, and each bootstrap value is the statistic of
+      the resampled groups (GM(resampled N = 1) / GM(resampled N = 8), say).</div>
+    <p>A <span data-term="p-value-bootstrap">bootstrap p-value</span> comes from the same 10 000 values:
+      twice the share of them on the far side of "no effect" (1 for a ratio, 0 on the log scale), and never
+      below 1/10 000, which is the resolution 10 000 resamples can give.</p>
+    <details class="deeper"><summary>The code: one resample, and the percentile interval</summary>
+      <div data-code="analysis/stats/bootstrap.py|def resample(|2" data-title="One resample: as many draws as the group has"></div>
+      <div data-code="analysis/stats/bootstrap.py|def percentile_interval(|4" data-title="The percentile interval"></div>
+    </details>
+
+    <h2 id="rq2metric">The RQ2 metric</h2>
+    <p>How much does synchronization cost in one environment? Compare the atomic histogram with its
+      lock-free control on the <b>same input</b>: r = ln T(atomic) - ln T(local). But r also holds things
+      that are not synchronization, such as the dependency chain that slows the local control at k = 1. Those
+      are the same in every environment at the same k, so compare r <b>between</b> environments
+      (<a href="../adr/0026-rq2-metric-and-contention-sweep.md">ADR 0026</a>; with made-up numbers first on
+      <a href="questions.html#example">RQ2 with made-up numbers</a>):</p>
+    <div class="formula">Δr = r(browser) - r(native)
+exp(Δr) = [T_atomic / T_local in the browser] / [T_atomic / T_local natively]
+        1 = synchronization costs as much as natively; above 1 = more; below 1 = less</div>
+    <p>The four published times of a cell, and the metric worked from them next to the published value:</p>
+    <div class="card">
+      <div class="ctl"><span><span class="lab">Browser</span><span id="r-env"></span></span>
+        <span><span class="lab">k</span><span id="r-k"></span></span>
+        <span><span class="lab">N</span><span id="r-n"></span></span></div>
+      <ol class="eqs" id="r-steps"></ol>
+    </div>
+    <p class="src" data-src="campaign-v3-scaling, campaign-v3-contrasts"></p>
+    <details class="deeper"><summary>If you already know this: the interaction on logs, and the RQ1 contrast</summary>
+      <p>Its interval resamples four groups of runs (browser atomic, browser local, native atomic, native
+        local), each on its own. The RQ1 contrast is built the same way, with T(1) and T(N) in place of atomic
+        and local: the browser's speedup over native's, an <span data-term="interaction">interaction</span>
+        of two ratios.</p>
+      <div data-code="analysis/inference/interaction.py|def interaction(|10" data-title="The interaction, on logs"></div>
+    </details>
+
+    <h2 id="holm">Holm and the primary contrasts</h2>
+    <p>Why ten comparisons were named in advance and get a stricter bar is on
+      <a href="reading.html#decisions">Ten decisions, a stricter bar</a>. The ten
+      <span data-term="primary-contrast">primary contrasts</span> (plan decision D8): RQ2 at N = 8 for
+      k = 1, 4, 16, 256 in both browsers (8), and RQ1 for the filter at N = 8 in both browsers (2).
+      Everything else is <span data-term="exploratory">exploratory</span>: 95 % intervals, no decision.</p>
+    <ul>
+      <li>Their intervals are <span data-term="bonferroni">Bonferroni</span> 99.5 % intervals
+        (1 - 0.05 / 10), so the ten hold together with 95 % confidence
+        (<span data-term="family-wise-error">family-wise error</span>).</li>
+      <li>The decisions use <span data-term="holm">Holm</span>'s step-down correction: sort the p-values,
+        multiply the smallest by 10, the next by 9, and so on, keep a running maximum, and reject when the
+        result is at most 0.05. It controls the same family error as Bonferroni and is never less powerful
+        (Holm 1979).</li>
+    </ul>
+    <div class="formula">sort p(1) ≤ p(2) ≤ ... ≤ p(10)
+adjusted(i) = max over j ≤ i of  min(1, (10 - j + 1) · p(j))
+reject contrast i  if  adjusted(i) ≤ 0.05</div>
+    <p>The ten primary contrasts, and Holm recomputed here in your browser from the raw p-values, next to the
+      published adjusted values:</p>
+    <div id="holm-table"></div>
+    <p class="src" data-src="campaign-v3-contrasts"></p>
+    <p>Not rejecting is not proof of equality (<a href="reading.html#notproof">Not rejecting is not
+      proof</a>): Chrome's filter speedup ratio is 0.99, and its 99.5 % interval says any difference is
+      between about -5 % and +3 %.</p>
+    <details class="deeper"><summary>The code: Holm 1979</summary>
+      <div data-code="analysis/stats/holm.py|def holm_adjusted(|11" data-title="Holm 1979"></div>
+    </details>
+
+    <h2 id="robust">Mann-Whitney and Cliff's delta</h2>
+    <p>The bootstrap makes no normality assumption, but it is one method. As a robustness check, the plan
+      repeats the 10 decisions with the course's default test for timing data: the
+      <span data-term="mann-whitney-u">Mann-Whitney U</span> rank test, with
+      <span data-term="cliff-s-delta">Cliff's delta</span> as its <span data-term="effect-size">effect
+      size</span>.</p>
+    <div class="why"><b>Why a second test at all?</b> If two methods built on different assumptions reach
+      the same ten decisions, the decisions do not hang on either method's assumptions. Mann-Whitney looks only
+      at ranks (which of two runs was faster), never at how much, so it cannot be fooled by a few extreme
+      values; the bootstrap uses the values themselves. Agreement between them is the point.</div>
+    <p>Each run gives one ratio (log T1/TN for RQ1, log T atomic / T local for RQ2, the two cells paired by
+      repetition index); the browser's 30 ratios are compared with native's, and the 10 p-values are
+      Holm-adjusted.</p>
+    <div class="formula">Cliff's δ = ( #{pairs where browser &gt; native} - #{pairs where browser &lt; native} ) / (30 · 30)
+          +1 or -1 = complete separation; 0 = complete overlap</div>
+    <p>The pairing by repetition index is arbitrary, so it is redrawn 1000 times at random; "same decision"
+      is the share of those re-pairings that reach the bootstrap's decision:</p>
+    <div id="robust-table"></div>
+    <p class="src" data-src="campaign-v3-robustness"></p>
+    <details class="deeper"><summary>The code: Cliff's delta</summary>
+      <div data-code="analysis/stats/cliff.py|def cliffs_delta(|8" data-title="Cliff's delta"></div>
+    </details>
+
+    <h2 id="karp">Karp-Flatt</h2>
+    <p>Efficiency below 1 says that scaling is sub-linear, not why. Amdahl's law would blame a serial part:
+      a fraction of the work that only one thread can do. The <span data-term="karp-flatt">Karp-Flatt</span>
+      serial fraction (Karp and Flatt 1990) turns that around and asks which serial fraction <i>would</i>
+      explain the measured speedup:</p>
+    <div class="formula">e = (1/S - 1/N) / (1 - 1/N)</div>
+    <p>A constant e across N reads as a serial part; an e that grows with N reads as an overhead that grows
+      with the threads. For the filter (pick N):</p>
+    <div class="card">
+      <div class="ctl"><span><span class="lab">N</span><span id="k-n"></span></span></div>
+      <ol class="eqs" id="k-steps"></ol>
+    </div>
+    <p class="src" data-src="campaign-v3-karp-flatt"></p>
+    <div class="why"><b>Why compute it, if the filter has no serial part?</b> Because it is the standard
+      first suspect, and the number shows it is the wrong one: the filter's timed region has no serial part,
+      and in weak scaling T(N) does not stay flat either. So e here is a cost of running in parallel (shared
+      memory bandwidth natively, a fixed per-iteration overhead in the browsers, neither measured directly),
+      not a serial fraction of the code. See <a href="rq1.html#forkjoin">Fork-join in the results</a>.</div>
+    <details class="deeper"><summary>The code: the serial fraction</summary>
+      <div data-code="analysis/scaling/karp_flatt.py|def serial_fraction(speedup|4" data-title="The serial fraction"></div>
+    </details>
+
+    <div class="remember"><b>What to remember.</b> Median per run, geometric mean per configuration,
+      percentile bootstrap over runs with 10 000 resamples and a fixed seed, Bonferroni intervals and Holm
+      decisions for the ten primary contrasts, Mann-Whitney as the second opinion. Every one of these was
+      written down before the data existed, and every one is recomputed live on this page from the published
+      tables.</div>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var el = UI.el, $ = UI.$, D = UI.D, fmt = UI.fmt;
+  var ENVS = [{ value: "native", label: "Native" }, { value: "chrome", label: "Chrome" }, { value: "firefox", label: "Firefox" }];
+  var NAME = { native: "Native", chrome: "Chrome", firefox: "Firefox" };
+  function ms(ns) { var v = ns / 1e6; return fmt(v, v >= 100 ? 1 : 3) + " ms"; }
+  function li(html, muted) { return el("li", { html: html + (muted ? '<br><span class="m">' + muted + "</span>" : "") }); }
+  function scaling(env, workload, k, n) {
+    var where = { environment: env, workload: workload, threads: n };
+    if (workload !== "filter") where.k = k;
+    return UI.row("campaign-v3-scaling", where);
+  }
+
+  // --- speedup calculator -------------------------------------------------------------------
+  var c = { env: "native", w: "filter", k: 1, n: 8 };
+  function drawCalc() {
+    var r1 = scaling(c.env, c.w, c.k, 1), rn = scaling(c.env, c.w, c.k, c.n);
+    var steps = $("#c-steps"); steps.innerHTML = "";
+    if (!r1 || !rn) { steps.appendChild(li("no data")); return; }
+    var t1 = r1.center_ns, tn = rn.center_ns, s = t1 / tn, e = s / c.n;
+    var name = c.w === "filter" ? "filter" : c.w + ", k = " + c.k;
+    steps.appendChild(li("T(1) = <b>" + ms(t1) + "</b>", NAME[c.env] + ", " + name + ", 1 thread: geometric mean of " + r1.runs + " runs"));
+    steps.appendChild(li("T(" + c.n + ") = <b>" + ms(tn) + "</b>", "same, " + c.n + " threads"));
+    steps.appendChild(li("S = T(1) / T(" + c.n + ") = <b class='" + c.env + "-ink'>" + fmt(s, 3) + "</b>",
+      "published: " + fmt(rn.speedup, 3) + ", 95 % CI [" + fmt(rn.speedup_low, 3) + ", " + fmt(rn.speedup_high, 3) + "]"));
+    steps.appendChild(li("E = S / N = " + fmt(s, 3) + " / " + c.n + " = <b class='" + c.env + "-ink'>" + fmt(e, 3) + "</b>", fmt(100 * e, 0) + " % of ideal"));
+    var host = $("#c-bars"); host.innerHTML = "";
+    host.appendChild(UI.bars([
+      { label: "T(1)", values: [{ name: "T(1)", value: t1 / 1e6, cls: c.env }] },
+      { label: "T(" + c.n + ")", values: [{ name: "T(N)", value: tn / 1e6, cls: c.env }] },
+      { label: "ideal T(1)/N", values: [{ name: "ideal", value: t1 / c.n / 1e6, cls: "faint" }] }
+    ], { digits: t1 > 1e8 ? 0 : 2, unit: " ms" }));
+    $("#c-note").textContent = s < 1
+      ? "Speedup below 1: with more threads it got slower. Contention on the shared counters costs more than the threads add."
+      : e > 1.0005 ? "Efficiency above 1 (superlinear): more threads gained more than N times; a slower T(1) is the usual suspect."
+      : e > 0.97 ? "Close to ideal: the threads barely interfere."
+      : "Below ideal: the threads share memory bandwidth and caches, and pay the fork-join.";
+  }
+  UI.segmented($("#c-env"), ENVS, function (v) { c.env = v; drawCalc(); });
+  UI.segmented($("#c-w"), [{ value: "filter", label: "filter" }, { value: "hist-local", label: "local" }, { value: "hist-atomic", label: "atomic" }], function (v) {
+    c.w = v; UI.$$("#c-k button").forEach(function (b) { b.disabled = v === "filter"; }); drawCalc();
+  });
+  UI.segmented($("#c-k"), [1, 4, 16, 256].map(function (k) { return { value: k, label: String(k) }; }), function (v) { c.k = v; drawCalc(); });
+  UI.segmented($("#c-n"), [2, 4, 6, 7, 8].map(function (n) { return { value: n, label: String(n) }; }), function (v) { c.n = v; drawCalc(); }, 8);
+  UI.$$("#c-k button").forEach(function (b) { b.disabled = true; });
+
+  // --- RQ2 metric ---------------------------------------------------------------------------------
+  var r = { env: "chrome", k: 256, n: 8 };
+  function drawR() {
+    var st = $("#r-steps"); st.innerHTML = "";
+    var ba = scaling(r.env, "hist-atomic", r.k, r.n), bl = scaling(r.env, "hist-local", r.k, r.n);
+    var na = scaling("native", "hist-atomic", r.k, r.n), nl = scaling("native", "hist-local", r.k, r.n);
+    var pub = UI.row("campaign-v3-contrasts", { question: "RQ2", environment: r.env, k: r.k, threads: r.n });
+    if (!ba || !bl || !na || !nl) { st.appendChild(li("no data")); return; }
+    var rb = Math.log(ba.center_ns / bl.center_ns), rn = Math.log(na.center_ns / nl.center_ns), dr = rb - rn;
+    st.appendChild(li(NAME[r.env] + ": T_atomic / T_local = " + ms(ba.center_ns) + " / " + ms(bl.center_ns) + " = <b>" + fmt(ba.center_ns / bl.center_ns, 2) + "</b>, r = ln of it = " + fmt(rb, 3)));
+    st.appendChild(li("Native: " + ms(na.center_ns) + " / " + ms(nl.center_ns) + " = <b>" + fmt(na.center_ns / nl.center_ns, 2) + "</b>, r = " + fmt(rn, 3)));
+    st.appendChild(li("Δr = " + fmt(rb, 3) + " - " + fmt(rn, 3) + " = " + fmt(dr, 3) + ";  exp(Δr) = <b class='" + r.env + "-ink'>" + fmt(Math.exp(dr), 3) + "</b>",
+      pub ? "published: " + fmt(pub.effect, 3) + ", 95 % CI [" + fmt(pub.low, 3) + ", " + fmt(pub.high, 3) + "]" + (pub.primary === "yes" ? ", primary: 99.5 % CI [" + fmt(pub.primary_low, 3) + ", " + fmt(pub.primary_high, 3) + "], Holm p " + pub.holm_p : ", exploratory") : ""));
+    var e = Math.exp(dr);
+    st.appendChild(li(e > 1 ? "Synchronization costs " + NAME[r.env] + " " + fmt(e, 2) + " times what it costs natively, relative to the same lock-free control." : "Synchronization costs " + NAME[r.env] + " " + fmt(e, 2) + " times what it costs natively: less than natively."));
+  }
+  UI.segmented($("#r-env"), [{ value: "chrome", label: "Chrome" }, { value: "firefox", label: "Firefox" }], function (v) { r.env = v; drawR(); });
+  UI.segmented($("#r-k"), [1, 4, 16, 256].map(function (k) { return { value: k, label: String(k) }; }), function (v) { r.k = v; drawR(); }, 256);
+  UI.segmented($("#r-n"), [1, 2, 4, 6, 7, 8].map(function (n) { return { value: n, label: String(n) }; }), function (v) { r.n = v; drawR(); }, 8);
+
+  // --- Holm ------------------------------------------------------------------------------------------
+  var primary = UI.rows("campaign-v3-contrasts", { primary: "yes" });
+  var ps = primary.map(function (x) { return x.p; });
+  var order = ps.map(function (_, i) { return i; }).sort(function (i, j) { return ps[i] - ps[j]; });
+  var adj = new Array(ps.length), run = 0, rank = {};
+  order.forEach(function (idx, k) { run = Math.max(run, Math.min(1, (ps.length - k) * ps[idx])); adj[idx] = run; rank[idx] = k; });
+  $("#holm-table").appendChild(UI.table(primary.map(function (x, i) { return { x: x, i: i }; }).sort(function (p, q) { return rank[p.i] - rank[q.i]; }), [
+    { label: "Rank", value: function (o) { return String(rank[o.i] + 1); }, num: true },
+    { label: "Contrast", value: function (o) { return el("span", {}, [o.x.question + " ", el("span", { class: o.x.environment + "-ink", text: NAME[o.x.environment] }), " " + o.x.workload + (o.x.k !== "" ? " k = " + o.x.k : "")]); } },
+    { label: "Effect [99.5 % CI]", value: function (o) { return fmt(o.x.effect, 3) + " [" + fmt(o.x.primary_low, 3) + ", " + fmt(o.x.primary_high, 3) + "]"; }, num: true },
+    { label: "p", value: function (o) { return String(o.x.p); }, num: true },
+    { label: "× (10 - rank + 1)", value: function (o) { return String(ps.length - rank[o.i]); }, num: true },
+    { label: "Holm p, here", value: function (o) { return fmt(adj[o.i], 4); }, num: true },
+    { label: "Holm p, published", value: function (o) { return String(o.x.holm_p); }, num: true },
+    { label: "Rejected", value: function (o) { return o.x.rejected; } }
+  ]));
+
+  // --- robustness -------------------------------------------------------------------------------------------
+  $("#robust-table").appendChild(UI.table(UI.rows("campaign-v3-robustness"), [
+    { label: "Contrast", value: function (x) { return el("span", {}, [x.question + " ", el("span", { class: x.environment + "-ink", text: NAME[x.environment] }), " " + x.workload + (x.k !== "" ? " k = " + x.k : "")]); } },
+    { label: "Cliff's δ", value: function (x) { return fmt(x.cliffs_delta, 2); }, num: true },
+    { label: "Holm p (U)", value: function (x) { return Number(x.holm_p).toPrecision(2); }, num: true },
+    { label: "Rejected (U)", key: "rejected" },
+    { label: "Rejected (bootstrap)", key: "bootstrap_rejected" },
+    { label: "Same decision", value: function (x) { return fmt(100 * x.same_decision_share, 1) + " %"; }, num: true }
+  ]));
+
+  // --- Karp-Flatt -------------------------------------------------------------------------------------------
+  function drawK(n) {
+    var st = $("#k-steps"); st.innerHTML = "";
+    ["native", "chrome", "firefox"].forEach(function (env) {
+      var x = UI.row("campaign-v3-karp-flatt", { environment: env, workload: "filter", threads: n });
+      if (!x) return;
+      var e = (1 / x.speedup - 1 / n) / (1 - 1 / n);
+      st.appendChild(li(NAME[env] + ": S = " + fmt(x.speedup, 3) + ", e = (1/" + fmt(x.speedup, 3) + " - 1/" + n + ") / (1 - 1/" + n + ") = <b class='" + env + "-ink'>" + fmt(e, 3) + "</b>",
+        "published " + fmt(x.serial_fraction, 3) + ", 95 % CI [" + fmt(x.serial_fraction_low, 3) + ", " + fmt(x.serial_fraction_high, 3) + "]"));
+    });
+  }
+  UI.segmented($("#k-n"), [2, 4, 6, 7, 8].map(function (n) { return { value: n, label: String(n) }; }), drawK, 8);
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>
