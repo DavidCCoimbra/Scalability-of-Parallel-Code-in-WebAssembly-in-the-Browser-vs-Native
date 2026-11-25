@@ -107,11 +107,8 @@ Atomics.add(counters, value, 1n);</pre></figure>
       lock-and-add:</p>
     <div class="card" id="cas-host"></div>
     <p>Under contention, try-and-retry costs twice: a plain read that pulls the line over, and attempts that fail
-      and go round again. The study counted both on the real runs:</p>
-    <div id="cas-table"></div>
-    <p class="src" data-src="perf-v3-retries, perf-v3-counters"></p>
-    <p>Read the first column as "extra attempts per add": at k = 1 with 8 threads, one Chrome add in four goes round
-      the loop a second time, while native and Firefox almost never do. The full reading of these numbers, the test that ties the penalty at k = 1 to the loop, and the question left open at <i>k</i> = 256, are in <a href="rq2.html#code">Why Chrome: code and counters</a>.</p>
+      and go round again. The study counts both on its real runs:
+      <a href="rq2.html#retries">Retries, counted</a> and <a href="rq2.html#readfirst">Line transfers, counted</a>.</p>
 
     <h2 id="code">What each engine emits</h2>
     <p>Which strategy a runtime uses is not chosen by the Rust source; it is chosen by whatever turns the code into
@@ -161,25 +158,8 @@ Atomics.add(counters, value, 1n);</pre></figure>
       synchronization. If RQ2 compared k = 1 against k = 256, that effect would pollute the answer. So RQ2 never
       compares inputs; it compares shared against private at the <b>same</b> k, where this effect is present in
       both and cancels (<a href="reading.html#rq2metric">the RQ2 metric</a>).</p></aside>
-    <details class="deeper"><summary>In depth: the numbers, the dependency chain and the two instruction streams</summary>
-      <div id="sf-table"></div>
-      <p class="src" data-src="campaign-v3-scaling"></p>
-      <p>At <i>k</i> = 1 the loop is a <span data-term="dependency-chain">dependency chain</span> through memory: the
-        new value goes from the store buffer straight to the next load
-        (<span data-term="store-buffer-store-to-load-forwarding">store-to-load forwarding</span>), and no pixel can
-        start before the previous one finished. Here Chrome is even slightly <b>faster</b> than native. LLVM emits one
-        memory-operand <code>inc</code> per pixel; V8 emits a separate load, add and store:</p>
-      <div class="pair">
-        <div data-code="data/earlier/probes/native-hist-local-k1-loop.asm|29900:|11" data-title="Native (LLVM), unrolled by 4" data-highlight="inc"></div>
-        <div data-code="data/earlier/probes/v8-hist-local-k1-loop.asm|8c0:|8" data-title="Chrome (V8 TurboFan), one pixel" data-highlight="mov    rdx|add    rdx|mov    QWORD"></div>
-      </div>
-      <p>On this core the memory-operand <code>inc</code> chain is about 1.5 to 2 % slower. A C probe of the two
-        sequences alone on one P-core (<code>bench/probes/rmw_chain.c</code>, ADR 0060) took 155.2 ms against 152.7 ms,
-        about 60 % of the gap; it explains a design result, it is not a campaign number. The lesson the paper draws:
-        one source and one set of flags do not give one instruction stream; the engine's code generator is part of
-        what is measured.</p>
-      <p class="src" data-files="data/earlier/probes/rmw-chain.txt, bench/probes/rmw_chain.c, analysis/extras/jitdump.py, docs/adr/0060-local-histogram-k1-instruction-choice.md"></p>
-    </details>
+    <p>The measured times, the two instruction streams and the probe that compares them are on
+      <a href="rq1.html#k1-forwarding">RQ1: scaling</a>.</p>
 
     <p class="takeaway"><strong>In summary.</strong> An atomic add exists so that no count is lost when threads share
       a counter. A CPU can do it in one locked step, or by trying and retrying. Native and Firefox do the first;
@@ -221,19 +201,6 @@ window.page = function (UI) {
     } };
   }));
 
-  // --- counters table --------------------------------------------------------------------------
-  function c(env, k, name) { var r = UI.row("perf-v3-counters", { environment: env, k: k, threads: 8, counter: name }); return r ? r.mean : null; }
-  var rt = ENVS.map(function (e) {
-    var x = UI.row("perf-v3-retries", { environment: e[0], k: 1 });
-    return { env: e[1], ex: x, rd: c(e[0], 1, "read_hitm"), rfo: c(e[0], 1, "rfo_hitm") };
-  });
-  $("#cas-table").appendChild(UI.table(rt, [
-    { label: "k = 1, N = 8", key: "env" },
-    { label: "Extra attempts per add [95 % interval]", num: true, value: function (r) { return r.ex ? fmt(r.ex.excess_lock_loads, 3) + " [" + fmt(r.ex.low, 3) + ", " + fmt(r.ex.high, 3) + "]" : "–"; } },
-    { label: "Plain reads that pulled the line, per add", num: true, value: function (r) { return fmt(r.rd, 3); } },
-    { label: "Writes that pulled the line, per add", num: true, value: function (r) { return fmt(r.rfo, 2); } }
-  ]));
-
   // --- assembly per engine -------------------------------------------------------------------
   var ASM = {
     native: { title: "Native: LLVM", lines: [
@@ -272,21 +239,6 @@ window.page = function (UI) {
     $("#asm-note").textContent = a.note;
   }
   UI.segmented(group($("#asm-controls"), "engine"), ENVS.map(function (e) { return { label: e[1], value: e[0] }; }), showAsm, "chrome");
-
-  // --- store forwarding table ------------------------------------------------------------------
-  var sf = ENVS.map(function (e) {
-    var a = UI.row("campaign-v3-scaling", { environment: e[0], workload: "hist-local", k: 1, threads: 1 });
-    var b = UI.row("campaign-v3-scaling", { environment: e[0], workload: "hist-local", k: 256, threads: 1 });
-    return { env: e[1], k1: a && a.center_ns / 1e6, k256: b && b.center_ns / 1e6, px: a && a.center_ns / (8192 * 8192) };
-  });
-  $("#sf-table").appendChild(UI.table(sf, [
-    { label: "Private histogram, N = 1", key: "env" },
-    { label: "k = 1 (ms per iteration)", num: true, value: function (r) { return fmt(r.k1, 1); } },
-    { label: "k = 256 (ms)", num: true, value: function (r) { return fmt(r.k256, 1); } },
-    { label: "k = 1 / k = 256", num: true, value: function (r) { return fmt(r.k1 / r.k256, 1); } },
-    { label: "k = 1: ns per pixel", num: true, value: function (r) { return fmt(r.px, 2); } },
-    { label: "cycles per pixel at 3.2 GHz", num: true, value: function (r) { return fmt(r.px * 3.2, 1); } }
-  ]));
 };
 </script>
 <script src="assets/app.js"></script>

@@ -20,6 +20,7 @@
   .fig .cool { fill: var(--native-soft); stroke: var(--native); }
   .fig .arrow { stroke: var(--muted); fill: none; marker-end: url(#ah); }
 
+  .pair { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
 </style>
 </head>
 <body data-page="rq1">
@@ -105,6 +106,29 @@
         is part of what is measured.
         <a href="../../docs/adr/0060-local-histogram-k1-instruction-choice.md">ADR 0060</a></p></aside>
     </details>
+    <h3 id="k1-forwarding">The local histogram at k = 1: one counter, one chain</h3>
+    <p>At k = 1 every pixel adds to the same counter, so each add waits for the one before it
+      (<a href="atomics.html#forwarding">Store forwarding at k = 1</a> explains the mechanism). That is why the
+      local histogram is several times slower at k = 1 than at k = 256 with one thread, in every environment, and
+      it is where Chrome ends slightly faster than native:</p>
+    
+      <div id="sf-table"></div>
+      <p class="src" data-src="campaign-v3-scaling"></p>
+      <p>At <i>k</i> = 1 the loop is a <span data-term="dependency-chain">dependency chain</span> through memory: the
+        new value goes from the store buffer straight to the next load
+        (<span data-term="store-buffer-store-to-load-forwarding">store-to-load forwarding</span>), and no pixel can
+        start before the previous one finished. Here Chrome is even slightly <b>faster</b> than native. LLVM emits one
+        memory-operand <code>inc</code> per pixel; V8 emits a separate load, add and store:</p>
+      <div class="pair">
+        <div data-code="data/earlier/probes/native-hist-local-k1-loop.asm|29900:|11" data-title="Native (LLVM), unrolled by 4" data-highlight="inc"></div>
+        <div data-code="data/earlier/probes/v8-hist-local-k1-loop.asm|8c0:|8" data-title="Chrome (V8 TurboFan), one pixel" data-highlight="mov    rdx|add    rdx|mov    QWORD"></div>
+      </div>
+      <p>On this core the memory-operand <code>inc</code> chain is about 1.5 to 2 % slower. A C probe of the two
+        sequences alone on one P-core (<code>bench/probes/rmw_chain.c</code>, ADR 0060) took 155.2 ms against 152.7 ms,
+        about 60 % of the gap; it explains a design result, it is not a campaign number. The lesson the paper draws:
+        one source and one set of flags do not give one instruction stream; the engine's code generator is part of
+        what is measured.</p>
+      <p class="src" data-files="data/earlier/probes/rmw-chain.txt, bench/probes/rmw_chain.c, analysis/extras/jitdump.py, docs/adr/0060-local-histogram-k1-instruction-choice.md"></p>
 
     <h2 id="forkjoin">Fork-join in the results</h2>
     <p>One cost does not get divided by N: starting the threads on a piece of work and waiting for them all to
@@ -291,6 +315,26 @@ window.page = function (UI) {
     { label: "95% CI", num: true, value: function (r) { return "[" + UI.fmt(r.serial_fraction_low, 3) + ", " + UI.fmt(r.serial_fraction_high, 3) + "]"; } }
   ]));
 
+  (function () {
+  var el = UI.el, $ = UI.$, fmt = UI.fmt;
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  function group(host, label) { var g = el("span"); g.appendChild(el("span", { class: "lbl", text: label })); var h = el("span"); g.appendChild(h); host.appendChild(g); return h; }
+
+  // --- store forwarding table ------------------------------------------------------------------
+  var sf = ENVS.map(function (e) {
+    var a = UI.row("campaign-v3-scaling", { environment: e[0], workload: "hist-local", k: 1, threads: 1 });
+    var b = UI.row("campaign-v3-scaling", { environment: e[0], workload: "hist-local", k: 256, threads: 1 });
+    return { env: e[1], k1: a && a.center_ns / 1e6, k256: b && b.center_ns / 1e6, px: a && a.center_ns / (8192 * 8192) };
+  });
+  $("#sf-table").appendChild(UI.table(sf, [
+    { label: "Private histogram, N = 1", key: "env" },
+    { label: "k = 1 (ms per iteration)", num: true, value: function (r) { return fmt(r.k1, 1); } },
+    { label: "k = 256 (ms)", num: true, value: function (r) { return fmt(r.k256, 1); } },
+    { label: "k = 1 / k = 256", num: true, value: function (r) { return fmt(r.k1 / r.k256, 1); } },
+    { label: "k = 1: ns per pixel", num: true, value: function (r) { return fmt(r.px, 2); } },
+    { label: "cycles per pixel at 3.2 GHz", num: true, value: function (r) { return fmt(r.px * 3.2, 1); } }
+  ]));
+  })();
 };
 </script>
 <script src="assets/app.js"></script>

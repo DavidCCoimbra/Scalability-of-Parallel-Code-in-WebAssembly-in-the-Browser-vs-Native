@@ -204,14 +204,12 @@
     </details>
 
     <h2 id="hitm">Counting line moves</h2>
-    <p>Everything above would be a story if it could not be checked. It can: the CPU keeps counters of its own, and
-      one of them counts exactly the event described here, a core asking for a line and finding it in another core's
-      cache with fresh writes in it (a <span data-term="hitm">HITM</span>, for "hit modified"). Reading those counters
-      during 30 runs per cell, and dividing by the number of adds, gives how many times per add the line moved.</p>
-    <p>Natively and in Firefox the line moves about once per add at <i>k</i> = 256 and about once per four adds at
-      <i>k</i> = 1 (when a core keeps the line for a while, its next few adds find it already there). Chrome's
-      numbers look different, and that difference is the whole of <a href="rq2.html#readfirst">Why Chrome: code and
-      counters</a>, where the table lives.</p>
+    <p>The CPU keeps counters of its own, and one of them counts exactly the event described here: a core asking
+      for a line and finding it in another core's cache with fresh writes in it (a
+      <span data-term="hitm">HITM</span>, for "hit modified"). Dividing that count by the number of adds gives how
+      many times per add the line moved. The study reads these counters on its real runs:
+      <a href="rq2.html#readfirst">Line transfers, counted</a> has the table.</p>
+
     <p class="takeaway"><strong>In summary.</strong> RAM is far and caches are near. Data moves in 64-byte lines, so neighbours travel together. Many cores may read a line but only one may write it, so threads that add to the same counter take turns and the line travels, which costs about a hundred times the add itself. In the study, k sets how many counters the adds spread over, and padding gives each counter a line of its own, so only true sharing is measured.</p>
 
     <footer class="pager" id="pager"></footer>

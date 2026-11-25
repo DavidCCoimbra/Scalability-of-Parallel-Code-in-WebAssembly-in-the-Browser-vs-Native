@@ -394,6 +394,11 @@
         Firefox), so a 0 there means "under one tick", not free.</p>
       <div data-code="bench/src/calibration.rs|pub fn calibrate_probes|12" data-title="The calibration inside every run"></div>
     </details>
+    <details class="deeper"><summary>In depth: the empty broadcast, and how the calibration table is computed</summary>
+      <div data-code="bench/src/calibration/empty_broadcast.rs|fn fork_join(|6" data-title="The empty broadcast: only wake-up and join are left"></div>
+      <p class="muted" style="font-size:var(--fs-sm)">The median over runs of each run's median of 20 warm calls, computed from the per-run calibration rows of <code>data/raw/campaign-v3</code> (all 30 runs of every configuration, 270 per environment and N) by <code>scripts/explainer_data.py</code>. <code>broadcast</code> runs an empty closure on every thread; <code>par_iter</code> is an empty parallel iterator. The browser clock ticks in 5 µs (Chrome) and 20 µs (Firefox), so small browser values are a tick or two.</p>
+    </details>
+
     <p class="takeaway"><strong>In summary.</strong> A run is one fresh start of one program, and it gives one number. The same Rust code times the workload in all three environments; the harness differs only in how it starts the program (flags or a URL) and how the result reaches the disk (printed, or posted to a local server). Each configuration has 30 runs, each run discards its warm-up iterations, browser runs wait 3 s first, and the runs of all three environments are shuffled into one order.</p>
 
     <footer class="pager" id="pager"></footer>
