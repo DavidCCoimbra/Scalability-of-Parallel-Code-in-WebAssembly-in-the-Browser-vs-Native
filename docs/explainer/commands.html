@@ -47,7 +47,7 @@
       <thead><tr><th>Command</th><th>When</th><th>What happens</th></tr></thead>
       <tbody>
         <tr><td><code>make build</code></td><td>After pulling or changing <code>bench/</code></td><td>Compiles the native runner and the WASM package. A minute the first time, seconds after.</td></tr>
-        <tr><td><code>make test</code></td><td>Before every commit</td><td>What CI runs, minus LaTeX: the Rust tests, the Python tests, lint. On the Mac two Linux-only lint steps fail; the rest must pass.</td></tr>
+        <tr><td><code>make test</code></td><td>Before every commit</td><td>What CI runs, minus the browser and tables jobs: the Rust tests, the Python tests, lint. On the Mac two Linux-only lint steps fail; the rest must pass.</td></tr>
         <tr><td><code>make quick-rq1</code></td><td>To see the whole pipeline work, on any machine</td><td>Eighteen tiny runs of the filter in native, Chrome and Firefox, then their progress line. Never a result.</td></tr>
         <tr><td><code>make campaign SPEC=harness/campaigns/&lt;name&gt;.json</code></td><td>On the PC, after <code>make env-setup</code></td><td>Runs the whole campaign; stop it and run it again to resume.</td></tr>
         <tr><td><code>make status SPEC=...</code></td><td>In a second terminal, any time</td><td>Progress, failures, ETA. Reads two files, touches nothing.</td></tr>
