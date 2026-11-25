@@ -1,1 +1,114 @@
-% 16-problems
+\section{Problems Found and Pitfalls of Browser Benchmarking}
+\label{sec:problems}
+
+A browser is not a process that waits to be measured: it moves itself,
+starts work of its own and updates itself. This section lists every problem
+the study met, how it was detected and how it is controlled. Several were
+found on earlier builds and fixed before the reported one; they are part of
+the method and of the contribution.
+
+\begin{table}[htbp]
+\caption{The problems found, in the order they appeared.}
+\label{tab:problems}
+\centering\scriptsize
+\begin{tabular}{rp{0.25\linewidth}p{0.3\linewidth}p{0.32\linewidth}}
+\toprule
+\# & Problem & How it was detected & Control \\
+\midrule
+1 & A mask of eight CPUs that is four cores & Review of the CPU numbering before measuring & SMT off, one CPU per core, checked per run \\
+2 & Background work on the measured cores & Design review & Shield, quiet mode, foreign CPU time per run \\
+3 & Asymmetric background services between the browsers & Review of the launch settings & The same services off in both \\
+4 & Chrome's browser process leaves the CPU mask & A sampler of every thread's allowed CPUs & No session bus for the browser; escaped processes counted per run and rejected \\
+5 & Firefox still starting up during the measurement & Bursty iterations; a pilot with and without delay & A 3 s start delay in every browser run \\
+6 & A slow first browser launch & Launch times on a new machine & One discarded launch per browser before the plan \\
+7 & A command run during a campaign & One run over the foreign CPU threshold & Nothing else is started during a campaign \\
+8 & Our own asymmetries in RQ2 & Review of the measured path against its machine code & A new build; everything measured again \\
+9 & The pinned Firefox updated itself & Strict validation of the recorded version & An enterprise policy, the version read from the install, a check before every campaign \\
+10 & A degraded core & Crashes pinned to one core & Measure only on the prepared machine; per-core check; the build made twice \\
+11 & A wrong computation without a crash & A type error inside a library on valid data & Analysis pinned away from the core; tables regenerated on another machine \\
+12 & A new workload changed another's machine code & The codegen comparison & The sequential filter has its own copy of the row code \\
+13 & A gate criterion failed twice & The gate & A recorded decision before the campaign; the effect measured \\
+14 & Whole-run counters are mostly not the loop & A sanity check against the listing & Counters by the difference of two pass counts \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{4. Chrome escapes the mask.} During the mask pilot a sampler read
+the allowed CPUs of every thread and showed Chrome's browser process on the
+E-cores. Chrome asks the desktop session, through the D-Bus session bus, to
+move it into its own systemd scope, which is outside the run's scope and
+its mask. Firefox's processes all stayed inside, so the two browsers were
+not confined alike. Without the session bus address every Chrome process
+stays in the run scope. Each run now counts the processes of its browser
+found outside its scope, and strict validation rejects a run with any. The
+renderer, where the WASM and its workers run, had stayed on the P-cores
+throughout, and the pilots taken before the fix were repeated where their
+decision could depend on it. A process-level mask is a request that a
+process can undo.
+
+\paragraph{5. Firefox's start-up work.} With a fresh profile on every run,
+the page starts measuring while the browser is still starting. For short
+iterations at eight threads this made Firefox's local histogram 1.32 times
+slower and bursty, and produced a ``knee'' at seven and eight threads that
+looked like oversubscription and was first read as such. A 3~s delay before
+the page creates its worker removes both. A scaling artefact at high $N$
+that comes from start-up is the kind of effect that would be reported as a
+result of the engine.
+
+\paragraph{7. Activity during a campaign.} On the second build one run
+exceeded the foreign-CPU threshold because a version-control command ran
+during a campaign; the run was repeated. Since then campaigns start quiet
+mode themselves. For the v3 campaigns the coding assistant used during
+development was kept alive, confined to the E-cores, instead of being
+stopped (stopping it also froze the terminals it ran in for the 14 hours of
+the main campaign), under the rule that no command is started while a
+campaign runs. A rule cannot be checked, but what each run records can: the
+load average and the foreign CPU time of the v3 main campaign
+(Section~\ref{sec:quality}) are those of the v2 main campaign, in which the
+assistant was stopped (medians 3.00 and 3.19, maxima of foreign CPU time
+0.205 and 0.222~s). That is evidence of the same quiet, not proof that
+nothing ran.
+
+\paragraph{8. Our own asymmetries.} The RQ2 numerator paid a bounds check
+per pixel that the denominator did not; and the final step of a histogram
+was timed in some variants only. Neither would show in any quality check,
+since every checksum was right. They were found by reading the measured
+path against its disassembly. The fix was not a correction of the numbers
+but a new build and a second full measurement
+(Section~\ref{sec:builds-history}).
+
+\paragraph{9. Firefox updates itself.} The profile setting that turns
+automatic updates off does not stop the download or the update on the next
+start. During the exploratory campaigns of the second build the pinned
+Firefox 158.0 replaced itself with 160.0. Because every run records the
+version of the binary it launched, strict validation rejected all 2640
+affected runs; they were set aside and repeated on 158.0. Only an
+enterprise policy file stops the updater; the installer now writes it, reads
+the version from the install itself, and a campaign refuses to start with
+another version. In v3 no campaign was affected and every environment is
+interleaved in every campaign. Chrome for Testing has no updater.
+
+\paragraph{10 and 11. The degraded core.} Section~\ref{sec:core}. The lesson
+beyond this machine: a crash is the easy failure. A core that computes
+wrongly without crashing is caught only by checksums (in the measured
+code), by reproducible builds (in the compiler) and by regenerating results
+elsewhere (in the analysis).
+
+\paragraph{12. Code that did not change, changed.} Adding a second caller
+to a function that the compiler had inlined changed the machine code of the
+parallel filter, whose source was untouched (Section~\ref{sec:codegen}). A
+comparison of two builds is a comparison of two instruction streams;
+without a tool that compares them, this would have been measured as noise
+or, worse, as a result.
+
+\paragraph{14. Counters of a whole run.} Section~\ref{sec:why-rq1}: per-pixel
+counters of a browser run were three to eight times what the loop executes,
+because a run is also a browser start, an input generation and checksums.
+Only the difference between two campaigns that differ in the amount of loop
+work isolates the loop.
+
+\paragraph{For benchmarkers.} A CPU mask, a fresh profile and a pinned
+version do not by themselves confine, quiet and freeze a browser. What made
+these problems visible was recording the state with every run (the allowed
+CPUs, the version, the foreign CPU time, the checksum) and rejecting runs
+by rules fixed in advance.

@@ -57,7 +57,7 @@ counters per line the atomic histogram at $k=256$, $N=8$ slows by 1.18
 times natively (490 against 415~ms), 1.25 times in Firefox and 3.45 times
 in Chrome (726 against 210~ms), which then takes 1.48 times the native
 time. Chrome's advantage under spread contention depends on each counter
-having its own line. At $k=1$ packing changes nothing (one counter is hit).
+having its own line. At $k=1$ packing changes little (within 4\%): one counter is hit.
 \item \emph{Sorts.} The stable parallel sort, which allocates, reaches
 7.78 to 7.80 at $N=8$ in the three environments at 1.04 (Firefox) and 1.09
 (Chrome) times the native time; the unstable in-place sort reaches 6.19 to
@@ -95,7 +95,7 @@ At eight threads the filter keeps 0.860 of its one-thread rate natively
 0.917) within one to two points: the filter's loss is the same whether the
 work per thread shrinks or stays fixed, which fits a cost of sharing the
 memory and not a serial part. The browser over native time ratio stays flat
-in Chrome (1.17 to 1.18) and falls in Firefox from 1.36 at $N=1$ to 1.28 at
+in Chrome (1.16 to 1.20) and falls in Firefox from 1.36 at $N=1$ to 1.28 at
 $N=8$.
 
 \subsection{E-cores}
@@ -246,5 +246,5 @@ in Chrome and 1.3\% in Firefox. Its time is set by contention for the
 counters. This also bounds what the v3 change to its task code could have
 moved.
 \end{itemize}
-One feature is unexplained: the filter steps up by about 4\% between grains
-of 8 and 16 rows natively, and similarly in the browsers.
+One feature is unexplained: between grains of 8 and 16 rows the filter
+steps up by 4\% natively, 7\% in Chrome and 2\% in Firefox.

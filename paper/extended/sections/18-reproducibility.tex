@@ -1,1 +1,53 @@
-% 18-reproducibility
+\section{Reproducibility}
+\label{sec:reproducibility}
+
+\paragraph{Provenance.} Every number of this report comes from one build,
+the tag \code{measured/v3} (commit \code{ac65af6a}), built twice from
+scratch with equal digests. The repository holds that build's code, the raw
+runs of every campaign (one CSV and one context file per run, the campaign's
+specification and its journal in execution order, the discarded first
+launches and the state of the machine at the start), the derived tables,
+the probes with their code and data, the checks that are not results (the
+per-core check, the two gates), the progress logs of the measuring session,
+and one decision record per design decision. The data of the earlier build
+are kept at a tag, and the evidence older than that (pilot runs, one-off
+probes) in a folder of its own.
+
+\paragraph{From runs to tables.} One command regenerates every table and
+figure from the raw runs. A second regenerates them and fails if any line
+of any table differs from the committed one (only the commit and the
+creation time of a table's side file may change); the continuous
+integration runs it on another machine whenever the analysis, the harness
+or the data change. The bootstrap is seeded, so the intervals are
+reproducible to the digit. The tables of this report are written from the
+committed tables by a script, so no number of a table is typed by hand.
+
+\paragraph{From source to runs.} Development and tests run anywhere; a
+campaign of the study needs more:
+\begin{itemize}[leftmargin=1.5em]
+\item Linux with systemd and a graphical session (the browsers start
+headless but need the session's display variables), and administrator
+rights for the environment setup and for the run scopes.
+\item The CPU layout of this study is written in two places that must
+change together, the masks of the make targets and of every campaign
+specification; they describe an i9-14900KF.
+\item Time: the main campaign is 5310 runs and 14 hours, and it resumes if
+stopped; all campaigns together took about 56 hours of machine time.
+\item The pinned toolchain, crates and browser builds, which the setup
+target installs without administrator rights, with the browsers' archives
+checked against pinned digests.
+\end{itemize}
+
+\paragraph{Checks that run on every change.} Formatting, lints and tests of
+the crate for both targets; the WASM package built from a clean checkout;
+SIMD parity on the final native binary and the final WASM module; every
+workload run in both browsers with checksums and input fingerprints
+compared with native; the tests of the harness, the analysis and the
+scripts under strict typing; the structure of the decision records; and
+the regeneration of the tables.
+
+\paragraph{What cannot be reproduced exactly.} The times depend on this
+machine, including its degraded core. Another machine should reproduce the
+decisions and the shapes, not the milliseconds. The effect of RQ2 depends
+on the engine versions; the native probe (one C file) reproduces its
+mechanism on any x86 machine without a browser.
