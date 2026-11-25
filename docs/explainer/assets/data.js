@@ -578,6 +578,16 @@ window.PPC = {
    "line": 3,
    "text": "async function measure(query, meta) {\n  // Spawns N more Web Workers that share this module's WebAssembly.Memory and become the Rayon\n  // pool. This worker coordinates: it blocks in run() while the pool works, which the page's main\n  // thread may not do (Atomics.wait is not allowed there).\n  // requestedThreads parses the whole configuration in Rust, so a bad query fails here, before\n  // the pool starts.\n  await startThreadPool(requestedThreads(query));\n  const clock = JSON.parse(clockStats());\n  meta.clockResolutionNs = clock.resolutionNs;\n  meta.clockSmallestStepNs = clock.smallestStepNs;\n  meta.hardwareConcurrency = navigator.hardwareConcurrency;\n  return { csv: run(query), meta };\n}"
   },
+  "data/checks/gate-v3-check.txt|^firefox,hist-local,few,1,8,|1": {
+   "file": "data/checks/gate-v3-check.txt",
+   "line": 27,
+   "text": "firefox,hist-local,few,1,8,3,20740000,19720000,1.052"
+  },
+  "data/checks/gate-v3-check.txt|^gate: firefox hist-local|2": {
+   "file": "data/checks/gate-v3-check.txt",
+   "line": 1,
+   "text": "gate: firefox hist-local few k=1 N=8: the first 3 measured iterations are 1.052 times the last 3, outside 5%\ngate: 1 problem(s)"
+  },
   "data/earlier/probes/native-hist-local-k1-loop.asm|29900:|11": {
    "file": "data/earlier/probes/native-hist-local-k1-loop.asm",
    "line": 10,
@@ -622,6 +632,16 @@ window.PPC = {
    "file": "data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.json",
    "line": 77,
    "text": "  \"orderSeed\": 2026112201,\n  \"orderPosition\": 2666,\n  \"startedAt\": \"2026-11-22T04:13:37.279+00:00\",\n  \"finishedAt\": \"2026-11-22T04:13:46.891+00:00\",\n  \"launchSeconds\": 9.559,\n  \"artifactSha256\": \"387871291106220da7f1d5ee5205b9b3fa7425a80eda2c81c614e0b276c2ca43\",\n  \"loadavgBefore\": [\n    3.97,\n    3.45,\n    3.17\n  ],\n  \"loadavgAfter\": [\n    3.44,\n    3.35,\n    3.14\n  ],\n  \"shield\": {\n    \"system.slice\": \"16-31\",\n    \"user.slice\": \"16-31\",\n    \"init.scope\": \"16-31\"\n  },\n  \"runCpuSeconds\": 4.315,\n  \"runCpuMethod\": \"scope\",\n  \"foreignCpuSeconds\": 0.045,\n  \"startDelayMs\": 3000,\n  \"passes\": 1,\n  \"leftoverProcesses\": 0,\n  \"escapedProcesses\": 0,\n  \"grain\": null,\n  \"cores\": {"
+  },
+  "data/sessions/v3/build/digests.txt|two builds from scratch|5": {
+   "file": "data/sessions/v3/build/digests.txt",
+   "line": 1,
+   "text": "# commit ac65af6a447c96164011c2784857a9c2dc443c53, two builds from scratch with equal digests\n525707dedef95487ddc4efca3a8bbab48668201b3d90773f55e03c5108494bf3  bench/target/release/native\n387871291106220da7f1d5ee5205b9b3fa7425a80eda2c81c614e0b276c2ca43  bench/www/pkg/bench_bg.wasm\nbc737307d72c8104cafc18701d5770e049d1cf471cc5d323f664c40794e19f65  bench/www/pkg/bench.js\n9801503f464f848c6c7405462fca9a5c721556904c5fee5ee0afcb0887ea1b7f  bench/www/pkg/snippets/wasm-bindgen-rayon-38edf6e439f6d70d/src/workerHelpers.no-bundler.js"
+  },
+  "data/sessions/v3/main/progress.log|start  01-campaign|7": {
+   "file": "data/sessions/v3/main/progress.log",
+   "line": 1,
+   "text": "2026-11-21 21:10:17  start  01-campaign\n2026-11-22 11:10:01  done   01-campaign\n2026-11-22 11:10:01  start  02-status\n2026-11-22 11:10:02  done   02-status\n2026-11-22 11:10:02  start  03-results\n2026-11-22 11:10:11  failed 03-results: see data/sessions/v3/main/03-results.log\n2026-11-22 11:16:00  note   03-results failed because data/tables/campaign-v3 did not exist; after mkdir, make results MEASURED=v3 was run by hand on the tagged commit and ended at 11:27 with exit 0; the tables of this folder are its output"
   },
   "data/tables/campaign-v3/campaign-v3-quality.md|Configurations whose valid run values trend|4": {
    "file": "data/tables/campaign-v3/campaign-v3-quality.md",

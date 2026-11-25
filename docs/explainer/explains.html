@@ -1,0 +1,428 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PPC explainer - What explains the results</title>
+<meta name="description" content="Nine open questions behind the results: the guess for each, the prediction written before the test, and how each one ended: answered, supported or still open.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .fig text { font-family: var(--sans); font-size: 12px; fill: var(--body); }
+  .fig .box { fill: var(--panel); stroke: var(--edge); }
+  .fig .hot { fill: var(--chrome-soft); stroke: var(--chrome); }
+  .fig .cool { fill: var(--native-soft); stroke: var(--native); }
+  .fig .good { fill: color-mix(in srgb, var(--good) 14%, var(--panel)); stroke: var(--good); }
+  .fig .arrow { stroke: var(--muted); fill: none; marker-end: url(#ah); }
+  .board td, .board th { vertical-align: top; }
+  .chip.ok { background: color-mix(in srgb, var(--good) 16%, transparent); color: var(--good); border-color: transparent; }
+  .chip.part { background: var(--copy-soft); color: var(--copy); border-color: transparent; }
+  .chip.no { background: var(--bad-soft); color: var(--bad); border-color: transparent; }
+  .scatter text { font-family: var(--sans); font-size: 11px; fill: var(--muted); }
+  .scatter .axis { stroke: var(--edge); }
+</style>
+</head>
+<body data-page="explains">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
+  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
+  <div class="spacer"></div>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <div class="results" role="listbox"></div>
+  </div>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Pages">
+    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="harness.html">From make to a CSV row</a></li><li><a href="reading.html">Reading the numbers</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+<p class="kicker">Results · 4 of 8</p>
+    <h1>What explains the results</h1>
+    <p class="lead">A measurement tells you <i>what</i> happened: the filter gets 7 times faster with 8 threads, Chrome
+      pays twice for a shared counter. It does not tell you <i>why</i>. This page is about the why. The study listed
+      nine things it had seen and could not yet explain, wrote down a guess for each, wrote down what a test would
+      show (a <span data-term="prediction">prediction</span>) if the guess were right and if it were wrong, and only then ran the tests.</p>
+    <div class="oneliner"><b>In one sentence:</b> of nine open questions, the tests answered three, supported four,
+      explained one through another, and left one open; no answer changes a result, each one says how far the
+      explanation of a result can be trusted.</div>
+
+    <h2 id="how">How an explanation is tested</h2>
+    <p>It is easy to explain a number after you have seen it. Any story fits. The discipline that makes a story
+      worth something is to say <i>before the test</i> what the test should show, so that the story can lose.</p>
+    <figure class="figure"><svg class="fig" viewBox="0 0 700 150" role="img" aria-label="From something seen to an outcome: guess, prediction written down, test, outcome">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker></defs>
+      <rect class="box" x="6" y="40" width="112" height="56" rx="8"/><text x="62" y="64" text-anchor="middle" font-weight="600">Something seen</text><text x="62" y="82" text-anchor="middle">a number</text>
+      <path class="arrow" d="M120 68 h 22"/>
+      <rect class="box" x="146" y="40" width="112" height="56" rx="8"/><text x="202" y="64" text-anchor="middle" font-weight="600">A guess</text><text x="202" y="82" text-anchor="middle">the hypothesis</text>
+      <path class="arrow" d="M260 68 h 22"/>
+      <rect class="cool" x="286" y="28" width="136" height="80" rx="8"/><text x="354" y="52" text-anchor="middle" font-weight="600">Written first</text><text x="354" y="70" text-anchor="middle">if right, we see A</text><text x="354" y="88" text-anchor="middle">if wrong, we see B</text>
+      <path class="arrow" d="M424 68 h 22"/>
+      <rect class="box" x="450" y="40" width="96" height="56" rx="8"/><text x="498" y="64" text-anchor="middle" font-weight="600">The test</text><text x="498" y="82" text-anchor="middle">runs</text>
+      <path class="arrow" d="M548 68 h 22"/>
+      <rect class="good" x="574" y="8" width="120" height="30" rx="8"/><text x="634" y="28" text-anchor="middle">answered</text>
+      <rect class="box" x="574" y="53" width="120" height="30" rx="8"/><text x="634" y="73" text-anchor="middle">supported</text>
+      <rect class="hot" x="574" y="98" width="120" height="30" rx="8"/><text x="634" y="118" text-anchor="middle">not supported</text>
+    </svg><figcaption>The prediction is written before the test runs (ADR 0088). The outcome is one of three words, never "it fits".</figcaption></figure>
+    <p>The three words mean different things, and the difference is the whole point:</p>
+    <ul>
+      <li><b>Answered</b>: the test changed <i>one thing</i> and the effect followed it. That shows a cause.</li>
+      <li><b>Supported</b>: several independent measurements agree with the guess, but none of them changed only the
+        thing in question. The guess is the best reading; it is not proven.</li>
+      <li><b>Not supported</b>: the test showed what the "if wrong" column said. The guess is dropped and the
+        question stays open.</li>
+    </ul>
+    <div class="why"><b>Why not just say "we think it is the memory"?</b> Because a reader cannot tell a tested
+      explanation from a plausible one unless the text says which is which. If every explanation were written in the
+      same confident voice, the one that was only a guess would be believed as much as the one that was proven, and
+      the first person to check it would stop trusting all of them.</div>
+    <div class="callout"><b>None of this is a result of the study.</b> The results are the ten contrasts on
+      <a href="rq2.html#primary">RQ2: synchronization</a>, decided by a plan fixed before the data. Everything on this
+      page is <span data-term="exploratory">exploratory</span>: it explains those results, it does not add to them.</div>
+
+    <h2 id="board">Nine questions, one board</h2>
+    <p>Here is the whole board. Each row is something the main campaign showed and nobody could explain from the
+      times alone. The sections below go through them in the order that reads best, not in numeric order.</p>
+    <div style="overflow-x:auto"><table class="board">
+      <thead><tr><th>#</th><th>What was seen</th><th>The guess</th><th>Tested by</th><th>Outcome</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>The filter's efficiency stops at 0.87 with 8 threads</td><td>Eight threads run into the memory they share, not into the cores</td><td>counters, SIMD builds, cutoff</td><td><a href="#q1"><span class="chip part">supported, for about half</span></a></td></tr>
+        <tr><td>2</td><td>The filter scales better in Firefox, where it is slower</td><td>A slower loop asks less of the shared memory</td><td>the same three, read together</td><td><a href="#q2"><span class="chip part">supported</span></a></td></tr>
+        <tr><td>3</td><td>With one thread the filter takes 1.17 (Chrome) and 1.36 (Firefox) times the native time</td><td>The engines' machine code is longer or slower</td><td>counters, engine code</td><td><a href="#q3"><span class="chip ok">answered, as far as counters go</span></a></td></tr>
+        <tr><td>4</td><td>The local histogram's efficiency dips at 6 and 7 threads</td><td>Rayon splits work in powers of two, which loads 6 or 7 threads unevenly</td><td>fixed grains at N = 6, 7, 8</td><td><a href="#q4"><span class="chip no">not supported, open</span></a></td></tr>
+        <tr><td>5</td><td>The local histogram's speedup passes 8 in Firefox</td><td>One thread pays for cache misses that eight threads do not</td><td>counters</td><td><a href="#q5"><span class="chip part">supported</span></a></td></tr>
+        <tr><td>6</td><td>With one thread, Chrome's atomic histogram depends on k; nobody else's does</td><td>V8's optimizing compiler adds with a read and a compare-and-swap</td><td>tier campaign, native probe, engine code</td><td><a href="#q67"><span class="chip ok">answered</span></a></td></tr>
+        <tr><td>7</td><td>At k = 256 with 8 threads, Chrome's atomic histogram is twice as fast as native's</td><td>The same sequence changes how eight cores contend for 256 lines</td><td>tier campaign, native probe</td><td><a href="#q67"><span class="chip ok">answered for the sequence</span></a> <span class="chip part">mechanism open</span></td></tr>
+        <tr><td>8</td><td>Firefox's RQ2 number is under 1 at k = 16 and 256</td><td>It comes from the denominator: its local histogram scales more</td><td>the two factors of the ratio</td><td><a href="#q8"><span class="chip ok">follows from 5</span></a></td></tr>
+        <tr><td>9</td><td>The atomic cells at k = 1 are noisy: runs fall on several time levels</td><td>The levels are states of contention that differ from run to run</td><td>counters per run</td><td><a href="#q9"><span class="chip part">supported</span></a></td></tr>
+      </tbody></table></div>
+    <p class="src" data-files="docs/adr/0088-what-explains-the-results.md, docs/adr/0089-tier-and-atomic-increment-results.md, docs/adr/0090-counters-of-the-loop-alone.md, docs/adr/0091-what-explains-the-scaling.md"></p>
+
+    <h2 id="q3">Question 3: why the browser is slower with one thread</h2>
+    <p>Start with the simplest question. One thread, no sharing, the same Rust source: why does the filter take
+      longer in a browser? There are only two ways for the same work to take longer on the same core. Either the
+      machine code has <b>more instructions</b>, or it has the same number and the CPU gets through them
+      <b>more slowly</b>.</p>
+    <p>The CPU can count both. <span data-term="hardware-counters">Hardware counters</span> give the number of
+      instructions executed and the number of clock cycles spent (a cycle is one tick of the CPU's clock, 3.2 billion per second here). Divide each by the
+      number of pixels and you have the cost of one pixel:</p>
+    <div class="controls-row"><span class="muted">Workload:</span><span id="w-q3-wl"></span></div>
+    <div id="w-q3"></div>
+    <p class="src" data-src="perf-loop-v3-counters"></p>
+    <p>Both engines run about a third more instructions per pixel than native code on the filter. Chrome gets
+      through them at a higher rate (more instructions per cycle) and ends about 1.17 times the native cycles.
+      Firefox runs them at the native rate or below, and ends about 1.36 times. Those two ratios are the time ratios
+      of the main campaign: the counters and the clock tell the same story.</p>
+    <div class="analogy"><b>Picture it.</b> Three cooks follow the same recipe. One was given it in 65 steps, the
+      other two in about 86 steps each, because their translators were wordier. Of the two with the long version,
+      one works faster with his hands and nearly catches up; the other does not.</div>
+    <details class="deeper"><summary>If you already know this: the listings, and how the loop alone was counted</summary>
+      <p>The listings agree with the counters. The filter loops in <code>data/probes/engine-code</code> handle 16
+        pixels in 65 instructions natively, 87 in Chrome and 85 in Firefox: 4.06, 5.44 and 5.31 per pixel, against
+        the counted 4.10, 5.52 and 5.41. Firefox's loop is as long as Chrome's and runs slower; it mixes VEX-encoded
+        and legacy-encoded vector instructions and uses <code>palignr</code> where V8 does not. Whether that is why
+        it gets fewer instructions per cycle was not tested, so the answer stops at the counters.</p>
+      <p>A browser run also starts a browser, generates the input and computes checksums, and all of that is
+        counted too. So the loop was isolated by a difference: two campaigns identical except that one does 1 pass
+        per timed sample and the other 8 (<code>perf-loop1-v3</code>, <code>perf-loop8-v3</code>, 180 runs each).
+        The second does seven more passes of the loop and nothing else, so (count of the second - count of the
+        first) / (7 × samples × pixels) is the loop alone (ADR 0090). The check that the method works: the native
+        local histogram gives 2.77 instructions per pixel against the 2.75 of its code.</p>
+    </details>
+
+    <h2 id="q1">Question 1: why 8 threads give 7, not 8</h2>
+    <p>The filter has no part that only one thread can do, and no thread ever waits for another. So why is its
+      speedup about 7 and not 8? The guess: the eight cores are fine, but they all read and write the same memory,
+      and memory has a limit on how much it can deliver per second.</p>
+    <figure class="figure"><svg class="fig" viewBox="0 0 700 170" role="img" aria-label="Eight cores, each with its own work, all fed by one shared memory">
+      <text x="350" y="16" text-anchor="middle" font-weight="600">Eight cores, one memory</text>
+      <g id="cores"></g>
+      <rect class="cool" x="40" y="118" width="620" height="38" rx="8"/><text x="350" y="142" text-anchor="middle">shared memory: 128 MB of image in, 128 MB out per pass, far larger than the 36 MB cache</text>
+      <g stroke="var(--muted)" stroke-width="1.5">
+        <line x1="77" y1="76" x2="77" y2="116"/><line x1="155" y1="76" x2="155" y2="116"/><line x1="233" y1="76" x2="233" y2="116"/><line x1="311" y1="76" x2="311" y2="116"/>
+        <line x1="389" y1="76" x2="389" y2="116"/><line x1="467" y1="76" x2="467" y2="116"/><line x1="545" y1="76" x2="545" y2="116"/><line x1="623" y1="76" x2="623" y2="116"/>
+      </g>
+      <g>
+        <rect class="box" x="44" y="32" width="66" height="44" rx="6"/><text x="77" y="59" text-anchor="middle">core 1</text>
+        <rect class="box" x="122" y="32" width="66" height="44" rx="6"/><text x="155" y="59" text-anchor="middle">core 2</text>
+        <rect class="box" x="200" y="32" width="66" height="44" rx="6"/><text x="233" y="59" text-anchor="middle">core 3</text>
+        <rect class="box" x="278" y="32" width="66" height="44" rx="6"/><text x="311" y="59" text-anchor="middle">core 4</text>
+        <rect class="box" x="356" y="32" width="66" height="44" rx="6"/><text x="389" y="59" text-anchor="middle">core 5</text>
+        <rect class="box" x="434" y="32" width="66" height="44" rx="6"/><text x="467" y="59" text-anchor="middle">core 6</text>
+        <rect class="box" x="512" y="32" width="66" height="44" rx="6"/><text x="545" y="59" text-anchor="middle">core 7</text>
+        <rect class="box" x="590" y="32" width="66" height="44" rx="6"/><text x="623" y="59" text-anchor="middle">core 8</text>
+      </g>
+    </svg><figcaption>Each core has its own rows of the image, so no core waits for another. What they share is the road the pixels travel on.</figcaption></figure>
+    <p>If the guess is right, the counters should show something specific when going from 1 thread to 8: the
+      <i>same</i> instructions per pixel (the work did not change), <i>more</i> cycles per pixel (each instruction
+      waits longer for its data), and <i>more</i> cache misses. That is what they show. Each number below is the
+      8-thread value divided by the 1-thread value, so 1.00 means "unchanged":</p>
+    <div id="w-q1"></div>
+    <p class="src" data-src="perf-loop-v3-rises"></p>
+    <p>But look at the size. Natively the cycles rise by 8.5%, and an efficiency of 0.87 means 15% is lost. So the
+      cores' own slower work explains <b>about half</b> of the loss. The other half is time in which a core is not
+      running the loop at all, which a cycle counter does not see: it fits the cost of handing out and collecting
+      the tasks, and was not measured here. That is why the outcome says "supported, for about half".</p>
+    <p>Two other measurements point the same way. First, three builds of the same filter that differ only in how
+      fast one thread goes through memory (<a href="extras.html#simd">SIMD builds</a>): the faster one thread reads,
+      the less eight threads gain.</p>
+    <div class="card"><div id="w-q1-simd"></div></div>
+    <p class="src" data-src="simd-v3-variants"></p>
+    <p>Second, the image size. Natively, a 4096 x 4096 image (32 MB for input and output together) keeps more of
+      its efficiency at 8 threads than the 8192 x 8192 one (128 MB):</p>
+    <div id="w-q1-cut"></div>
+    <p class="src" data-src="cutoff-4096-v3-scaling, cutoff-8192-v3-scaling"></p>
+    <p>Natively this agrees. In the browsers it does not show (their efficiency is <i>lower</i> on the smaller
+      image, because the fixed cost of a parallel region weighs more there, see
+      <a href="granularity.html">When parallelism pays</a>), so the cutoff supports the reading natively and is not
+      clear for the browsers.</p>
+
+    <h2 id="q2">Question 2: why Firefox scales better</h2>
+    <p>This is the one RQ1 contrast that came out different from native: Firefox's filter speedup at 8 threads is
+      5.5% higher. It would be tempting to write "Firefox runs threads better". The data says something less
+      flattering and more interesting.</p>
+    <div class="why"><b>What is the trap here?</b> Speedup is T<sub>1</sub> / T<sub>8</sub>. You can raise it by
+      making T<sub>8</sub> smaller, or by making T<sub>1</sub> <i>bigger</i>. A runtime with a slow single thread
+      gets a better speedup for free. If we reported "Firefox scales best" without looking at the seconds, we would
+      be praising the slowest runtime for being slow.</div>
+    <p>Firefox's loop is the slowest of the three per thread (question 3). A slower loop asks for less memory per
+      second, so eight of them run into the shared memory less (question 1). The counters agree: from 1 to 8
+      threads Firefox's cycles per pixel rise less than native's, and so do its cache misses (the table above). In
+      the SIMD chart Firefox sits where its one-thread speed puts it, on the same curve as the native builds.</p>
+    <p>And there is one test that changes the speed inside a single engine. With the slower baseline compiler, the
+      filter is slower per thread and scales slightly better, in <i>both</i> browsers:</p>
+    <div id="w-q2"></div>
+    <p class="src" data-src="tier-v3-arms"></p>
+    <p>So Firefox does not scale better because of how it runs threads. In seconds it stays the slowest at every
+      thread count. Chrome is the case this does not close: its cycles rise less than native's and yet its
+      efficiency is the native one, so by the same accounting Chrome loses more <i>outside</i> the loop, which fits
+      the larger cost of its parallel region (<a href="rq1.html#forkjoin">Fork-join in the results</a>) and was not
+      measured here.</p>
+
+    <h2 id="q5">Question 5: a speedup above 8</h2>
+    <p>Eight threads cannot do more than eight times the work of one. Yet Firefox's local histogram reaches a
+      speedup above 8 at k = 16 and k = 256. When a number is impossible, the baseline is the suspect: the
+      one-thread run must be paying for something the eight-thread run does not.</p>
+    <div id="w-q5"></div>
+    <p class="src" data-src="perf-loop-v3-rises"></p>
+    <p>In Firefox a pixel costs <i>fewer</i> cycles with eight threads than with one (5% fewer at k = 256, which is
+      the size of the excess over 8), and its cache misses per pixel fall by a quarter, where native's and Chrome's
+      fall by a twentieth. The prediction held: the one-thread run pays for cache misses that the eight-thread run
+      does not. What SpiderMonkey's one-thread loop does to miss more is not known.</p>
+    <p>It is not a slow pool of one thread either: the speedup is above 8 against plain sequential code too
+      (<a href="#baseline">below</a>).</p>
+
+    <h2 id="q4">Question 4: the dip at 6 and 7 threads</h2>
+    <p>The local histogram's efficiency dips at 6 and 7 threads and recovers at 8, in every runtime. The guess was
+      about how Rayon cuts the work: it halves it again and again, which gives pieces in powers of two, and six or
+      seven threads cannot share eight pieces evenly. The test: cut the work into pieces of a fixed size instead,
+      and see whether the dip goes away.</p>
+    <div class="controls-row"><span class="muted">Runtime:</span><span id="w-q4-env"></span></div>
+    <div id="w-q4"></div>
+    <p class="src" data-src="grain-threads-v3-grains"></p>
+    <p>Look at the <b>times</b>, not the efficiencies. With a fixed grain, 6 or 7 threads are not faster: 256 KB
+      gives the times of Rayon's own split, and 1024 KB is worse. The efficiencies with a fixed grain look better
+      only because the <i>one-thread</i> run with a fixed grain is slower, which raises every speedup computed from
+      it. The guess is <b>not supported</b>. The dip stays unexplained; where the kernel places six or seven
+      threads on eight cores was not tested.</p>
+    <div class="remember"><b>A test that fails is still a result.</b> The study now knows one thing the dip is not,
+      and says so. It also shows, a second time on this page, how a relative number can improve because its
+      baseline got worse.</div>
+
+    <h2 id="q67">Questions 6 and 7: Chrome's atomic add</h2>
+    <p>These two are the heart of RQ2 and have a page of their own: <a href="why.html">Why Chrome: code and
+      counters</a>. In short: V8's optimizing compiler adds to a shared counter with a read and a compare-and-swap
+      that retries; a native program changed to add the same way gets Chrome's times, slower on one counter
+      (<a href="why.html#probe">question 6, answered</a>) and faster on 256 counters with eight threads
+      (<a href="why.html#k256">question 7, answered for the sequence</a>). Why the same sequence wins on 256
+      counters is a proposed mechanism, not a tested one.</p>
+
+    <h2 id="q8">Question 8: Firefox below 1</h2>
+    <p>Firefox's RQ2 number is 0.83 at k = 16 and 0.80 at k = 256: it seems to pay less than native for sharing.
+      But the number is a ratio of two times, and it can fall because the top got smaller or because the bottom got
+      bigger. Firefox's atomic times are the native ones, within a few percent. What moves is the other factor: its
+      local histogram is slower than native's with one thread and scales past 8 (question 5), which is the
+      denominator of the comparison. The table with both factors is on
+      <a href="rq2.html#answer">The answer to RQ2</a>. So this one needs no test of its own: it follows from
+      question 5.</p>
+
+    <h2 id="q9">Question 9: the noisy cells</h2>
+    <p>Almost every cell of the study repeats within a percent. The atomic histogram at k = 1 with eight threads
+      does not: its runs spread over 25 to 32% between the fastest and the slowest, and they fall on a few distinct
+      time levels instead of a smooth cloud. The guess: eight cores fighting for one cache line can settle into
+      different patterns of who gets the line when, and a run keeps the pattern it starts with.</p>
+    <p>If so, a run's time should follow its own count of line transfers. It does: across the 30 runs of the
+      counters campaign, the rank correlation (<span data-term="spearman-s-rho">Spearman's ρ</span>) between a run's time
+      and its lines taken for writing from another core is +0.94 in Chrome, +0.63 natively and +0.56 in Firefox. At
+      k = 256 the runs are within 1% and there is nothing to follow. The levels are states of contention; what sets
+      the state of a run is not known.</p>
+    <p class="src" data-files="docs/adr/0091-what-explains-the-scaling.md, data/tables/perf-v3/perf-v3-runs.csv"></p>
+
+    <h2 id="baseline">Is the one-thread baseline fair?</h2>
+    <p>Twice on this page a speedup looked better because its baseline was worse. So the study checked its own
+      baseline. Every speedup in the results is relative to the same parallel code run with a pool of <i>one</i>
+      thread. If that pool were slow, every speedup would be inflated. The main campaign therefore also ran plain
+      sequential versions with no thread pool at all (<code>filter-seq</code>, <code>hist-seq</code>, the <span data-term="sequential-reference">sequential references</span>):</p>
+    <div id="w-seq"></div>
+    <p class="src" data-src="campaign-v3-sequential"></p>
+    <p>A value of 1.00 means the pool of one thread is exactly as fast as plain sequential code. Every value is
+      between 0.96 and 1.07: the pool of one thread costs between -7% and +5% in time. The relative speedup is not
+      inflated by its baseline.</p>
+    <details class="deeper"><summary>If you already know this: which core did the work at one thread</summary>
+      <p>Every v3 run records the busy time of each measured CPU, so the one-thread runs can be split by the core
+        that did most of the work. For the native filter that is CPU 12 (the degraded core, see
+        <a href="session.html#cores">The per-core check</a>) or CPU 14:</p>
+      <div id="w-split"></div>
+      <p class="src" data-src="campaign-v3-core-split"></p>
+      <p>The runs on CPU 12 are not slower. The busiest core has 70 to 80% of a native run's busy time and 47 to
+        64% of a browser run's, the rest being the main thread and the browser's other threads: the split says where
+        most of the work was, not that one core did it all.</p>
+    </details>
+
+    <h2 id="open">What stays open</h2>
+    <p>A study is also judged by what it admits it does not know. These are declared with the results:</p>
+    <ul>
+      <li>Why SpiderMonkey's filter loop, which can now be read, gets fewer instructions per cycle than V8's.</li>
+      <li>Why SpiderMonkey's local histogram misses the cache more with one thread.</li>
+      <li>What Chrome loses outside the loop at eight threads.</li>
+      <li>The mechanism by which a read before the locked write contends less over 256 lines.</li>
+      <li>The dip at six and seven threads.</li>
+      <li>What sets a run's state of contention at k = 1.</li>
+    </ul>
+    <div class="remember"><b>What to remember.</b> An explanation is only as good as the test it survived. Here,
+      Chrome's atomic penalty has a cause shown by changing one thing; the filter's scaling has a reading supported
+      by three measurements that agree; one guess failed its test and was dropped. And twice a ratio looked better
+      because its bottom got worse: always look at the seconds.</div>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var $ = UI.$, el = UI.el, fmt = UI.fmt;
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+  function ci(r, d) { return fmt(r.low, d) + " to " + fmt(r.high, d); }
+  function loop(env, wl, k, n, counter) { return UI.row("perf-loop-v3-counters", { environment: env, workload: wl, k: k, threads: n, counter: counter }); }
+  function rise(env, wl, k, counter) { return UI.row("perf-loop-v3-rises", { environment: env, workload: wl, k: k, threads: 8, counter: counter }); }
+
+  // Question 3: instructions and cycles per pixel of the loop alone, one thread.
+  var Q3 = [{ value: "filter", label: "Filter", wl: "filter", k: "" }, { value: "local", label: "Local histogram, k = 256", wl: "hist-local", k: 256 }];
+  UI.segmented($("#w-q3-wl"), Q3, function (v) {
+    var w = Q3.filter(function (x) { return x.value === v; })[0], host = $("#w-q3"); host.innerHTML = "";
+    var nat = { i: loop("native", w.wl, w.k, 1, "instructions").per_pixel, c: loop("native", w.wl, w.k, 1, "cycles").per_pixel };
+    host.appendChild(UI.table(ENVS, [
+      { label: w.label + ", one thread", value: function (e) { return e[1]; } },
+      { label: "Instructions per pixel", num: true, value: function (e) { return fmt(loop(e[0], w.wl, w.k, 1, "instructions").per_pixel, 2); } },
+      { label: "times native", num: true, value: function (e) { return fmt(loop(e[0], w.wl, w.k, 1, "instructions").per_pixel / nat.i, 2); } },
+      { label: "Cycles per pixel", num: true, value: function (e) { return fmt(loop(e[0], w.wl, w.k, 1, "cycles").per_pixel, 2); } },
+      { label: "times native", num: true, value: function (e) { return fmt(loop(e[0], w.wl, w.k, 1, "cycles").per_pixel / nat.c, 2); } },
+      { label: "Instructions per cycle", num: true, value: function (e) { return fmt(loop(e[0], w.wl, w.k, 1, "instructions").per_pixel / loop(e[0], w.wl, w.k, 1, "cycles").per_pixel, 2); } }
+    ]));
+  });
+
+  // Question 1: what rises from one thread to eight, per pixel.
+  function riseTable(host, wl, k, counters) {
+    host.appendChild(UI.table(ENVS, [{ label: "N = 8 over N = 1, per pixel", value: function (e) { return e[1]; } }].concat(counters.map(function (c) {
+      return { label: c[1], num: true, value: function (e) { var r = rise(e[0], wl, k, c[0]); return fmt(r.over_one_thread, 3) + "  (" + ci(r, 3) + ")"; } };
+    }))));
+  }
+  riseTable($("#w-q1"), "filter", "", [["instructions", "Instructions"], ["cycles", "Cycles"], ["llc_misses", "Last-level cache misses"], ["l2_misses", "L2 cache misses"]]);
+
+  // Efficiency at eight threads against the one-thread throughput, over the three builds and three environments.
+  (function () {
+    var BYTES = 8192 * 8192, pts = [];
+    UI.rows("simd-v3-variants", { threads: 8 }).forEach(function (r) {
+      var one = UI.row("simd-v3-variants", { build: r.build, environment: r.environment, threads: 1 });
+      pts.push({ build: r.build, env: r.environment, mbs: BYTES / (one.center_ns / 1e9) / 1e6, eff: r.efficiency });
+    });
+    pts.sort(function (a, b) { return a.mbs - b.mbs; });
+    var W = 640, H = 280, L = 52, R = 16, T = 14, B = 40, xmax = 4600, ymin = 0.68, ymax = 1.0;
+    function fx(v) { return L + (W - L - R) * v / xmax; }
+    function fy(v) { return T + (H - T - B) * (1 - (v - ymin) / (ymax - ymin)); }
+    var svg = '<svg class="chart scatter" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Efficiency at eight threads against megabytes per second read by one thread">';
+    [0.7, 0.8, 0.9, 1.0].forEach(function (v) { svg += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(v) + '" y2="' + fy(v) + '"/><text x="' + (L - 6) + '" y="' + (fy(v) + 4) + '" text-anchor="end">' + fmt(v, 1) + '</text>'; });
+    [0, 1000, 2000, 3000, 4000].forEach(function (v) { svg += '<text x="' + fx(v) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + v + '</text>'; });
+    svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle">MB per second read by one thread</text>';
+    svg += '<text x="12" y="' + ((T + H - B) / 2) + '" text-anchor="middle" transform="rotate(-90 12 ' + ((T + H - B) / 2) + ')">efficiency at N = 8</text>';
+    pts.forEach(function (p) {
+      svg += '<circle cx="' + fx(p.mbs) + '" cy="' + fy(p.eff) + '" r="6" fill="var(--' + p.env + ')"><title>' + p.build + ', ' + envName(p.env) + ': ' + fmt(p.mbs, 0) + ' MB/s, efficiency ' + fmt(p.eff, 3) + '</title></circle>';
+      svg += '<text x="' + (fx(p.mbs) + 9) + '" y="' + (fy(p.eff) + (p.build === "scalar" && p.env === "chrome" ? 14 : -7)) + '">' + p.build + '</text>';
+    });
+    var wrap = $("#w-q1-simd"); wrap.innerHTML = svg + "</svg>";
+    var legend = el("div", { class: "legend-row" });
+    ENVS.forEach(function (e) { legend.appendChild(el("span", { class: "chip " + e[0], text: e[1] })); });
+    wrap.appendChild(legend);
+    wrap.appendChild(UI.table(pts, [
+      { label: "Build", key: "build" }, { label: "Runtime", value: function (p) { return envName(p.env); } },
+      { label: "MB/s with one thread", num: true, value: function (p) { return fmt(p.mbs, 0); } },
+      { label: "Efficiency at N = 8", num: true, value: function (p) { return fmt(p.eff, 3); } }
+    ]));
+  })();
+
+  $("#w-q1-cut").appendChild(UI.table(ENVS, [
+    { label: "Filter efficiency at N = 8", value: function (e) { return e[1]; } },
+    { label: "4096 x 4096 (32 MB)", num: true, value: function (e) { return fmt(UI.row("cutoff-4096-v3-scaling", { environment: e[0], workload: "filter", threads: 8 }).efficiency, 3); } },
+    { label: "8192 x 8192 (128 MB)", num: true, value: function (e) { return fmt(UI.row("cutoff-8192-v3-scaling", { environment: e[0], workload: "filter", threads: 8 }).efficiency, 3); } }
+  ]));
+
+  // Question 2: the filter with each compiler of each browser.
+  function arm(env, variant, n) { return UI.row("tier-v3-arms", { environment: env, workload: "filter", threads: n, variant: variant }); }
+  $("#w-q2").appendChild(UI.table([["chrome", "optimizing", "Chrome, optimizing compiler"], ["chrome", "baseline", "Chrome, baseline compiler"], ["firefox", "optimizing", "Firefox, optimizing compiler"], ["firefox", "baseline", "Firefox, baseline compiler"]], [
+    { label: "Filter", value: function (a) { return a[2]; } },
+    { label: "One thread, ms", num: true, value: function (a) { return fmt(arm(a[0], a[1], 1).center_ns / 1e6, 1); } },
+    { label: "Eight threads, ms", num: true, value: function (a) { return fmt(arm(a[0], a[1], 8).center_ns / 1e6, 2); } },
+    { label: "Speedup at N = 8", num: true, value: function (a) { return fmt(arm(a[0], a[1], 8).speedup, 2); } }
+  ]));
+
+  // Question 5: the local histogram, cycles and L2 misses per pixel, eight threads over one.
+  $("#w-q5").appendChild(UI.table(ENVS, [
+    { label: "Local histogram, N = 8 over N = 1", value: function (e) { return e[1]; } },
+    { label: "Speedup at N = 8, k = 256", num: true, value: function (e) { return fmt(UI.row("campaign-v3-scaling", { environment: e[0], workload: "hist-local", k: 256, threads: 8 }).speedup, 2); } },
+    { label: "Cycles per pixel, k = 16", num: true, value: function (e) { return fmt(rise(e[0], "hist-local", 16, "cycles").over_one_thread, 3); } },
+    { label: "Cycles per pixel, k = 256", num: true, value: function (e) { return fmt(rise(e[0], "hist-local", 256, "cycles").over_one_thread, 3); } },
+    { label: "L2 misses per pixel, k = 16", num: true, value: function (e) { return fmt(rise(e[0], "hist-local", 16, "l2_misses").over_one_thread, 2); } },
+    { label: "L2 misses per pixel, k = 256", num: true, value: function (e) { return fmt(rise(e[0], "hist-local", 256, "l2_misses").over_one_thread, 2); } }
+  ]));
+
+  // Question 4: Rayon's adaptive split against two fixed grains, at 6, 7 and 8 threads.
+  UI.segmented($("#w-q4-env"), ENVS.map(function (e) { return { value: e[0], label: e[1] }; }), function (env) {
+    var host = $("#w-q4"); host.innerHTML = "";
+    function g(variant, n) { return UI.row("grain-threads-v3-grains", { environment: env, threads: n, variant: variant }); }
+    function cell(variant, n) { var r = g(variant, n); return fmt(r.center_ns / 1e6, 2) + " ms, " + fmt(r.efficiency, 3); }
+    host.appendChild(UI.table([["adaptive", "Rayon's adaptive split"], [256, "fixed grain of 256 KB"], [1024, "fixed grain of 1024 KB"]], [
+      { label: "Local histogram, k = 16: time, efficiency", value: function (v) { return v[1]; } },
+      { label: "N = 1", num: true, value: function (v) { return fmt(g(v[0], 1).center_ns / 1e6, 1) + " ms"; } },
+      { label: "N = 6", num: true, value: function (v) { return cell(v[0], 6); } },
+      { label: "N = 7", num: true, value: function (v) { return cell(v[0], 7); } },
+      { label: "N = 8", num: true, value: function (v) { return cell(v[0], 8); } }
+    ]));
+  });
+
+  // The sequential references: the pool of one thread against plain sequential code.
+  var SEQ = [["filter", "", "Filter"], ["hist-local", 1, "Local histogram, k = 1"], ["hist-local", 4, "Local histogram, k = 4"], ["hist-local", 16, "Local histogram, k = 16"], ["hist-local", 256, "Local histogram, k = 256"]];
+  function seq(env, w, n) { return UI.row("campaign-v3-sequential", { environment: env, workload: w[0], k: w[1], threads: n }); }
+  $("#w-seq").appendChild(UI.table(SEQ, [{ label: "Sequential time / time of the pool", value: function (w) { return w[2]; } }].concat(
+    ENVS.map(function (e) { return { label: e[1] + ", pool of 1", num: true, value: function (w) { return fmt(seq(e[0], w, 1).speedup_vs_sequential, 3); } }; }),
+    ENVS.map(function (e) { return { label: e[1] + ", pool of 8", num: true, value: function (w) { return fmt(seq(e[0], w, 8).speedup_vs_sequential, 2); } }; }))));
+
+  $("#w-split").appendChild(UI.table(UI.rows("campaign-v3-core-split", { environment: "native", workload: "filter" }), [
+    { label: "Native filter, N = 1: busiest CPU", key: "cpu", num: true },
+    { label: "Runs", key: "runs", num: true },
+    { label: "Median time / configuration's median", num: true, value: function (r) { return fmt(r.median_over_configuration, 4); } },
+    { label: "Slowest run / configuration's median", num: true, value: function (r) { return fmt(r.max_over_configuration, 4); } },
+    { label: "Share of the run's busy time", num: true, value: function (r) { return fmt(r.median_busy_share, 2); } }
+  ]));
+
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>
