@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Glossary</title>
+<title>Glossary - WASM threads vs native</title>
 <meta name="description" content="Every word the guide uses, explained in one plain sentence and one short paragraph with an example, grouped by the page that explains it or from A to Z.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -26,29 +26,30 @@
 <body data-page="glossary">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="words.html">Words of the project</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Appendix · 2 of 2</p>
     <h1>Glossary</h1>
     <p class="lead">Every word the guide uses that a newcomer might not know, from <i>thread</i> and
       <i>cache</i> to <i>Holm</i> and <i>systemd scope</i>. Each one gets a plain sentence anyone can read,
       then a short paragraph with an example from this project and the file or decision it comes
       from.</p>
-    <div class="oneliner"><b>In one sentence:</b> a dictionary of the project in two layers per word,
-      the plain sentence and the example, grouped by the page that explains the word, or from A to Z.</div>
+    <p class="lead-more">In short: a dictionary of the project in two layers per word,
+      the plain sentence and the example, grouped by the page that explains the word, or from A to Z.</p>
     <p>On every page, a word with a dotted underline is one of these: hover or tap it and the plain
       sentence appears; the link in that box brings you here, to the example. Nothing on the pages
       assumes you know a word before it has been explained, so if one is missing, it is a bug.</p>
@@ -67,6 +68,7 @@
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

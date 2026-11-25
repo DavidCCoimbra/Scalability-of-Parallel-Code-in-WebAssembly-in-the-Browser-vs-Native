@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - The workflow: branches, PRs, ADRs</title>
+<title>Contribute: branches, PRs and ADRs - WASM threads vs native</title>
 <meta name="description" content="Ticket, branch, commits, the PR template, what CI checks, the bot review and the squash merge, when a decision needs an ADR, and what is off limits.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -19,28 +19,29 @@
 <body data-page="workflow">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Working on it · 8 of 8</p>
-    <h1>The workflow: branches, PRs, ADRs</h1>
+    <h1>Contribute: branches, PRs and ADRs</h1>
 
     <p class="lead">Every change to this repository, from a comment to a campaign, goes the same way: a branch, a small pull request that CI and a reviewer look at, a squash merge. The author must be
       able to explain every line that lands, which is why the process is written down and why some things
       are off limits.</p>
-    <div class="oneliner"><b>In one sentence:</b> one small change, one branch, commits and a PR title written as Conventional Commits, a PR from the template, CI green, the bot's review read, squash-merge; a decision gets an ADR, and <code>AI_USE.md</code> is written by the author alone.</div>
+    <p class="lead-more">In short: one small change, one branch, commits and a PR title written as Conventional Commits, a PR from the template, CI green, the bot's review read, squash-merge; a decision gets an ADR, and <code>AI_USE.md</code> is written by the author alone.</p>
 
     <h2 id="ticket">A branch, small commits, a PR</h2>
     <ol class="steps">
@@ -50,7 +51,7 @@
       <li><b>The PR</b> is filled from <code>.github/pull_request_template.md</code>: a summary, a Mermaid diagram of where the change fits, the paper figure it produces when there is one, and how it was verified (Mac numbers are never results).</li>
     </ol>
     <div data-code=".github/pull_request_template.md|## Summary|15" data-title="The PR template"></div>
-    <div class="why"><b>Why small PRs, one at a time?</b> The course rule is that the author can explain every line, and nobody can explain two thousand lines read in one evening. A PR of one module with its tests can be read whole, and it leaves a trail: this line came from this PR, for this reason. A commit title in a fixed form makes that trail searchable.</div>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why small PRs, one at a time?</b> The course rule is that the author can explain every line, and nobody can explain two thousand lines read in one evening. A PR of one module with its tests can be read whole, and it leaves a trail: this line came from this PR, for this reason. A commit title in a fixed form makes that trail searchable.</p></aside>
 
     <h2 id="ci">What CI checks</h2>
     <p>Every push to a PR runs <code>.github/workflows/ci.yml</code>. A first job looks at which folders
@@ -78,12 +79,12 @@
         PR's title, so <code>main</code>'s history is one line per change.</li>
       <li>After the merge: <code>git switch main</code>, <code>git pull</code>, and the next PR starts.</li>
     </ol>
-    <div class="why"><b>Why squash?</b> A branch's twenty "fix typo" commits are useful while working and
-      noise afterwards. One commit per PR means <code>git log main</code> reads as the list of changes, each with its type and scope, and <code>git bisect</code> lands on a whole change.</div>
-    <div class="why"><b>Why a reviewer that is not the author?</b> The author of a benchmark is the person least
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why squash?</b> A branch's twenty "fix typo" commits are useful while working and
+      noise afterwards. One commit per PR means <code>git log main</code> reads as the list of changes, each with its type and scope, and <code>git bisect</code> lands on a whole change.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a reviewer that is not the author?</b> The author of a benchmark is the person least
       able to see its blind spots: a warm-up that is too short, a timed region that includes an allocation, a
       comparison across builds. The checklist is the list of ways this study could fool itself, run on every
-      change (<a href="validity.html">Four ways a study fools itself</a>).</div>
+      change (<a href="validity.html">Four ways a study fools itself</a>).</p></aside>
 
     <h2 id="adr">When a decision needs an ADR</h2>
     <p>An ADR (<span data-term="adr">architecture decision record</span>) is a short file in
@@ -99,10 +100,10 @@
     <p>Numbering is sequential; a decision is never edited, only superseded by a later one that names it.
       <code>scripts/check_adrs.py</code> checks the structure in CI, and <a href="decisions.html">Decisions:
       the ADRs</a> lists all of them by topic.</p>
-    <div class="why"><b>Why write decisions down at all?</b> Because the paper has five pages and the defence
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why write decisions down at all?</b> Because the paper has five pages and the defence
       has questions. "Why 30 runs?", "why 128 bytes?", "why not the E-cores?" each have an answer with the
       pilot data that gave it, and the ADR is where that answer waited. A decision in someone's head is lost
-      by the second week.</div>
+      by the second week.</p></aside>
 
     <h2 id="limits">What is off limits</h2>
     <div class="scroll-x"><table class="t">
@@ -118,13 +119,14 @@
         <tr><td>No em dash, documents in English</td><td>The author's rule</td></tr>
       </tbody>
     </table></div>
-    <div class="remember"><b>What to remember.</b> A small change, a branch, Conventional Commits, a PR from the template, CI, the bot as a double check, squash. A changed parameter or statistic is an ADR before it is code. The author owns
-      <code>AI_USE.md</code> and <code>main</code>.</div>
+    <p class="takeaway"><strong>In summary.</strong> A small change, a branch, Conventional Commits, a PR from the template, CI, the bot as a double check, squash. A changed parameter or statistic is an ADR before it is code. The author owns
+      <code>AI_USE.md</code> and <code>main</code>.</p>
     <p class="src" data-files="CLAUDE.md, .claude/skills/small-pr/SKILL.md, .claude/skills/conventional-commits/SKILL.md, .github/pull_request_template.md, .github/workflows/ci.yml, .github/workflows/claude-review.yml, docs/adr/README.md"></p>
 
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

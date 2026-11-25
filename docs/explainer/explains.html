@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - What explains the results</title>
+<title>What explains the results - WASM threads vs native</title>
 <meta name="description" content="Nine open questions behind the results: the guess for each, the prediction written before the test, and how each one ended: answered, supported or still open.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -25,30 +25,31 @@
 <body data-page="explains">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="harness.html">From make to a CSV row</a></li><li><a href="reading.html">Reading the numbers</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-<p class="kicker">Results · 4 of 8</p>
     <h1>What explains the results</h1>
     <p class="lead">A measurement tells you <i>what</i> happened: the filter gets 7 times faster with 8 threads, Chrome
       pays twice for a shared counter. It does not tell you <i>why</i>. This page is about the why. The study listed
       nine things it had seen and could not yet explain, wrote down a guess for each, wrote down what a test would
       show (a <span data-term="prediction">prediction</span>) if the guess were right and if it were wrong, and only then ran the tests.</p>
-    <div class="oneliner"><b>In one sentence:</b> of nine open questions, the tests answered three, supported four,
+    <p class="lead-more">In short: of nine open questions, the tests answered three, supported four,
       explained one through another, and left one open; no answer changes a result, each one says how far the
-      explanation of a result can be trusted.</div>
+      explanation of a result can be trusted.</p>
 
     <h2 id="how">How an explanation is tested</h2>
     <p>It is easy to explain a number after you have seen it. Any story fits. The discipline that makes a story
@@ -75,13 +76,13 @@
       <li><b>Not supported</b>: the test showed what the "if wrong" column said. The guess is dropped and the
         question stays open.</li>
     </ul>
-    <div class="why"><b>Why not just say "we think it is the memory"?</b> Because a reader cannot tell a tested
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not just say "we think it is the memory"?</b> Because a reader cannot tell a tested
       explanation from a plausible one unless the text says which is which. If every explanation were written in the
       same confident voice, the one that was only a guess would be believed as much as the one that was proven, and
-      the first person to check it would stop trusting all of them.</div>
-    <div class="callout"><b>None of this is a result of the study.</b> The results are the ten contrasts on
+      the first person to check it would stop trusting all of them.</p></aside>
+    <aside class="callout note"><p class="callout-title">Note</p><p><b>None of this is a result of the study.</b> The results are the ten contrasts on
       <a href="rq2.html#primary">RQ2: synchronization</a>, decided by a plan fixed before the data. Everything on this
-      page is <span data-term="exploratory">exploratory</span>: it explains those results, it does not add to them.</div>
+      page is <span data-term="exploratory">exploratory</span>: it explains those results, it does not add to them.</p></aside>
 
     <h2 id="board">Nine questions, one board</h2>
     <p>Here is the whole board. Each row is something the main campaign showed and nobody could explain from the
@@ -116,10 +117,10 @@
       through them at a higher rate (more instructions per cycle) and ends about 1.16 times the native cycles.
       Firefox runs them at the native rate or below, and ends about 1.36 times. Those two ratios are the time ratios
       of the main campaign: the counters and the clock tell the same story.</p>
-    <div class="analogy"><b>Picture it.</b> Three cooks follow the same recipe. One was given it in 65 steps, the
+    <p><em>An analogy.</em> Three cooks follow the same recipe. One was given it in 65 steps, the
       other two in about 86 steps each, because their translators were wordier. Of the two with the long version,
-      one works faster with his hands and nearly catches up; the other does not.</div>
-    <details class="deeper"><summary>If you already know this: the listings, and how the loop alone was counted</summary>
+      one works faster with his hands and nearly catches up; the other does not.</p>
+    <details class="deeper"><summary>In depth: the listings, and how the loop alone was counted</summary>
       <p>The listings agree with the counters. The filter loops in <code>data/probes/engine-code</code> handle 16
         pixels in 65 instructions natively, 87 in Chrome and 85 in Firefox: 4.06, 5.44 and 5.31 per pixel, against
         the counted 4.10, 5.52 and 5.41. Firefox's loop is as long as Chrome's and runs slower; it mixes VEX-encoded
@@ -175,16 +176,16 @@
       its efficiency at 8 threads than the 8192 x 8192 one (128 MB):</p>
     <div id="w-q1-cut"></div>
     <p class="src" data-src="cutoff-4096-v3-scaling, cutoff-8192-v3-scaling"></p>
-    <p>Natively this agrees. In the browsers it does not show: their efficiency is <i>lower</i> on the smaller image, not higher (on small images the fixed cost of a parallel region also weighs in, see <a href="granularity.html">When parallelism pays</a>). So the cutoff supports the reading natively and is not clear for the browsers.</p>
+    <p>Natively this agrees. In the browsers it does not show: their efficiency is <i>lower</i> on the smaller image, not higher (on small images the fixed cost of a parallel region also weighs in, see <a href="extras.html#granularity">When parallelism pays</a>). So the cutoff supports the reading natively and is not clear for the browsers.</p>
 
     <h2 id="q2">Question 2: why Firefox scales better</h2>
     <p>This is the one RQ1 contrast that came out different from native: Firefox's filter speedup at 8 threads is
       5.5% higher. It would be tempting to write "Firefox runs threads better". The data says something less
       flattering and more interesting.</p>
-    <div class="why"><b>What is the trap here?</b> Speedup is T<sub>1</sub> / T<sub>8</sub>. You can raise it by
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>What is the trap here?</b> Speedup is T<sub>1</sub> / T<sub>8</sub>. You can raise it by
       making T<sub>8</sub> smaller, or by making T<sub>1</sub> <i>bigger</i>. A runtime with a slow single thread
       gets a better speedup for free. If we reported "Firefox scales best" without looking at the seconds, we would
-      be praising the slowest runtime for being slow.</div>
+      be praising the slowest runtime for being slow.</p></aside>
     <p>Firefox's loop is the slowest of the three per thread (question 3). A slower loop asks for less memory per
       second, so eight of them run into the shared memory less (question 1). The counters agree: from 1 to 8
       threads Firefox's cycles per pixel rise less than native's, and so do its cache misses (the table above). In
@@ -225,16 +226,16 @@
       only because the <i>one-thread</i> run with a fixed grain is slower, which raises every speedup computed from
       it. The guess is <b>not supported</b>. The dip stays unexplained; where the kernel places six or seven
       threads on eight cores was not tested.</p>
-    <div class="remember"><b>A test that fails is still a result.</b> The study now knows one thing the dip is not,
+    <p class="takeaway"><strong>In summary.</strong> The study now knows one thing the dip is not,
       and says so. It also shows, a second time on this page, how a relative number can improve because its
-      baseline got worse.</div>
+      baseline got worse.</p>
 
     <h2 id="q67">Questions 6 and 7: Chrome's atomic add</h2>
-    <p>These two are the heart of RQ2 and have a page of their own: <a href="why.html">Why Chrome: code and
+    <p>These two are the heart of RQ2 and have a page of their own: <a href="rq2.html#cause">Why Chrome: code and
       counters</a>. In short: V8's optimizing compiler adds to a shared counter with a read and a compare-and-swap
       that retries; a native program changed to add the same way gets Chrome's times, slower on one counter
-      (<a href="why.html#probe">question 6, answered</a>) and faster on 256 counters with eight threads
-      (<a href="why.html#k256">question 7, answered for the sequence</a>). Why the same sequence wins on 256
+      (<a href="rq2.html#probe">question 6, answered</a>) and faster on 256 counters with eight threads
+      (<a href="rq2.html#k256">question 7, answered for the sequence</a>). Why the same sequence wins on 256
       counters is a proposed mechanism, not a tested one.</p>
 
     <h2 id="q8">Question 8: Firefox below 1</h2>
@@ -268,7 +269,7 @@
     <p>A value of 1.00 means the pool of one thread is exactly as fast as plain sequential code. Every value is
       between 0.96 and 1.07: the pool of one thread costs between -7% and +5% in time. The relative speedup is not
       inflated by its baseline.</p>
-    <details class="deeper"><summary>If you already know this: which core did the work at one thread</summary>
+    <details class="deeper"><summary>In depth: which core did the work at one thread</summary>
       <p>Every v3 run records the busy time of each measured CPU, so the one-thread runs can be split by the core
         that did most of the work. For the native filter that is CPU 12 (the degraded core, see
         <a href="session.html#cores">The per-core check</a>) or CPU 14:</p>
@@ -289,14 +290,15 @@
       <li>The dip at six and seven threads.</li>
       <li>What sets a run's state of contention at k = 1.</li>
     </ul>
-    <div class="remember"><b>What to remember.</b> An explanation is only as good as the test it survived. Here,
+    <p class="takeaway"><strong>In summary.</strong> An explanation is only as good as the test it survived. Here,
       Chrome's atomic penalty has a cause shown by changing one thing; the filter's scaling has a reading supported
       by three measurements that agree; one guess failed its test and was dropped. And twice a ratio looked better
-      because its bottom got worse: always look at the seconds.</div>
+      because its bottom got worse: always look at the seconds.</p>
 
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

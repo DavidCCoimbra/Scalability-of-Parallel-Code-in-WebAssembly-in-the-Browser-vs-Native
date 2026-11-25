@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Three runtimes, one source</title>
+<title>Environments and builds - WASM threads vs native</title>
 <meta name="description" content="One Rust source compiled once for Linux and once for WebAssembly; what native, Chrome and Firefox each do with it; the five pieces WASM threads need; and how a build is tagged so runs are never mixed.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -26,31 +26,32 @@
 <body data-page="environments">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="words.html">Words of the project</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">The study · 3 of 4</p>
-    <h1>Three runtimes, one source</h1>
+    <h1>Environments and builds</h1>
 
     <p class="lead">The comparison is only fair if the code is the same. So there is one Rust program, compiled by
       one compiler with one set of options, into two outputs: a normal Linux program, and a WebAssembly file. Chrome
       and Firefox each take that same WebAssembly file and turn it into machine code with their own engine. That last
       step is part of what the study measures.</p>
 
-    <div class="oneliner"><b>In one sentence:</b> same source, same compiler, same options, three places to run it;
-      the only thing that differs between environments is what runs the code.</div>
+    <p class="lead-more">In short: same source, same compiler, same options, three places to run it;
+      the only thing that differs between environments is what runs the code.</p>
 
     <figure class="figure">
       <svg viewBox="0 0 640 170" role="img" aria-label="One Rust source compiled to a native binary and to a WASM file; the WASM file goes into Chrome and Firefox, each with its own engine">
@@ -85,13 +86,13 @@
       <li><b>The options.</b> The same optimization settings for both outputs, including the same width of
         <span data-term="simd">SIMD</span> (instructions that work on several pixels at once): 128 bits on both sides.</li>
     </ul>
-    <div class="why"><b>Why not let the native build use everything the CPU has?</b> The PC's CPU can do 256-bit SIMD
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not let the native build use everything the CPU has?</b> The PC's CPU can do 256-bit SIMD
       (<span data-term="avx2">AVX2</span>), which processes twice as many pixels per instruction, but WebAssembly can
       only ask for 128 bits. If the native build used 256 and the browser 128, part of the gap would be the width of
       the instructions, not the runtime. The study keeps both at 128, and tries the wider native build only as an
       exploratory extra (<a href="extras.html#simd">SIMD builds</a>). A check in CI confirms the blur's inner loop
-      really uses SIMD in both outputs (ADR 0017).</div>
-    <details class="deeper"><summary>If you already know this: the exact toolchain, profile and targets</summary>
+      really uses SIMD in both outputs (ADR 0017).</p></aside>
+    <details class="deeper"><summary>In depth: the exact toolchain, profile and targets</summary>
       <div class="scroll-x"><table class="t">
         <thead><tr><th></th><th><span class="chip native">native</span></th><th><span class="chip chrome">chrome</span> and <span class="chip firefox">firefox</span></th></tr></thead>
         <tbody>
@@ -114,7 +115,7 @@
       (which workload, how many threads, the image size), starts its N threads, does the warm-up and the timed
       iterations, and prints one line of results per iteration. The harness captures that output and writes the CSV.</p>
     <p>Its stopwatch is the operating system's high-resolution clock, which counts in nanoseconds.</p>
-    <details class="deeper"><summary>If you already know this: the entry point and the scope it runs in</summary>
+    <details class="deeper"><summary>In depth: the entry point and the scope it runs in</summary>
       <p>The binary is <code>bench/target/release/native</code>. It builds a global Rayon pool of N threads, runs the
         configuration and prints CSV. The harness starts it inside a <span data-term="systemd-scope-slice">systemd scope</span>
         with a <span data-term="taskset">taskset</span> mask of the 8 P-cores. The clock is
@@ -135,21 +136,21 @@
       <div class="card"><h3><span class="firefox-ink">Firefox</span></h3><p>Firefox 158.0, downloaded from Mozilla's
         archive. Its engine is <span data-term="spidermonkey">SpiderMonkey</span>. Automatic updates are switched off by
         a policy, after a pinned copy updated itself once in the middle of the study
-        (<a href="pitfalls.html#update">A pinned Firefox updates itself</a>).</p></div>
+        (<a href="machine.html#update">A pinned Firefox updates itself</a>).</p></div>
     </div>
-    <div class="why"><b>Why a fresh browser for every run, with no window and no extensions?</b> A browser you use
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a fresh browser for every run, with no window and no extensions?</b> A browser you use
       carries state: extensions, cached pages, background tabs, update checks. Any of them can take CPU time in the
       middle of a measurement, and differently from one run to the next. A fresh temporary profile has none of that;
       headless (no window) removes the cost of drawing; and both browsers get the same quiet settings, so neither is
-      favoured. A pilot measured headless against a visible window: within 0.3 % (ADR 0046).</div>
-    <div class="why"><b>Why no automation framework (Puppeteer, Playwright)?</b> Those tools drive the browser through
+      favoured. A pilot measured headless against a visible window: within 0.3 % (ADR 0046).</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why no automation framework (Puppeteer, Playwright)?</b> Those tools drive the browser through
       a control channel, with their own threads and timers inside the browser. They would be part of the measurement.
       Here the browser gets nothing but a URL with the settings in it, and the page reports back by itself
-      (ADR 0006).</div>
+      (ADR 0006).</p></aside>
     <p>The page's stopwatch is <code>performance.now()</code>. Browsers deliberately round it, to make a kind of
       attack harder: to 5 µs in Chrome and 20 µs in Firefox here. Every measured iteration lasts at least 100 times
       that, so the rounding cannot change a result (ADR 0039, ADR 0041).</p>
-    <details class="deeper"><summary>If you already know this: pins, flags and the version check</summary>
+    <details class="deeper"><summary>In depth: pins, flags and the version check</summary>
       <p>Both versions are pinned in <code>harness/browsers.json</code>, the Chrome archive with its SHA-256. The
         launcher gives each browser a <span data-term="fresh-profile">fresh, temporary profile</span>,
         <span data-term="headless">headless</span>, with flags that turn off background work (updates, telemetry,
@@ -179,12 +180,12 @@
         responsive), but running a parallel region means waiting for every thread to finish. So one extra worker calls
         the Rust code and does the waiting, and the main thread only waits for its message.</li>
     </ol>
-    <div class="why"><b>Why does this matter for the results?</b> Because a browser run has more threads than N: the
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does this matter for the results?</b> Because a browser run has more threads than N: the
       N workers of the pool, the coordinating worker, and the browser's own threads. At N = 8 they all share the 8
       cores. That is one of the threats discussed in <a href="threats.html#internal">Threats to validity</a>, and the
       reason the cost of starting and joining a parallel region is measured in every run
-      (<a href="threads.html#forkjoin">Fork-join and its cost</a>).</div>
-    <details class="deeper"><summary>If you already know this: the flags, the headers and the worker</summary>
+      (<a href="threads.html#forkjoin">Fork-join and its cost</a>).</p></aside>
+    <details class="deeper"><summary>In depth: the flags, the headers and the worker</summary>
       <p>Target features <code>+atomics,+bulk-memory,+mutable-globals,+simd128</code> and a shared, imported memory of at
         most 4 GiB; <code>-Z build-std</code> for the standard library; <code>Cross-Origin-Opener-Policy: same-origin</code>
         and <code>Cross-Origin-Embedder-Policy: require-corp</code> from the server; <code>startThreadPool(N)</code> from
@@ -199,10 +200,10 @@
     <p>A build is the exact compiled output: one Linux program and one WebAssembly file from one version of the
       source. Change one line of the measured code, rebuild, and the machine code may come out different, sometimes in
       a way that changes a timing. So runs from two different builds are never compared as if they were one.</p>
-    <div class="why"><b>Why so strict about it?</b> Imagine measuring native on Monday, improving the code a little on
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why so strict about it?</b> Imagine measuring native on Monday, improving the code a little on
       Tuesday, then measuring Chrome. Chrome would be running better code, and the comparison would be unfair without
       anyone noticing. To make that impossible, every run records which build it came from, and a campaign is always
-      one build. The build every reported number comes from is named with a git tag, <code>measured/v3</code>.</div>
+      one build. The build every reported number comes from is named with a git tag, <code>measured/v3</code>.</p></aside>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Build of the reported results</th><th></th></tr></thead>
       <tbody>
@@ -214,7 +215,7 @@
       </tbody>
     </table></div>
     <p class="src" data-files="data/raw/campaign-v3/campaign.json, data/sessions/v3/build/digests.txt, docs/adr/0062-bench-refactor-codegen-neutral.md, docs/adr/0086-v3-build.md"></p>
-    <details class="deeper"><summary>If you already know this: codegen-neutral refactors and the earlier build</summary>
+    <details class="deeper"><summary>In depth: codegen-neutral refactors and the earlier build</summary>
       <ul>
         <li>Every run records the git commit and the SHA-256 of the native binary and of the <code>.wasm</code> file.</li>
         <li>A refactor of the measured path is checked with <code>scripts/codegen_diff.sh</code>; if any hot function's
@@ -222,7 +223,7 @@
         <li>The earlier tags (<code>measured/campaign</code>, <code>measured/extras</code>, and the others) mark the first
           build. A review of the measured path found asymmetries in it, among them a per-pixel bounds check paid only by
           the shared counters; v2 removed them, and every reported campaign was run again on v2
-          (<a href="pitfalls.html#v2">Our own asymmetries</a>).</li>
+          (<a href="machine.html#v2">Our own asymmetries</a>).</li>
       </ul>
     </details>
     <p>One last point, and it is a finding rather than a flaw: the same WebAssembly instruction does not give the
@@ -232,13 +233,14 @@
     <div id="t1-table"></div>
     <p class="src" data-src="campaign-v3-scaling"></p>
 
-    <div class="remember"><b>What to remember.</b> One source, one compiler, one set of options, two outputs. Native
+    <p class="takeaway"><strong>In summary.</strong> One source, one compiler, one set of options, two outputs. Native
       runs machine code made ahead of time; each browser makes its own machine code from the same WebAssembly file,
-      and that step is part of what is measured. Every run names its build, and builds are never mixed.</div>
+      and that step is part of what is measured. Every run names its build, and builds are never mixed.</p>
 
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

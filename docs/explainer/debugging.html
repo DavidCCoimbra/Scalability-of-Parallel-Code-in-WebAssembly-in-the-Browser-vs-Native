@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Debugging a run</title>
+<title>Debug a run - WASM threads vs native</title>
 <meta name="description" content="From make status to the journal, the error record and replaying one run by hand; the common failures and where to look.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -19,31 +19,32 @@
 <body data-page="debugging">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Working on it · 7 of 8</p>
-    <h1>Debugging a run</h1>
+    <h1>Debug a run</h1>
 
     <p class="lead">A campaign of thousands of runs will, now and then, have one that fails: a browser that
       did not post its result in time, a checksum that disagrees, a machine that was not quiet. The harness
       never hides this. It writes the failure next to the good runs, keeps counting, and gives you the exact
       command to run the one run again by hand.</p>
-    <div class="oneliner"><b>In one sentence:</b> <code>make status</code> says what failed,
+    <p class="lead-more">In short: <code>make status</code> says what failed,
       <code>campaign.jsonl</code> says when, the run's <code>.error.json</code> says why, and
-      <code>harness.native</code> or <code>harness.launcher</code> replays one run while you watch.</div>
+      <code>harness.native</code> or <code>harness.launcher</code> replays one run while you watch.</p>
 
     <h2 id="status">Start from make status</h2>
     <pre class="cmd">make status SPEC=harness/campaigns/&lt;name&gt;.json</pre>
@@ -60,10 +61,10 @@
       <li><b>last run</b>: its id and age. A last run that is minutes old with <code>remaining &gt; 0</code>
         and no progress is a hung run; the orchestrator kills it at <code>timeoutSeconds</code>.</li>
     </ul>
-    <div class="why"><b>Why does the harness not stop at the first failure?</b> Because one failed browser run
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the harness not stop at the first failure?</b> Because one failed browser run
       in 5310 is not unusual and a stopped campaign at 3 in the morning wastes the night. The failure is recorded,
       the campaign goes on, and the data check refuses to analyse a campaign with a failed run until it is
-      re-run or excluded with a reason (<a href="campaigns.html#quality">The data check</a>).</div>
+      re-run or excluded with a reason (<a href="campaigns.html#quality">The data check</a>).</p></aside>
 
     <h2 id="records">The run's records</h2>
     <p>Everything a run left is in <code>data/raw/&lt;name&gt;/</code>, named by its id:</p>
@@ -97,9 +98,9 @@ python3 -m harness.launcher --browser chrome \
     <p>To run the failed runs of a campaign again, in their place in the order:</p>
     <pre class="cmd">make campaign SPEC=harness/campaigns/&lt;name&gt;.json   # resumes; skips what is done, skips failed
 python3 -m harness.campaign harness/campaigns/&lt;name&gt;.json --retry-failed   # runs the failed ones again</pre>
-    <div class="why"><b>Why does a plain resume skip failed runs?</b> So that a failure you have not looked
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does a plain resume skip failed runs?</b> So that a failure you have not looked
       at is not silently repeated and overwritten. You decide, after reading the error, whether to retry;
-      <code>--retry-failed</code> moves the old files to <code>failed/</code> and keeps the attempt count.</div>
+      <code>--retry-failed</code> moves the old files to <code>failed/</code> and keeps the attempt count.</p></aside>
 
     <h2 id="common">The common failures</h2>
     <div class="scroll-x"><table class="t">
@@ -114,15 +115,16 @@ python3 -m harness.campaign harness/campaigns/&lt;name&gt;.json --retry-failed  
         <tr><td><code>make lint</code> fails on the Mac in clippy or mypy only</td><td>Two Linux-only checks (<code>sched_setaffinity</code>, a resident-set test)</td><td>Expected; CI runs them on Linux. The other lint steps must pass</td></tr>
       </tbody>
     </table></div>
-    <p>A longer list, by symptom, is on <a href="where.html#symptoms">Something broke: where to look</a>.</p>
-    <div class="remember"><b>What to remember.</b> status, then the journal, then the error file, then replay
+    <p>A longer list, by symptom, is on <a href="code.html#symptoms">Something broke: where to look</a>.</p>
+    <p class="takeaway"><strong>In summary.</strong> status, then the journal, then the error file, then replay
       the one run by hand with its own <code>launchFlags</code>. Retry only after reading why. The data check,
-      not status, is what says the campaign can be analysed.</div>
+      not status, is what says the campaign can be analysed.</p>
     <p class="src" data-files="harness/campaign/status/README.md, harness/campaign/runner.py, harness/native/cli.py, harness/launcher/cli.py, docs/adr/0051-foreign-cpu-threshold-and-data-check.md"></p>
 
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Rust for JS developers</title>
+<title>Rust for JavaScript developers - WASM threads vs native</title>
 <meta name="description" content="The three ideas of Rust that make the parallel code safe, each with a two-line example, then every construct the repository uses next to its nearest JavaScript or TypeScript twin, read from the real files.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -25,23 +25,24 @@
 <body data-page="rust">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="words.html">Words of the project</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Concepts · 4 of 4</p>
-    <h1>Rust for JS developers</h1>
+    <h1>Rust for JavaScript developers</h1>
 
     <p class="lead">The measured code is written in Rust. If you write JavaScript, most of it will look
       familiar: functions, loops, objects with fields, arrays, callbacks. Three ideas are new, and they are
@@ -49,10 +50,10 @@
       those three ideas first, with tiny examples, and then every Rust construct the repository uses, each
       next to the nearest JavaScript or TypeScript you already know.</p>
 
-    <div class="oneliner"><b>In one sentence:</b> Rust is a language where every value has one owner, where
+    <p class="lead-more">In short: Rust is a language where every value has one owner, where
       many parts of the program may read a value at once but only one may change it, and where the compiler
       refuses to build a program in which two threads could write the same memory, which is exactly the
-      guarantee a parallel benchmark needs.</div>
+      guarantee a parallel benchmark needs.</p>
 
     <h2 id="three">Three ideas</h2>
 
@@ -60,10 +61,10 @@
       <code>bench/src/</code> and to see why the filter and the local histogram can run on 8 threads with
       no lock at all.</p>
 
-    <div class="analogy"><b>Picture it.</b> A library book. One person has it checked out (the owner). Many
+    <p><em>An analogy.</em> A library book. One person has it checked out (the owner). Many
       people may read a photocopy at the same time, but nobody may write in the book while photocopies are
       out, and only one person at a time may hold the pen. Rust's compiler is the librarian: it refuses to
-      let you leave with a plan that breaks those rules.</div>
+      let you leave with a plan that breaks those rules.</p>
 
     <div class="ideas">
       <div class="card"><h3>1. Every value has one owner</h3>
@@ -87,11 +88,11 @@ let w = &amp;mut image;  // error: r1, r2 live</pre></div>
 spawn(|| total += 1);     <span class="no">refused</span></pre></div>
     </div>
 
-    <div class="why"><b>Why does the study care?</b> RQ2 compares a histogram that shares counters with one
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the study care?</b> RQ2 compares a histogram that shares counters with one
       that does not. If the "does not share" version secretly shared something, or the filter had a hidden
       race that sometimes produced a wrong pixel, every ratio in the paper would be measuring a bug. Rust
       makes the no-sharing claim a property the compiler proved, and the checksum of every iteration
-      confirms it at run time (<a href="workloads.html#inputs">Inputs and checksums</a>).</div>
+      confirms it at run time (<a href="workloads.html#inputs">Inputs and checksums</a>).</p></aside>
 
     <p>The rest of this page is a reference. Read it with <code>bench/src/</code> open; every excerpt is read
       from the real file when the guide is built, and the link in its header opens the file. The
@@ -209,7 +210,7 @@ class AtomicHistogram implements Workload { /* ... */ }</pre></figure>
       AtomicHistogram</code> is <code>implements</code>, written outside the struct.</p>
     <p class="whyline">Why: the timed loop runs any workload without knowing which, so "only <code>run</code> is timed" is guaranteed in one place (ADR 0015).</p></div>
 
-    <details class="deeper"><summary>If you already know this: trait objects, generics, derive, cfg and compile-time asserts</summary>
+    <details class="deeper"><summary>In depth: trait objects, generics, derive, cfg and compile-time asserts</summary>
     <div class="item"><h3>Trait objects: Box&lt;dyn Trait&gt;</h3>
     <div data-code="bench/src/experiment/workload_kind.rs|pub fn build_with(self, image: GrayImage, grain: Grain)|12" data-title="A factory that picks the workload"></div>
     <p><code>Box&lt;dyn Workload&gt;</code> is "some object on the heap that implements <code>Workload</code>",
@@ -290,7 +291,7 @@ const histogram = partials.reduce(merge, emptyHistogram());</pre></figure>
       reference, which is why all threads can share the table. The <code>Ordering</code> argument makes no
       difference on these targets; see <a href="atomics.html#order">Memory order</a>.</p></div>
 
-    <details class="deeper"><summary>If you already know this: static atomics, repr(align) and inline</summary>
+    <details class="deeper"><summary>In depth: static atomics, repr(align) and inline</summary>
     <div class="item"><h3>Static atomics</h3>
     <div data-code="bench/src/pool.rs|static POOL_THREADS: AtomicUsize|1"></div>
     <p>A global. Rust forbids a plain mutable global, because any thread could race on it, so the global is an
@@ -302,7 +303,7 @@ const histogram = partials.reduce(merge, emptyHistogram());</pre></figure>
 const STRIDE = 128 / 8;   // 16 u64 slots = 128 bytes
 Atomics.add(counters, value * STRIDE, 1n);</pre></figure>
     <p><code>repr(align(128))</code> starts every counter on a 128-byte boundary and pads it to 128 bytes, one
-      counter per cache line and per prefetch pair (<a href="caches.html#falsesharing">False sharing and padding</a>).
+      counter per cache line and per prefetch pair (<a href="memory.html#falsesharing">False sharing and padding</a>).
       <code>#[inline(always)]</code> on <code>increment</code> keeps the locked add inside the per-pixel loop;
       <code>#[inline(never)]</code> on <code>blur_interior</code> keeps it a separate function with a stable name, so
       <code>scripts/check_simd.py</code> can find it in both disassemblies.</p></div>
@@ -321,7 +322,7 @@ Atomics.add(counters, value * STRIDE, 1n);</pre></figure>
       like a TS <code>declare function</code>: it lets Rust call <code>performance.now</code>.</p>
     <p class="whyline">Why: the browser page calls the same <code>run</code> path as the native runner, only through this bridge (ADR 0018).</p></div>
 
-    <details class="deeper"><summary>If you already know this: the build flags and in-file tests</summary>
+    <details class="deeper"><summary>In depth: the build flags and in-file tests</summary>
     <div class="item"><h3>The build flags</h3>
     <div data-code="bench/.cargo/config.toml|[target.wasm32-unknown-unknown]|17" data-title="WASM-only flags"></div>
     <p>Threads need the <span data-term="atomics-bulk-memory-mutable-globals">atomics target features</span>, memory
@@ -338,18 +339,19 @@ Atomics.add(counters, value * STRIDE, 1n);</pre></figure>
       refactor that changes a result fails CI (ADR 0062).</p></div>
     </details>
 
-    <details class="deeper"><summary>Two things you might expect and will not find</summary>
+    <details class="deeper"><summary>In depth: Two things you might expect and will not find</summary>
     <p><b><code>Arc</code></b> (shared ownership across threads): Rayon's closures only <i>borrow</i> data for
       the length of the parallel call, so nothing needs reference counting. <b><code>rayon::join</code></b>:
       not called directly; the parallel iterators use it internally to split work in halves.</p>
     </details>
 
-    <div class="remember"><b>What to remember.</b> One owner per value; many readers or one writer; and the
+    <p class="takeaway"><strong>In summary.</strong> One owner per value; many readers or one writer; and the
       compiler, not a test, is what guarantees no two threads write the same memory. Everything in
-      <code>bench/src/</code> that looks strange is one of those three rules written down.</div>
+      <code>bench/src/</code> that looks strange is one of those three rules written down.</p>
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

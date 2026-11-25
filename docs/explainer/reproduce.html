@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - From raw runs to the paper</title>
+<title>Reproduce the tables and figures - WASM threads vs native</title>
 <meta name="description" content="The chain from the raw runs of measured/v3 to the tables, figures and numbers of the paper, a check of the paper's main numbers against the tables they come from, and how this guide gets its numbers.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -16,36 +16,37 @@
 <body data-page="reproduce">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="words.html">Words first</a></li><li><a href="setup.html">Install and first run</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Working on it · 5 of 8</p>
-    <h1>From raw runs to the paper</h1>
+    <h1>Reproduce the tables and figures</h1>
 
     <p class="lead">No number in the paper is typed from memory or copied from a terminal. Each one is
       in a table that a command wrote from the raw runs, and that command is in a make target. Anyone with
       the repository can delete the tables and make them again.</p>
 
-    <div class="oneliner"><b>In one sentence:</b> <code>make all-results</code> turns
-      <code>data/raw/*-v3</code> into <code>data/tables/*-v3</code> and <code>paper/figures/</code>; the paper and this guide quote those tables, and this page checks the main numbers against them.</div>
+    <p class="lead-more">In short: <code>make all-results</code> turns
+      <code>data/raw/*-v3</code> into <code>data/tables/*-v3</code> and <code>paper/figures/</code>; the paper and this guide quote those tables, and this page checks the main numbers against them.</p>
 
     <h2 id="chain">The chain</h2>
-    <div class="why"><b>Why must every number be reproducible from a command?</b> Because a number typed
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why must every number be reproducible from a command?</b> Because a number typed
       from a terminal is a number nobody can check: not a reviewer, not the author in a month. With the chain
       below, "where does 0.42 come from?" has one answer, a file and the command that wrote it, and
-      <a href="#numbers">the table at the end of this page</a> recomputes the main numbers from those files every time it is opened.</div>
+      <a href="#numbers">the table at the end of this page</a> recomputes the main numbers from those files every time it is opened.</p></aside>
     <div class="card">
       <div id="chain-svg" class="diagram"></div>
       <div id="chain-panel" class="panel" aria-live="polite"><p class="muted">Pick a box above.</p></div>
@@ -76,10 +77,10 @@
 make all-results           # every table and figure of every campaign
 make tables-check          # the same, then fail if a committed table differs
 make explainer             # this guide's data.js</pre>
-    <div class="def"><b>Why the tables carry a sidecar.</b> Each <code>-scaling.json</code> and
+    <p class="def"><b>Why the tables carry a sidecar.</b> Each <code>-scaling.json</code> and
       <code>-contrasts.json</code> records the settings (summary, centre, bootstrap seed and resamples)
       and the commit that wrote it, in a fixed key order. Regenerating a table on the same data changes
-      only the commit and the time stamp, so a diff shows at once whether a number moved.</div>
+      only the commit and the time stamp, so a diff shows at once whether a number moved.</p>
     <p class="src" data-files="make/results.mk, analysis/README.md"></p>
 
     <h2 id="numbers">Every paper number, its file</h2>
@@ -113,6 +114,7 @@ python3 -m scripts.explainer_data --check      # exit 1 if data.js is out of dat
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>
@@ -123,7 +125,7 @@ window.page = function (UI) {
   var BOXES = [
     { key: "raw", t: "data/raw", s: "*-v3 runs", d: "The runs as they were written: one CSV of times and one JSON of context per run, plus the campaign journal. Never edited.", page: "data.html#raw" },
     { key: "check", t: "datacheck", s: "quality.md", d: "The quality report: missing, failed and conflicting runs, strict validation, foreign CPU, clock, order drift. Blocks the chain if the data cannot be analysed.", page: "campaigns.html#quality" },
-    { key: "stats", t: "analysis", s: "v0, results, ...", d: "One value per run, speedups with bootstrap intervals, the plan's contrasts with Holm, the robustness check, Karp-Flatt, cutoff, grain, counters.", page: "stats.html" },
+    { key: "stats", t: "analysis", s: "v0, results, ...", d: "One value per run, speedups with bootstrap intervals, the plan's contrasts with Holm, the robustness check, Karp-Flatt, cutoff, grain, counters.", page: "reading.html#statistics" },
     { key: "tables", t: "data/tables", s: "*-v3 CSV", d: "One table per question, with a JSON sidecar that records the settings and the commit.", page: "data.html#tables" },
     { key: "figures", t: "figures", s: "paper/figures", d: "PDF figures drawn by matplotlib from the same raw runs.", page: "data.html#figures" },
     { key: "paper", t: "paper.tex", s: "quotes, includes", d: "The paper includes the figures and quotes the tables; the main numbers are checked below.", page: "reproduce.html#numbers" }

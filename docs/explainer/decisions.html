@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Decisions: the ADRs</title>
+<title>ADR index - WASM threads vs native</title>
 <meta name="description" content="Why every design decision of the study is written down as an ADR, the decisions that later data changed and what that taught, and all 74 ADRs grouped by topic.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -24,32 +24,33 @@
 <body data-page="decisions">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="words.html">Words of the project</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">The code · 4 of 4</p>
-    <h1>Decisions: the ADRs</h1>
+    <h1>ADR index</h1>
 
     <p class="lead">Every setting of this study is a choice someone made: measure on 8 cores and not 16,
       30 runs and not 10, wait 3 seconds before a browser run, pad each counter to 128 bytes. Each choice is
       written down in a short file called an ADR, with what forced it, what was decided and what it costs.
       There are 74 of them in <code>docs/adr/</code>, and they are the study's memory.</p>
 
-    <div class="oneliner"><b>In one sentence:</b> a decision is never edited away; a later ADR amends or
+    <p class="lead-more">In short: a decision is never edited away; a later ADR amends or
       supersedes it, so the reason behind every setting can be read in the order it happened, including the
-      times the data proved an earlier reason wrong.</div>
+      times the data proved an earlier reason wrong.</p>
 
     <h2 id="how">How decisions are kept</h2>
     <p>An <span data-term="adr">ADR</span> (Architecture Decision Record) is a short Markdown file named
@@ -62,14 +63,14 @@
       <div class="card"><h4>Consequences</h4><p>What it costs, what it rules out, what has to be reported as a threat.</p></div>
       <div class="card"><h4>Status</h4><p>Accepted, amended by a later ADR, or superseded by one.</p></div>
     </div>
-    <div class="analogy"><b>Picture it.</b> A ship's log. You do not go back and change Tuesday's entry when
+    <p><em>An analogy.</em> A ship's log. You do not go back and change Tuesday's entry when
       Thursday turns out differently; you write Thursday's entry and say "Tuesday's course was wrong,
-      because of this". Anyone reading the log later sees both the mistake and how it was found.</div>
-    <div class="why"><b>Why write decisions down at all?</b> Six months later, "why is the delay 3 seconds?"
+      because of this". Anyone reading the log later sees both the mistake and how it was found.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why write decisions down at all?</b> Six months later, "why is the delay 3 seconds?"
       has only two possible answers: a file that says so, or a guess. A guess might lead someone to remove
       the delay, and the Firefox start-up effect it hides (below) would quietly come back into the numbers.
       The ADR also lets a reviewer check that a setting was chosen for a reason, not tuned until the result
-      looked good.</div>
+      looked good.</p></aside>
     <p>Three rules keep the record honest:</p>
     <ul>
       <li><b>Never rewritten.</b> When new data changes a decision, a new ADR says what changed and why, and
@@ -101,7 +102,7 @@
       <h4>From a hypothesis to machine code and counters (ADR 0049, 0068, 0072)</h4>
       <p>ADR 0049 kept the 128-byte padding and recorded Chrome's odd counter pattern as a hypothesis: "the
         code was not inspected". The v2 audit then read the JIT code from each browser's memory: V8 compiles
-        the atomic add as a load plus a <code>lock cmpxchg</code> loop. ADR 0068 made the hardware counters readable, and ADR 0072 counted with 30 runs per cell: the loop retries once every four adds at k = 1, N = 8, and Chrome reads the line before it writes it. That was still an observation. ADR 0088 wrote down what a test would show, and ADR 0089 ran it on <code>measured/v3</code>: a native program in which only the instructions of the add change gets Chrome's times.</p> <p><b>The lesson:</b> a hypothesis is allowed in an ADR as long as it is labelled one; it took four more ADRs to turn it first into a measurement and then into a tested cause. <a href="why.html">Why Chrome: code and counters</a>.</p>
+        the atomic add as a load plus a <code>lock cmpxchg</code> loop. ADR 0068 made the hardware counters readable, and ADR 0072 counted with 30 runs per cell: the loop retries once every four adds at k = 1, N = 8, and Chrome reads the line before it writes it. That was still an observation. ADR 0088 wrote down what a test would show, and ADR 0089 ran it on <code>measured/v3</code>: a native program in which only the instructions of the add change gets Chrome's times.</p> <p><b>The lesson:</b> a hypothesis is allowed in an ADR as long as it is labelled one; it took four more ADRs to turn it first into a measurement and then into a tested cause. <a href="rq2.html#cause">Why Chrome: code and counters</a>.</p>
     </div>
     <div class="story">
       <h4>The v2 build: asymmetries of our own (ADR 0069)</h4>
@@ -110,7 +111,7 @@
         and others did not. Both were fixed in one tagged build, <code>measured/v2</code>, and every campaign was run again on it. Earlier campaigns stay valid for their own build but are never mixed with v2 in one comparison (ADR 0062).</p>
       <p><b>The lesson:</b> the control and the thing it controls for must differ in exactly one way; two
         hidden differences meant every earlier RQ2 number had to be remeasured.
-        <a href="pitfalls.html#v2">Our own asymmetries: the v2 build</a>.</p>
+        <a href="machine.html#v2">Our own asymmetries: the v2 build</a>.</p>
     </div>
     <div class="story">
       <h4>A pinned browser that updated itself (ADR 0071)</h4>
@@ -118,7 +119,7 @@
         updates. The affected runs of that build were repeated on 158.0, Firefox now gets an enterprise policy that turns
         updates off, and a campaign refuses to start with an unpinned browser.</p>
       <p><b>The lesson:</b> "pinned" is a claim until something checks it on every start.
-        <a href="pitfalls.html#update">A pinned Firefox updates itself</a>.</p>
+        <a href="machine.html#update">A pinned Firefox updates itself</a>.</p>
     </div>
     <div class="story">
       <h4>Notion out, Markdown in (ADR 0063)</h4> <p>ADR 0010 mirrored every ADR to Notion. Keeping two copies in sync by hand was dropped: the files in <code>docs/adr/</code> are the only copy.</p>
@@ -128,7 +129,7 @@
     <p>All 95, each in one topic. Rows in colour were later amended or partly superseded; the last column
       says by which ADR. Click a number to open the file. Open the block to see them all, or type in the box
       to find one.</p>
-    <details class="deeper"><summary>All 95 ADRs, by topic</summary>
+    <details class="deeper"><summary>In depth: All 95 ADRs, by topic</summary>
     <div class="filter-row">
       <label for="adr-filter" class="sr">Filter ADRs</label>
       <input id="adr-filter" type="search" placeholder="Filter by number or word">
@@ -317,12 +318,13 @@
     </div>
     </details>
 
-    <div class="remember"><b>What to remember.</b> Before changing any setting, find its ADR: it says why
+    <p class="takeaway"><strong>In summary.</strong> Before changing any setting, find its ADR: it says why
       the setting is what it is, and often what went wrong the last time it was different. If you change it,
-      you write the next ADR; you never edit the old one.</div>
+      you write the next ADR; you never edit the old one.</p>
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

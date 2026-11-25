@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - One run, start to end</title>
+<title>Follow one run through the code - WASM threads vs native</title>
 <meta name="description" content="The shape of a run first (which program runs where, and what crosses each boundary), then two real runs followed line by line through the code, natively and in Chrome, and the path of their numbers into the analysis.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -28,23 +28,24 @@
 <body data-page="trace">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="words.html">Words of the project</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">The code · 2 of 4</p>
-    <h1>One run, start to end</h1>
+    <h1>Follow one run through the code</h1>
 
     <p class="lead">A run is one program start: the program is launched, works, prints its times, and is
       gone. This page follows two real runs of the main campaign through the code, line by line: the atomic
@@ -52,9 +53,9 @@
       and once in Chrome (<code>campaign-v3-4221-chrome-hist-atomic-k1-n8-r0</code>). Then the 30 runs of
       each configuration go into the analysis.</p>
 
-    <div class="oneliner"><b>In one sentence:</b> the campaign picks the run, the harness starts it on the
+    <p class="lead-more">In short: the campaign picks the run, the harness starts it on the
       fast cores, both the native program and the browser end up in the same Rust function, which times
-      only the work, and the CSV it prints is stored next to a record of the conditions.</div>
+      only the work, and the CSV it prints is stored next to a record of the conditions.</p>
 
     <h2 id="shape">The shape before the steps</h2>
     <p>Before stepping through 27 lines of code, here is the whole shape. Each box is a separate program
@@ -121,11 +122,11 @@
       </svg>
       <figcaption>Three zones, three kinds of boundary: a command line or a URL goes in, CSV text comes out, and from then on only files connect the programs.</figcaption>
     </figure>
-    <div class="why"><b>Why does only the red box matter for the numbers?</b> Everything to its left
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does only the red box matter for the numbers?</b> Everything to its left
       happens before the clock starts and runs on other cores; everything to its right happens after the
       CSV exists. So a slow harness, a slow disk or a slow analysis cannot change a measured time. The
       only things that can are inside that box: the runtime, the code, and the machine it runs on, which is
-      what the study compares. <a href="pieces.html">How the pieces talk</a> gives every port and file.</div>
+      what the study compares. <a href="code.html#pieces">How the pieces talk</a> gives every port and file.</p></aside>
     <p>Below, each step shows the line that runs, what the variables hold, and, in the box marked
       <b>In plain words</b>, the one thing a newcomer would not get from the code. Use the arrow keys.</p>
 
@@ -164,9 +165,9 @@
     <div id="analysis-trace"></div>
     <p class="src" data-src="campaign-v3-scaling"></p>
 
-    <div class="remember"><b>What to remember.</b> One run is one fresh process, started from outside the
+    <p class="takeaway"><strong>In summary.</strong> One run is one fresh process, started from outside the
       measured cores, that ends in <code>run_in_pool</code> whatever the environment. The clock brackets only
-      <code>Workload::run</code>. What comes out is text in a file, and from there on it is arithmetic.</div>
+      <code>Workload::run</code>. What comes out is text in a file, and from there on it is arithmetic.</p>
 
     <div hidden>
       <div data-code="harness/campaign/plan.py|def plan(spec: CampaignSpec)|13"></div>
@@ -200,6 +201,7 @@
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Your first day</title>
+<title>Installation and first run - WASM threads vs native</title>
 <meta name="description" content="Two machines and their jobs, install and build, run one native configuration, read one CSV row field by field, run the tests, and where to go next.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -18,30 +18,31 @@
 <body data-page="setup">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Start · 2 of 2</p>
-    <h1>Your first day</h1>
+    <h1>Installation and first run</h1>
 
     <p class="lead">By the end of this page you will have built the project, run it once, read what it printed,
       and run its tests. Every command here works on the Mac. Nothing you do today produces a result for the
       paper; that only happens on the measuring PC, and the page says where that line is.</p>
-    <div class="oneliner"><b>In one sentence:</b> <code>make setup</code>, <code>make build</code>, one native run,
+    <p class="lead-more">In short: <code>make setup</code>, <code>make build</code>, one native run,
       one CSV row read field by field, <code>make test</code>: an hour, and you can read the rest of the guide
-      with the code in front of you.</div>
+      with the code in front of you.</p>
 
     <h2 id="machines">Two machines, two jobs</h2>
     <p>The project lives on two computers on purpose.</p>
@@ -51,9 +52,9 @@
       <div class="card"><h3>The Linux PC: where numbers are made</h3>
         <ul><li>its CPU is prepared: fast cores set aside, clock fixed, nothing else running</li><li>the pinned browsers live there</li><li>every number in the paper comes from it</li></ul></div>
     </div>
-    <div class="why"><b>Why can a time from the Mac never be a result?</b> It has a different chip, its clock
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why can a time from the Mac never be a result?</b> It has a different chip, its clock
       speeds up and down by itself, and other programs share it. A number from it would compare the Mac to the
-      PC, not Chrome to native. <a href="measuring.html#fair">A fair comparison</a> explains the rule; <a href="machine.html">The machine and its controls</a> shows what the PC does about each of those.</div>
+      PC, not Chrome to native. <a href="measuring.html#fair">A fair comparison</a> explains the rule; <a href="machine.html">The machine and its controls</a> shows what the PC does about each of those.</p></aside>
 
     <h2 id="install">Install and build</h2>
     <p>Three things need to be on the machine: Rust (the compiler for the workloads), Python 3 (the harness and
@@ -64,9 +65,9 @@ make build                    # the native program and the WASM package</pre>
     <p><code>make</code> is a tool that runs named recipes; the recipes live in <code>Makefile</code> and
       <code>make/*.mk</code>, and <code>make help</code> lists them. <code>make build</code> is two steps:</p>
     <div data-code="make/build.mk|build: build-native build-wasm|8" data-title="The build recipe"></div>
-    <div class="why"><b>Why a nightly compiler of one fixed date?</b> WebAssembly with threads needs a compiler
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a nightly compiler of one fixed date?</b> WebAssembly with threads needs a compiler
       feature that only Rust's nightly builds have. Fixing the date means everyone, and the measuring PC, compiles
-      with exactly the same compiler, so a difference between two builds is never "a different compiler".</div>
+      with exactly the same compiler, so a difference between two builds is never "a different compiler".</p></aside>
     <p>What you get: <code>bench/target/release/native</code>, the native program, and
       <code>bench/www/pkg/</code>, the WASM module with the small JavaScript file the browser loads. On the PC,
       <code>make setup</code> also downloads the two pinned browsers, and <code>make deps sudoers
@@ -84,7 +85,7 @@ make build                    # the native program and the WASM package</pre>
       <a href="protocol.html#warmup">warm-up</a>.</p>
     <p>In the browser the same options go in the page's address instead of on the command line, and the result
       is sent to a small local server rather than printed. That needs the pinned browsers and belongs to the PC;
-      <a href="harness.html#browser">A browser run</a> shows it. To try the whole pipeline on the Mac without
+      <a href="protocol.html#browser">A browser run</a> shows it. To try the whole pipeline on the Mac without
       preparing anything, <code>make quick-rq1</code> runs a tiny copy of the main campaign in about two minutes.
       Its numbers are never results either.</p>
 
@@ -106,10 +107,10 @@ make build                    # the native program and the WASM package</pre>
         <tr><td>checksum</td><td>0x0c94a2fe…</td><td>A fingerprint of the output picture. It must be identical for every thread count and every environment; if it is not, the result was wrong and nothing else matters.</td></tr>
       </tbody>
     </table></div>
-    <div class="why"><b>Why a checksum on every row?</b> Two reasons. A parallel program that gives a different
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a checksum on every row?</b> Two reasons. A parallel program that gives a different
       answer with 8 threads than with 1 has a bug, and timing a bug is pointless. And a compiler that notices
       nobody reads the output may skip the work entirely; a checksum that is printed forces it to be computed.
-      <a href="workloads.html#inputs">Inputs and checksums</a> has the details.</div>
+      <a href="workloads.html#inputs">Inputs and checksums</a> has the details.</p></aside>
     <p>The other fields record the conditions of the run (memory used, where the buffers sat in memory, the
       picture's own fingerprint) so that a strange number can be explained later. <a href="data.html#onerow">Data
       folders and files</a> reads every one of them aloud.</p>
@@ -130,17 +131,18 @@ make build                    # the native program and the WASM package</pre>
         project numbers.</li>
       <li>Know those? <a href="questions.html">Questions and design</a>, then <a href="workloads.html">The
         workloads</a> with <code>bench/src/workloads/</code> open next to it.</li>
-      <li>Here to change something? <a href="pieces.html">How the pieces talk</a>, then
+      <li>Here to change something? <a href="code.html#pieces">How the pieces talk</a>, then
         <a href="changing.html">Change something safely</a> and <a href="workflow.html">The workflow</a>.</li>
       <li>Something broke? <a href="debugging.html">Debugging a run</a>.</li>
     </ul>
-    <div class="remember"><b>What to remember.</b> The Mac builds and tests; only the PC measures. One run is
+    <p class="takeaway"><strong>In summary.</strong> The Mac builds and tests; only the PC measures. One run is
       one program start that prints one row per round, and the checksum on every row is the first thing to look
-      at.</div>
+      at.</p>
 
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

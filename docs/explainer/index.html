@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Start here</title>
+<title>Introduction - WASM threads vs native</title>
 <meta name="description" content="The study in a short story, the whole project in one picture, what was found in words, how to read this guide, and where each grading criterion is shown.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -20,30 +20,31 @@
 <body data-page="index">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Start · 1 of 2</p>
-    <h1>Start here</h1>
+    <h1>Introduction</h1>
 
-    <p class="lead big">A web page can now run the same kind of heavy code a desktop program runs, and it can
+    <p class="lead">A web page can now run the same kind of heavy code a desktop program runs, and it can
       use several of the computer's cores to do it. This study asks a simple question about that: when the
       <b>same program</b> runs inside <b>Chrome</b>, inside <b>Firefox</b>, and <b>directly on the computer</b>,
       does adding more cores help each of them the same way?</p>
-    <div class="oneliner"><b>In one sentence:</b> same source, same compiler, same settings, same machine, three
-      places to run: every difference we measure comes from where the code runs, not from the code.</div>
+    <p class="lead-more">In short: same source, same compiler, same settings, same machine, three
+      places to run: every difference we measure comes from where the code runs, not from the code.</p>
 
     <h2 id="story">The study in a story</h2>
     <p>Imagine one recipe and three kitchens. The recipe is a small program written in Rust, a language that can
@@ -85,7 +86,7 @@
       the shared tally": a "try, check, try again" loop where the others use a single step. We counted the retries happening, and then tested it: a normal program rewritten to add Chrome's way gets Chrome's times, slower on one tally and faster on many.</p>
     <p>We also hit, and fixed, three traps of measuring inside a browser: Chrome quietly used cores it was told
       not to; Firefox's slow start made short runs look slow; and a browser we had pinned to one version updated itself in the middle of the work. And we measured the whole study twice, on two copies of the program, with the rules for the second time written down before it started: every answer came back the same (<a href="session.html">The session of a build</a>).</p>
-    <details class="deeper"><summary>If you already know this: the two numbers behind the words</summary>
+    <details class="deeper"><summary>In depth: the two numbers behind the words</summary>
       <p>Speedup of the filter at N = 8 (T<sub>1</sub> / T<sub>8</sub>, geometric mean of 30 runs):</p>
       <div id="rq1-bars"></div>
       <p class="src" data-src="campaign-v3-scaling"></p>
@@ -93,7 +94,7 @@
         (1 = as native; above 1 = synchronization costs more than natively):</p>
       <div id="rq2-bars"></div>
       <p class="src" data-src="campaign-v3-contrasts"></p>
-      <p>Full results: <a href="rq1.html">RQ1</a>, <a href="rq2.html">RQ2</a>, <a href="why.html">Why Chrome</a>, <a href="explains.html">What explains the results</a>.</p>
+      <p>Full results: <a href="rq1.html">RQ1</a>, <a href="rq2.html">RQ2</a>, <a href="rq2.html#cause">Why Chrome</a>, <a href="explains.html">What explains the results</a>.</p>
     </details>
 
     <h2 id="how">How to read this guide</h2>
@@ -113,7 +114,7 @@
     <h3>Two layers on every page</h3>
     <p>Every page is written twice in one place. The plain text comes first and assumes nothing. Under it, boxes
       like this one hold what a reader from the field wants:</p>
-    <details class="deeper"><summary>If you already know this: an example of the second layer</summary>
+    <details class="deeper"><summary>In depth: an example of the second layer</summary>
       <p>Formulas, the full tables, the compiler flags, the algebra. A junior skips these; an expert opens them.
         Nothing that was in the guide before is gone, it lives in one of these.</p>
     </details>
@@ -121,13 +122,13 @@
     <h3>What the boxes mean</h3>
     <div class="legend">
       <div class="card"><h3>Why</h3><p>Every decision gets the question a newcomer would ask, and what would go wrong without it.</p>
-        <div class="why"><b>Why 30 runs?</b> With 3, one slow run changes the answer.</div></div>
+        <aside class="callout why"><p class="callout-title">Why</p><p><b>Why 30 runs?</b> With 3, one slow run changes the answer.</p></aside></div>
       <div class="card"><h3>Picture it</h3><p>An everyday analogy for each hard idea, set apart so you know it is only a picture.</p>
-        <div class="analogy"><b>Picture it.</b> Cores are stoves; threads are cooks.</div></div>
+        <p><em>An analogy.</em> Cores are stoves; threads are cooks.</p></div>
       <div class="card"><h3>A word where it is used</h3><p>Underlined words open a short definition; the <a href="glossary.html">glossary</a> has them all, with examples.</p>
-        <span class="def"><b>Example.</b> A new word is explained like this, the first time.</span></div>
+        <p class="def"><b>Example.</b> A new word is explained like this, the first time.</p></div>
       <div class="card"><h3>What to remember</h3><p>The one thing to take from the page, at its end.</p>
-        <div class="remember"><b>What to remember.</b> Same code, three places.</div></div>
+        <p class="takeaway"><strong>In summary.</strong> Same code, three places.</p></div>
       <div class="card"><h3>Source lines</h3><p>Every measured number has a "source" line under it, linking the table in <code>data/tables/</code> it was read from.</p></div>
       <div class="card"><h3>Where in the code</h3><p>Code excerpts are read from the repository when the guide is built, with a link to the file and line. The "Code:" button opens them in VS Code.</p></div>
     </div>
@@ -143,11 +144,11 @@
       <tbody>
         <tr><td>Motivation and the research questions</td><td><a href="questions.html#why">Why this matters</a>, <a href="questions.html#rqs">RQ1 and RQ2</a></td></tr>
         <tr><td>Related work</td><td><a href="questions.html#related">What others measured</a></td></tr>
-        <tr><td>Methodology: workloads, padding, unit of analysis, CPU mask, turbo, warm-up, versions, order, tests</td><td><a href="workloads.html">The workloads</a>, <a href="machine.html">The machine</a>, <a href="protocol.html">Runs, warm-up and order</a>, <a href="stats.html">The statistics</a></td></tr>
-        <tr><td>Rigor: controls, repetitions, intervals, effect sizes, multiple comparisons, reproducibility</td><td><a href="protocol.html#thirty">30 runs</a>, <a href="stats.html#bootstrap">Bootstrap</a>, <a href="stats.html#holm">Holm</a>, <a href="stats.html#robust">Mann-Whitney and Cliff's delta</a>, <a href="session.html">The session of a build</a>, <a href="reproduce.html">From raw runs to the paper</a></td></tr>
-        <tr><td>Results with uncertainty, figures, numbers matching the data</td><td><a href="rq1.html">RQ1</a>, <a href="rq2.html">RQ2</a>, <a href="extras.html">Exploratory campaigns</a>, <a href="granularity.html">When parallelism pays</a></td></tr>
-        <tr><td>Analysis: why, and the explicit answers</td><td><a href="why.html">Why Chrome</a>, <a href="explains.html">What explains the results</a>, <a href="rq1.html#answer">Answer to RQ1</a>, <a href="rq2.html#answer">Answer to RQ2</a></td></tr>
-        <tr><td>Threats to validity</td><td><a href="threats.html">Threats to validity</a>, <a href="pitfalls.html">Problems found and fixed</a></td></tr>
+        <tr><td>Methodology: workloads, padding, unit of analysis, CPU mask, turbo, warm-up, versions, order, tests</td><td><a href="workloads.html">The workloads</a>, <a href="machine.html">The machine</a>, <a href="protocol.html">Runs, warm-up and order</a>, <a href="reading.html#statistics">The statistics</a></td></tr>
+        <tr><td>Rigor: controls, repetitions, intervals, effect sizes, multiple comparisons, reproducibility</td><td><a href="protocol.html#thirty">30 runs</a>, <a href="reading.html#bootstrap">Bootstrap</a>, <a href="reading.html#holm">Holm</a>, <a href="reading.html#robust">Mann-Whitney and Cliff's delta</a>, <a href="session.html">The session of a build</a>, <a href="reproduce.html">From raw runs to the paper</a></td></tr>
+        <tr><td>Results with uncertainty, figures, numbers matching the data</td><td><a href="rq1.html">RQ1</a>, <a href="rq2.html">RQ2</a>, <a href="extras.html">Exploratory campaigns</a>, <a href="extras.html#granularity">When parallelism pays</a></td></tr>
+        <tr><td>Analysis: why, and the explicit answers</td><td><a href="rq2.html#cause">Why Chrome</a>, <a href="explains.html">What explains the results</a>, <a href="rq1.html#answer">Answer to RQ1</a>, <a href="rq2.html#answer">Answer to RQ2</a></td></tr>
+        <tr><td>Threats to validity</td><td><a href="threats.html">Threats to validity</a>, <a href="machine.html#problems">Problems found and fixed</a></td></tr>
       </tbody>
     </table></div>
     <p class="src" data-files="paper/final/paper.tex"></p>
@@ -155,6 +156,7 @@
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>
@@ -166,7 +168,7 @@ window.page = function (UI) {
     { key: "bench", t: "bench/", s: "Rust workloads", page: "workloads.html", d: "One Rust crate holds the filter and the histograms. The same source builds a native binary and a WASM module, with the same compiler and flags." },
     { key: "build", t: "Build", s: "native + WASM", page: "environments.html", d: "make builds the native runner and the WASM package (nightly Rust, build-std, atomics and simd128). The tag measured/v3 fixes the exact build; its hashes are recorded with every run." },
     { key: "machine", t: "Machine", s: "8 P-cores, quiet", page: "machine.html", d: "One i9-14900KF under Linux: turbo and SMT off, governor performance, the 8 P-cores shielded for the measurement, the rest of the system on the E-cores." },
-    { key: "harness", t: "Harness", s: "fresh process", page: "harness.html", d: "The orchestrator launches each run as a fresh process: the native binary, or Chrome or Firefox with a fresh profile, a CPU mask and the configuration in the URL. The page posts its CSV to a local server." },
+    { key: "harness", t: "Harness", s: "fresh process", page: "protocol.html#launch", d: "The orchestrator launches each run as a fresh process: the native binary, or Chrome or Firefox with a fresh profile, a CPU mask and the configuration in the URL. The page posts its CSV to a local server." },
     { key: "campaign", t: "Campaign", s: "30 runs, shuffled", page: "campaigns.html", d: "A campaign spec lists environments, workloads, thread counts and repetitions. The runs are interleaved in a seeded random order and can resume after a stop." },
     { key: "analysis", t: "Analysis", s: "bootstrap, Holm", page: "reading.html", d: "One value per run (the median of its 10 measured iterations), the geometric mean over the 30 runs, speedup per environment, bootstrap intervals over runs, and Holm over the 10 primary contrasts." },
     { key: "paper", t: "Paper", s: "RQ1, RQ2", page: "reproduce.html", d: "Tables in data/tables/ and figures in paper/figures/ feed paper/final/paper.tex. Every number has a file." }

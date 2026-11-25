@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Atomics in machine code</title>
+<title>Atomic operations - WASM threads vs native</title>
 <meta name="description" content="What an atomic add is and why a plain add loses counts; two ways a CPU can do it (lock the block and add, or try and retry); what each engine emits for the same WebAssembly instruction; memory order and store forwarding, for the record.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -29,32 +29,33 @@
 <body data-page="atomics">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="words.html">Words of the project</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Concepts · 3 of 4</p>
-    <h1>Atomics in machine code</h1>
+    <h1>Atomic operations</h1>
 
     <p class="lead">The shared histogram has one line of Rust per pixel: add one to a shared counter, atomically.
       That one line reaches Chrome and Firefox as the same WebAssembly instruction, and the two browsers turn it into
       <b>different</b> machine code. One of them does the add in one step; the other tries, checks, and retries. That
       difference is where the RQ2 results come from.</p>
 
-    <div class="oneliner"><b>In one sentence:</b> native code and Firefox add with one locked instruction that cannot
+    <p class="lead-more">In short: native code and Firefox add with one locked instruction that cannot
       fail; Chrome reads the counter, computes, and tries to write it back only if nobody changed it in between,
-      going round again if someone did.</div>
+      going round again if someone did.</p>
 
     <h2 id="what">What an atomic add is</h2>
     <p>A plain <code>count = count + 1</code> is three steps for the CPU: read the current value from memory, add one,
@@ -72,11 +73,11 @@
     <p>Two adds happened, the counter went up by one: a count was lost, and the histogram is wrong. An
       <span data-term="atomic-operation">atomic</span> add makes the three steps one indivisible step, so no other
       thread can slip in between the read and the write, and nothing is ever lost, even with 8 threads on one counter.</p>
-    <div class="why"><b>Why does the study use atomics and not a lock?</b> A lock would be a second mechanism on top
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the study use atomics and not a lock?</b> A lock would be a second mechanism on top
       of the add (take the lock, add, release), with its own costs to untangle. An atomic add is the smallest unit of
       synchronization a CPU offers: one instruction. Whatever the browser does differently with it is as close to the
-      hardware as a measurement can get.</div>
-    <details class="deeper"><summary>If you already know this: the Rust, and the nearest JS</summary>
+      hardware as a measurement can get.</p></aside>
+    <details class="deeper"><summary>In depth: the Rust, and the nearest JS</summary>
       <div data-code="bench/src/workloads/histogram/counter_table.rs|// The ordering changes nothing on our targets|9" data-title="One shared counter, incremented atomically" data-highlight="fetch_add"></div>
       <div class="pair">
         <div data-code="bench/src/workloads/histogram/atomic.rs|fn run(|9" data-title="The timed loop of the atomic histogram"></div>
@@ -99,9 +100,9 @@ Atomics.add(counters, value, 1n);</pre></figure>
         <b>compare-and-swap</b>: "write my new value, but only if memory still holds the value I read". If another
         core changed the counter in between, the swap fails and the loop starts again with a fresh read.</li>
     </ul>
-    <div class="analogy"><b>Picture it.</b> Lock-and-add is taking the one shared pen and writing your tick before
+    <p><em>An analogy.</em> Lock-and-add is taking the one shared pen and writing your tick before
       handing it on. Try-and-retry is writing your tick on a sticky note from memory, then checking the sheet: if
-      nobody wrote since you looked, you stick it on; if someone did, you tear it up and start over.</div>
+      nobody wrote since you looked, you stick it on; if someone did, you tear it up and start over.</p>
     <p>Step through two cores adding to the same counter with try-and-retry, and then the same two adds with
       lock-and-add:</p>
     <div class="card" id="cas-host"></div>
@@ -110,7 +111,7 @@ Atomics.add(counters, value, 1n);</pre></figure>
     <div id="cas-table"></div>
     <p class="src" data-src="perf-v3-retries, perf-v3-counters"></p>
     <p>Read the first column as "extra attempts per add": at k = 1 with 8 threads, one Chrome add in four goes round
-      the loop a second time, while native and Firefox almost never do. The full reading of these numbers, the test that shows the loop is the cause, and the question left open at <i>k</i> = 256, are in <a href="why.html">Why Chrome: code and counters</a>.</p>
+      the loop a second time, while native and Firefox almost never do. The full reading of these numbers, the test that shows the loop is the cause, and the question left open at <i>k</i> = 256, are in <a href="rq2.html#cause">Why Chrome: code and counters</a>.</p>
 
     <h2 id="code">What each engine emits</h2>
     <p>Which strategy a runtime uses is not chosen by the Rust source; it is chosen by whatever turns the code into
@@ -120,22 +121,22 @@ Atomics.add(counters, value, 1n);</pre></figure>
     <figure class="code asm"><header><span id="asm-title"></span><span class="muted">mnemonics from data/probes/engine-code, operands simplified</span></header><pre class="plain" id="asm-pre"></pre></figure>
     <p id="asm-note"></p>
     <p class="src" data-files="data/probes/engine-code/README.md, docs/adr/0088-what-explains-the-results.md, docs/adr/0049-padding-and-atomic-code.md"></p>
-    <div class="def"><b>How to read it.</b> Each line is one machine instruction. <code>mov</code> copies a value,
+    <p class="def"><b>How to read it.</b> Each line is one machine instruction. <code>mov</code> copies a value,
       <code>add</code> adds, <code>shl</code> multiplies by a power of two, and anything starting with <code>lock</code>
       is done atomically on memory. The words in brackets are memory locations; the ones starting with % are the
-      core's own scratch registers.</div>
-    <div class="why"><b>Why does V8 choose the retry loop?</b> The WebAssembly instruction is "atomic add and return
+      core's own scratch registers.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does V8 choose the retry loop?</b> The WebAssembly instruction is "atomic add and return
       the old value". When the old value is not used, as here, there are two correct ways to compile it, and V8's
       compiler happens to take the general one that works for any read-modify-write. It is a choice of the engine,
       not a bug, and not something the study's code can change. That makes it a finding of RQ2 rather than a flaw
-      of the setup.</div>
+      of the setup.</p></aside>
 
     <h2 id="order">Memory order, for the record</h2>
     <p>Anyone who knows atomics will ask about <i>memory ordering</i> before anything else, so it has to be said
       plainly: it is not the reason for the Chrome result. Every Rust atomic takes an ordering (how strictly other
       memory accesses are kept in sequence around it), and one could suspect the browsers pay for a stricter one.
       They do not, on this hardware:</p>
-    <details class="deeper"><summary>If you already know this: why ordering changes nothing on these targets</summary>
+    <details class="deeper"><summary>In depth: why ordering changes nothing on these targets</summary>
       <p>The histogram asks for <code>Relaxed</code>, the weakest <span data-term="memory-ordering-relaxed-seqcst">ordering</span>:
         it only needs each counter updated atomically, and the counters are read only after the parallel call has
         joined (ADR 0014). <code>SeqCst</code> is the strongest, and the only one JS and WASM offer. The choice changes
@@ -156,11 +157,11 @@ Atomics.add(counters, value, 1n);</pre></figure>
       <i>k</i> = 256. When every pixel adds to the same counter, each add must wait for the previous add's result
       before it can start; the core cannot overlap them. At <i>k</i> = 256 consecutive pixels usually hit different
       counters and the core runs many adds at once.</p>
-    <div class="why"><b>Why does it matter for the study?</b> Because it means "k = 1 is slow" is partly not about
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does it matter for the study?</b> Because it means "k = 1 is slow" is partly not about
       synchronization. If RQ2 compared k = 1 against k = 256, that effect would pollute the answer. So RQ2 never
       compares inputs; it compares shared against private at the <b>same</b> k, where this effect is present in
-      both and cancels (<a href="stats.html#rq2metric">the RQ2 metric</a>).</div>
-    <details class="deeper"><summary>If you already know this: the numbers, the dependency chain and the two instruction streams</summary>
+      both and cancels (<a href="reading.html#rq2metric">the RQ2 metric</a>).</p></aside>
+    <details class="deeper"><summary>In depth: the numbers, the dependency chain and the two instruction streams</summary>
       <div id="sf-table"></div>
       <p class="src" data-src="campaign-v3-scaling"></p>
       <p>At <i>k</i> = 1 the loop is a <span data-term="dependency-chain">dependency chain</span> through memory: the
@@ -180,14 +181,15 @@ Atomics.add(counters, value, 1n);</pre></figure>
       <p class="src" data-files="data/earlier/probes/rmw-chain.txt, bench/probes/rmw_chain.c, analysis/extras/jitdump.py, docs/adr/0060-local-histogram-k1-instruction-choice.md"></p>
     </details>
 
-    <div class="remember"><b>What to remember.</b> An atomic add exists so that no count is lost when threads share
+    <p class="takeaway"><strong>In summary.</strong> An atomic add exists so that no count is lost when threads share
       a counter. A CPU can do it in one locked step, or by trying and retrying. Native and Firefox do the first;
       Chrome does the second, which costs an extra read and, under contention, retries that the study counted.
-      Memory ordering is not the reason.</div>
+      Memory ordering is not the reason.</p>
 
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

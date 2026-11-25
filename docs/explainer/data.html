@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Data folders and files</title>
+<title>Data files, CSV schema and tables - WASM threads vs native</title>
 <meta name="description" content="What a campaign leaves in data/raw, the tables derived from it in data/tables, the run record and the CSV row field by field, and the figures the paper reads.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -16,31 +16,32 @@
 <body data-page="data">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="words.html">Words first</a></li><li><a href="setup.html">Install and first run</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Working on it · 4 of 8</p>
-    <h1>Data folders and files</h1>
+    <h1>Data files, CSV schema and tables</h1>
 
     <p class="lead">Every measurement is kept as it was produced, one pair of files per run, and every
       number derived from it is written to a separate table. Nothing in <code>data/raw/</code> is ever
       edited; everything in <code>data/tables/</code> can be deleted and made again.</p>
 
-    <div class="oneliner"><b>In one sentence:</b> <code>data/raw/&lt;campaign&gt;/</code> holds what the
+    <p class="lead-more">In short: <code>data/raw/&lt;campaign&gt;/</code> holds what the
       runs wrote (a CSV of times and a JSON of context per run), and <code>data/tables/&lt;campaign&gt;/</code>
-      holds what the analysis computed from them.</div>
+      holds what the analysis computed from them.</p>
 
     <h2 id="onerow">One row, read aloud</h2>
     <p>Before the folders, one line of one real file. This is a measured iteration of the main campaign's run
@@ -54,14 +55,14 @@
       was the same image and the output the same blur as in every other environment; then addresses and
       memory sizes recorded for the record. <a href="setup.html#firstrow">Your first day</a> walks a row like
       this one field by field.</p>
-    <div class="why"><b>Why does every row repeat the whole configuration?</b> So that a row can be read
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does every row repeat the whole configuration?</b> So that a row can be read
       alone. A thousand files later, nobody has to remember which folder meant what: the row says native,
       filter, 8 threads. The joined table that <code>harness.collect</code> makes is just all the rows of all
-      the runs, with the run id added, and it needs no other key.</div>
-    <div class="why"><b>Why two files per run and not one?</b> The CSV is what the measured program wrote and
+      the runs, with the run id added, and it needs no other key.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why two files per run and not one?</b> The CSV is what the measured program wrote and
       nothing else; the JSON is what the harness knew about the machine around it. Keeping them apart means
       the Rust code never has to know about governors or scopes, and the harness never has to parse a
-      time (<a href="pieces.html#boundaries">What crosses each boundary</a>).</div>
+      time (<a href="code.html#boundaries">What crosses each boundary</a>).</p></aside>
 
     <h2 id="raw">data/raw</h2>
     <p>One folder per campaign, named after the spec's <code>name</code>. Inside, the files of the main
@@ -74,7 +75,7 @@
 ├── ...                                             5310 runs × 2 files
 ├── discarded/                                      the discarded first launches
 └── sysinfo/                                        the machine state at the start of each session</pre>
-    <details class="deeper"><summary>If you already know this: every file in the folder, who writes it</summary>
+    <details class="deeper"><summary>In depth: every file in the folder, who writes it</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>File or folder</th><th>Who writes it</th><th>What it holds</th></tr></thead>
       <tbody>
@@ -96,18 +97,18 @@
       <code>data/raw/quick-*</code> and <code>data/mac-smoke/</code> are ignored by git, because they are
       never results. <code>python3 -m harness.collect</code> writes a joined table such as
       <code>data/campaign-v3.csv</code> on demand; it is not kept.</p>
-    <div class="def"><b>Raw is never edited.</b> A wrong run is not fixed in place: it is excluded by a
+    <p class="def"><b>Raw is never edited.</b> A wrong run is not fixed in place: it is excluded by a
       rule fixed before the analysis (the plan's D7), or re-run and moved to <code>excluded/</code> with an
-      ADR saying why. So every table can always be traced back to the files as the runs wrote them.</div>
+      ADR saying why. So every table can always be traced back to the files as the runs wrote them.</p>
 
     <h2 id="tables">data/tables</h2>
-    <div class="why"><b>Why a second folder at all?</b> Raw is what happened; tables are what was computed
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a second folder at all?</b> Raw is what happened; tables are what was computed
       from it, by a command that can be run again. Delete <code>data/tables/</code> and <code>make
       all-results</code> brings it back identical, except for the time stamp in each sidecar. If a number
-      in the paper is ever doubted, that one command is the answer.</div>
+      in the paper is ever doubted, that one command is the answer.</p></aside>
     <p>One folder per campaign (or per family of campaigns), written by the <code>*-results</code> make
       targets. Every folder ends in <code>-v3</code>: the final build, and the only one this guide and the paper read. The tables of the earlier build are at the tag <code>data/v2</code>.</p>
-    <details class="deeper"><summary>If you already know this: every table suffix and its columns</summary>
+    <details class="deeper"><summary>In depth: every table suffix and its columns</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Suffix</th><th>Written by</th><th>One row per</th><th>Main columns</th></tr></thead>
       <tbody>
@@ -139,7 +140,7 @@
       configuration, so a single row says what it measured:</p>
     <div data-code="bench/src/results.rs|pub const CSV_HEADER|1" data-title="The header, shared by native and WASM"></div>
     <div data-code="data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.csv|calibration-pause|3" data-title="The first rows of a Chrome run: the pause, then warm fork-join samples"></div>
-    <details class="deeper"><summary>If you already know this: every CSV column</summary>
+    <details class="deeper"><summary>In depth: every CSV column</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
       <tbody>
@@ -162,7 +163,7 @@
       the conditions it claims (strict validation, ADR 0027):</p>
     <div data-code="data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.json|^{|34" data-title="Build, clock and machine state"></div>
     <div data-code="data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.json|orderSeed|30" data-title="Order, times, artifact hash, shield and CPU time"></div>
-    <details class="deeper"><summary>If you already know this: every key of the run's JSON</summary>
+    <details class="deeper"><summary>In depth: every key of the run's JSON</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Key</th><th>Meaning</th></tr></thead>
       <tbody>
@@ -208,6 +209,7 @@
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

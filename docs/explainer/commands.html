@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Every command</title>
+<title>Commands - WASM threads vs native</title>
 <meta name="description" content="Every make target, what it runs and when to use it; the campaign commands of harness/ and the analysis commands of analysis/, with what each one reads, writes and prints.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -15,39 +15,40 @@
 <body data-page="commands">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="words.html">Words first</a></li><li><a href="setup.html">Install and first run</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Working on it · 2 of 8</p>
-    <h1>Every command</h1>
+    <h1>Commands</h1>
 
     <p class="lead">Everything in this study runs through <code>make</code>. A make target is a short name
       for one or more shell commands; most of them call a Python module of <code>harness/</code> or
       <code>analysis/</code>, which you can also run on its own with <code>python3 -m</code>.</p>
 
-    <div class="oneliner"><b>In one sentence:</b> <code>make help</code> lists what you need,
+    <p class="lead-more">In short: <code>make help</code> lists what you need,
       <code>make campaign SPEC=...</code> measures, <code>make status</code> watches, and the
-      <code>*-results</code> targets turn raw runs into the tables and figures of the paper.</div>
+      <code>*-results</code> targets turn raw runs into the tables and figures of the paper.</p>
 
     <h2 id="daily">The six you use daily</h2>
     <p>You will type these six far more than all the others together. Each one stands for a longer command
       that you never have to remember.</p>
-    <span class="def"><b>make.</b> A tool that runs named recipes. <code>make build</code> looks up
+    <p class="def"><b>make.</b> A tool that runs named recipes. <code>make build</code> looks up
       <code>build</code> in the <code>Makefile</code> and runs the shell commands written under it. The
       recipes of this project are in <code>make/*.mk</code>, one file per concern, and
-      <code>make help</code> lists the ones meant for you.</span>
+      <code>make help</code> lists the ones meant for you.</p>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Command</th><th>When</th><th>What happens</th></tr></thead>
       <tbody>
@@ -59,11 +60,11 @@
         <tr><td><code>make results</code> (or <code>all-results</code>)</td><td>After a campaign, on any machine</td><td>Every table and figure of the paper from the raw runs; <code>all-results</code> adds the exploratory campaigns and this guide's numbers.</td></tr>
       </tbody>
     </table></div>
-    <div class="why"><b>Why does everything go through make?</b> Because the long commands have twenty
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does everything go through make?</b> Because the long commands have twenty
       flags that must be the same every time (<code>--strict</code>, the 0.25 s threshold, the mask), and
       a flag typed differently once would make one table silently unlike the others. The recipe is the
       single place those flags live, and it is committed. The reference below shows what each recipe expands
-      to.</div>
+      to.</p></aside>
 
     <h2 id="make">make targets</h2>
     <p>The <code>Makefile</code> holds only the shared variables and <code>help</code>; the rules live in
@@ -71,12 +72,12 @@
       listed by <code>make help</code>; one marked <code>#: text</code> is a helper that <code>help</code>
       hides. Both kinds are in the tables below.</p>
     <div data-code="Makefile|P_MASK ?= |9" data-title="The variables every target shares"></div>
-    <div class="def"><b>SPEC.</b> The campaign a target works on: a JSON file in
+    <p class="def"><b>SPEC.</b> The campaign a target works on: a JSON file in
       <code>harness/campaigns/</code>. Its <code>name</code> key gives the results folder
       <code>data/raw/&lt;name&gt;</code> and its <code>build</code> key the build variant
-      (<code>baseline</code>, <code>scalar</code> or <code>avx2</code>). Default: <code>smoke.json</code>.</div>
+      (<code>baseline</code>, <code>scalar</code> or <code>avx2</code>). Default: <code>smoke.json</code>.</p>
 
-<details class="deeper"><summary>If you already know this: every target, file by file</summary>
+<details class="deeper"><summary>In depth: every target, file by file</summary>
     <h3>Setup, once per machine (<code>make/setup.mk</code>)</h3>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Target</th><th>What it does</th><th>Notes</th></tr></thead>
@@ -184,7 +185,7 @@
     <h2 id="campaign">Campaign commands</h2>
     <p>The harness never measures: the Rust code times its own iterations. These commands start runs,
       watch them and gather their files. Each module has a <code>README.md</code> in its folder.</p>
-    <details class="deeper"><summary>If you already know this: every harness command and what it prints</summary>
+    <details class="deeper"><summary>In depth: every harness command and what it prints</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Command</th><th>What it does</th><th>What it prints or writes</th></tr></thead>
       <tbody>
@@ -217,9 +218,9 @@ last run  perf-v3-0359-chrome-hist-atomic-k256-n8-r29 (done), 2s ago</pre>
     <h2 id="analysis">Analysis commands</h2>
     <p>Every analysis command reads a raw campaign folder (or a table made from one) and writes a table,
       a figure or a report. The statistics are fixed by the analysis plan
-      (<code>docs/adr/0037-analysis-plan.md</code>, ADRs 0037 to 0039); <a href="stats.html">The
+      (<code>docs/adr/0037-analysis-plan.md</code>, ADRs 0037 to 0039); <a href="reading.html#statistics">The
       statistics</a> explains each one.</p>
-    <details class="deeper"><summary>If you already know this: every analysis command and what it writes</summary>
+    <details class="deeper"><summary>In depth: every analysis command and what it writes</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Command</th><th>What it computes</th><th>Writes</th></tr></thead>
       <tbody>
@@ -247,6 +248,7 @@ last run  perf-v3-0359-chrome-hist-atomic-k256-n8-r29 (done), 2s ago</pre>
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - How the code is organised</title>
+<title>Repository tour - WASM threads vs native</title>
 <meta name="description" content="Three programs with one job each (the measured Rust, the Python that starts runs, the Python that analyses them), the folders, what each one holds, and the style rules with the failure each one prevents.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -18,43 +18,56 @@
   .rule { margin: 14px 0; }
   .rule h3 { margin: 0 0 4px; font-size: 1rem; }
   .rule p { margin: 4px 0; }
+  pre.cmd { background: var(--panel-2); border: 1px solid var(--edge); border-radius: 8px; padding: 10px 12px; overflow-x: auto; font-size: var(--fs-sm); }
+  .two { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .two .card h3 { margin: 0 0 4px; font-size: 1rem; }
+  .two .card p, .two .card li { font-size: var(--fs-sm); }
+  .steps li { margin: 6px 0; }
+  .t td:first-child code { white-space: nowrap; }
+  .filter-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0; }
+  .filter-row input { height: 40px; border-radius: 8px; border: 1px solid var(--edge); background: var(--panel); color: var(--ink); padding: 0 12px; font: inherit; width: min(360px, 100%); }
+  table.where td:first-child { font-weight: 600; color: var(--ink); width: 30%; }
+  table.where td:first-child small { display: block; font-weight: 400; color: var(--muted); font-size: var(--fs-xs); margin-top: 2px; }
+  table.where td:nth-child(2) { font-family: var(--mono); font-size: var(--fs-xs); }
+  table.where td:nth-child(2) a { word-break: break-all; }
 </style>
 </head>
 <body data-page="code">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="words.html">Words of the project</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">The code · 1 of 4</p>
-    <h1>How the code is organised</h1>
+    <h1>Repository tour</h1>
 
     <p class="lead">The repository holds three programs, in two languages, and each one has exactly one job.
       One does the work and times itself. One starts that work under controlled conditions and keeps what it
       produced. One reads what was kept and turns it into tables and figures. Knowing which of the three you
       are looking at tells you most of what a file is for.</p>
 
-    <div class="oneliner"><b>In one sentence:</b> the code that is measured and the code that measures are
+    <p class="lead-more">In short: the code that is measured and the code that measures are
       separate programs that only talk through files, so the measurement can never slow down what it
-      measures.</div>
+      measures.</p>
 
-    <div class="analogy"><b>Picture it.</b> A cooking contest. The cook (<code>bench/</code>) makes the dish and
+    <p><em>An analogy.</em> A cooking contest. The cook (<code>bench/</code>) makes the dish and
       stops the clock. The referee (<code>harness/</code>) sets up the kitchen the same way for every cook,
       says "go", and writes the time on a card. The judge (<code>analysis/</code>) reads all the cards at the
       end and decides. The referee never stands in the kitchen while the cook works, and the judge never
-      touches a pan.</div>
+      touches a pan.</p>
 
     <div class="three">
       <div class="card"><h3>bench/</h3><span class="tag">Rust, compiled to native and WASM</span>
@@ -68,12 +81,12 @@
           decisions, and draws the figures. Writes <code>data/tables/</code> and <code>paper/figures/</code>.</p></div>
     </div>
 
-    <div class="why"><b>Why three programs and not one?</b> If the timing code and the orchestration lived in
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why three programs and not one?</b> If the timing code and the orchestration lived in
       one process, the orchestrator's own work (writing files, polling, logging) could run on the same cores
       at the same moment as a timed iteration and add to its time, and nobody could tell by how much. Keeping
       them in separate processes, on separate cores, with files as the only link, means a slow harness cannot
       make a workload look slow. How they are connected, process by process, is on
-      <a href="pieces.html">How the pieces talk</a>.</div>
+      <a href="code.html#pieces">How the pieces talk</a>.</p></aside>
 
     <h2 id="folders">The folders</h2>
     <p>Left to right is the order data flows. Click a box to see what the folder holds and which page explains it.</p>
@@ -96,8 +109,8 @@
       </tbody>
     </table></div>
     <p class="src" data-files="README.md, Makefile, make/"></p>
-    <p><span class="def"><b>Crate.</b> Rust's word for one buildable package of code with its own
-      <code>Cargo.toml</code>. <code>bench/</code> is one crate.</span></p>
+    <p><p class="def"><b>Crate.</b> Rust's word for one buildable package of code with its own
+      <code>Cargo.toml</code>. <code>bench/</code> is one crate.</p></p>
 
     <h2 id="bench">bench/</h2>
     <p>One Rust crate builds two things from the same source: the native program
@@ -110,11 +123,11 @@
       starts, <code>run</code> is the only timed call, and <code>checksum</code> hashes the result afterwards.
       The timing loop only knows about these three, so it cannot time anything else by accident.</p>
     <div data-code="bench/src/workloads/workload.rs|pub trait Workload {|10" data-title="The Workload trait"></div>
-    <div class="why"><b>Why so small an interface?</b> Because "what exactly is inside the clock" is the
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why so small an interface?</b> Because "what exactly is inside the clock" is the
       question a reviewer asks first. With three methods there is one answer, in one file
       (<code>measurement/measure.rs</code>), for the filter, both histograms and every extra. A workload with
-      a fourth, untimed step would have to say so in its <code>prepare</code>.</div>
-    <details class="deeper"><summary>If you already know this: every folder of bench/src</summary>
+      a fourth, untimed step would have to say so in its <code>prepare</code>.</p></aside>
+    <details class="deeper"><summary>In depth: every folder of bench/src</summary>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Path</th><th>Responsibility</th></tr></thead>
       <tbody>
@@ -145,10 +158,10 @@
       <code>analysis/</code>.</p>
     <p>Whether a run is native or a browser, its confinement is the same single function:</p>
     <div data-code="harness/shield/confinement.py|def confine(argv|7" data-title="Every run starts through confine()"></div>
-    <div class="why"><b>Why one function for both?</b> RQ1 compares browser against native. If native runs
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why one function for both?</b> RQ1 compares browser against native. If native runs
       were confined one way and browser runs another, part of any difference could be the confinement, not
-      the runtime. One function, one argument list, no second code path to drift.</div>
-    <details class="deeper"><summary>If you already know this: every folder of harness/</summary>
+      the runtime. One function, one argument list, no second code path to drift.</p></aside>
+    <details class="deeper"><summary>In depth: every folder of harness/</summary>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Path</th><th>Responsibility</th></tr></thead>
       <tbody>
@@ -178,11 +191,11 @@
       become one centre, their <span data-term="geometric-mean">geometric mean</span>.
       <a href="reading.html">Reading the numbers</a> says why, in plain words.</p>
     <div data-code="analysis/stats/summary.py|# Analysis plan D1 and D2|4" data-title="The run summary and the configuration centre"></div>
-    <div class="why"><b>Why fix the statistics before seeing the data?</b> With 30 runs and a dozen possible
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why fix the statistics before seeing the data?</b> With 30 runs and a dozen possible
       summaries, there is nearly always one that makes a wished-for difference look real. Writing the rules
       down first, and keeping them in a file CI checks, removes that choice. A reviewer can read the plan and
-      the code and see they match.</div>
-    <details class="deeper"><summary>If you already know this: the commands and the library</summary>
+      the code and see they match.</p></aside>
+    <details class="deeper"><summary>In depth: the commands and the library</summary>
     <div class="layers">
       <div class="card"><h3>Commands</h3><p><code>datacheck</code>, <code>v0</code> (speedup tables), <code>results</code> (RQ1, RQ2 contrasts), <code>robustness</code>, <code>karp_flatt</code>, <code>distributions</code>, <code>cutoff</code>, <code>grain</code>, <code>perf_counters</code>, <code>figures</code></p></div>
       <div class="card"><h3>stats/</h3><p>Generic statistics: summaries, bootstrap, Holm, Mann-Whitney U, Cliff's delta, Spearman, skewness</p></div>
@@ -202,69 +215,205 @@
     <div class="rule"><h3>Comments only when they add information</h3>
       <p>A comment says why, warns of a pitfall, or points to the paper, algorithm or ADR a value comes from.
         Never a comment that repeats the code.</p>
-      <div class="why"><b>What goes wrong otherwise.</b> A comment that restates the line drifts the first time
+      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> A comment that restates the line drifts the first time
         the line changes, and then it lies. A comment that says "128, because the prefetcher pairs lines
-        (ADR 0008)" tells the next reader the one thing the code cannot.</div></div>
+        (ADR 0008)" tells the next reader the one thing the code cannot.</p></aside></div>
 
     <div class="rule"><h3>Named constants, no magic numbers</h3>
       <p><code>CHUNK_BYTES</code>, <code>CACHE_LINE_BYTES</code>, <code>BOOTSTRAP_RESAMPLES</code>, each defined
         once with its source.</p>
-      <div class="why"><b>What goes wrong otherwise.</b> The number 65536 appears in the atomic histogram and in
+      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> The number 65536 appears in the atomic histogram and in
         the local one. Change one and not the other, and the two histograms no longer split the image the same
-        way: the RQ2 control stops being a control, and no test says so.</div></div>
+        way: the RQ2 control stops being a control, and no test says so.</p></aside></div>
 
     <div class="rule"><h3>A README with a diagram per module</h3>
       <p>What the module does, which file holds what, and a Mermaid flowchart of the flow.</p>
-      <div class="why"><b>What goes wrong otherwise.</b> The harness has nine folders. Without a map a newcomer
+      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> The harness has nine folders. Without a map a newcomer
         changes the launcher when the bug is in the server, or adds a second place that writes result files.
-        The README is the map, and it is next to the code so it is updated with it.</div></div>
+        The README is the map, and it is next to the code so it is updated with it.</p></aside></div>
 
     <div class="rule"><h3>Python: one concept per module, fully typed, mypy strict</h3>
       <p>One class or idea per file; every function typed; <code>mypy --strict</code> passes; the standard
         library where possible (matplotlib is the one exception, run through <code>uv</code>).</p>
-      <div class="why"><b>What goes wrong otherwise.</b> The analysis turns 150,000 CSV rows into 10 decisions.
+      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> The analysis turns 150,000 CSV rows into 10 decisions.
         A function that silently gets a string where it expected a number, or a list where it expected a run,
         produces a wrong table that still looks like a table. Strict types make that a build error. The
         standard library rule means the numbers can be recomputed anywhere, with no version of anything to
-        match.</div></div>
+        match.</p></aside></div>
 
     <div class="rule"><h3>Rust: one struct or impl per file, strong types, clippy clean</h3>
       <p>Domain concepts are their own types (<code>ThreadCount</code>, <code>WorkloadKind</code>), never
         loose tuples; <code>rustfmt</code> and <code>clippy</code> with <code>-D warnings</code>.</p>
-      <div class="why"><b>What goes wrong otherwise.</b> Passing <code>(8, 1)</code> where <code>(1, 8)</code> was
+      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> Passing <code>(8, 1)</code> where <code>(1, 8)</code> was
         meant is one swapped argument and a whole campaign at the wrong N. A <code>ThreadCount</code> cannot be
         handed to a parameter that wants a <code>K</code>. One struct per file also means the excerpts on
-        these pages can point at one small, stable file.</div></div>
+        these pages can point at one small, stable file.</p></aside></div>
 
     <div class="rule"><h3>The measured code is guarded</h3>
       <p>The timed region, the kernels and the checksum change only with an ADR that says why, and a
         <span data-term="codegen-neutral">codegen diff</span> (<code>scripts/codegen_diff.sh</code>) that shows
         whether the machine code changed. A change that is not codegen-neutral makes a new tagged build, and
         runs from different builds are never mixed in one comparison (ADR 0062).</p>
-      <div class="why"><b>What goes wrong otherwise.</b> A harmless-looking tidy-up of a loop can let the
+      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> A harmless-looking tidy-up of a loop can let the
         compiler unroll it differently, and the time per pixel moves by a few percent. If half the runs of a
         campaign came from before the tidy-up and half from after, the comparison would be between two
         programs, not two runtimes. <a href="changing.html#hotpath">Touching the measured code</a> walks through
-        the procedure.</div></div>
+        the procedure.</p></aside></div>
 
     <p class="src" data-files="CLAUDE.md, make/test.mk, scripts/codegen_diff.sh"></p>
 
-    <div class="remember"><b>What to remember.</b> Three programs: the cook, the referee, the judge. The cook
+    <p class="takeaway"><strong>In summary.</strong> Three programs: the cook, the referee, the judge. The cook
       (<code>bench/</code>) is the only one inside the clock, and changing it is a procedure, not an edit.
-      Everything else is Python that can be changed freely as long as the types and the tests pass.</div>
-    <footer class="pager" id="pager"></footer>
+      Everything else is Python that can be changed freely as long as the types and the tests pass.</p>
+
+    <h2 id="pieces">How the pieces talk</h2>
+
+
+    <p>The project is three programs in three languages that never run inside each other.
+      A Rust program does the measuring. A Python program starts it, hundreds of times, in a controlled way.
+      A second set of Python programs reads what was written and turns it into tables. They talk through
+      files, one web request and one command line. This page is the map of those hand-offs.</p>
+    <p class="lead-more">In short: <code>make</code> starts the Python orchestrator, which
+      starts one fresh process per run (the native binary, or a browser), the run writes a CSV of times (to
+      its standard output, or by posting it to a tiny local web server), the orchestrator writes the
+      context next to it, and the analysis reads only those files.</p>
+
+    <h3 id="picture">Processes, files and ports</h3>
+    <p>Every box below is a separate <a href="machines.html#program">process</a>: its own program start, its own
+      memory. Arrows are what one hands to the next. Click a box.</p>
+    <div class="card">
+      <div id="pieces-svg" class="diagram"></div>
+      <div id="pieces-panel" class="panel" aria-live="polite"><p class="muted">Pick a box above.</p></div>
+    </div>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why so many separate programs, and not one?</b> Because the thing being measured must
+      not be the thing doing the measuring. If the orchestrator lived inside the benchmark, its own work
+      (planning, writing files, waiting) would be inside the timed region, and worse, it would be inside it
+      <i>differently</i> natively and in a browser. So the Rust code times only itself, and everything
+      around it is another process on other cores (<a href="machine.html#quiet">Shield and quiet mode</a>).
+      The price is that the pieces have to agree on formats, and that is what this page lists.</p></aside>
+    <p><em>An analogy.</em> A lab with a stopwatch inside the experiment, a technician who
+      sets up each trial and writes the label, and an analyst who only ever sees the labelled sheets. The
+      technician never touches the stopwatch; the analyst never enters the lab.</p>
+
+    <h3 id="boundaries">What crosses each boundary</h3>
+    <p>Each hand-off carries one small, fixed thing. Knowing them is most of knowing the project.</p>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>From</th><th>To</th><th>What crosses</th><th>Looks like</th></tr></thead>
+      <tbody>
+        <tr><td><code>make</code></td><td><code>python3 -m harness.campaign</code></td><td>The path of a spec file</td><td><code>SPEC=harness/campaigns/campaign-v3.json</code></td></tr>
+        <tr><td>orchestrator</td><td>native binary</td><td>A command line: the configuration as <code>key=value</code> pairs, under a CPU mask</td><td><code>taskset -c 0,2,... native workload=filter input=noise threads=8 ...</code></td></tr>
+        <tr><td>native binary</td><td>orchestrator</td><td>CSV text on standard output, one row per timed round</td><td><code>native,filter,noise,,8192,8192,...,measured,0,3990000,...</code></td></tr>
+        <tr><td>orchestrator</td><td>browser</td><td>A command line with a fresh profile, a CPU mask and a URL whose <b>query string</b> holds the same configuration</td><td><code>http://127.0.0.1:8000/?run=...&amp;workload=filter&amp;threads=8...</code></td></tr>
+        <tr><td>browser page</td><td>results server</td><td>One HTTP POST with the CSV text as its body</td><td><code>POST /results</code> on <code>127.0.0.1:8000</code></td></tr>
+        <tr><td>results server</td><td>disk</td><td><code>&lt;run&gt;.csv</code></td><td><code>data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.csv</code></td></tr>
+        <tr><td>orchestrator</td><td>disk</td><td><code>&lt;run&gt;.json</code>: the context (build, machine state, mask, times, CPU time) and one line in <code>campaign.jsonl</code></td><td><a href="data.html#json">The run record</a></td></tr>
+        <tr><td>disk</td><td>analysis</td><td>Only files. The analysis never talks to the harness.</td><td><code>python3 -m analysis.v0 data/raw/campaign-v3</code></td></tr>
+      </tbody>
+    </table></div>
+    <p class="def"><b>Query string.</b> The part of a web address after the <code>?</code>: pairs of
+      <code>name=value</code> joined by <code>&amp;</code>. The page reads it to know what to measure, the same
+      way the native program reads its command line. One parser in the Rust code reads both
+      (<a href="environments.html#same">same source, same flags</a>).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the browser post the result instead of saving a file?</b> A web page cannot
+      write to disk. So a tiny web server (<code>harness/server.py</code>) serves the page and accepts the
+      result back; it is also what sends the two headers that let the page use shared memory
+      (<a href="environments.html#wasm">What WASM threads need</a>). It listens only on
+      <code>127.0.0.1</code>, the machine itself, never the network.</p></aside>
+    <div data-code="harness/server.py|    def do_POST|12" data-title="The server stores what the page posts"></div>
+
+    <h3 id="who">Who starts whom</h3>
+    <ol class="steps">
+      <li><b>You</b> type <code>make campaign SPEC=...</code>. <code>make</code> builds the right variant, turns
+        quiet mode on, and starts the orchestrator under <code>systemd-inhibit</code> so the PC cannot sleep.</li>
+      <li><b>The orchestrator</b> (<code>harness.campaign</code>) reads the spec, shuffles the runs with the
+        spec's seed, checks the machine (strict campaigns), writes <code>campaign.json</code>, and starts the
+        results server once for the whole campaign.</li>
+      <li><b>Per run</b>, it starts one fresh process in its own
+        <span data-term="systemd-scope-slice">systemd scope</span>: the native binary, or Chrome or Firefox
+        with a fresh profile. It waits for the CSV (standard output, or the server), then writes the JSON.</li>
+      <li><b>The run</b> starts its thread pool, warms up, times its rounds, writes the CSV, and exits. A
+        browser run is a page and a coordinating worker; the pool is more workers started by the page
+        (<a href="protocol.html#browser">A browser run</a>).</li>
+      <li><b>After the last run</b>, the orchestrator stops the server, prints the counts, and <code>make</code>
+        turns quiet mode off.</li>
+      <li><b>Later, by hand</b>, <code>make results</code> runs the analysis commands over the folder.</li>
+    </ol>
+    <div data-code="harness/campaign/executors.py|class NativeExecutor|14" data-title="One native run, started by the orchestrator"></div>
+    <p>Nothing is kept in memory between runs that cannot be rebuilt from the folder, which is why a
+      campaign can be stopped and continued (<a href="campaigns.html#resume">Sessions, status and resume</a>).</p>
+
+    <h3 id="onemachine">On the Mac and on the PC</h3>
+    <div class="two">
+      <div class="card"><h4>On the Mac</h4>
+        <p>Every box runs, but with no CPU mask, no scope, no machine check (<code>"strict": false</code>
+          specs, <code>make quick-*</code>, <code>make mini</code>). The pieces talk exactly the same way, so
+          a change to a format shows up here first. The times are not results.</p></div>
+      <div class="card"><h4>On the PC</h4>
+        <p>The same boxes, plus the ones that hold the machine still: the shield keeps everything but the
+          run off the 8 measured cores, each run gets its own scope so its CPU time and any escaped browser
+          process are counted, and a strict campaign refuses to start if any of that is missing
+          (<a href="machine.html#checked">Checked on every run</a>).</p></div>
+    </div>
+    <p class="takeaway"><strong>In summary.</strong> Three programs, four hand-offs: a spec path, a command line
+      or URL, a CSV, a JSON. The Rust code never knows about campaigns; the analysis never knows about
+      browsers. Change a format in one place and look for the two readers of it.</p>
+    <p class="src" data-files="harness/README.md, harness/campaign/README.md, harness/server.py, harness/campaign/executors.py, bench/src/config.rs"></p>
+
+    <h2 id="where">Where to find things</h2>
+
+
+    <p>Two lookup tables, for when you know what you are looking for but not which file holds
+      it. The first answers "where in the code is this done?" with the file to open and the page that
+      explains it. The second starts from something that went wrong ("the campaign refuses to start", "a
+      checksum conflict") and says which check caught it and where to look.</p>
+
+    <p class="lead-more">In short: every part of the study has one home in the code, and
+      every failure is caught by a named check; these tables map both.</p>
+
+    <p><em>An analogy.</em> The index at the back of a textbook, and the troubleshooting
+      page at the back of a manual. Neither explains anything; both tell you which page does.</p>
+
+    <p>Type a word in the box to filter both tables. Rows whose name uses a technical term carry a one-line
+      gloss under it; the glossary and the linked page have the rest.</p>
+
+    <div class="filter-row">
+      <label for="where-filter" class="sr">Filter</label>
+      <input id="where-filter" type="search" placeholder="Filter both tables, for example: checksum">
+      <span id="where-count" class="muted"></span>
+    </div>
+
+    <h3 id="questions">Where is it done?</h3>
+    <div id="questions-table"></div>
+
+    <h3 id="symptoms">Something broke: where to look</h3>
+    <p>Most failures stop a run or a campaign with a message, on purpose: a run that would give a wrong
+      number fails instead, and is counted. Tests run with <code>make test</code> (Rust, Python) and
+      <code>make lint</code>; CI runs both on every PR. For the step-by-step, from <code>make status</code>
+      to re-running one id by hand, see <a href="debugging.html">Debugging a run</a>.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does so much fail on purpose?</b> A benchmark's worst outcome is not a crash
+      but a wrong number that looks right. A run at the wrong N, on the wrong cores, or with a wrong
+      checksum would sit in the table like any other and move a result. So every check that can tell
+      refuses the run, writes an error file, and the data check counts it; nothing is dropped quietly.</p></aside>
+    <div id="symptoms-table"></div>
+
+    <p class="takeaway"><strong>In summary.</strong> If you are asking "where is X", the first table has the
+      file and the page. If you are asking "why did it stop", the second table names the check, and the
+      check is on your side.</p>
+        <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>
 <script src="assets/glossary.js"></script>
 <script>
 window.page = function (UI) {
+  (function () {
   var el = UI.el, $ = UI.$;
   var BOXES = [
     { key: "bench", t: "bench/", s: "Rust, measured", page: "workloads.html", d: "The workloads and the loop that times them. The only code that runs while the clock is running. Builds the native runner and the WASM package." },
-    { key: "harness", t: "harness/", s: "Python, starts runs", page: "harness.html", d: "Launches each run as a fresh process or browser, confined to the P-cores, and stores its CSV and context in data/raw/<campaign>/." },
+    { key: "harness", t: "harness/", s: "Python, starts runs", page: "protocol.html#launch", d: "Launches each run as a fresh process or browser, confined to the P-cores, and stores its CSV and context in data/raw/<campaign>/." },
     { key: "data", t: "data/", s: "raw runs, tables", page: "data.html", d: "data/raw holds the runs exactly as produced; data/tables holds what analysis derived from them. Raw files are never edited." },
     { key: "analysis", t: "analysis/", s: "Python, statistics", page: "reading.html", d: "Reads data/raw, writes data/tables and paper/figures: one value per run, speedup, bootstrap intervals, Holm, figures." },
     { key: "paper", t: "paper/", s: "LaTeX", page: "reproduce.html", d: "paper/final/paper.tex reads its numbers from data/tables and its figures from paper/figures." },
@@ -289,6 +438,150 @@ window.page = function (UI) {
     };
   });
   UI.clickable($("#folders-svg"), $("#folders-panel"), details).pick("bench");
+  })();
+  (function () {
+
+  var el = UI.el, $ = UI.$;
+  var W = 760;
+  var B = [
+    { key: "make", x: 10, y: 10, w: 110, h: 46, t: "make", s: "SPEC=...", d: "Builds the spec's variant, turns quiet mode on, starts the orchestrator under systemd-inhibit. It is the only thing you type." },
+    { key: "orch", x: 160, y: 10, w: 150, h: 46, t: "orchestrator", s: "harness.campaign", d: "One Python process for the whole campaign: shuffles the runs with the seed, checks the machine, starts the results server, then starts one fresh process per run and writes each run's context JSON and journal line." },
+    { key: "server", x: 160, y: 116, w: 150, h: 46, t: "results server", s: "127.0.0.1:8000", d: "harness/server.py: serves bench/www with the two isolation headers and accepts POST /results, which it writes as <run>.csv. Started once per campaign, stopped at the end." },
+    { key: "native", x: 360, y: 10, w: 130, h: 46, t: "native binary", s: "stdout", d: "One fresh process per run, under taskset and its own systemd scope. Reads its configuration from the command line, prints the CSV to standard output, exits." },
+    { key: "browser", x: 360, y: 116, w: 130, h: 46, t: "browser", s: "page + workers", d: "One fresh Chrome or Firefox per run, fresh profile, under the same mask. The page reads the query string, a coordinating worker runs the measurement, and the page POSTs the CSV to the server." },
+    { key: "files", x: 540, y: 63, w: 110, h: 46, t: "files", s: "data/raw/<name>/", d: "<run>.csv from the run, <run>.json from the orchestrator, campaign.json and campaign.jsonl. Never edited by hand." },
+    { key: "analysis", x: 690, y: 63, w: 60, h: 46, t: "analysis", s: "tables", d: "python3 -m analysis.* reads the folder and writes data/tables. It never talks to the harness: files only." }
+  ];
+  var A = [["make", "orch"], ["orch", "server"], ["orch", "native"], ["orch", "browser"], ["native", "files"], ["server", "files"], ["browser", "server"], ["orch", "files"], ["files", "analysis"]];
+  var svg = '<svg viewBox="0 0 ' + W + ' 172" role="img" aria-label="Processes, files and ports">';
+  function c(b) { return { x: b.x + b.w / 2, y: b.y + b.h / 2 }; }
+  A.forEach(function (a) {
+    var p = c(B.find(function (b) { return b.key === a[0]; })), q = c(B.find(function (b) { return b.key === a[1]; }));
+    svg += '<path class="arrow" d="M' + p.x + ' ' + p.y + ' L' + q.x + ' ' + q.y + '"/>';
+  });
+  B.forEach(function (b) {
+    svg += '<rect class="box" data-key="' + b.key + '" x="' + b.x + '" y="' + b.y + '" width="' + b.w + '" height="' + b.h + '" rx="8"/>' +
+      '<text x="' + (b.x + b.w / 2) + '" y="' + (b.y + 20) + '" text-anchor="middle" font-size="12" font-weight="600">' + b.t + '</text>' +
+      '<text x="' + (b.x + b.w / 2) + '" y="' + (b.y + 36) + '" text-anchor="middle" font-size="10" style="fill:var(--muted)">' + b.s + '</text>';
+  });
+  $("#pieces-svg").innerHTML = svg + "</svg>";
+  var details = {};
+  B.forEach(function (b) { details[b.key] = function (panel) { panel.appendChild(el("h3", { style: "margin-top:0", text: b.t })); panel.appendChild(el("p", { text: b.d })); }; });
+  UI.clickable($("#pieces-svg"), $("#pieces-panel"), details).pick("orch");
+
+  })();
+  (function () {
+  var el = UI.el, $ = UI.$, $$ = UI.$$;
+  // [what, files, page, gloss (one plain line, optional)]
+  var Q = [
+    ["The workloads (filter, histograms, sort)", "bench/src/workloads/gaussian.rs, bench/src/workloads/histogram/atomic.rs, bench/src/workloads/histogram/local.rs", "workloads.html"],
+    ["The timed region: what is inside the clock", "bench/src/measurement/measure.rs", "trace.html#native", "The lines between the two clock reads; only the workload's run() is there."],
+    ["Warm-up and measured iterations", "bench/src/measurement/measure.rs, bench/src/measurement/plan.rs", "protocol.html#warmup", "The first W repetitions are done but not used, because a program is slower the first few times."],
+    ["The checksum and the input fingerprint", "bench/src/workloads/checksum.rs, bench/src/workloads/fnv1a.rs, bench/src/input/gray_image.rs", "workloads.html#inputs", "One number that summarises a result (or an input), so two results can be compared at a glance."],
+    ["The input images (noise, few_colors(k))", "bench/src/input/generators.rs, bench/src/input/split_mix64.rs", "workloads.html#inputs"],
+    ["Padding of the shared counters", "bench/src/workloads/histogram/padded_counter.rs, bench/src/workloads/histogram/counter_table.rs", "caches.html#falsesharing", "Empty space after each counter so that no two counters share a 64-byte block of memory."],
+    ["The fork-join calibration", "bench/src/calibration/fork_join.rs, bench/src/calibration/empty_broadcast.rs, bench/src/calibration/empty_par_iter.rs", "protocol.html#calibration", "Timing an empty parallel call: the fixed cost of handing out work and waiting for it."],
+    ["The CSV schema of a run", "bench/src/results/record.rs, bench/src/results/README.md", "harness.html#csv"],
+    ["Native entry: flags and the Rayon pool", "bench/src/bin/native/main.rs, bench/src/bin/native/args.rs, bench/src/pool.rs", "trace.html#native"],
+    ["WASM entry: exports and the browser clock", "bench/src/wasm.rs, bench/src/wasm/performance_clock.rs", "environments.html#wasm"],
+    ["The browser page and the coordinator worker", "bench/www/main.js, bench/www/worker.js, bench/www/coordinator_worker.js", "harness.html#browser", "The helper thread that is allowed to wait, which the page's main thread is not."],
+    ["WASM build flags (atomics, simd128, build-std)", "bench/.cargo/config.toml, bench/rust-toolchain.toml, bench/build-wasm.sh", "environments.html#same"],
+    ["The campaign order (shuffle with a seed)", "harness/campaign/plan.py, harness/campaign/spec.py", "protocol.html#order", "The list of runs is shuffled once; the seed lets anyone shuffle it the same way again."],
+    ["Resume after a stop, the journal", "harness/campaign/journal.py, harness/campaign/runner.py", "campaigns.html#resume", "A log of every run done, so a campaign stopped halfway continues from where it was."],
+    ["Campaign progress", "harness/campaign/status/", "campaigns.html#resume"],
+    ["Launching a browser (profile, flags, teardown)", "harness/launcher/launcher.py, harness/launcher/commands.py", "harness.html#browser"],
+    ["Running the native binary", "harness/native/run.py", "harness.html#native"],
+    ["CPU mask, run scope, foreign CPU time", "harness/shield/confinement.py, harness/shield/", "machine.html#quiet", "Which cores a run may use; the group Linux keeps of its processes; CPU time other programs spent on those cores meanwhile."],
+    ["The results server (COOP/COEP)", "harness/server.py", "harness.html#server", "The two security headers a page needs before the browser allows memory shared between threads."],
+    ["Machine check: turbo, governor, SMT, mask", "harness/environment/check.py", "machine.html#checked"],
+    ["Quiet mode and the machine setup scripts", "harness/env/quiet.sh, harness/env/setup.sh", "machine.html#quiet"],
+    ["Pinned browser builds", "harness/browsers.py, harness/browsers.json", "environments.html#browsers", "One exact version of each browser, downloaded and checked, so every run uses the same one."],
+    ["The context saved with every run, strict validation", "harness/context/record.py, harness/context/validation.py", "harness.html#csv", "A run is accepted only if its record shows the right cores, clock settings and browser version."],
+    ["Joining runs into one table", "harness/collect.py", "trace.html#analysis"],
+    ["One value per run (median)", "analysis/runs.py, analysis/stats/summary.py", "reading.html#onevalue"],
+    ["Speedup, efficiency and their intervals", "analysis/scaling/table.py, analysis/v0.py", "stats.html#speedup"],
+    ["Bootstrap intervals and p-values", "analysis/stats/bootstrap.py", "reading.html#sure"],
+    ["The RQ1 and RQ2 contrasts, Holm", "analysis/results.py, analysis/inference/contrast.py, analysis/stats/holm.py", "reading.html#decisions"],
+    ["Mann-Whitney and Cliff's delta", "analysis/robustness.py, analysis/stats/mann_whitney.py, analysis/stats/cliff.py", "stats.html#robust"],
+    ["Karp-Flatt serial fraction", "analysis/karp_flatt.py, analysis/scaling/karp_flatt.py", "stats.html#karp"],
+    ["The data check before analysis", "analysis/datacheck.py, analysis/quality/", "campaigns.html#quality"],
+    ["Cutoff and grain campaigns", "analysis/cutoff.py, analysis/grain.py, analysis/scaling/fork_join.py", "granularity.html"],
+    ["Hardware counters per atomic add", "scripts/perf-counters.sh, analysis/extras/perf_counters.py", "why.html#retries", "Counts the CPU keeps of its own events, read with the Linux tool perf."],
+    ["Figures of the paper", "analysis/figures/", "reproduce.html"],
+    ["Every command", "Makefile, make/", "commands.html"],
+    ["This guide's numbers", "scripts/explainer_data.py, docs/explainer/assets/data.js", "reproduce.html#explainer"]
+  ];
+  // [symptom, where to look, explanation, gloss (optional)]
+  var S = [
+    ["The campaign refuses to start: environment check failed", "harness/environment/check.py, data/raw/<campaign>/sysinfo/", "A strict campaign checks turbo, governor, SMT and the P-core mask on every start and resume, and writes what it found to sysinfo/. Run make env-setup on the PC, then start again.", "The machine is not in the slowed-down, held-still state the study measures on."],
+    ["The campaign refuses to start: unpinned browser", "harness/campaign/runner.py, harness/browsers.json", "The installed Chrome or Firefox is not the pinned version (Firefox can update itself). Reinstall the pinned build with make browsers."],
+    ["A run fails with a checksum error", "bench/src/measurement/measure.rs, data/raw/<campaign>/failed/", "An iteration gave a different checksum from the first: the workload computed a wrong result. The run fails instead of timing it; its error file is kept."],
+    ["The analysis stops on a checksum conflict", "harness/collect.py", "Two runs of the same workload, input and size gave different checksums (across environments or thread counts). Nothing is written until it is explained."],
+    ["A WASM run fails: memory grew while measuring", "bench/src/run/memory_tracker.rs", "Linear memory grew during the measured phase, so an allocation happened in the timed region. Allocation must stay in prepare or before the run.", "The program asked for more memory in the middle of a timed step, which would add to the time."],
+    ["The page reports: not cross-origin isolated", "harness/server.py, bench/www/main.js", "SharedArrayBuffer needs the COOP and COEP headers; the page was not served by server.py, or the headers were removed.", "The page was opened without the two security headers that allow shared memory."],
+    ["A browser run times out", "data/raw/<campaign>/<run>.browser.log, harness/launcher/launcher.py", "No result before the spec's timeout. The browser log is kept for runs that did not finish."],
+    ["A run is rejected by strict validation", "harness/context/validation.py, analysis/inference/exclusion.py", "Its context shows a wrong mask, turbo on, SMT on, escaped processes or another browser version. Excluded runs are counted in the data check, never silently dropped.", "The run happened, but its record shows the conditions were not the right ones, so it is set aside and counted."],
+    ["Runs above the foreign CPU threshold", "analysis/quality/foreign_cpu.py, data/tables/<campaign>/<campaign>-quality.md", "More than 0.25 s of CPU time from other processes on the measured cores during the run (ADR 0051): the shield or quiet mode did not hold.", "Some other program used the measured cores while the run was going."],
+    ["A configuration under 100 times the clock resolution", "analysis/quality/clock.py", "Iterations too short for the browser's coarse performance.now(); the sample would be mostly quantisation error (ADR 0041).", "The browser's clock only ticks every few microseconds; a time much shorter than 100 ticks is mostly rounding."],
+    ["Run values trend with the execution order", "analysis/quality/order_drift.py", "Spearman |rho| > 0.5 between run order and run value: something drifted during the campaign. Reported in the data check; with 30 runs about 1 in 140 configurations shows it by chance.", "Later runs got steadily slower or faster, which suggests the machine changed during the day."],
+    ["A refactor of bench/ changed the measured code", "scripts/codegen_diff.sh, scripts/codegen_diff.py", "Builds the base and the working tree and compares every function; a hot function that differs means the change is not codegen-neutral and needs a new build tag (ADR 0062).", "The machine code of the timed functions is compared before and after an edit; if it changed, the numbers are not comparable."],
+    ["The filter is no longer vectorized", "scripts/check_simd.py", "CI checks that blur_interior uses packed 16-bit SIMD in both the native binary and bench.wasm (ADR 0017).", "The compiler stopped using the instructions that process 8 pixels at once."],
+    ["Browser results differ from native in CI", "harness/browser_check/", "The CI correctness check runs small cases in both browsers and compares the checksums with native (ADR 0024)."],
+    ["An ADR or a page has an em dash, or an ADR is malformed", "scripts/check_no_em_dash.py, scripts/check_adrs.py", "make lint and CI refuse it."],
+    ["This guide shows old numbers or a missing excerpt", "scripts/explainer_data.py", "Run python3 -m scripts.explainer_data; it fails if an excerpt's first line is no longer found in its file."]
+  ];
+  function files(list) {
+    var td = el("span");
+    list.split(",").map(function (f) { return f.trim(); }).forEach(function (f, i) {
+      if (i) td.appendChild(document.createTextNode(", "));
+      if (f.indexOf("<") >= 0) td.appendChild(el("code", { text: f }));
+      else td.appendChild(UI.repoLink(f));
+    });
+    return td;
+  }
+  function named(name, gloss) {
+    var cell = el("span", { text: name });
+    if (gloss) cell.appendChild(el("small", { text: gloss }));
+    return cell;
+  }
+  function tableOf(rows, heads, cells) {
+    var t = el("table", { class: "t where" }), tr = el("tr");
+    heads.forEach(function (h) { tr.appendChild(el("th", { text: h })); });
+    t.appendChild(el("thead", {}, [tr]));
+    var tb = el("tbody");
+    rows.forEach(function (r) {
+      var row = el("tr");
+      cells(r).forEach(function (c) {
+        var td = el("td");
+        if (c instanceof Node) td.appendChild(c); else td.textContent = c;
+        row.appendChild(td);
+      });
+      tb.appendChild(row);
+    });
+    t.appendChild(tb);
+    return el("div", { class: "scroll-x" }, [t]);
+  }
+  $("#questions-table").appendChild(tableOf(Q, ["What", "Files", "Explained in"], function (r) {
+    var page = UI.PAGES.filter(function (p) { return p.file === r[2].split("#")[0]; })[0];
+    return [named(r[0], r[3]), files(r[1]), el("a", { href: r[2], text: page ? page.title : r[2] })];
+  }));
+  $("#symptoms-table").appendChild(tableOf(S, ["Symptom", "Where to look", "What it means"], function (r) {
+    return [named(r[0], r[3]), files(r[1]), r[2]];
+  }));
+  var box = $("#where-filter"), count = $("#where-count");
+  function filter() {
+    var q = box.value.trim().toLowerCase(), n = 0, total = 0;
+    $$("table.where tbody tr").forEach(function (tr) {
+      total++;
+      var show = !q || tr.textContent.toLowerCase().indexOf(q) >= 0;
+      tr.hidden = !show;
+      if (show) n++;
+    });
+    count.textContent = n + " of " + total + " rows";
+  }
+  box.addEventListener("input", filter);
+  filter();
+  })();
 };
 </script>
 <script src="assets/app.js"></script>

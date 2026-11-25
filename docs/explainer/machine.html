@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - The machine and its controls</title>
+<title>The machine and environment control - WASM threads vs native</title>
 <meta name="description" content="One PC, slowed down on purpose: why only its 8 P-cores are used, why turbo, SMT and the governor are fixed, how the rest of the system is kept away, and what is checked on every run.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -14,36 +14,49 @@
   .checks { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
   .checks .card h3 { margin: 0 0 4px; font-size: 1rem; }
   .checks .card p { font-size: var(--fs-sm); margin: 3px 0; }
+  .chart { width: 100%; height: auto; display: block; }
+  .chart text { font-family: var(--sans); fill: var(--muted); font-size: 11px; }
+  .chart .axis { stroke: var(--edge); }
+  .chart .ideal { stroke: var(--faint); stroke-dasharray: 4 4; fill: none; }
+  .controls-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 10px 0; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+  .fig text { font-family: var(--sans); font-size: 12px; fill: var(--body); }
+  .fig .box { fill: var(--panel); stroke: var(--edge); }
+  .fig .hot { fill: var(--chrome-soft); stroke: var(--chrome); }
+  .fig .cool { fill: var(--native-soft); stroke: var(--native); }
+  .fig .arrow { stroke: var(--muted); fill: none; marker-end: url(#ah); }
+
 </style>
 </head>
 <body data-page="machine">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="harness.html">From make to a CSV row</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Method · 1 of 6</p>
-    <h1>The machine and its controls</h1>
+    <h1>The machine and environment control</h1>
 
     <p class="lead">Every number in the study comes from one PC. Before measuring, we make that PC
       <b>slower and quieter than it normally is</b>, on purpose, and we keep it that way for every run. This
       page says what we switch off, why each switch matters, and how the harness checks it every time.</p>
 
-    <div class="oneliner"><b>In one sentence:</b> the same 8 identical cores, at the same speed, with nothing
+    <p class="lead-more">In short: the same 8 identical cores, at the same speed, with nothing
       else on them, for every run; so when Chrome and native differ, the difference cannot have come from the
-      hardware.</div>
+      hardware.</p>
 
     <h2 id="pc">One PC, slowed down on purpose</h2>
     <p>A modern computer is built to be fast on average, not to be the same every second. It speeds up
@@ -51,10 +64,10 @@
       what else is running. It wakes up background jobs at random moments. None of that is a problem for a
       user. All of it is a problem for a measurement, because the same program can take a different time
       each time you run it, for reasons that have nothing to do with the program.</p>
-    <div class="analogy"><b>Picture it.</b> You want to know whether two runners are equally fast. You would
+    <p><em>An analogy.</em> You want to know whether two runners are equally fast. You would
       not time one on a windy day and the other on a calm day, or let one run on an empty track and the other
       through a crowd. You pick one track, close it to the public, and wait for the wind to drop. The track is
-      slower than a race with a tailwind, and that is the point: the same conditions for both.</div>
+      slower than a race with a tailwind, and that is the point: the same conditions for both.</p>
     <p>This study does that to one machine (the page <a href="machines.html">Programs, processes, threads
       and cores</a> explains the words core, thread and clock, if they are new). The PC is an
       <span data-term="i9-14900kf">Intel i9-14900KF</span> with 64 GB of RAM, running Ubuntu 26.04 LTS (kernel 7.0.0-43 for every campaign of the study).
@@ -67,14 +80,14 @@
       <div id="cpu-panel" class="panel" aria-live="polite"><p class="muted">Pick a group above.</p></div>
     </div>
     <p class="src" data-files="harness/env/setup.sh, paper/final/paper.tex"></p>
-    <div class="why"><b>Why one machine, and not several?</b> Because the study compares runtimes, not
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why one machine, and not several?</b> Because the study compares runtimes, not
       machines. If native ran on one PC and Chrome on another, a difference between them could be the PCs.
       With one machine, the machine is the same in both halves of every comparison and cancels out. The
       price is that the results describe this PC; the page <a href="threats.html#external">External threats</a>
-      says so.</div>
-    <div class="why"><b>Why not develop on it too?</b> Development happens on a Mac. The Mac has a different
+      says so.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not develop on it too?</b> Development happens on a Mac. The Mac has a different
       CPU, turbo on, and no way to shield cores, so its numbers would not be comparable with anything.
-      Numbers from the Mac are never results (<a href="setup.html#machines">Two machines, two jobs</a>).</div>
+      Numbers from the Mac are never results (<a href="setup.html#machines">Two machines, two jobs</a>).</p></aside>
 
     <h2 id="pcores">P-cores only</h2>
     <p>The measured program is told which cores it may use: the 8 P-cores, numbered
@@ -83,20 +96,20 @@
       <b>process</b>, not on each of its threads: a web page cannot choose which core each of its workers
       runs on, so to keep the comparison fair native is given exactly the same treatment
       (<a href="../adr/0001-p-cores-only.md">ADR 0001</a>).</p>
-    <div class="why"><b>Why not use all 24 cores?</b> Because the slow cores would make the fast ones wait.
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not use all 24 cores?</b> Because the slow cores would make the fast ones wait.
       Rayon splits the work into pieces and lets idle threads take pieces from busy ones. With E-cores in the
       mix, some threads land on cores that are about half as fast, and share them with the rest of the
       system. In a pilot, adding the E-cores made runs at N = 8 up to 19 % slower and several times more
       variable (<a href="../adr/0045-p-cores-confirmed-and-browser-scope.md">ADR 0045</a>). The P+E case is
       still interesting, so it is measured on its own as an exploratory campaign
-      (<a href="extras.html#hybrid">P-cores plus E-cores</a>); it just is not the baseline.</div>
-    <div class="why"><b>Why is a mask on the process not enough for a browser?</b> Because a browser is not
+      (<a href="extras.html#hybrid">P-cores plus E-cores</a>); it just is not the baseline.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is a mask on the process not enough for a browser?</b> Because a browser is not
       one process: Chrome starts helper processes, and one of them once moved itself out of the mask by
-      asking the desktop for a new process (<a href="pitfalls.html#mask">Chrome escapes the CPU mask</a>).
+      asking the desktop for a new process (<a href="machine.html#mask">Chrome escapes the CPU mask</a>).
       So every run starts inside its own <span data-term="systemd-scope-slice">systemd scope</span>: a group
       the operating system keeps track of, whose <code>AllowedCPUs</code> bounds every process the browser
-      creates, however it creates them. The run's own CPU time is later read from that same group.</div>
-    <details class="deeper"><summary>If you already know this: the mask and the scope in the code</summary>
+      creates, however it creates them. The run's own CPU time is later read from that same group.</p></aside>
+    <details class="deeper"><summary>In depth: the mask and the scope in the code</summary>
       <div data-code="harness/shield/confinement.py|def confine(|7" data-title="The mask, and the scope around it"></div>
       <div data-code="harness/shield/scope.py|def scope_prefix(|18" data-title="Every run in its own scope"></div>
       <p>The scope is created with <span data-term="systemd-run">systemd-run</span>, which needs a
@@ -109,25 +122,25 @@
     <p>Three features of the CPU make the same run take different times. All three are fixed before a
       session by <code>make env-setup</code>, and stay fixed until the next reboot. Each one has a short
       story of what would go wrong if it were left alone.</p>
-    <div class="why"><b>Turbo: off.</b> <span data-term="turbo-boost">Turbo</span> lets the chip run faster
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Turbo: off.</b> <span data-term="turbo-boost">Turbo</span> lets the chip run faster
       than its normal speed while it is cool, and faster still when only a few cores are busy. Imagine it on:
       a run with 1 thread uses one core, which stays cool and turbos high; a run with 8 threads heats the
       chip and turbos less. Then "8 threads are only 6 times faster than 1" would be partly true and partly
       an artefact: the 1-thread run had a faster clock. Speedup would mix how well the code parallelizes with
       how the chip manages heat. With turbo off, every core runs at the same
       <span data-term="base-clock">base clock</span>, 3.2 GHz, whatever the load
-      (<a href="../adr/0002-turbo-off-performance-governor.md">ADR 0002</a>).</div>
-    <div class="why"><b>Governor: performance.</b> The <span data-term="governor">governor</span> is the
+      (<a href="../adr/0002-turbo-off-performance-governor.md">ADR 0002</a>).</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Governor: performance.</b> The <span data-term="governor">governor</span> is the
       rule the operating system uses to pick the clock speed. The default saves power: it lowers the clock
       when the machine looks idle, and raises it again when work arrives. Between two iterations the machine
       does look idle for a moment, so the next iteration would start slow and speed up. With the governor
-      set to <code>performance</code>, the clock never drops.</div>
-    <div class="why"><b>SMT: off.</b> <span data-term="smt-hyperthreading">SMT</span> (hyper-threading)
+      set to <code>performance</code>, the clock never drops.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>SMT: off.</b> <span data-term="smt-hyperthreading">SMT</span> (hyper-threading)
       makes one physical core look like two. Two threads can then run "at once" on it, but they share its
       arithmetic units and its cache, so each gets roughly half. If SMT were on, a run with 8 threads could
       have two of them on the same core, and "8 cores" would really be 7 and a half. With SMT off, the odd
       CPU numbers 1 to 15 disappear, and each CPU in the mask is one whole core
-      (<a href="../adr/0025-smt-off.md">ADR 0025</a>).</div>
+      (<a href="../adr/0025-smt-off.md">ADR 0025</a>).</p></aside>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Setting</th><th>On the PC</th><th>What it would do to a measurement</th><th>Decision</th></tr></thead>
       <tbody>
@@ -136,9 +149,9 @@
         <tr><td>SMT</td><td><b>off</b></td><td>Two measured threads could share one core and each get half of it.</td><td><a href="../adr/0025-smt-off.md">ADR 0025</a></td></tr>
       </tbody>
     </table></div>
-    <span class="def"><b>Degraded core.</b> One core of this particular CPU is faulty at high frequencies.
-      With turbo off it never reaches them: a check of every core before the build found it as fast as the others and computing correctly (<a href="session.html#cores">The per-core check</a>). It is the same core for every environment, so it does not favour one; it is listed as a threat (<a href="threats.html#internal">Internal threats</a>).</span>
-    <details class="deeper"><summary>If you already know this: how env-setup does it, and what is not logged</summary>
+    <p class="def"><b>Degraded core.</b> One core of this particular CPU is faulty at high frequencies.
+      With turbo off it never reaches them: a check of every core before the build found it as fast as the others and computing correctly (<a href="session.html#cores">The per-core check</a>). It is the same core for every environment, so it does not favour one; it is listed as a threat (<a href="threats.html#internal">Internal threats</a>).</p>
+    <details class="deeper"><summary>In depth: how env-setup does it, and what is not logged</summary>
       <div data-code="harness/env/setup.sh|smt/control|14" data-title="make env-setup: SMT off, turbo off, governor performance"></div>
       <p>The frequency is not sampled during a run: reading it sends an interrupt to the measured cores, which is exactly the kind of disturbance the setup removes. The governor, turbo and SMT settings are recorded before and after each run. Since <code>measured/v3</code> each run also records, per measured CPU, its busy time and a frequency reading before and after; the busy time says which cores worked, but the frequency reading turned out to be taken while a core is already going idle and is not used (ADR 0085). With turbo off, the
         <span data-term="degraded-core">degraded core</span> never reaches the frequencies at which it fails,
@@ -159,15 +172,15 @@
         (<a href="../adr/0042-quiet-mode-before-measuring.md">ADR 0042</a>,
         <a href="../adr/0070-quiet-campaigns.md">ADR 0070</a>).</li>
     </ul>
-    <div class="why"><b>Why both, if the shield already moves everything away?</b> Because the E-cores and
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why both, if the shield already moves everything away?</b> Because the E-cores and
       the P-cores are not fully separate. They share the chip's last cache and its memory. A background job
       on an E-core that reads a lot of data pushes the measured program's data out of that cache, and the
       measured program slows down without anything touching its cores. Quiet mode keeps those jobs from
       starting in the first place. The page <a href="memory.html">Memory and caches</a> explains why a
-      shared cache matters.</div>
+      shared cache matters.</p></aside>
     <p>The machine also does not go to sleep in the middle of a campaign: <code>make campaign</code> runs
       under <span data-term="systemd-inhibit">systemd-inhibit</span>.</p>
-    <details class="deeper"><summary>If you already know this: the shield and quiet mode in the code</summary>
+    <details class="deeper"><summary>In depth: the shield and quiet mode in the code</summary>
       <div data-code="harness/env/shield.sh|for unit in|7" data-title="The shield: everything else to the E-cores"></div>
       <div data-code="harness/env/quiet.sh|apps=(|8" data-title="Quiet mode: what it closes and stops"></div>
       <p>The shield is a <span data-term="cgroup-cpuset">cpuset</span> on <code>system.slice</code>,
@@ -180,9 +193,9 @@
     <p>Setting all of this once is not enough. A reboot undoes it. A step can be forgotten. A background job
       can slip through. So the study does not trust the setup: it <b>checks</b> it, at two moments, and
       records what it found with every run.</p>
-    <div class="why"><b>Why check, if we just set it?</b> Because a measurement taken with turbo back on
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why check, if we just set it?</b> Because a measurement taken with turbo back on
       would look exactly like a normal one, only faster, and nobody would notice. The only protection is a
-      check that refuses to run, and a record that lets the analysis throw the run out later.</div>
+      check that refuses to run, and a record that lets the analysis throw the run out later.</p></aside>
     <div class="checks">
       <div class="card"><h3>Before a session</h3><p>Every start and every resume of a campaign checks turbo,
         the governor, SMT, that the mask is every P-core, that the shield is up and that the browsers are the
@@ -203,7 +216,7 @@
     <p>In the main campaign, no run failed strict validation and no run went over the foreign CPU
       threshold (<code>data/tables/campaign-v3/campaign-v3-quality.md</code>; see
       <a href="campaigns.html#quality">The data check</a>).</p>
-    <details class="deeper"><summary>If you already know this: how foreign CPU time is read, and the validation code</summary>
+    <details class="deeper"><summary>In depth: how foreign CPU time is read, and the validation code</summary>
       <p>The busy time of the 8 CPUs comes from <span data-term="proc-stat">/proc/stat</span>, read before
         and after the run, in clock ticks. The run's own CPU time comes from its scope's
         <code>cpu.stat</code>. <span data-term="foreign-cpu-time">Foreign CPU time</span> is the difference.
@@ -214,20 +227,108 @@
       <p class="src" data-files="harness/env/setup.sh, harness/env/check.sh, harness/environment/, harness/shield/cpu_time.py, harness/context/validation.py, analysis/quality/foreign_cpu.py"></p>
     </details>
 
-    <div class="remember"><b>What to remember.</b> One PC, made slow and quiet on purpose: 8 identical cores
+    <p class="takeaway"><strong>In summary.</strong> One PC, made slow and quiet on purpose: 8 identical cores
       at a fixed clock for the measured program, everything else pushed to the other cores, and every setting
       checked before and recorded with every run. A difference between native and a browser cannot be the
-      machine, because the machine was the same for both.</div>
+      machine, because the machine was the same for both.</p>
 
-    <footer class="pager" id="pager"></footer>
+    <h2 id="problems">Problems found and fixed</h2>
+
+    <p>A benchmark can be wrong without anything looking wrong: every run finishes, every checksum matches,
+      and the numbers look plausible. Each problem on this page is of that kind. They are part of the results because
+      anyone who benchmarks a browser will meet them.</p>
+    <p class="lead-more">In short: telling a browser which cores to use, giving it a fresh profile and
+      installing a fixed version are not enough to confine it, quiet it and freeze it; a review of our own measured code found two asymmetries; and one core of the measuring PC turned out to compute wrongly when it runs fast.</p>
+    <p class="def"><b>Pilot numbers on this page.</b> The numbers that found these problems come from pilots and from the earlier build, <code>measured/v2</code>. They justify the fixes; they are not results of the study. Every fix was in place before the first run of <code>measured/v3</code>.</p>
+    <p>Each problem is told the same way: what happened, why it would have fooled us, the fix, and the check that now
+      catches it.</p>
+
+    <h3 id="mask">Chrome escapes the CPU mask</h3>
+    <p>Every run is told to use only the 8 fast cores (a <span data-term="taskset">taskset</span> mask), inside its
+      own <span data-term="systemd-scope-slice">systemd scope</span>, a box the operating system keeps the run's
+      processes in. During the pilot, a sampler that checked where every thread was allowed to run found that
+      <b>Chrome's main process had moved itself out of the box</b>: through the <span data-term="session-bus-d-bus">session
+      bus</span> it asked the system for a box of its own, in the user's area, and ran on the slow cores, outside the
+      mask. Firefox's processes stayed in (ADR 0045).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> Chrome would have had the 8 fast cores for its workers plus
+      extra cores for its own housekeeping, and Firefox would not. A difference between the two browsers would then
+      have been partly a difference in how many cores each really had, and we would have read it as a difference
+      between the engines.</p></aside>
+    <ul>
+      <li><b>Fix:</b> the harness launches the browsers without the session bus address. Without it, every Chrome
+        process stays in the run's box.</li>
+      <li><b>Check:</b> every run records <span data-term="escaped-process">escapedProcesses</span>, the browser
+        processes found outside the box, and <span data-term="strict-validation">strict validation</span> rejects any
+        run where it is not 0.</li>
+    </ul>
+    <div data-code="harness/context/validation.py|escaped = self.data.get(|3" data-title="A run with escaped processes fails validation"></div>
+
+    <h3 id="startup">Firefox's start-up</h3>
+    <p>A browser keeps working for seconds after the page has loaded: it compiles code, loads components, starts
+      services. The warm-up pilot ran with no delay, so its short measurements ended less than a second after the page
+      loaded. The delay pilot (ADR 0048) then showed <b>Firefox's local histogram at N = 8 up to 32% slower and
+      erratic</b> without a delay: Firefox's own start-up work was competing with the 8 workers for the 8 cores.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> Firefox would have looked worse at scaling than it is, and
+      the loss would have been blamed on WASM threads. The cause had nothing to do with threads: it was the browser
+      still starting up during the measurement.</p></aside>
+    <ul>
+      <li><b>Fix:</b> every browser run waits 3 s before it creates the coordinating worker (the
+        <span data-term="start-delay">start delay</span>), recorded with the run.</li>
+      <li><b>Left:</b> native has no delay, a known asymmetry that does not change a speedup within one runtime; 3 s
+        against 6 s differs by about 1% (<a href="threats.html#internal">Threats</a>).</li>
+    </ul>
+
+    <h3 id="update">A pinned Firefox updates itself</h3>
+    <p>The study pins Firefox 158.0, downloaded from Mozilla's archive, and the fresh profile turns automatic updates
+      off. On 2026-11-10, between two exploratory campaigns of the earlier build, the installed Firefox <b>updated itself in place to
+      160.0</b> anyway. Only the enterprise policy <code>DisableAppUpdate</code> stops it (ADR 0071).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> Two campaigns meant to compare the same Firefox would have
+      compared two different ones, with whatever changed in the engine between them mixed into the result.</p></aside>
+    <ul>
+      <li><b>Caught:</b> strict validation checks the browser version of every run, and rejected all 2640 affected exploratory runs of that build.</li>
+      <li><b>Fix:</b> the installer writes the policy and reinstalls a moved install, and a campaign refuses to start
+        when a browser is not the pinned version.</li>
+      <li><b>Now:</b> on <code>measured/v3</code> the policy and the version check were in place from the first run, so every Firefox run of every campaign is 158.0 and interleaved with the others. No run was rejected for its version.</li>
+    </ul>
+    <div data-code="harness/browsers.py|# Firefox from archive.mozilla.org updates itself|4" data-title="The policy that keeps Firefox pinned"></div>
+
+    <h3 id="v2">Our own asymmetries: the v2 build</h3>
+    <p>After the very first campaigns, a review of the measured code against the textbook, the cited papers and the lectures found two asymmetries the study had caused itself. They were fixed in the build <code>measured/v2</code> (ADR 0069):</p>
+    <ul>
+      <li><b>A safety check only on one side of RQ2.</b> The shared-counter histograms indexed a table whose length the
+        compiler did not know, so every pixel paid a bounds check (compare and branch) that the local control did not.
+        The atomic/local ratio therefore included code that only the atomic side ran, and that the engines might
+        compile differently from LLVM.</li>
+      <li><b>Final work timed in some variants only.</b> The local histogram's merge was inside the timed region; the
+        private merge and the read-back of the shared counters were outside it.</li>
+    </ul>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> RQ2 is a ratio of ratios, and it only cancels what is the
+      same on both sides. A check that ran on one side only, or a merge timed on one side only, would have been read
+      as a cost of synchronization in every engine.</p></aside>
+    <p>The fix: fixed-size counter tables (no per-pixel check; LLVM then unrolls the loop by 8 itself), and every
+      histogram's timed run now ends with its final histogram. The checksums did not change.</p>
+    <div data-code="bench/src/workloads/histogram/atomic.rs|fn run(|10" data-title="Reading the counters back is now timed, like the local merge"></div>
+    <p>Then every campaign was re-run on the corrected build. Later the study was measured a third time, on <code>measured/v3</code>, which adds what v2 could only declare (<a href="session.html#twice">Why the study was measured twice</a>). <b>Every number in this guide comes from <code>measured/v3</code></b>; the earlier builds' campaigns are not reported as results.</p>
+    <details class="deeper"><summary>In depth: why builds are never mixed</summary>
+      <p>Builds are never mixed in one comparison because a change in code layout alone, with the same instructions,
+        can change timing by a few percent (Mytkowicz et al. 2009). A refactor of the measured path is accepted only
+        when a codegen diff shows the hot functions unchanged; otherwise it is a new build with a new tag, and earlier
+        campaigns stay valid only for their own build (ADR 0062, <a href="changing.html#hotpath">Touching the measured
+        code</a>).</p>
+    </details>
+    <h3 id="core">A core that computes wrongly</h3> <p>One of the PC's eight fast cores is degraded. With the desktop's usual settings (turbo on), a test pinned to it crashed in 17 of 18 tries. With turbo off, the setting of every measurement, it passed 30 of 30 and timed the filter as fast as the other cores.</p> <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have fooled us.</b> A core that crashes is easy: you see it. A core that sometimes computes a wrong value and carries on is the dangerous one, and not only for the runs. The compiler that builds the measured program is a program too, and so is the analysis. That happened once: with the PC restored after the last campaign, an analysis command stopped with an error raised from inside Python's own statistics code, on data it reads without trouble elsewhere.</p></aside> <ul> <li><b>Fix:</b> the measured build is made on the prepared PC, twice from scratch, and tagged only if both builds are byte for byte equal. Outside a prepared session, analysis on that PC runs pinned away from that core.</li> <li><b>Check:</b> every run has a checksum that must match across runtimes and thread counts, and CI regenerates every table on another machine and compares it with the committed one.</li> </ul> <p class="src" data-files="docs/adr/0085-per-core-check.md, docs/adr/0094-hybrid-on-v3.md"></p> <p>The whole story is on <a href="session.html#cores">The per-core check</a>.</p> <p class="takeaway"><strong>In summary.</strong> Confining, quieting and freezing a browser each needs its own check, not just its own setting; a ratio only cancels what is truly the same on both sides; and the machine itself is part of what has to be checked. Every one of these is now checked on every run.</p>
+
+        <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>
 <script src="assets/glossary.js"></script>
 <script>
 window.page = function (UI) {
+  (function () {
   var el = UI.el, $ = UI.$;
   var GROUPS = [
     { key: "p", cls: "p", label: "P-cores", cpus: [0, 2, 4, 6, 8, 10, 12, 14],
@@ -263,6 +364,69 @@ window.page = function (UI) {
     };
   });
   UI.clickable($("#cpu-svg"), $("#cpu-panel"), details).pick("p");
+  })();
+  (function () {
+  // lineChart(series, opts): inline SVG lines with optional CI bands.
+  // series: [{name, cls, points: [{x, y, lo, hi}]}]; opts: {xs, ymin, ymax, log, ideal, ylabel, xlabel, height, ref}
+  function lineChart(series, opts) {
+    opts = opts || {};
+    var W = 640, H = opts.height || 300, L = 48, R = 14, T = 14, B = 38;
+    var xs = opts.xs, all = [];
+    series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.lo != null ? p.lo : p.y, p.hi != null ? p.hi : p.y); }); });
+    var ymin = opts.ymin != null ? opts.ymin : Math.min.apply(null, all);
+    var ymax = opts.ymax != null ? opts.ymax : Math.max.apply(null, all);
+    var log = !!opts.log;
+    function fy(v) {
+      var a = log ? Math.log(ymin) : ymin, b = log ? Math.log(ymax) : ymax, t = log ? Math.log(v) : v;
+      return T + (H - T - B) * (1 - (t - a) / (b - a));
+    }
+    var xmin = xs[0], xmax = xs[xs.length - 1];
+    function fx(v) { return L + (W - L - R) * (v - xmin) / (xmax - xmin || 1); }
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (opts.label || "chart") + '">';
+    var ticks = opts.yticks || (function () {
+      var out = [], n = 5; for (var i = 0; i <= n; i++) { var v = log ? Math.exp(Math.log(ymin) + (Math.log(ymax) - Math.log(ymin)) * i / n) : ymin + (ymax - ymin) * i / n; out.push(v); } return out;
+    })();
+    ticks.forEach(function (v) {
+      svg += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(v) + '" y2="' + fy(v) + '" stroke-opacity="0.6"/>';
+      svg += '<text x="' + (L - 6) + '" y="' + (fy(v) + 4) + '" text-anchor="end">' + (v === 0 ? "0" : UI.fmt(v, v >= 10 ? 0 : v >= 1 ? 1 : 2)) + '</text>';
+    });
+    xs.forEach(function (v) { svg += '<text x="' + fx(v) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + (opts.xfmt ? opts.xfmt(v) : v) + '</text>'; });
+    if (opts.xlabel) svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + opts.xlabel + '</text>';
+    if (opts.ylabel) svg += '<text x="12" y="' + ((T + H - B) / 2) + '" text-anchor="middle" transform="rotate(-90 12 ' + ((T + H - B) / 2) + ')">' + opts.ylabel + '</text>';
+    if (opts.ideal) svg += '<path class="ideal" d="M' + fx(xmin) + ' ' + fy(Math.max(ymin, xmin)) + ' L' + fx(Math.min(xmax, ymax)) + ' ' + fy(Math.min(xmax, ymax)) + '"/>';
+    if (opts.ref != null) svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(opts.ref) + '" y2="' + fy(opts.ref) + '" stroke="var(--faint)" stroke-dasharray="4 4"/>';
+    series.forEach(function (s) {
+      var pts = s.points.filter(function (p) { return p.y != null; });
+      if (!pts.length) return;
+      var band = pts.filter(function (p) { return p.lo != null; });
+      if (band.length) {
+        var d = band.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.hi); }).join(" ") + " " +
+          band.slice().reverse().map(function (p) { return "L" + fx(p.x) + " " + fy(p.lo); }).join(" ") + " Z";
+        svg += '<path d="' + d + '" fill="var(--' + s.cls + ')" fill-opacity="0.15" stroke="none"/>';
+      }
+      svg += '<path d="' + pts.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.y); }).join(" ") + '" fill="none" stroke="var(--' + s.cls + ')" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="6 4"' : '') + '/>';
+      pts.forEach(function (p) {
+        svg += '<circle cx="' + fx(p.x) + '" cy="' + fy(p.y) + '" r="3.2" fill="var(--' + s.cls + ')"><title>' + s.name + ', ' + (opts.xfmt ? opts.xfmt(p.x) : p.x) + ': ' + UI.fmt(p.y, 3) + (p.lo != null ? ' [' + UI.fmt(p.lo, 3) + ', ' + UI.fmt(p.hi, 3) + ']' : '') + '</title></circle>';
+      });
+    });
+    var wrap = UI.el("div");
+    wrap.innerHTML = svg + "</svg>";
+    var legend = UI.el("div", { class: "legend-row" });
+    series.forEach(function (s) { legend.appendChild(UI.el("span", { class: "chip " + s.cls, text: s.name })); });
+    if (opts.ideal) legend.appendChild(UI.el("span", { class: "chip", text: "dashed: ideal" }));
+    wrap.appendChild(legend);
+    return wrap;
+  }
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+  var $ = UI.$, el = UI.el;
+
+  })();
 };
 </script>
 <script src="assets/app.js"></script>

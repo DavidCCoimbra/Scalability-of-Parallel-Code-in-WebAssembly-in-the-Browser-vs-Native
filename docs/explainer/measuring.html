@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Measuring time: why one run is not enough</title>
+<title>Measuring time - WASM threads vs native</title>
 <meta name="description" content="Why the same program takes different times, why we repeat, how a median and a mean differ, what spread and an interval mean, and what makes a comparison fair.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -22,48 +22,49 @@
 <body data-page="measuring">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="setup.html">Your first day</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Foundations · 4 of 6</p>
-    <h1>Measuring time: why one run is not enough</h1>
+    <h1>Measuring time</h1>
 
     <p class="lead">Time a program once and you get a number. Time it again and you get a different one. Neither
       is wrong. This page explains where the difference comes from, how to turn many numbers into one honest
       answer, and how to say how sure you are. No formulas; the formulas are on
-      <a href="stats.html">The statistics, in detail</a>.</p>
-    <div class="oneliner"><b>In one sentence:</b> a timing is a sample, not the truth, so we repeat it, summarize
+      <a href="reading.html#statistics">The statistics, in detail</a>.</p>
+    <p class="lead-more">In short: a timing is a sample, not the truth, so we repeat it, summarize
       with a number that one slow run cannot drag, say how far that summary could move, and only compare things
-      that were measured the same way on the same machine.</div>
+      that were measured the same way on the same machine.</p>
 
     <h2 id="noise">The same program, different times</h2>
     <p>Run the same program twice on the same computer and the second time is a little different. Something
       else was using the chip. A cache held the data the first time and not the second. The chip was warmer. The
       operating system checked for updates. None of these are the program's fault; together they are called
       <b>noise</b>.</p>
-    <div class="analogy"><b>Picture it.</b> Your commute is "20 minutes". Some days it is 17, some days 26, once
-      it was 40 because of a parade. "20 minutes" is not any one day; it is what you learned from many.</div>
+    <p><em>An analogy.</em> Your commute is "20 minutes". Some days it is 17, some days 26, once
+      it was 40 because of a parade. "20 minutes" is not any one day; it is what you learned from many.</p>
 
     <h2 id="repeat">Repeat, then summarize</h2>
     <p>So the study never times anything once. Each setup is run <b>30 times</b>, each time from a fresh start,
       and the 30 numbers are boiled down to one. The 30 are a <b>sample</b>: thirty days of commute. The number
       we report is a <b>summary</b> of them.</p>
-    <div class="why"><b>Why 30 and not 3?</b> With 3 runs, one slow day changes the answer. With 30, it is one
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why 30 and not 3?</b> With 3 runs, one slow day changes the answer. With 30, it is one
       among many. More runs make the answer steadier, but each run costs minutes of machine time, and 30 was
       enough to make the intervals below small next to the differences the study is looking for
-      (<a href="protocol.html#thirty">30 runs, 10 iterations</a>).</div>
+      (<a href="protocol.html#thirty">30 runs, 10 iterations</a>).</p></aside>
 
     <h2 id="spread">Median, mean and spread</h2>
     <p>Two ways to boil 30 numbers down to one:</p>
@@ -95,9 +96,9 @@
       honest answer is not one number but a <b>range</b>: "the summary is about here, and with another thirty it
       would land somewhere between here and here". That range is called an <b>interval</b>. The narrower it is,
       the surer we are.</p>
-    <div class="analogy"><b>Picture it.</b> "My commute is 20 minutes, give or take 2" says more than "20
+    <p><em>An analogy.</em> "My commute is 20 minutes, give or take 2" says more than "20
       minutes". And if your commute is 20 give or take 2, and mine is 21 give or take 2, we cannot honestly say
-      yours is faster: the ranges overlap.</div>
+      yours is faster: the ranges overlap.</p>
     <p>That last point is how the study decides things. Two setups are called different only when their ranges
       do not overlap. And "we could not tell them apart" is <b>not</b> the same as "they are the same": with
       wider ranges, a real difference can hide. <a href="reading.html#sure">Reading the numbers</a> shows the
@@ -118,15 +119,15 @@
         code (<a href="compilers.html#jit">Engines and JIT</a>). They are run and thrown away
         (<a href="protocol.html#warmup">Warm-up inside the run</a>).</li>
     </ul>
-    <div class="analogy"><b>Picture it.</b> Comparing two routes to work means driving both in the same car, on
+    <p><em>An analogy.</em> Comparing two routes to work means driving both in the same car, on
       the same weeks, not one in July and the other in a January snowstorm, and not counting the day you were
-      still learning the way.</div>
+      still learning the way.</p>
 
     <h2 id="remember">What to remember</h2>
-    <div class="remember"><b>What to remember.</b> One timing is a sample. Repeat 30 times, summarize with
+    <p class="takeaway"><strong>In summary.</strong> One timing is a sample. Repeat 30 times, summarize with
       something a slow outlier cannot drag, report a range and not a point, call two things different only when
       the ranges do not overlap, and measure everything the same way on the same machine, in a shuffled order,
-      after a warm-up.</div>
+      after a warm-up.</p>
     <p>Used by: <a href="protocol.html">Runs, warm-up and order</a>, <a href="reading.html">Reading the
       numbers</a>, <a href="threats.html">Threats to validity</a>. Next foundation: <a href="ratios.html">Ratios,
       speedup and the log scale</a>.</p>
@@ -134,6 +135,7 @@
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Threats to validity</title>
+<title>Threats to validity - WASM threads vs native</title>
 <meta name="description" content="The three threats that matter most, in plain words, then the full list of what could make the results wrong, what controls each threat and what is left.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -25,27 +25,28 @@
 <body data-page="threats">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-<p class="kicker">Results · 8 of 8</p>
     <h1>Threats to validity</h1>
     <p class="lead">Every measurement can be wrong in ways its numbers do not show. A careful study ends by listing how
       it could be wrong, what was done about each, and what is left. This page does that for this study, in plain
       words first and then in full.</p>
-    <div class="oneliner"><b>In one sentence:</b> the known ways to be wrong are controlled or measured; what is left is one machine, a possible crowding of the cores at N = 8, explanations that are supported to different degrees, and intervals that bound what "no difference" can mean.</div>
+    <p class="lead-more">In short: the known ways to be wrong are controlled or measured; what is left is one machine, a possible crowding of the cores at N = 8, explanations that are supported to different degrees, and intervals that bound what "no difference" can mean.</p>
     <p>The four kinds of threat below are explained with an example each in
       <a href="validity.html">Four ways a study fools itself</a>.</p>
 
@@ -67,7 +68,7 @@
     <p><b>Could something other than the runtime explain the differences?</b> Other programs using the cores, the
       browser starting up, a drifting clock, a different browser version: anything that changes the time but is not
       what the study compares.</p>
-    <details class="deeper"><summary>The full list: threat, control, what is left</summary>
+    <details class="deeper"><summary>In depth: threat, control, what is left</summary>
       <div id="w-internal"></div>
     </details>
 
@@ -75,14 +76,14 @@
     <p><b>Do the numbers measure what the questions ask?</b> A speedup that hides who is faster in seconds, a metric
       that counts the wrong cost, a counter read as a cause: ways of measuring something real but not the thing
       asked.</p>
-    <details class="deeper"><summary>The full list: threat, control, what is left</summary>
+    <details class="deeper"><summary>In depth: threat, control, what is left</summary>
       <div id="w-construct"></div>
     </details>
 
     <h2 id="external">External</h2>
     <p><b>How far do the results carry beyond this setup?</b> One machine, two browser versions, two workloads, one
       image size. The study was built for a fair comparison, not for a typical desktop.</p>
-    <details class="deeper"><summary>The full list: threat, control, what is left</summary>
+    <details class="deeper"><summary>In depth: threat, control, what is left</summary>
       <div id="w-external"></div>
     </details>
 
@@ -90,15 +91,16 @@
     <p><b>Do the numbers support what is concluded from them?</b> Enough runs, the right unit of analysis, a bar
       raised for testing ten things at once, and "not rejected" never read as "equal"
       (<a href="reading.html#notproof">Not rejecting is not proof</a>).</p>
-    <details class="deeper"><summary>The full list: threat, control, what is left</summary>
+    <details class="deeper"><summary>In depth: threat, control, what is left</summary>
       <div id="w-conclusion"></div>
     </details>
     <p class="src" data-files="docs/adr/0080-threats-to-validity.md, paper/final/paper.tex"></p>
-    <div class="remember"><b>What to remember.</b> The results are solid for this machine and this setup, came back the same when everything was measured again, and are honest about their limits: one PC, a possible crowding at N = 8, explanations that are tested, supported or open and labelled as such, and a few percent of difference that the intervals cannot see.</div>
+    <p class="takeaway"><strong>In summary.</strong> The results are solid for this machine and this setup, came back the same when everything was measured again, and are honest about their limits: one PC, a possible crowding at N = 8, explanations that are tested, supported or open and labelled as such, and a few percent of difference that the intervals cannot see.</p>
 
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>

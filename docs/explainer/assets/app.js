@@ -1,4 +1,4 @@
-/* PPC explainer: shared behaviour. Plain script (no modules) so pages work from file://. */
+/* Documentation: shared behaviour. Plain script (no modules) so pages work from file://. */
 (function () {
   "use strict";
 
@@ -10,93 +10,42 @@
 
   // Every page, in reading order. sections: [id, title] for search and the page outline.
   var PAGES = [
-    { id: "index", file: "index.html", title: "Start here", group: "0 · Start",
-      sections: [["story", "The study in a story"], ["map", "The project in one picture"], ["answers", "What we found, in words"], ["how", "How to read this guide"], ["criteria", "For the grader: criterion by criterion"]] },
-    { id: "setup", file: "setup.html", title: "Your first day", group: "0 · Start",
-      sections: [["machines", "Two machines, two jobs"], ["install", "Install and build"], ["firstrun", "Run one thing"], ["firstrow", "Read one row"], ["firsttest", "Run the tests"], ["next", "Where to go next"]] },
-    { id: "machines", file: "machines.html", title: "Programs, processes, threads and cores", group: "1 · Foundations",
-      sections: [["program", "A program and a process"], ["threads", "Threads: several hands, one memory"], ["cores", "Cores: how many hands can work at once"], ["clock", "The clock, turbo and SMT"], ["remember", "What to remember"]] },
-    { id: "memory", file: "memory.html", title: "Memory and caches: why distance matters", group: "1 · Foundations",
-      sections: [["far", "RAM is far away"], ["caches", "Caches: small, near, fast"], ["lines", "Data moves in lines of 64 bytes"], ["sharing", "Two cores, one line"], ["remember", "What to remember"]] },
-    { id: "compilers", file: "compilers.html", title: "From source to machine code", group: "1 · Foundations",
-      sections: [["source", "Source code and machine code"], ["compile", "Compiling ahead of time"], ["wasm", "WebAssembly: a second step inside the browser"], ["jit", "Engines and JIT"], ["remember", "What to remember"]] },
-    { id: "measuring", file: "measuring.html", title: "Measuring time: why one run is not enough", group: "1 · Foundations",
-      sections: [["noise", "The same program, different times"], ["repeat", "Repeat, then summarize"], ["spread", "Median, mean and spread"], ["sure", "How sure can we be"], ["fair", "A fair comparison"], ["remember", "What to remember"]] },
-    { id: "ratios", file: "ratios.html", title: "Ratios, speedup and the log scale", group: "1 · Foundations",
-      sections: [["ratio", "Times faster, times slower"], ["speedup", "Speedup and efficiency"], ["log", "Why 2x and 0.5x are the same distance"], ["ratioofratios", "A ratio of ratios"], ["remember", "What to remember"]] },
-    { id: "validity", file: "validity.html", title: "Four ways a study fools itself", group: "1 · Foundations",
-      sections: [["internal", "Something else caused it"], ["construct", "We measured the wrong thing"], ["external", "It only holds here"], ["conclusion", "The numbers do not support it"], ["remember", "What to remember"]] },
-    { id: "questions", file: "questions.html", title: "Questions and design", group: "2 · The study",
-      sections: [["why", "Why this matters"], ["rqs", "RQ1 and RQ2"], ["example", "RQ2 with made-up numbers"], ["design", "The design in one table"], ["related", "What others measured"]] },
-    { id: "workloads", file: "workloads.html", title: "The workloads", group: "2 · The study",
-      sections: [["filter", "The Gaussian filter"], ["histogram", "The histogram, two ways"], ["k", "k: the contention dial"], ["inputs", "Inputs and checksums"]] },
-    { id: "environments", file: "environments.html", title: "Three runtimes, one source", group: "2 · The study",
-      sections: [["same", "Same source, same flags"], ["native", "Native"], ["browsers", "Chrome and Firefox"], ["wasm", "What WASM threads need"], ["builds", "Builds and tags"]] },
-    { id: "words", file: "words.html", title: "Words of the project", group: "2 · The study",
-      sections: [["cells", "Environment, workload, N, k"], ["runs", "Run, iteration, configuration, campaign"], ["builds", "Build, tag, variant"], ["numbers", "The numbers"]] },
-    { id: "threads", file: "threads.html", title: "Threads, workers and fork-join", group: "3 · Concepts",
-      sections: [["threads", "Threads and Web Workers"], ["rayon", "Rayon and work stealing"], ["forkjoin", "Fork-join and its cost"], ["grain", "Grain size"]] },
-    { id: "caches", file: "caches.html", title: "Contention and padding", group: "3 · Concepts",
-      sections: [["lines", "One line, one writer"], ["contention", "Contention"], ["falsesharing", "False sharing and padding"], ["hitm", "Counting line moves"]] },
-    { id: "atomics", file: "atomics.html", title: "Atomics in machine code", group: "3 · Concepts",
-      sections: [["what", "What an atomic add is"], ["strategies", "Two ways to add: lock, or try and retry"], ["code", "What each engine emits"], ["order", "Memory order, for the record"], ["forwarding", "Store forwarding at k = 1"]] },
-    { id: "rust", file: "rust.html", title: "Rust for JS developers", group: "3 · Concepts",
-      sections: [["three", "Three ideas"], ["basics", "Types, ownership, borrowing"], ["traits", "Traits and generics"], ["rayon", "Rayon in the code"], ["atomics", "Atomics in the code"], ["wasm", "From Rust to WASM"]] },
-    { id: "machine", file: "machine.html", title: "The machine and its controls", group: "4 · Method",
-      sections: [["pc", "One PC, slowed down on purpose"], ["pcores", "P-cores only"], ["clock", "Turbo, governor, SMT"], ["quiet", "Shield and quiet mode"], ["checked", "Checked on every run"]] },
-    { id: "harness", file: "harness.html", title: "From make to a CSV row", group: "4 · Method",
-      sections: [["pipeline", "The run pipeline"], ["native", "A native run"], ["browser", "A browser run"], ["server", "The results server"], ["csv", "One CSV row, field by field"]] },
-    { id: "protocol", file: "protocol.html", title: "Runs, warm-up and order", group: "4 · Method",
-      sections: [["unit", "The run is the unit"], ["warmup", "Warm-up inside the run"], ["thirty", "30 runs, 10 iterations"], ["order", "Random interleaved order"], ["calibration", "Fork-join calibration"]] },
-    { id: "session", file: "session.html", title: "The session of a build", group: "4 · Method",
-      sections: [["twice", "Why the study was measured twice"], ["steps", "The steps, in order"], ["cores", "The per-core check"], ["build", "Built twice"], ["gate", "The gate, and the cell that failed it"], ["rules", "Rules fixed before the data"], ["campaigns", "Then the campaigns"]] },
-    { id: "reading", file: "reading.html", title: "Reading the numbers", group: "4 · Method",
-      sections: [["onevalue", "One value per run"], ["average", "An average that respects ratios"], ["sure", "How sure: the interval"], ["decisions", "Ten decisions, a stricter bar"], ["notproof", "Not rejecting is not proof"]] },
-    { id: "stats", file: "stats.html", title: "The statistics, in detail", group: "4 · Method",
-      sections: [["speedup", "Speedup and efficiency"], ["geomean", "Geometric mean"], ["bootstrap", "Bootstrap intervals"], ["rq2metric", "The RQ2 metric"], ["holm", "Holm and the primary contrasts"], ["robust", "Mann-Whitney and Cliff's delta"], ["karp", "Karp-Flatt"]] },
-    { id: "rq1", file: "rq1.html", title: "RQ1: scaling", group: "5 · Results",
-      sections: [["curves", "Speedup curves"], ["ratio", "Browser over native"], ["forkjoin", "Fork-join in the results"], ["answer", "The answer to RQ1"]] },
-    { id: "rq2", file: "rq2.html", title: "RQ2: synchronization", group: "5 · Results",
-      sections: [["metric", "The metric, with the real numbers"], ["primary", "The 10 primary contrasts"], ["n1", "Already at N = 1"], ["answer", "The answer to RQ2"]] },
-    { id: "why", file: "why.html", title: "Why Chrome: code and counters", group: "5 · Results",
-      sections: [["code", "The machine code"], ["probe", "The test: change only the add"], ["tier", "The engine's other compiler"], ["retries", "Retries, counted"], ["readfirst", "Reading the line first"], ["k256", "k = 256: the sequence wins, the mechanism is open"], ["c2c", "The padding holds"]] },
-    { id: "explains", file: "explains.html", title: "What explains the results", group: "5 · Results",
-      sections: [["how", "How an explanation is tested"], ["board", "Nine questions, one board"], ["q3", "Question 3: why the browser is slower with one thread"], ["q1", "Question 1: why 8 threads give 7, not 8"], ["q2", "Question 2: why Firefox scales better"], ["q5", "Question 5: a speedup above 8"], ["q4", "Question 4: the dip at 6 and 7 threads"], ["q67", "Questions 6 and 7: Chrome's atomic add"], ["q8", "Question 8: Firefox below 1"], ["q9", "Question 9: the noisy cells"], ["baseline", "Is the one-thread baseline fair?"], ["open", "What stays open"]] },
-    { id: "extras", file: "extras.html", title: "Exploratory campaigns", group: "5 · Results",
-      sections: [["questions", "Five questions"], ["private", "Private and packed atomics"], ["weak", "Weak scaling"], ["simd", "SIMD builds"], ["hybrid", "P-cores plus E-cores"]] },
-    { id: "granularity", file: "granularity.html", title: "When parallelism pays", group: "5 · Results",
-      sections: [["advice", "Advice for developers"], ["cutoff", "The cutoff campaign"], ["rule", "The 100:1 rule"], ["grain", "The grain U-curve"]] },
-    { id: "pitfalls", file: "pitfalls.html", title: "Problems found and fixed", group: "5 · Results",
-      sections: [["mask", "Chrome escapes the CPU mask"], ["startup", "Firefox's start-up"], ["update", "A pinned Firefox updates itself"], ["v2", "Our own asymmetries: the v2 build"], ["core", "A core that computes wrongly"]] },
-    { id: "threats", file: "threats.html", title: "Threats to validity", group: "5 · Results",
-      sections: [["three", "The three that matter most"], ["internal", "Internal"], ["construct", "Construct"], ["external", "External"], ["conclusion", "Conclusion"]] },
-    { id: "pieces", file: "pieces.html", title: "How the pieces talk", group: "6 · Working on it",
-      sections: [["picture", "Processes, files and ports"], ["boundaries", "What crosses each boundary"], ["who", "Who starts whom"], ["onemachine", "On the Mac and on the PC"]] },
-    { id: "commands", file: "commands.html", title: "Every command", group: "6 · Working on it",
-      sections: [["daily", "The six you use daily"], ["make", "make targets"], ["campaign", "Campaign commands"], ["analysis", "Analysis commands"]] },
-    { id: "campaigns", file: "campaigns.html", title: "Campaigns, specs and resume", group: "6 · Working on it",
-      sections: [["what", "What a campaign is"], ["spec", "A campaign spec"], ["resume", "Sessions, status and resume"], ["quality", "The data check"], ["list", "Every campaign of the study"]] },
-    { id: "data", file: "data.html", title: "Data folders and files", group: "6 · Working on it",
-      sections: [["onerow", "One row, read aloud"], ["raw", "data/raw"], ["tables", "data/tables"], ["json", "The run record"], ["figures", "Figures"]] },
-    { id: "reproduce", file: "reproduce.html", title: "From raw runs to the paper", group: "6 · Working on it",
-      sections: [["chain", "The chain"], ["numbers", "Every paper number, its file"], ["explainer", "This guide's numbers"]] },
-    { id: "changing", file: "changing.html", title: "Change something safely", group: "6 · Working on it",
-      sections: [["rules", "The rules and why"], ["workload", "Add a workload"], ["campaign", "Add a campaign"], ["analysis", "Add an analysis"], ["hotpath", "Touching the measured code"]] },
-    { id: "debugging", file: "debugging.html", title: "Debugging a run", group: "6 · Working on it",
-      sections: [["status", "Start from make status"], ["records", "The run's records"], ["rerun", "Re-run one id by hand"], ["common", "The common failures"]] },
-    { id: "workflow", file: "workflow.html", title: "The workflow: branches, PRs, ADRs", group: "6 · Working on it",
-      sections: [["ticket", "A branch, small commits, a PR"], ["ci", "What CI checks"], ["review", "The bot review and the merge"], ["adr", "When a decision needs an ADR"], ["limits", "What is off limits"]] },
-    { id: "code", file: "code.html", title: "How the code is organised", group: "7 · The code",
-      sections: [["folders", "The folders"], ["bench", "bench/"], ["harness", "harness/"], ["analysis", "analysis/"], ["style", "Style rules and why"]] },
-    { id: "trace", file: "trace.html", title: "One run, start to end", group: "7 · The code",
-      sections: [["shape", "The shape before the steps"], ["native", "A native run"], ["browser", "A browser run"], ["analysis", "Into the analysis"]] },
-    { id: "where", file: "where.html", title: "Where is…?", group: "7 · The code",
-      sections: [["questions", "Where is it done?"], ["symptoms", "Something broke: where to look"]] },
-    { id: "decisions", file: "decisions.html", title: "Decisions: the ADRs", group: "7 · The code",
-      sections: [["how", "How decisions are kept"], ["changed", "Decisions that changed"], ["map", "The ADRs by topic"]] },
-    { id: "lectures", file: "lectures.html", title: "Lecture map", group: "Appendix",
-      sections: [["map", "Course concepts in the project"]] },
-    { id: "glossary", file: "glossary.html", title: "Glossary", group: "Appendix", sections: [] }
+    {"id": "index", "file": "index.html", "title": "Introduction", "group": "Getting started", "sections": [["story", "The study in a story", 2], ["map", "The project in one picture", 2], ["answers", "What we found, in words", 2], ["how", "How to read this guide", 2], ["criteria", "For the grader: criterion by criterion", 2]]},
+    {"id": "setup", "file": "setup.html", "title": "Installation and first run", "group": "Getting started", "sections": [["machines", "Two machines, two jobs", 2], ["install", "Install and build", 2], ["firstrun", "Run one thing", 2], ["firstrow", "Read one row", 2], ["firsttest", "Run the tests", 2], ["next", "Where to go next", 2]]},
+    {"id": "code", "file": "code.html", "title": "Repository tour", "group": "Getting started", "sections": [["folders", "The folders", 2], ["bench", "bench/", 2], ["harness", "harness/", 2], ["analysis", "analysis/", 2], ["style", "Style rules and why", 2], ["pieces", "How the pieces talk", 2], ["picture", "Processes, files and ports", 3], ["boundaries", "What crosses each boundary", 3], ["who", "Who starts whom", 3], ["onemachine", "On the Mac and on the PC", 3], ["where", "Where to find things", 2], ["questions", "Where is it done?", 3], ["symptoms", "Something broke: where to look", 3]]},
+    {"id": "machines", "file": "machines.html", "title": "Threads and cores", "group": "Concepts", "sections": [["program", "A program and a process", 2], ["threads", "Threads: several hands, one memory", 2], ["cores", "Cores: how many hands can work at once", 2], ["clock", "The clock, turbo and SMT", 2], ["remember", "What to remember", 2]]},
+    {"id": "memory", "file": "memory.html", "title": "Memory and caches", "group": "Concepts", "sections": [["far", "RAM is far away", 2], ["caches", "Caches: small, near, fast", 2], ["lines", "Data moves in lines of 64 bytes", 2], ["sharing", "Two cores, one line", 2], ["remember", "What to remember", 2], ["contention-and-padding", "Contention and padding", 2], ["caches-lines", "One line, one writer", 3], ["contention", "Contention", 3], ["falsesharing", "False sharing and padding", 3], ["hitm", "Counting line moves", 3]]},
+    {"id": "compilers", "file": "compilers.html", "title": "From source to machine code", "group": "Concepts", "sections": [["source", "Source code and machine code", 2], ["compile", "Compiling ahead of time", 2], ["wasm", "WebAssembly: a second step inside the browser", 2], ["jit", "Engines and JIT", 2], ["remember", "What to remember", 2]]},
+    {"id": "threads", "file": "threads.html", "title": "Thread pools and fork-join", "group": "Concepts", "sections": [["threads", "Threads and Web Workers", 2], ["rayon", "Rayon and work stealing", 2], ["forkjoin", "Fork-join and its cost", 2], ["grain", "Grain size", 2]]},
+    {"id": "atomics", "file": "atomics.html", "title": "Atomic operations", "group": "Concepts", "sections": [["what", "What an atomic add is", 2], ["strategies", "Two ways to add: lock, or try and retry", 2], ["code", "What each engine emits", 2], ["order", "Memory order, for the record", 2], ["forwarding", "Store forwarding at k = 1", 2]]},
+    {"id": "measuring", "file": "measuring.html", "title": "Measuring time", "group": "Concepts", "sections": [["noise", "The same program, different times", 2], ["repeat", "Repeat, then summarize", 2], ["spread", "Median, mean and spread", 2], ["sure", "How sure can we be", 2], ["fair", "A fair comparison", 2], ["remember", "What to remember", 2]]},
+    {"id": "ratios", "file": "ratios.html", "title": "Ratios, speedup and intervals", "group": "Concepts", "sections": [["ratio", "Times faster, times slower", 2], ["speedup", "Speedup and efficiency", 2], ["log", "Why 2x and 0.5x are the same distance", 2], ["ratioofratios", "A ratio of ratios", 2], ["remember", "What to remember", 2]]},
+    {"id": "validity", "file": "validity.html", "title": "How a study can be wrong", "group": "Concepts", "sections": [["internal", "Something else caused it", 2], ["construct", "We measured the wrong thing", 2], ["external", "It only holds here", 2], ["conclusion", "The numbers do not support it", 2], ["remember", "What to remember", 2]]},
+    {"id": "rust", "file": "rust.html", "title": "Rust for JavaScript developers", "group": "Concepts", "sections": [["three", "Three ideas", 2], ["basics", "Types, ownership, borrowing", 2], ["traits", "Traits and generics", 2], ["rayon", "Rayon in the code", 2], ["atomics", "Atomics in the code", 2], ["wasm", "From Rust to WASM", 2]]},
+    {"id": "questions", "file": "questions.html", "title": "Research questions and design", "group": "The study", "sections": [["why", "Why this matters", 2], ["rqs", "RQ1 and RQ2", 2], ["example", "RQ2 with made-up numbers", 2], ["design", "The design in one table", 2], ["related", "What others measured", 2], ["vocabulary", "Vocabulary of the project", 2], ["cells", "Environment, workload, N, k", 3], ["runs", "Run, iteration, configuration, campaign", 3], ["builds", "Build, tag, variant", 3], ["numbers", "The numbers", 3]]},
+    {"id": "workloads", "file": "workloads.html", "title": "Workloads", "group": "The study", "sections": [["filter", "The Gaussian filter", 2], ["histogram", "The histogram, two ways", 2], ["k", "k: the contention dial", 2], ["inputs", "Inputs and checksums", 2]]},
+    {"id": "environments", "file": "environments.html", "title": "Environments and builds", "group": "The study", "sections": [["same", "Same source, same flags", 2], ["native", "Native", 2], ["browsers", "Chrome and Firefox", 2], ["wasm", "What WASM threads need", 2], ["builds", "Builds and tags", 2]]},
+    {"id": "machine", "file": "machine.html", "title": "The machine and environment control", "group": "The study", "sections": [["pc", "One PC, slowed down on purpose", 2], ["pcores", "P-cores only", 2], ["clock", "Turbo, governor, SMT", 2], ["quiet", "Shield and quiet mode", 2], ["checked", "Checked on every run", 2], ["problems", "Problems found and fixed", 2], ["mask", "Chrome escapes the CPU mask", 3], ["startup", "Firefox's start-up", 3], ["update", "A pinned Firefox updates itself", 3], ["v2", "Our own asymmetries: the v2 build", 3], ["core", "A core that computes wrongly", 3]]},
+    {"id": "protocol", "file": "protocol.html", "title": "The run protocol", "group": "The study", "sections": [["unit", "The run is the unit", 2], ["warmup", "Warm-up inside the run", 2], ["thirty", "30 runs, 10 iterations", 2], ["order", "Random interleaved order", 2], ["calibration", "Fork-join calibration", 2], ["launch", "How a run is launched", 2], ["pipeline", "The run pipeline", 3], ["native", "A native run", 3], ["browser", "A browser run", 3], ["server", "The results server", 3], ["csv", "One CSV row, field by field", 3]]},
+    {"id": "reading", "file": "reading.html", "title": "Analysis plan and statistics", "group": "The study", "sections": [["onevalue", "One value per run", 2], ["average", "An average that respects ratios", 2], ["sure", "How sure: the interval", 2], ["decisions", "Ten decisions, a stricter bar", 2], ["notproof", "Not rejecting is not proof", 2], ["statistics", "The statistics in detail", 2], ["speedup", "Speedup and efficiency", 3], ["geomean", "Geometric mean", 3], ["bootstrap", "Bootstrap intervals", 3], ["rq2metric", "The RQ2 metric", 3], ["holm", "Holm and the primary contrasts", 3], ["robust", "Mann-Whitney and Cliff's delta", 3], ["karp", "Karp-Flatt", 3]]},
+    {"id": "rq1", "file": "rq1.html", "title": "RQ1: scaling", "group": "Results", "sections": [["curves", "Speedup curves", 2], ["ratio", "Browser over native", 2], ["forkjoin", "Fork-join in the results", 2], ["answer", "The answer to RQ1", 2]]},
+    {"id": "rq2", "file": "rq2.html", "title": "RQ2: synchronization", "group": "Results", "sections": [["metric", "The metric, with the real numbers", 2], ["primary", "The 10 primary contrasts", 2], ["n1", "Already at N = 1", 2], ["answer", "The answer to RQ2", 2], ["cause", "The cause: machine code, a probe and counters", 2], ["code", "The machine code", 3], ["probe", "The test: change only the add", 3], ["tier", "The engine's other compiler", 3], ["retries", "Retries, counted", 3], ["readfirst", "Reading the line first", 3], ["k256", "k = 256: the sequence wins, the mechanism is open", 3], ["c2c", "The padding holds", 3]]},
+    {"id": "explains", "file": "explains.html", "title": "What explains the results", "group": "Results", "sections": [["how", "How an explanation is tested", 2], ["board", "Nine questions, one board", 2], ["q3", "Question 3: why the browser is slower with one thread", 2], ["q1", "Question 1: why 8 threads give 7, not 8", 2], ["q2", "Question 2: why Firefox scales better", 2], ["q5", "Question 5: a speedup above 8", 2], ["q4", "Question 4: the dip at 6 and 7 threads", 2], ["q67", "Questions 6 and 7: Chrome's atomic add", 2], ["q8", "Question 8: Firefox below 1", 2], ["q9", "Question 9: the noisy cells", 2], ["baseline", "Is the one-thread baseline fair?", 2], ["open", "What stays open", 2]]},
+    {"id": "extras", "file": "extras.html", "title": "Exploratory campaigns", "group": "Results", "sections": [["questions", "Five questions", 2], ["private", "Private and packed atomics", 2], ["weak", "Weak scaling", 2], ["simd", "SIMD builds", 2], ["hybrid", "P-cores plus E-cores", 2], ["granularity", "When parallelism pays", 2], ["advice", "Advice for developers", 3], ["cutoff", "The cutoff campaign", 3], ["rule", "The 100:1 rule", 3], ["grain", "The grain U-curve", 3]]},
+    {"id": "threats", "file": "threats.html", "title": "Threats to validity", "group": "Results", "sections": [["three", "The three that matter most", 2], ["internal", "Internal", 2], ["construct", "Construct", 2], ["external", "External", 2], ["conclusion", "Conclusion", 2]]},
+    {"id": "campaigns", "file": "campaigns.html", "title": "Run a campaign", "group": "Guides", "sections": [["what", "What a campaign is", 2], ["spec", "A campaign spec", 2], ["resume", "Sessions, status and resume", 2], ["quality", "The data check", 2], ["list", "Every campaign of the study", 2]]},
+    {"id": "reproduce", "file": "reproduce.html", "title": "Reproduce the tables and figures", "group": "Guides", "sections": [["chain", "The chain", 2], ["numbers", "Every paper number, its file", 2], ["explainer", "This guide's numbers", 2]]},
+    {"id": "changing", "file": "changing.html", "title": "Add a workload or change the measured path", "group": "Guides", "sections": [["rules", "The rules and why", 2], ["workload", "Add a workload", 2], ["campaign", "Add a campaign", 2], ["analysis", "Add an analysis", 2], ["hotpath", "Touching the measured code", 2]]},
+    {"id": "debugging", "file": "debugging.html", "title": "Debug a run", "group": "Guides", "sections": [["status", "Start from make status", 2], ["records", "The run's records", 2], ["rerun", "Re-run one id by hand", 2], ["common", "The common failures", 2]]},
+    {"id": "trace", "file": "trace.html", "title": "Follow one run through the code", "group": "Guides", "sections": [["shape", "The shape before the steps", 2], ["native", "A native run", 2], ["browser", "A browser run", 2], ["analysis", "Into the analysis", 2]]},
+    {"id": "session", "file": "session.html", "title": "The session of a build", "group": "Guides", "sections": [["twice", "Why the study was measured twice", 2], ["steps", "The steps, in order", 2], ["cores", "The per-core check", 2], ["build", "Built twice", 2], ["gate", "The gate, and the cell that failed it", 2], ["rules", "Rules fixed before the data", 2], ["campaigns", "Then the campaigns", 2]]},
+    {"id": "workflow", "file": "workflow.html", "title": "Contribute: branches, PRs and ADRs", "group": "Guides", "sections": [["ticket", "A branch, small commits, a PR", 2], ["ci", "What CI checks", 2], ["review", "The bot review and the merge", 2], ["adr", "When a decision needs an ADR", 2], ["limits", "What is off limits", 2]]},
+    {"id": "commands", "file": "commands.html", "title": "Commands", "group": "Reference", "sections": [["daily", "The six you use daily", 2], ["make", "make targets", 2], ["campaign", "Campaign commands", 2], ["analysis", "Analysis commands", 2]]},
+    {"id": "campaigns.html#spec", "file": "campaigns.html#spec", "title": "Campaign spec format", "group": "Reference", "sections": [], "alias": true},
+    {"id": "data", "file": "data.html", "title": "Data files, CSV schema and tables", "group": "Reference", "sections": [["onerow", "One row, read aloud", 2], ["raw", "data/raw", 2], ["tables", "data/tables", 2], ["json", "The run record", 2], ["figures", "Figures", 2]]},
+    {"id": "decisions", "file": "decisions.html", "title": "ADR index", "group": "Reference", "sections": [["how", "How decisions are kept", 2], ["changed", "Decisions that changed", 2], ["map", "The ADRs by topic", 2]]},
+    {"id": "lectures", "file": "lectures.html", "title": "Course lecture map", "group": "Reference", "sections": [["map", "Course concepts in the project", 2], ["l-embarrassing", "1. Embarrassingly parallel programming", 3], ["l-empirical", "2. Software empirical experimentation", 3], ["l-sync", "3. Synchronization", 3], ["l-java", "4. Concurrency in Java and irregular parallelism", 3], ["l-rust", "5. Concurrency in Rust", 3]]},
+    {"id": "glossary", "file": "glossary.html", "title": "Glossary", "group": "Reference", "sections": []}
   ];
 
   // --- small helpers ------------------------------------------------------------
@@ -203,41 +152,31 @@
   // --- navigation -------------------------------------------------------------------
   var current = document.body.getAttribute("data-page");
 
+  var REAL_PAGES = PAGES.filter(function (p) { return !p.alias; });
+
+  // Left column: every page in its group. The page's own sections are in the right column.
   function initNav() {
     var nav = $("#nav");
     if (!nav) return;
-    var seen = store("seen") || {};
-    seen[current] = true;
-    store("seen", seen);
     nav.innerHTML = "";
-    var groups = {};
-    PAGES.forEach(function (p) { (groups[p.group] = groups[p.group] || []).push(p); });
-    Object.keys(groups).forEach(function (g) {
-      nav.appendChild(el("h4", { text: g }));
+    var groups = [];
+    PAGES.forEach(function (p) {
+      var g = groups.filter(function (x) { return x.name === p.group; })[0];
+      if (!g) groups.push(g = { name: p.group, pages: [] });
+      g.pages.push(p);
+    });
+    groups.forEach(function (g) {
+      nav.appendChild(el("h4", { text: g.name }));
       var ol = el("ol");
-      groups[g].forEach(function (p) {
-        var li = el("li", { class: seen[p.id] ? "seen" : "" });
-        var a = el("a", { href: p.file }, [el("span", { class: "dot", "aria-hidden": "true" }), p.title]);
+      g.pages.forEach(function (p) {
+        var a = el("a", { href: p.file, text: p.title });
         if (p.id === current) a.setAttribute("aria-current", "page");
-        li.appendChild(a);
-        if (p.id === current) {
-          var heads = $$("main h2[id]");
-          if (heads.length) {
-            var toc = el("ol", { class: "toc" });
-            heads.forEach(function (h) {
-              toc.appendChild(el("li", {}, [el("a", { href: "#" + h.id, "data-toc": h.id, text: h.textContent })]));
-            });
-            li.appendChild(toc);
-          }
-        }
-        ol.appendChild(li);
+        ol.appendChild(el("li", {}, [a]));
       });
       nav.appendChild(ol);
     });
-    var count = PAGES.filter(function (p) { return seen[p.id]; }).length;
-    var prog = el("div", { class: "progress" }, [count + " of " + PAGES.length + " pages read", el("div", { class: "bar" }, [el("i")])]);
-    nav.appendChild(prog);
-    requestAnimationFrame(function () { $("i", prog).style.transform = "scaleX(" + (count / PAGES.length) + ")"; });
+    var here = $('a[aria-current="page"]', nav);
+    if (here) nav.scrollTop = Math.max(0, here.offsetTop - nav.clientHeight / 2);
 
     var menu = $("#menu-btn");
     if (menu) menu.addEventListener("click", function () {
@@ -246,32 +185,111 @@
     });
     nav.addEventListener("click", function (e) { if (e.target.closest("a")) nav.classList.remove("open"); });
 
-    // highlight the section being read
-    if ("IntersectionObserver" in window) {
-      var obs = new IntersectionObserver(function (entries) {
-        entries.forEach(function (en) {
-          if (!en.isIntersecting) return;
-          $$("[data-toc]").forEach(function (a) { a.classList.toggle("active", a.getAttribute("data-toc") === en.target.id); });
-        });
-      }, { rootMargin: "-20% 0px -70% 0px" });
-      $$("main h2[id]").forEach(function (h) { obs.observe(h); });
+    var page = REAL_PAGES.filter(function (p) { return p.id === current; })[0];
+    var h1 = $("main h1");
+    if (page && h1) h1.parentNode.insertBefore(el("p", { class: "crumb", text: page.group }), h1);
+  }
+
+  // Right column: the h2 and h3 of this page, with the section in view highlighted.
+  function initOutline() {
+    var host = $("#outline");
+    if (!host) return;
+    var heads = $$("main h2[id], main h3[id]").filter(function (h) { return !h.closest("details, .card, .page-sources"); });
+    if (heads.length < 2) return;
+    host.appendChild(el("h4", { text: "On this page" }));
+    var ol = el("ol");
+    heads.forEach(function (h) {
+      ol.appendChild(el("li", {}, [el("a", { href: "#" + h.id, "data-toc": h.id, class: h.tagName === "H3" ? "sub" : "", text: h.textContent })]));
+    });
+    host.appendChild(ol);
+    var links = $$("[data-toc]", host);
+    function mark() {
+      var line = window.scrollY + 120, active = heads[0];
+      heads.forEach(function (h) { if (h.getBoundingClientRect().top + window.scrollY <= line) active = h; });
+      links.forEach(function (a) {
+        var on = a.getAttribute("data-toc") === active.id;
+        a.classList.toggle("active", on);
+        if (on && host.scrollHeight > host.clientHeight) host.scrollTop = Math.max(0, a.offsetTop - host.clientHeight / 2);
+      });
     }
+    var queued = false;
+    window.addEventListener("scroll", function () {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(function () { queued = false; mark(); });
+    }, { passive: true });
+    mark();
   }
 
   function initPager() {
     var pager = $("#pager");
     if (!pager) return;
-    var i = PAGES.findIndex(function (p) { return p.id === current; });
-    var prev = PAGES[i - 1], next = PAGES[i + 1];
-    pager.appendChild(prev ? el("a", { href: prev.file, class: "prev" }, [el("small", { text: "← Previous" }), prev.title]) : el("span"));
-    pager.appendChild(next ? el("a", { href: next.file, class: "next" }, [el("small", { text: "Next →" }), next.title]) : el("span"));
+    var i = REAL_PAGES.findIndex(function (p) { return p.id === current; });
+    var prev = REAL_PAGES[i - 1], next = REAL_PAGES[i + 1];
+    pager.appendChild(prev ? el("a", { href: prev.file, class: "prev" }, [el("small", { text: "Previous" }), prev.title]) : el("span"));
+    pager.appendChild(next ? el("a", { href: next.file, class: "next" }, [el("small", { text: "Next" }), next.title]) : el("span"));
+  }
+
+  // "This page rests on": every table, file and decision record the page names, in one list at its end.
+  function initPageSources() {
+    var pager = $("#pager");
+    if (!pager || $(".page-sources")) return;
+    var seen = {}, files = [];
+    $$("main .src a[data-repo]").forEach(function (a) {
+      var f = a.getAttribute("data-repo");
+      if (!seen[f]) { seen[f] = true; files.push(f); }
+    });
+    if (!files.length) return;
+    files.sort();
+    var box = el("section", { class: "page-sources" }, [el("h2", { text: "This page rests on" })]);
+    var ul = el("ul");
+    files.forEach(function (f) { ul.appendChild(el("li", {}, [repoLink(f)])); });
+    box.appendChild(ul);
+    pager.parentNode.insertBefore(box, pager);
+  }
+
+  // Every code block gets a language label and a copy button.
+  var LANGS = { rs: "rust", py: "python", js: "javascript", json: "json", sh: "shell", mk: "make", toml: "toml", md: "markdown", yml: "yaml", csv: "csv", txt: "text", s: "asm", asm: "asm", wat: "wat", log: "log", html: "html" };
+  var SHELL_LINE = /^\s*(\$ |make |git |python3 |cargo |bash |cd |sudo |ls |taskset |uv )/m;
+  function copyButton(getText) {
+    var b = el("button", { type: "button", class: "copy-btn", text: "Copy" });
+    function done() { b.textContent = "Copied"; setTimeout(function () { b.textContent = "Copy"; }, 1200); }
+    function viaSelection() {
+      var ta = el("textarea", { style: "position:fixed;opacity:0" });
+      ta.value = getText();
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); done(); } catch (e) { /* the browser refused; nothing else to try */ }
+      document.body.removeChild(ta);
+    }
+    b.addEventListener("click", function () {
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(getText()).then(done, viaSelection);
+      else viaSelection();
+    });
+    return b;
+  }
+  function langOf(pre) {
+    if (pre.getAttribute("data-lang")) return pre.getAttribute("data-lang");
+    if (pre.classList.contains("out")) return "output";
+    if (pre.classList.contains("plain")) return "asm";
+    return SHELL_LINE.test(pre.textContent) ? "shell" : "text";
+  }
+  function initCopy(root) {
+    $$("main pre", root).forEach(function (pre) {
+      if (pre._copy || pre.closest("figure.code, .block")) return;
+      pre._copy = true;
+      var block = el("div", { class: "block" });
+      pre.parentNode.insertBefore(block, pre);
+      block.appendChild(el("div", { class: "code-head" }, [el("span", { class: "lang", text: langOf(pre) }), copyButton(function () { return pre.textContent; })]));
+      block.appendChild(pre);
+    });
   }
 
   // --- search ---------------------------------------------------------------------------
   function searchIndex() {
     var items = [];
     PAGES.forEach(function (p) {
-      items.push({ title: p.title, where: "Page", href: p.file, text: p.title });
+      items.push({ title: p.title, where: p.group, href: p.file, text: p.title });
       p.sections.forEach(function (s) { items.push({ title: s[1], where: p.title, href: p.file + "#" + s[0], text: s[1] }); });
     });
     G.forEach(function (t) { items.push({ title: t.term, where: "Glossary", href: "glossary.html#" + t.id, text: t.term + " " + t.def }); });
@@ -336,7 +354,7 @@
       function show() {
         hide();
         pop = el("div", { class: "pop", role: "tooltip" }, [el("b", { text: t.term }), document.createElement("br"), t.def + " ",
-          el("a", { href: "glossary.html#" + t.id, text: "Glossary →" })]);
+          el("a", { href: "glossary.html#" + t.id, text: "Glossary" })]);
         document.body.appendChild(pop);
         var r = node.getBoundingClientRect();
         pop.style.left = Math.max(8, Math.min(window.scrollX + r.left, window.scrollX + document.documentElement.clientWidth - pop.offsetWidth - 8)) + "px";
@@ -384,7 +402,9 @@
     var box = el("figure", { class: "code" });
     if (!c) { box.appendChild(el("pre", { text: "(excerpt not found: " + key + ")" })); return box; }
     var lines = c.text.split("\n"), first = c.line || 1;
-    box.appendChild(el("header", {}, [el("span", { text: opts.title || "" }), repoLink(c.file, first)]));
+    var ext = c.file.split(".").pop();
+    box.appendChild(el("header", {}, [el("span", {}, [el("span", { class: "lang", text: LANGS[ext] || ext }), opts.title ? " · " + opts.title : ""]),
+      el("span", {}, [repoLink(c.file, first), " ", copyButton(function () { return c.text; })])]));
     var pre = el("pre");
     lines.forEach(function (ln, i) {
       var hl = (opts.highlight && opts.highlight.test(ln)) || (opts.lines && opts.lines.indexOf(first + i) >= 0);
@@ -586,7 +606,6 @@
   function boot() {
     if (STATIC) document.documentElement.classList.add("static");
     initTheme();
-    initOpener();
     initNav();
     initPager();
     initSearch();
@@ -596,13 +615,16 @@
     if (typeof window.page === "function") window.page(window.UI);
     initSources(); // sources and terms added by the page's own widgets
     initTerms();
+    initCopy();
+    initPageSources();
+    initOutline();
     document.addEventListener("keydown", function (e) { if (e.key === "Escape") hide(); });
     // widgets that redraw (tabs, steppers) add new sources and terms later
     var main = $("main"), queued = false;
     if (main && "MutationObserver" in window) new MutationObserver(function () {
       if (queued) return;
       queued = true;
-      requestAnimationFrame(function () { queued = false; initSources(main); initTerms(); });
+      requestAnimationFrame(function () { queued = false; initSources(main); initTerms(); initCopy(main); });
     }).observe(main, { childList: true, subtree: true });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", boot); else boot();

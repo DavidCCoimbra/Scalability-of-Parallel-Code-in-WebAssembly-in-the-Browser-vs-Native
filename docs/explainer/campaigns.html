@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>PPC explainer - Campaigns, specs and resume</title>
+<title>Run a campaign - WASM threads vs native</title>
 <meta name="description" content="A campaign spec field by field, every campaign of the study with its build and run count, how a campaign is planned, resumed and watched, and the data check before any analysis.">
 <link rel="stylesheet" href="assets/style.css">
 <script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -16,50 +16,51 @@
 <body data-page="campaigns">
 <a class="skip" href="#main">Skip to the content</a>
 <header class="topbar">
-  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav">Menu</button>
-  <a class="brand" href="index.html">PPC <span>· explainer</span></a>
-  <div class="spacer"></div>
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
   <div class="search" id="search" role="search">
-    <input type="search" placeholder="Search terms and pages  ( / )" aria-label="Search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
     <div class="results" role="listbox"></div>
   </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
   <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
 </header>
 <div class="shell">
-  <nav class="sidebar" id="nav" aria-label="Pages">
-    <noscript><ol><li><a href="index.html">Start here</a></li><li><a href="words.html">Words first</a></li><li><a href="setup.html">Install and first run</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
   </nav>
   <main id="main">
   <article class="page">
-    <p class="kicker">Working on it · 3 of 8</p>
-    <h1>Campaigns, specs and resume</h1>
+    <h1>Run a campaign</h1>
 
     <p class="lead">A <b>campaign</b> is one set of measurements decided in advance: which runtimes,
       which workloads, which thread counts, how many runs. It is written down as a JSON file, the
       <b>spec</b>, before anything runs, and the harness runs exactly that and nothing else.</p>
 
-    <div class="oneliner"><b>In one sentence:</b> a spec fixes every parameter and a random seed, the
+    <p class="lead-more">In short: a spec fixes every parameter and a random seed, the
       harness turns it into a shuffled list of runs, and stopping and restarting never changes that list:
-      it only continues it.</div>
+      it only continues it.</p>
 
     <h2 id="what">What a campaign is</h2>
     <p>A <b>run</b> is one program start that measures one configuration (one runtime, one workload, one
       thread count) ten times and writes a CSV. A <b>campaign</b> is a list of runs decided before any of them
       starts: every configuration the question needs, thirty times each, in a shuffled order. The list is
       written as a small JSON file, the <b>spec</b>, and the harness runs exactly that list.</p>
-    <div class="analogy"><b>Picture it.</b> A clinical trial writes down, before the first patient, who gets
+    <p><em>An analogy.</em> A clinical trial writes down, before the first patient, who gets
       what and in which order, then follows the sheet. Deciding as you go is how you end up measuring your
-      own expectations. The spec is the sheet.</div>
-    <div class="why"><b>Why shuffle, and why record the seed?</b> A machine drifts over thirteen hours: it
+      own expectations. The spec is the sheet.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why shuffle, and why record the seed?</b> A machine drifts over thirteen hours: it
       warms, a background job wakes, a cache fills. If every native run came first and every Firefox run
       last, the drift would look like a difference between native and Firefox. Shuffled, the drift falls on
       all three alike and becomes noise instead of a bias (<a href="measuring.html#fair">A fair
       comparison</a>). The seed is recorded so the same shuffle can be rebuilt and a stopped campaign
-      continues the same list (<a href="#resume">Sessions and resume</a>).</div>
-    <div class="why"><b>Why thirty runs, and why a fresh process each time?</b> One run can be unlucky; thirty
+      continues the same list (<a href="#resume">Sessions and resume</a>).</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why thirty runs, and why a fresh process each time?</b> One run can be unlucky; thirty
       give a spread you can see and an interval you can report. A fresh process each time makes the thirty
       independent: nothing one run warmed up or cached helps the next (<a href="protocol.html#unit">The run
-      is the unit</a>, <a href="protocol.html#thirty">30 runs, 10 iterations</a>).</div>
+      is the unit</a>, <a href="protocol.html#thirty">30 runs, 10 iterations</a>).</p></aside>
 
     <h2 id="spec">A campaign spec</h2>
     <p>This is the spec of the main campaign on the final build, as it is in the repository:</p>
@@ -67,7 +68,7 @@
     <p>The keys you will change are <code>name</code>, <code>orderSeed</code>, <code>environments</code>,
       <code>workloads</code>, <code>threads</code> and <code>repetitions</code>. The rest is the protocol and
       stays as it is unless an ADR changes it.</p>
-<details class="deeper"><summary>If you already know this: every key, what it changes, and its ADR</summary>
+<details class="deeper"><summary>In depth: every key, what it changes, and its ADR</summary>
     <p>Each key, and what it changes:</p>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Key</th><th>Meaning</th><th>In campaign-v3</th></tr></thead>
@@ -133,10 +134,10 @@
     <p class="src" data-files="harness/campaign/runner.py, harness/campaign/journal.py, harness/campaign/status/README.md, data/raw/campaign-v3/campaign.jsonl"></p>
 
     <h2 id="quality">The data check</h2>
-    <div class="why"><b>Why check the data before looking at it?</b> Because a person who has seen the
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why check the data before looking at it?</b> Because a person who has seen the
       result will find reasons to drop the runs that disagree with it. The check runs the same rules on every
       campaign, written before the first one (ADR 0051), and reports; it never decides what the answer is.
-      A campaign it blocks is re-run or excluded with an ADR, not patched.</div>
+      A campaign it blocks is re-run or excluded with an ADR, not patched.</p></aside>
     <p>When a campaign ends, and before any statistic is looked at, <code>python3 -m analysis.datacheck</code>
       writes a short quality report (ADR 0051). It removes nothing: the analysis plan fixed in advance
       which runs are excluded (D7), and the check only says whether the data can be analysed.</p>
@@ -170,7 +171,7 @@
     <h2 id="list">Every campaign of the study</h2>
     <p>Every result in the paper and in this guide comes from a campaign on the build tagged
       <code>measured/v3</code> (commit <code>ac65af6a</code>; every campaign records the digests of the binaries it ran). The campaigns of the earlier build, <code>measured/v2</code>, are at the tag <code>data/v2</code>, valid for their own build, but builds are never mixed in one comparison (ADR 0062, 0095). Pilots only sized the design; their runs and specs are in <code>data/earlier/pilot/</code>.</p>
-    <details class="deeper"><summary>If you already know this: every spec, its runs, its status and its ADR</summary>
+    <details class="deeper"><summary>In depth: every spec, its runs, its status and its ADR</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Spec</th><th>What it measures</th><th>Runs</th><th>Status</th><th>ADR</th></tr></thead>
       <tbody>
@@ -202,12 +203,13 @@
     </table></div>
 </details>
     <div class="stats" id="totals"></div>
-    <div class="callout"><b>No run left out.</b> No campaign of <code>measured/v3</code> has a failed, missing or excluded run, so no <code>excluded/</code> folder exists. On the earlier build the pinned Firefox once updated itself in the middle of the exploratory campaigns; since then a strict campaign refuses to start with an unpinned browser (ADR 0071). See <a href="pitfalls.html#update">A pinned Firefox updates itself</a>.</div>
+    <aside class="callout note"><p class="callout-title">Note</p><p><b>No run left out.</b> No campaign of <code>measured/v3</code> has a failed, missing or excluded run, so no <code>excluded/</code> folder exists. On the earlier build the pinned Firefox once updated itself in the middle of the exploratory campaigns; since then a strict campaign refuses to start with an unpinned browser (ADR 0071). See <a href="machine.html#update">A pinned Firefox updates itself</a>.</p></aside>
     <p class="src" data-files="harness/campaigns/README.md, data/README.md, docs/adr/0084-v3-design.md, docs/adr/0095-v3-is-the-reported-build.md, docs/adr/0071-firefox-pin-guard.md"></p>
 
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
 </div>
 
 <script src="assets/data.js"></script>
