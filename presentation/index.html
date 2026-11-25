@@ -382,7 +382,7 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
     <div data-step="1">
       <h3>2. Faster loops scale worse</h3>
       <div id="ch-mem"></div>
-      <p class="tiny">Efficiency at N = 8 against what one thread reads per second, for scalar, baseline and AVX2 builds. One curve for three builds and three environments.</p>
+      <p class="tiny">Efficiency at N = 8 against what one thread reads per second, for scalar, baseline and AVX2 builds. One trend across three builds; Chrome sits off it, at the native efficiency.</p>
     </div>
     <div data-step="2">
       <h3>3. Small regions pay for the fork-join</h3>
@@ -444,7 +444,7 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
       <p class="tiny" id="cas-note" style="margin-top:8px"></p>
     </div>
   </div>
-  <p class="key c" data-step="3" style="margin-top:14px;font-size:27px">Changing <b>only</b> the increment in a native program reproduces Chrome in both directions, and with V8's baseline compiler the penalty at k = 1 is gone (effect 2.17 to 1.04). At k = 256 the mechanism is proposed, not shown.</p>
+  <p class="key c" data-step="3" style="margin-top:14px;font-size:27px">Changing <b>only</b> the increment in a native program reproduces both directions of Chrome's effect, and with V8's baseline compiler the penalty at k = 1 is gone (effect 2.17 to 1.04). At k = 256 the mechanism is proposed, not shown.</p>
   <aside class="notes">Why. I read the machine code each engine produces for the same WASM instruction, i64 atomic add. LLVM natively emits one lock inc; SpiderMonkey one lock add; V8's optimizing compiler, which is what the campaign measures, a load and a lock compare-and-swap that goes back to the load if another core changed the counter in between; V8's baseline compiler a lock xadd. The picture is a model of eight cores, and the table next to it is what was measured. Now: the locked add at k equal to 1. One cache line, eight cores, it bounces; no retries. Native takes 380 milliseconds with one thread and 857 with eight: shared atomics do not scale. [next] The same with compare-and-swap: a core reads, loses the line to a neighbour, finds its value stale and retries. Chrome takes 698 and 1823 milliseconds. The native probe, where I changed only the increment, gives 677 and 2132. Counters: Chrome retries one add in four, native and Firefox practically none. [next] Now 256 counters: the lines spread over the cores, retries almost vanish, and the same sequence is the faster one: 210 milliseconds in Chrome and 240 in the probe against 414 natively. Why, I can only propose: reading the line first asks for exclusive ownership less often. [next] So the RQ2 finding is about a compiler's choice of instructions for an atomic add, not about WebAssembly threads as such: with only its baseline compiler Chrome's effect at k 1 goes from 2.17 to 1.04. Keys: 1 to 3 choose the sequence, up and down change k, R restarts the model.</aside>
 </section>
 
@@ -498,11 +498,11 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
     <div>
       <div class="box" style="margin-bottom:22px">
         <h3>RQ1</h3>
-        <p>With enough work per parallel region, the same Rust/Rayon code scales in the browser as it does natively. WASM threads cost a constant factor in time (1.17 to 1.36 for the filter) and a slower fork-join.</p>
+        <p>With enough work per parallel region, the same Rust/Rayon code scales in the browser as it does natively. WASM threads cost a factor in time that does not grow with N (1.17 to 1.36 for the filter) and a slower fork-join.</p>
       </div>
       <div class="box" data-step="1">
         <h3>RQ2</h3>
-        <p>Shared atomics widen the gap in Chrome under concentrated contention (up to 2.26) and narrow it under spread contention (0.42); Firefox is never worse than native. The cause is the instruction sequence V8 emits for an atomic add.</p>
+        <p>Shared atomics widen the gap in Chrome under concentrated contention (up to 2.26) and narrow it under spread contention (0.42); Firefox is never worse than native. The penalty follows the instruction sequence V8 emits for an atomic add.</p>
       </div>
     </div>
     <div>
@@ -1051,7 +1051,7 @@ const scaleDemo = (() => {
     document.getElementById("sc-title").textContent = `Measured at N = ${threadsNow}: ${WORKLOADS[state.workload][2]}`;
     document.getElementById("sc-note").textContent = "Geometric means of 30 runs; time / native at the same N. " + (atomic
       ? "Shared atomic counters: more threads are slower than one."
-      : "What WASM costs is a constant factor in time, not scalability.");
+      : "What WASM costs is a factor in time that does not grow with N, not scalability.");
     document.getElementById("sc-table").innerHTML = "<tr><th></th><th>Time, ms</th><th>Speedup [95 % CI]</th><th>Efficiency</th><th>Time / native</th></tr>".replace(/ /g, "\u00a0") +
       ENVS.map((env) => {
         const cell = series[env][state.n];
