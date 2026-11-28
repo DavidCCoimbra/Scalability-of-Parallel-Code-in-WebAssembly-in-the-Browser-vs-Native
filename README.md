@@ -106,6 +106,7 @@ python3 ../scripts/check_simd.py bench.wasm.dis wasm32
 | `docs/adr/` | The decision records, with those of the exploratory campaigns in `extras/` |
 | `scripts/` | Repository checks: ADR structure, SIMD, codegen diff, hardware counters |
 | `paper/` | LaTeX: `final/` (the paper), `pilot/`, `proposal/`, with shared `figures/` and `bib/` |
+| `presentation/` | The slides of the final presentation: one HTML file that opens offline, and the script that embeds its data |
 
 ```mermaid
 flowchart LR
