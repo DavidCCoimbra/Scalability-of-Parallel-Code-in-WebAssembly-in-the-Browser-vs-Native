@@ -38,9 +38,11 @@ flowchart LR
 | In the paper | Source |
 |---|---|
 | Run counts, exclusions, order trend | `data/tables/campaign-v3/campaign-v3-quality.md` |
-| Speedup, efficiency (Figure 1) | `campaign-v3-scaling.csv`, `figures/campaign-speedup.pdf` |
+| Speedup, efficiency (Figure 1) | `campaign-v3-scaling.csv`, `figures/campaign-efficiency-paper.pdf` |
 | Primary contrasts and their 99.5 % intervals (Table 1, RQ1) | `campaign-v3-contrasts.csv`, `campaign-v3-sensitivity.csv` (columns `primary_*`) |
-| Time over native (ABS rows), RQ2 by thread count (Figure 2) | `campaign-v3-contrasts.csv`, `figures/campaign-rq2-ends.pdf` |
+| Time over native (ABS rows), speedup ratio by thread count (RQ1 rows), the RQ2 effect at every N, N = 1 included (RQ2 rows, Table 1 and Figure 2) | `campaign-v3-contrasts.csv`, `figures/campaign-rq2-effect.pdf` |
+| The previous build's two filter contrasts, quoted in the threats | ADR 0079, ADR 0095 |
+| The analysis plan's date and the later addition of the rank test | ADR 0037 |
 | The two factors of the RQ2 ratio | `campaign-v3-rq2-decomposition.csv` |
 | Mann-Whitney, Cliff's delta, re-pairings | `campaign-v3-robustness.csv` |
 | Spread of the runs | `campaign-v3-distributions.csv` |
