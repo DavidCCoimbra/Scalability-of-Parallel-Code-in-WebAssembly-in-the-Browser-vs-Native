@@ -45,117 +45,65 @@
   <article class="page">
     <h1>RQ1: scaling</h1>
     <p class="lead">RQ1 asks whether the same parallel code gains from threads in the browser as it does natively. The filter and the local histogram answer it: their threads never wait for each other. With enough work per parallel region they scale in the browsers as they do natively, and the browser is slower by a factor that does not grow with the thread count.</p>
-    <p>If you have not yet read <a href="ratios.html">Ratios, speedup and intervals</a>, read it first: this
-      page is written in those terms.</p>
+    <p>This page uses the terms of <a href="ratios.html">Ratios, speedup and intervals</a>. Read that page first if they are new.</p>
 
     <h2 id="curves">Speedup curves</h2>
-    <p><span data-term="speedup-relative">Speedup</span> answers "how many times faster is it with N threads
-      than with 1?", inside one runtime. 2 threads giving speedup 2 is perfect; 8 threads giving 7 is very good.
-      The dashed line in the chart is perfect. Pick a workload and compare the three environments:</p>
+    <p><span data-term="speedup-relative">Speedup</span> is how many times faster the workload is with N threads than with 1, inside one environment. A speedup of 2 with 2 threads is the ideal; 7 with 8 threads is very good. The dashed line in the chart is the ideal. Pick a workload and compare the three environments:</p>
     <div class="controls-row"><span class="muted">Workload:</span><span id="w-wl"></span></div>
     <div class="card"><div id="w-curve"></div><div id="w-curve-note" class="muted" style="font-size:var(--fs-sm)"></div></div>
     <p class="src" data-src="campaign-v3-scaling"></p>
-    <p>The three lines sit on top of each other. That is the result: adding threads helps the browser as much as it
-      helps native code. Each dot is the middle of 30 separate runs, and the shaded band around it says how much
-      that middle could move with another 30 runs (<a href="reading.html#sure">How sure: the interval</a>). The
-      bands are so narrow you can barely see them.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>What would it look like if WASM scaled worse?</b> The browser lines would start near native's at
-      N = 1 and bend away below it as N grew: 8 threads giving, say, 4 instead of 7. Then the gap between browser
-      and native would be a cost of <i>parallelism</i>, growing with every thread. The lines do not bend away, so
-      it is not.</p></aside>
-    <p class="def"><b>A yardstick for efficiency.</b> <span data-term="efficiency">Efficiency</span> is speedup
-      divided by N: the share of each thread's time that turned into useful work. 1.0 is perfect; above 0.8 is
-      considered good for memory-heavy code like an image filter, because the 8 threads share one memory bus. The filter's 0.87 natively, 0.87 in Chrome and 0.92 in Firefox at N = 8 are all in that range.</p>
+    <p>The three lines lie on top of each other. That is the result: adding threads helps the browser as much as it helps native code. Each dot is the geometric mean of 30 runs, and the shaded band is its interval (<a href="reading.html#sure">How sure: the interval</a>). The bands are narrow enough to be hard to see.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>What would it look like if WASM scaled worse?</b> The browser lines would start near the native one at N = 1 and bend below it as N grows: 8 threads giving 4, say, where native gives 7. The gap between browser and native would then be a cost of <i>parallelism</i> that grows with every thread. The lines do not bend, so it is not.</p></aside>
+    <p class="def"><b>A reference for efficiency.</b> <span data-term="efficiency">Efficiency</span> is the speedup divided by N: the share of each thread's time that became useful work. 1.0 is the ideal; above 0.8 counts as good for memory-bound code such as an image filter, because the 8 threads share one memory bus. The filter is in that range at N = 8: 0.87 natively, 0.87 in Chrome and 0.92 in Firefox.</p>
     <details class="deeper"><summary>In depth: the superlinear Firefox value, and why the ratio must come with the speedup</summary>
-      <p>The filter reaches about 7 at N = 8 everywhere. The local histogram reaches 7.8 to 8.5; Firefox's value above 8 at k = 256 (8.48) starts from a slower T<sub>1</sub> (1.27 times native), not from faster threads: its one-thread run pays for cache misses that its eight-thread run does not (<a href="explains.html#q5">question 5</a>). A relative speedup compares each environment with itself, so an environment with a slow single thread can show a high speedup and still be slower in seconds. That is why every speedup in this documentation is read next to the time ratio
-        browser / native (ADR 0039), the next section. The paper reports this reading in
-        <code>paper/final/paper.tex</code>, section RQ1.</p>
+      <p>The filter reaches about 7 at N = 8 in every environment. The local histogram reaches 7.8 to 8.5. Firefox's value above 8 at k = 256 (8.48) starts from a slower T<sub>1</sub> (1.27 times native), not from faster threads: its one-thread run pays for cache misses that its eight-thread run does not (<a href="explains.html#q5">question 5</a>). A relative speedup compares each environment with itself, so an environment with a slow single thread can show a high speedup and still be slower in seconds. That is why every speedup in this documentation is read next to the time ratio browser / native (ADR 0039), the next section. The paper reports this reading in <code>paper/final/paper.tex</code>, section RQ1.</p>
     </details>
 
     <h2 id="ratio">Browser over native</h2>
-    <p>Speedup hides one thing: it never says who is faster in seconds. So here is the same question in seconds:
-      how many times longer does the browser take than native, for the same workload and the same N? A value of
-      1.2 means "20% slower than native".</p>
+    <p>A speedup never says which environment is faster in seconds. So this section asks the same question in seconds: how many times longer does the browser take than native, for the same workload and the same N? A value of 1.2 means 20% slower than native.</p>
     <div class="controls-row"><span class="muted">Workload:</span><span id="w-wl2"></span></div>
     <div class="card"><div id="w-ratio"></div></div>
     <p class="src" data-src="campaign-v3-scaling"></p>
-    <p><b>This is the headline of RQ1: the line is flat.</b> The browser is about 1.17 (Chrome) to 1.36 (Firefox) times slower than native on the filter with one thread, and about the same with eight (1.18 and 1.29). The cost of running in the browser is a factor per thread that does not grow as threads are added: Chrome's stays about the same and Firefox's falls from 1.36 to 1.29. It gets divided by N like everything else.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why the flat line is the test, and not the speedup alone.</b> Two environments can both have a speedup
-      of 7 and still be far apart in seconds; the speedup alone would hide that. And a browser could have the same
-      speedup at N = 2 but fall behind at N = 8; the speedup at one N would hide that too. A ratio that stays
-      flat across every N rules both out at once.</p></aside>
+    <p><b>The line is flat, and that is the main result of RQ1.</b> On the filter with one thread the browser takes about 1.17 (Chrome) to 1.36 (Firefox) times the native time, and about the same with eight (1.18 and 1.29). Running in the browser costs a factor per thread that does not grow with N: Chrome's stays about the same and Firefox's falls from 1.36 to 1.29. The factor is divided by N with the rest of the work.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is the flat line the test, and not the speedup alone?</b> Two environments can both have a speedup of 7 and be far apart in seconds, and the speedup hides that. A browser could also match the native speedup at N = 2 and fall behind at N = 8, and the speedup at one N hides that too. A ratio that stays flat across every N excludes both.</p></aside>
     <details class="deeper"><summary>In depth: the primary RQ1 contrast and the k = 1 instruction aside</summary>
-      <p>The primary RQ1 contrast is the filter's speedup at N = 8, browser over native, tested with Holm over the 10
-        primary contrasts fixed before the campaign (<a href="reading.html#decisions">Ten decisions, a stricter
-        bar</a>):</p>
+      <p>The primary RQ1 contrast is the filter's speedup at N = 8, browser over native, tested with Holm over the 10 primary contrasts that were fixed before the campaign (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>):</p>
       <div id="w-primary"></div>
       <p class="src" data-src="campaign-v3-contrasts"></p>
-      <p>Chrome's filter speedup is within a few percent of native's and the interval contains 1. Firefox's is 5.5% higher and Holm-significant, but from a slower baseline. In seconds the filter on one thread is 1.17 times native in Chrome and 1.36 in Firefox, and the ratio does not grow with N: WASM threads cost a factor per thread, not scalability. Why Firefox scales a little better is not that it runs threads better: its loop is slower, and eight slower loops ask less of the shared memory (<a href="explains.html#q2">What explains the results</a>).</p>
-      <aside class="callout note"><p class="callout-title">Note</p><p><b>Chrome faster than native at k = 1.</b> On the local histogram at k = 1, every pixel
-        increments the same counter, a chain bound by <span data-term="store-buffer-store-to-load-forwarding">store
-        forwarding</span>. V8 compiles it as a load, an add and a store; LLVM as one memory-operand <code>inc</code>.
-        Chrome ends up about 2.7% faster than native there, a likely part of the reason being the instruction choice
-        (ADR 0060, and <a href="atomics.html#forwarding">Store forwarding at k = 1</a>). The engine's code generator
-        is part of what is measured.
-        <a href="../../docs/adr/0060-local-histogram-k1-instruction-choice.md">ADR 0060</a></p></aside>
+      <p>Chrome's filter speedup is within a few percent of the native one, and the interval contains 1. Firefox's is 5.5% higher and Holm-significant, but from a slower baseline. In seconds, the filter on one thread takes 1.17 times the native time in Chrome and 1.36 in Firefox, and the ratio does not grow with N: WASM threads cost a factor per thread, not scalability. Firefox scales a little better not because it runs threads better: its loop is slower, and eight slower loops ask less of the shared memory (<a href="explains.html#q2">What explains the results</a>).</p>
+      <aside class="callout note"><p class="callout-title">Note</p><p><b>Chrome faster than native at k = 1.</b> On the local histogram at k = 1, every pixel increments the same counter, a chain bound by <span data-term="store-buffer-store-to-load-forwarding">store forwarding</span>. V8 compiles it as a load, an add and a store; LLVM as one memory-operand <code>inc</code>. Chrome is about 2.7% faster than native there, and the choice of instruction is a likely part of the reason (<a href="../../docs/adr/0060-local-histogram-k1-instruction-choice.md">ADR 0060</a>, <a href="atomics.html#forwarding">Store forwarding at k = 1</a>). The engine's code generator is part of what is measured.</p></aside>
     </details>
     <h3 id="k1-forwarding">The local histogram at k = 1: one counter, one chain</h3>
-    <p>At k = 1 every pixel adds to the same counter, so each add waits for the one before it
-      (<a href="atomics.html#forwarding">Store forwarding at k = 1</a> explains the mechanism). That is why the
-      local histogram is several times slower at k = 1 than at k = 256 with one thread, in every environment, and
-      it is where Chrome ends slightly faster than native:</p>
+    <p>At k = 1 every pixel adds to the same counter, so each add waits for the one before it (<a href="atomics.html#forwarding">Store forwarding at k = 1</a>). That makes the local histogram several times slower at k = 1 than at k = 256 with one thread, in every environment, and it is where Chrome is slightly faster than native:</p>
     
       <div id="sf-table"></div>
       <p class="src" data-src="campaign-v3-scaling"></p>
-      <p>At <i>k</i> = 1 the loop is a <span data-term="dependency-chain">dependency chain</span> through memory: the
-        new value goes from the store buffer straight to the next load
-        (<span data-term="store-buffer-store-to-load-forwarding">store-to-load forwarding</span>), and no pixel can
-        start before the previous one finished. Here Chrome is even slightly <b>faster</b> than native. LLVM emits one
-        memory-operand <code>inc</code> per pixel; V8 emits a separate load, add and store:</p>
+      <p>At <i>k</i> = 1 the loop is a <span data-term="dependency-chain">dependency chain</span> through memory: the new value goes from the store buffer to the next load (<span data-term="store-buffer-store-to-load-forwarding">store-to-load forwarding</span>), and no pixel can start before the previous one finishes. LLVM emits one memory-operand <code>inc</code> per pixel; V8 emits a separate load, add and store:</p>
       <div class="pair">
         <div data-code="data/earlier/probes/native-hist-local-k1-loop.asm|29900:|11" data-title="Native (LLVM), unrolled by 4" data-highlight="inc"></div>
         <div data-code="data/earlier/probes/v8-hist-local-k1-loop.asm|8c0:|8" data-title="Chrome (V8 TurboFan), one pixel" data-highlight="mov    rdx|add    rdx|mov    QWORD"></div>
       </div>
-      <p>On this core the memory-operand <code>inc</code> chain is about 1.5 to 2 % slower. A C probe of the two
-        sequences alone on one P-core (<code>bench/probes/rmw_chain.c</code>, ADR 0060) took 155.2 ms against 152.7 ms,
-        about 60 % of the gap; it explains a design result, it is not a campaign number. The lesson the paper draws:
-        one source and one set of flags do not give one instruction stream; the engine's code generator is part of
-        what is measured.</p>
+      <p>On this core the chain of memory-operand <code>inc</code> is about 1.5 to 2% slower. A C probe of the two sequences alone on one P-core (<code>bench/probes/rmw_chain.c</code>, ADR 0060) took 155.2 ms against 152.7 ms, about 60% of the gap. It explains a result of the design; it is not a campaign number. One source and one set of flags do not give one instruction stream: the engine's code generator is part of what is measured.</p>
       <p class="src" data-files="data/earlier/probes/rmw-chain.txt, bench/probes/rmw_chain.c, analysis/extras/jitdump.py, docs/adr/0060-local-histogram-k1-instruction-choice.md"></p>
 
     <h2 id="forkjoin">Fork-join in the results</h2>
-    <p>One cost does not get divided by N: starting the threads on a piece of work and waiting for them all to
-      finish, the <span data-term="fork-join">fork-join</span> (<a href="threads.html#forkjoin">Fork-join and its
-      cost</a>). Every run measures it before its workload, by timing an empty parallel region: all the threads
-      are woken up, do nothing, and are collected again.</p>
+    <p>One cost is not divided by N: starting the threads on a piece of work and waiting for all of them to finish, the <span data-term="fork-join">fork-join</span> (<a href="threads.html#forkjoin">Fork-join and its cost</a>). Every run measures it before its workload, with an empty parallel region: the threads wake, do nothing, and are joined.</p>
     <div class="controls-row"><span class="muted">Probe:</span><span id="w-probe"></span></div>
     <div id="w-fj"></div>
     <p class="muted" style="font-size:var(--fs-sm)">Computed by <code>scripts/explainer_data.py</code> from the
       <code>calibration-warm</code> rows of every run in <code>data/raw/campaign-v3/</code>: the median over runs of
       each run's median of 20 calls, and the mean of all calls.</p>
-    <p>At N = 8 one empty fork-join costs about 110 µs in Chrome and 60 µs in Firefox against 7.9 µs natively: eight to fourteen times more. That sounds bad, until you compare it with the work: one filter pass over the 8192 x 8192 image
-      takes several milliseconds, so the fork-join is about 3% of it in Chrome and 0.2% natively. With big pieces
-      of work it is noise; with pieces of a few hundred microseconds it is the main cost.
-      <a href="extras.html#cutoff">Exploratory campaigns</a> measures exactly where that line is.</p>
+    <p>At N = 8 one empty fork-join costs about 110 µs in Chrome and 60 µs in Firefox against 7.9 µs natively: eight to fourteen times more. Compare it with the work: one pass of the filter over the 8192 x 8192 image takes several milliseconds, so the fork-join is about 3% of it in Chrome and 0.2% natively. With large pieces of work it is negligible; with pieces of a few hundred microseconds it is the main cost. <a href="extras.html#cutoff">The cutoff campaign</a> measures where that limit is.</p>
     <details class="deeper"><summary>In depth: the step at N = 8 and the clock ticks</summary>
-      <p>All three runtimes step up at N = 8, likely because the coordinating thread then shares the 8 cores with N
-        workers; below N = 8 the browser values are one or two clock ticks (<code>performance.now()</code> is 5 µs in
-        Chrome and 20 µs in Firefox), so the browser medians there are coarse. The N = 8 medians are 110, 60 and 7.9 µs and the means 164, 91 and 46 µs; <a href="protocol.html#calibration">Fork-join
-        calibration</a> explains the warm and cold probes.</p>
+      <p>All three environments step up at N = 8, likely because the coordinating thread then shares the 8 cores with N workers. Below N = 8 the browser values are one or two clock ticks (<code>performance.now()</code> ticks in 5 µs in Chrome and 20 µs in Firefox), so the browser medians there are coarse. The N = 8 medians are 110, 60 and 7.9 µs and the means 164, 91 and 46 µs. <a href="protocol.html#calibration">Fork-join calibration</a> explains the warm and cold samples.</p>
     </details>
 
     <h2 id="answer">The answer to RQ1</h2>
     <div class="stats" id="w-answer-stats"></div>
-    <p><b>With enough work per parallel region, the same Rust/Rayon code scales in the browser as it does
-      natively.</b> The filter's efficiency at N = 8 is 0.87 natively, 0.87 in Chrome and 0.92 in Firefox; the
-      speedups agree within a few percent; and the browser / native time ratio does not grow with N, in strong and
-      in weak scaling (<a href="extras.html#weak">Weak scaling</a>). WASM costs a factor per thread that does not grow with N, and it divides with the work. What does not divide is the fork-join of each region, several times slower in the
-      browsers.</p>
-    <p class="takeaway"><strong>In summary.</strong> Threads help the browser as much as they help native code. The browser is 17 to 36% slower per thread on the filter, and that does not get worse with more threads.
-      The one thing that stays expensive is starting and stopping the threads, so keep each parallel piece of work
-      big.</p>
+    <p><b>With enough work per parallel region, the same Rust/Rayon code scales in the browser as it does natively.</b> The filter's efficiency at N = 8 is 0.87 natively, 0.87 in Chrome and 0.92 in Firefox. The speedups agree within a few percent. The time ratio browser / native does not grow with N, in strong and in weak scaling (<a href="extras.html#weak">Weak scaling</a>). WASM costs a factor per thread that does not grow with N and is divided with the work. What is not divided is the fork-join of each region, several times slower in the browsers.</p>
+    <p class="takeaway"><strong>In summary.</strong> Threads help the browser as much as they help native code. The browser is 17 to 36% slower per thread on the filter, and more threads do not make that worse. Starting and joining the threads stays expensive, so keep each parallel region large.</p>
     <details class="deeper"><summary>In depth: where the constant factor and the lost efficiency come from</summary>
-      <p>The literature points to the engines' code generation and bounds-checked linear-memory accesses as the source of the per-thread factor (Jangda et al. 2019, Szewczyk et al. 2022). The counters of the loop measured it for the filter: both engines run about a third more instructions per pixel than native code (<a href="explains.html#q3">question 3</a>). The lost efficiency (0.87, not 1) is not a serial part: the timed region has none. The filter's <span data-term="karp-flatt">Karp-Flatt</span> serial fraction at N = 8 is small in all three (<a href="reading.html#karp">Karp-Flatt</a>) and reads as a cost of running in parallel. With eight threads a pixel costs the same instructions and more cycles (8.5% more natively), with more cache misses: the eight threads run into the memory they share. That explains about half of the lost efficiency natively; the rest is time in which a core is not running the loop at all (<a href="explains.html#q1">question 1</a>). The SIMD builds on <a href="extras.html#simd">Exploratory campaigns</a> point the same way for the native builds and for Firefox: the faster one thread goes through memory, the less eight threads gain. Chrome does not fit that line: it goes through memory more slowly than native and has the native efficiency.</p>
+      <p>The literature attributes the per-thread factor to the engines' code generation and to bounds-checked accesses to linear memory (Jangda et al. 2019, Szewczyk et al. 2022). The counters of the loop measured it for the filter: both engines run about a third more instructions per pixel than native code (<a href="explains.html#q3">question 3</a>). The lost efficiency (0.87, not 1) is not a serial part: the timed region has none. The filter's <span data-term="karp-flatt">Karp-Flatt</span> serial fraction at N = 8 is small in all three environments (<a href="reading.html#karp">Karp-Flatt</a>) and reads as a cost of running in parallel. With eight threads a pixel costs the same instructions and more cycles (8.5% more natively), with more cache misses: the eight threads contend for the memory they share. That explains about half of the lost efficiency natively; the rest is time in which a core does not run the loop at all (<a href="explains.html#q1">question 1</a>). The <a href="extras.html#simd">SIMD builds</a> point the same way for the native builds and for Firefox: the faster one thread goes through memory, the less eight threads gain. Chrome does not fit that line: it goes through memory more slowly than native and has the native efficiency.</p>
       <div id="w-kf"></div>
       <p class="src" data-src="campaign-v3-karp-flatt"></p>
     </details>

@@ -205,7 +205,7 @@
       about how Rayon cuts the work: it halves it again and again, which gives pieces in powers of two, and six or
       seven threads cannot share eight pieces evenly. The test: cut the work into pieces of a fixed size instead,
       and see whether the dip goes away.</p>
-    <div class="controls-row"><span class="muted">Runtime:</span><span id="w-q4-env"></span></div>
+    <div class="controls-row"><span class="muted">Environment:</span><span id="w-q4-env"></span></div>
     <div id="w-q4"></div>
     <p class="src" data-src="grain-threads-v3-grains"></p>
     <p>Look at the <b>times</b>, not the efficiencies. With a fixed grain, 6 or 7 threads are not faster: 256 KB
