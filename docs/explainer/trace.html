@@ -50,9 +50,7 @@
     <p class="lead">This guide follows two real runs of the main campaign through the code, line by line: the atomic histogram at k = 1 with 8 threads, once natively (<code>campaign-v3-4610-native-hist-atomic-k1-n8-r0</code>) and once in Chrome (<code>campaign-v3-4221-chrome-hist-atomic-k1-n8-r0</code>). The campaign picks the run, the harness starts it on the P-cores, both environments reach the same Rust function, which times only the work, and the CSV is stored next to a record of the conditions. Then the 30 runs of that configuration become one number.</p>
 
     <h2 id="shape">The shape before the steps</h2>
-    <p>Before stepping through 27 lines of code, here is the whole shape. Each box is a separate program
-      (a <a href="machines.html#program">process</a>); the dashed zones are where it runs; the arrows say what
-      crosses from one to the next. Only the red box is inside the clock.</p>
+    <p>This is the whole shape, before the 27 steps. Each box is a separate program (a <a href="machines.html#program">process</a>), the dashed zones show where it runs, and the arrows show what passes from one to the next. Only the red box is inside the timed region.</p>
     <figure class="figure">
       <svg id="shape-svg" viewBox="0 0 760 300" role="img" aria-label="The programs of one run, where each runs, and what crosses between them">
         <defs><marker id="tr-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--faint)"/></marker></defs>
@@ -112,15 +110,10 @@
         <text x="290" y="222" class="muted">Same Rust code in all three, compiled twice:</text>
         <text x="290" y="238" class="muted">to x86-64, and to WASM for the browser.</text>
       </svg>
-      <figcaption>Three zones, three kinds of boundary: a command line or a URL goes in, CSV text comes out, and from then on only files connect the programs.</figcaption>
+      <figcaption>Three zones and three kinds of boundary: a command line or a URL goes in, CSV text comes out, and from there only files connect the programs.</figcaption>
     </figure>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does only the red box matter for the numbers?</b> Everything to its left
-      happens before the clock starts and runs on other cores; everything to its right happens after the
-      CSV exists. So a slow harness, a slow disk or a slow analysis cannot change a measured time. The
-      only things that can are inside that box: the environment, the code, and the machine it runs on, which is
-      what the study compares. <a href="code.html#picture">Repository tour</a> gives every port and file.</p></aside>
-    <p>Below, each step shows the line that runs, what the variables hold, and, in the box marked
-      <b>In plain words</b>, the one thing a newcomer would not get from the code. Use the arrow keys.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does only the red box matter for the numbers?</b> Everything to its left happens before the timed region and runs on other cores; everything to its right happens after the CSV exists. So a slow harness, a slow disk or a slow analysis cannot change a measured time. Only what is inside that box can: the environment, the code and the machine, which is what the study compares. <a href="code.html#picture">Repository tour</a> gives every port and file.</p></aside>
+    <p>Each step below shows the line that runs, what the variables hold, and, under <b>In plain words</b>, what the code alone does not tell a newcomer. The arrow keys move between steps.</p>
 
     <h2 id="native">A native run</h2>
     <div class="hops">
@@ -136,8 +129,7 @@
     <div id="native-trace"></div>
 
     <h2 id="browser">A browser run</h2>
-    <p>The same run in Chrome. Everything from <code>run_in_pool</code> down is the same Rust code,
-      compiled to WASM: only the start (a browser launch) and the end (an HTTP POST) differ.</p>
+    <p>The same run in Chrome. Everything from <code>run_in_pool</code> down is the same Rust code, compiled to WASM. Only the start (a browser launch) and the end (an HTTP POST) differ.</p>
     <div class="hops">
       <div class="card"><b>launcher.py</b><span>fresh profile</span></div>
       <div class="card"><b>url.py</b><span>config in the URL</span></div>
@@ -150,16 +142,11 @@
     <div id="browser-trace"></div>
 
     <h2 id="analysis">Into the analysis</h2>
-    <p>Each run left a CSV (one row per iteration) and a JSON (its context) in
-      <code>data/raw/campaign-v3/</code>. The analysis joins them, reduces each run to one number, and
-      compares configurations. Follow the atomic histogram at k = 1 from its runs to its speedup; the plain
-      version of each statistic is on <a href="reading.html">Analysis plan and statistics</a>.</p>
+    <p>Each run leaves a CSV (one row per iteration) and a JSON (its context) in <code>data/raw/campaign-v3/</code>. The analysis joins them, reduces each run to one number, and compares configurations. The steps follow the atomic histogram at k = 1 from its runs to its speedup; <a href="reading.html">Analysis plan and statistics</a> explains each statistic.</p>
     <div id="analysis-trace"></div>
     <p class="src" data-src="campaign-v3-scaling"></p>
 
-    <p class="takeaway"><strong>In summary.</strong> One run is one fresh process, started from outside the
-      measured cores, that ends in <code>run_in_pool</code> whatever the environment. The clock brackets only
-      <code>Workload::run</code>. What comes out is text in a file, and from there on it is arithmetic.</p>
+    <p class="takeaway"><strong>In summary.</strong> One run is one fresh process, started from outside the measured cores, that ends in <code>run_in_pool</code> in every environment. The timed region is <code>Workload::run</code> and nothing else. What comes out is text in a file, and the rest is arithmetic.</p>
 
     <div hidden>
       <div data-code="harness/campaign/plan.py|def plan(spec: CampaignSpec)|13"></div>

@@ -38,55 +38,31 @@
     <p class="lead">A campaign is one set of measurements fixed in advance: environments, workloads, thread counts and repetitions, written as a JSON spec. This guide shows you how to run one, watch it, resume it after a stop, and read the data check that decides whether it can be analysed. Stopping and restarting never changes the list of runs; it continues it.</p>
 
     <h2 id="what">What a campaign is</h2>
-    <p>A <b>run</b> is one program start that measures one configuration (one runtime, one workload, one
-      thread count) ten times and writes a CSV. A <b>campaign</b> is a list of runs decided before any of them
-      starts: every configuration the question needs, thirty times each, in a shuffled order. The list is
-      written as a small JSON file, the <b>spec</b>, and the harness runs exactly that list.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why shuffle, and why record the seed?</b> A machine drifts over thirteen hours: it
-      warms, a background job wakes, a cache fills. If every native run came first and every Firefox run
-      last, the drift would look like a difference between native and Firefox. Shuffled, the drift falls on
-      all three alike and becomes noise instead of a bias (<a href="measuring.html#fair">A fair
-      comparison</a>). The seed is recorded so the same shuffle can be rebuilt and a stopped campaign
-      continues the same list (<a href="#resume">Sessions and resume</a>).</p></aside>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why thirty runs, and why a fresh process each time?</b> One run can be unlucky; thirty
-      give a spread you can see and an interval you can report. A fresh process each time makes the thirty
-      independent: nothing one run warmed up or cached helps the next (<a href="protocol.html#unit">The run
-      is the unit</a>, <a href="protocol.html#thirty">30 runs, 10 iterations</a>).</p></aside>
+    <p>A <b>run</b> is one program start that measures one configuration (one environment, one workload, one thread count) ten times and writes a CSV. A <b>campaign</b> is a list of runs fixed before any of them starts: every configuration the question needs, thirty times each, in a shuffled order. You write the list as a small JSON file, the <b>spec</b>, and the harness runs exactly that list.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why shuffle, and why record the seed?</b> A machine drifts over fourteen hours: it warms, a background job wakes, a cache fills. If every native run came first and every Firefox run last, the drift would look like a difference between native and Firefox. Shuffled, the drift falls on all three alike and becomes noise, not a bias (<a href="measuring.html#fair">A fair comparison</a>). The seed is recorded so that the same shuffle can be rebuilt and a stopped campaign continues the same list (<a href="#resume">Sessions, status and resume</a>).</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why thirty runs, and why a fresh process each time?</b> One run can be unlucky; thirty give a spread you can see and an interval you can report. A fresh process each time makes the thirty independent: nothing that one run warmed or cached helps the next (<a href="protocol.html#unit">The run is the unit</a>, <a href="protocol.html#thirty">30 runs, 10 iterations</a>).</p></aside>
 
     <h2 id="spec">A campaign spec</h2>
     <p>This is the spec of the main campaign on the final build, as it is in the repository:</p>
     <div data-code="harness/campaigns/campaign-v3.json|^{|86" data-title="The main campaign of measured/v3"></div>
-    <p>The keys you will change are <code>name</code>, <code>orderSeed</code>, <code>environments</code>,
-      <code>workloads</code>, <code>threads</code> and <code>repetitions</code>. The rest is the protocol and
-      stays as it is unless an ADR changes it.</p>
+    <p>The keys you change are <code>name</code>, <code>orderSeed</code>, <code>environments</code>, <code>workloads</code>, <code>threads</code> and <code>repetitions</code>. The rest is the protocol, and stays as it is unless an ADR changes it.</p>
 <p><a href="spec.html">Campaign spec format</a> lists every key with its type, its default and what it does.</p>
-    <p>From this spec the harness plans 3 environments × 9 workloads × 6 thread counts × 30 repetitions = 4860 runs, plus the 5 sequential references at one thread (3 × 5 × 30 = 450): <b>5310 runs</b>, plus the discarded first launches. A run id names one of them: <code>campaign-v3-2666-chrome-filter-noise-n8-r27</code> is at position 2666 of the order, Chrome, the
-      filter on noise, N = 8, repetition 27.</p>
+    <p>From this spec the harness plans 3 environments × 9 workloads × 6 thread counts × 30 repetitions = 4860 runs, and the 5 sequential references at one thread (3 × 5 × 30 = 450): <b>5310 runs</b>, plus the discarded first launches. A run id names one of them: <code>campaign-v3-2666-chrome-filter-noise-n8-r27</code> is position 2666 of the order, Chrome, the filter on noise, N = 8, repetition 27.</p>
     <div data-code="harness/campaign/plan.py|def discarded_runs|8" data-title="The discarded first launches"></div>
     <p class="src" data-files="harness/campaigns/campaign-v3.json, harness/campaign/spec.py, harness/campaign/plan.py, harness/campaign/README.md"></p>
 
     <h2 id="resume">Sessions, status and resume</h2>
-    <p>A campaign of thousands of runs takes hours (the main one about 13), so it must survive a stop:
-      a crash, a reboot, a Ctrl-C. The harness never keeps state in memory that it cannot rebuild from the
-      results folder.</p>
+    <p>A campaign of thousands of runs takes hours (the main one about 14), so it must survive a stop: a crash, a reboot, a Ctrl-C. The harness keeps no state in memory that it cannot rebuild from the results folder.</p>
     <ol>
-      <li><b>Plan.</b> The spec and its seed give the same shuffled list of runs every time. Native,
-        Chrome and Firefox are interleaved, so a slow drift of the machine falls on all three alike.</li>
-      <li><b>Session.</b> The first start writes <code>campaign.json</code>: the spec, the build identity
-        (commit, the SHA-256 of the native binary and of the WASM module, the browser versions) and the
-        plan. A later start is a new session: it checks that the spec and the build are the same and refuses
-        otherwise, so one campaign never mixes builds.</li>
-      <li><b>Skip what is done.</b> For each planned run, in order, the harness looks for its files. A run
-        with a result is skipped; a run with an <code>.error.json</code> counts as failed and is run again
-        only with <code>--retry-failed</code> (the old files move to <code>failed/</code>).</li>
+      <li><b>Plan.</b> The spec and its seed give the same shuffled list of runs every time, with native, Chrome and Firefox interleaved.</li>
+      <li><b>Session.</b> The first start writes <code>campaign.json</code>: the spec, the identity of the build (commit, the SHA-256 of the native binary and of the WASM module, the browser versions) and the plan. A later start is a new session: it checks that the spec and the build are the same and refuses if they are not, so a campaign never mixes builds.</li>
+      <li><b>Skip what is done.</b> For each planned run, in order, the harness looks for its files. It skips a run with a result. A run with an <code>.error.json</code> counts as failed, and runs again only with <code>--retry-failed</code> (the old files move to <code>failed/</code>).</li>
       <li><b>Log.</b> Every run appends one line to <code>campaign.jsonl</code>: its id, configuration,
         status, duration and problems.</li>
     </ol>
     <div data-code="harness/campaign/journal.py|def resumed|9" data-title="A new session refuses another spec or another build"></div>
     <div data-code="harness/campaign/runner.py|class Campaign|63" data-title="The session, from the check to the log"></div>
-    <p><code>make status SPEC=...</code> reads only <code>campaign.json</code> and
-      <code>campaign.jsonl</code>, never the machine, so it is safe in a second terminal during a
-      measurement. Its ETA is the mean duration of the logged runs times the runs left.</p>
+    <p><code>make status SPEC=...</code> reads only <code>campaign.json</code> and <code>campaign.jsonl</code>, never the machine, so you can run it in a second terminal during a measurement. Its ETA is the mean duration of the logged runs times the runs left.</p>
     <p>One journal line, for a discarded first launch:</p>
     <pre class="out">{"position": -1, "runId": "campaign-v3-discard1-chrome-filter-noise-n1-r0", "environment": "chrome",
  "workload": "filter", "input": "noise", "k": null, "warmup": 15, "threads": 1, "repetition": 0,
@@ -95,13 +71,8 @@
     <p class="src" data-files="harness/campaign/runner.py, harness/campaign/journal.py, harness/campaign/status/README.md, data/raw/campaign-v3/campaign.jsonl"></p>
 
     <h2 id="quality">The data check</h2>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why check the data before looking at it?</b> Because a person who has seen the
-      result will find reasons to drop the runs that disagree with it. The check runs the same rules on every
-      campaign, written before the first one (ADR 0051), and reports; it never decides what the answer is.
-      A campaign it blocks is re-run or excluded with an ADR, not patched.</p></aside>
-    <p>When a campaign ends, and before any statistic is looked at, <code>python3 -m analysis.datacheck</code>
-      writes a short quality report (ADR 0051). It removes nothing: the analysis plan fixed in advance
-      which runs are excluded (D7), and the check only says whether the data can be analysed.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why check the data before looking at it?</b> A person who has seen the result finds reasons to drop the runs that disagree with it. The check applies the same rules to every campaign, written before the first one (ADR 0051), and reports; it never decides what the answer is. A campaign that it blocks is run again or excluded with an ADR, not patched.</p></aside>
+    <p>When a campaign ends, and before you look at any statistic, <code>python3 -m analysis.datacheck</code> writes a short quality report. It removes nothing: the analysis plan fixed in advance which runs are excluded (D7), and the check only says whether the data can be analysed.</p>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Line of the report</th><th>What it catches</th><th>What happens</th></tr></thead>
       <tbody>
@@ -125,13 +96,11 @@
   - firefox hist-local k1 N=7: rho = +0.54 over 30 runs
 - Configurations mixing width, height, pitch, palette, passes: 0
 - Blocking the analysis (checksum conflicts, missing or failed runs, mixed settings): no</pre>
-    <p>One trending configuration out of 177 (162 parallel cells and 15 sequential ones): about one would be expected with no trend at all, and it is not a primary cell. Every reported campaign has its report next to its tables, as
-      <code>data/tables/&lt;campaign&gt;/&lt;campaign&gt;-quality.md</code>.</p>
+    <p>One configuration of 177 shows a trend (162 parallel configurations and 15 sequential ones). About one is expected with no trend at all, and it is not a configuration of a primary comparison. Every reported campaign has its report next to its tables, as <code>data/tables/&lt;campaign&gt;/&lt;campaign&gt;-quality.md</code>.</p>
     <p class="src" data-files="data/tables/campaign-v3/campaign-v3-quality.md, analysis/datacheck.py, analysis/quality/report.py, docs/adr/0051-foreign-cpu-threshold-and-data-check.md"></p>
 
     <h2 id="list">Every campaign of the study</h2>
-    <p>Every result in the paper and in this documentation comes from a campaign on the build tagged
-      <code>measured/v3</code> (commit <code>ac65af6a</code>; every campaign records the digests of the binaries it ran). The campaigns of the earlier build, <code>measured/v2</code>, are at the tag <code>data/v2</code>, valid for their own build, but builds are never mixed in one comparison (ADR 0062, 0095). Pilots only sized the design; their runs and specs are in <code>data/earlier/pilot/</code>.</p>
+    <p>Every result in the paper and in this documentation comes from a campaign on the build tagged <code>measured/v3</code> (commit <code>ac65af6a</code>; every campaign records the digests of the binaries it ran). The campaigns of the earlier build, <code>measured/v2</code>, are at the tag <code>data/v2</code>. They are valid for their own build, and builds are never mixed in one comparison (ADR 0062, 0095). Pilots only sized the design; their runs and specs are in <code>data/earlier/pilot/</code>.</p>
     <details class="deeper"><summary>In depth: every spec, its runs, its status and its ADR</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Spec</th><th>What it measures</th><th>Runs</th><th>Status</th><th>ADR</th></tr></thead>
@@ -164,7 +133,7 @@
     </table></div>
 </details>
     <div class="stats" id="totals"></div>
-    <aside class="callout note"><p class="callout-title">Note</p><p><b>No run left out.</b> No campaign of <code>measured/v3</code> has a failed, missing or excluded run, so no <code>excluded/</code> folder exists. On the earlier build the pinned Firefox once updated itself in the middle of the exploratory campaigns; since then a strict campaign refuses to start with an unpinned browser (ADR 0071). See <a href="environments.html#update">A pinned Firefox updates itself</a>.</p></aside>
+    <aside class="callout note"><p class="callout-title">Note</p><p><b>No run left out.</b> No campaign of <code>measured/v3</code> has a failed, missing or excluded run, so there is no <code>excluded/</code> folder. On the earlier build the pinned Firefox once updated itself during the exploratory campaigns; since then a strict campaign refuses to start with a browser that is not the pinned version (ADR 0071, <a href="environments.html#update">A pinned Firefox that updated itself</a>).</p></aside>
     <p class="src" data-files="harness/campaigns/README.md, data/README.md, docs/adr/0084-v3-design.md, docs/adr/0095-v3-is-the-reported-build.md, docs/adr/0071-firefox-pin-guard.md"></p>
 
     <footer class="pager" id="pager"></footer>

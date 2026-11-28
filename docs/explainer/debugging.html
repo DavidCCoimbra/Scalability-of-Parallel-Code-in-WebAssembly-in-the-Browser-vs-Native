@@ -42,26 +42,17 @@
 
     <h2 id="status">Start from make status</h2>
     <pre class="cmd">make status SPEC=harness/campaigns/&lt;name&gt;.json</pre>
-    <p>It reads only the campaign's two journal files, never the machine, so it is safe while a campaign runs.
-      The lines to look at:</p>
+    <p><code>make status</code> reads only the two journal files of the campaign, never the machine, so you can run it while a campaign runs. Read these lines:</p>
     <ul>
-      <li><b>progress</b>: done, failed and remaining, then the same per environment. One environment failing
-        more than the others points at that environment (a browser not pinned, a profile problem), not at the
-        machine.</li>
-      <li><b>problems</b>: what the strict checks found in the runs so far (an escaped process, foreign CPU
-        time, a context key that could not be read). <code>none</code> is the normal line.</li>
-      <li><b>sessions</b>: how many times the campaign was started. More than one is fine; it means it was
-        stopped and resumed.</li>
-      <li><b>last run</b>: its id and age. A last run that is minutes old with <code>remaining &gt; 0</code>
-        and no progress is a hung run; the orchestrator kills it at <code>timeoutSeconds</code>.</li>
+      <li><b>progress</b>: done, failed and remaining, then the same per environment. If one environment fails more than the others, the cause is in that environment (a browser that is not the pinned version, a profile problem), not in the machine.</li>
+      <li><b>problems</b>: what the strict checks found in the runs so far (an escaped process, foreign CPU time, a context key that could not be read). <code>none</code> is the normal line.</li>
+      <li><b>sessions</b>: how many times the campaign was started. More than one is normal: the campaign was stopped and resumed.</li>
+      <li><b>last run</b>: its id and age. A last run that is minutes old, with <code>remaining &gt; 0</code> and no progress, is a hung run; the orchestrator kills it at <code>timeoutSeconds</code>.</li>
     </ul>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the harness not stop at the first failure?</b> Because one failed browser run
-      in 5310 is not unusual and a stopped campaign at 3 in the morning wastes the night. The failure is recorded,
-      the campaign goes on, and the data check refuses to analyse a campaign with a failed run until it is
-      re-run or excluded with a reason (<a href="campaigns.html#quality">The data check</a>).</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the harness not stop at the first failure?</b> One failed browser run in 5310 is not unusual, and a campaign that stops at 3 in the morning wastes the night. The harness records the failure and goes on. The data check then refuses to analyse a campaign with a failed run until the run is repeated or excluded with a reason (<a href="campaigns.html#quality">The data check</a>).</p></aside>
 
     <h2 id="records">The run's records</h2>
-    <p>Everything a run left is in <code>data/raw/&lt;name&gt;/</code>, named by its id:</p>
+    <p>Everything that a run leaves is in <code>data/raw/&lt;name&gt;/</code>, named by its id:</p>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>File</th><th>When it exists</th><th>What to read in it</th></tr></thead>
       <tbody>
@@ -76,8 +67,7 @@
     <div data-code="harness/campaign/runner.py|def keep_failure|9" data-title="A retry keeps the earlier attempt"></div>
 
     <h2 id="rerun">Re-run one id by hand</h2>
-    <p>The <code>launchFlags</code> key of any run's JSON is the exact command the orchestrator used. To
-      replay one run outside a campaign, with its output on your screen:</p>
+    <p>The <code>launchFlags</code> key of the JSON of a run is the exact command the orchestrator used. To replay one run outside a campaign, with its output in your terminal:</p>
     <pre class="cmd"># a native run, no scope and no mask (fine on the Mac)
 python3 -m harness.native --run debug-filter-n8 --results data/raw/debug \
   --query "workload=filter&amp;input=noise&amp;threads=8&amp;width=4096&amp;height=4096&amp;warmup=5&amp;iters=10&amp;calibration=20"
@@ -87,14 +77,11 @@ python3 -m harness.launcher --browser chrome \
   --executable harness/browsers/chrome-155.0.8059.84/chrome-linux64/chrome \
   --run debug-chrome-filter-n8 --results data/raw/debug --headless \
   --query "workload=filter&amp;input=noise&amp;threads=8&amp;width=4096&amp;height=4096&amp;warmup=5&amp;iters=10&amp;calibration=20"</pre>
-    <p>Drop <code>--headless</code> to see the browser window and its console. Add <code>--cpus 0,2,4,6,8,10,12,14</code>
-      and <code>--scope-user $USER</code> on the PC to reproduce the campaign's conditions exactly.</p>
-    <p>To run the failed runs of a campaign again, in their place in the order:</p>
+    <p>Drop <code>--headless</code> to see the browser window and its console. On the PC, add <code>--cpus 0,2,4,6,8,10,12,14</code> and <code>--scope-user $USER</code> to reproduce the conditions of the campaign.</p>
+    <p>To run the failed runs of a campaign again, at their position in the order:</p>
     <pre class="cmd">make campaign SPEC=harness/campaigns/&lt;name&gt;.json   # resumes; skips what is done, skips failed
 python3 -m harness.campaign harness/campaigns/&lt;name&gt;.json --retry-failed   # runs the failed ones again</pre>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does a plain resume skip failed runs?</b> So that a failure you have not looked
-      at is not silently repeated and overwritten. You decide, after reading the error, whether to retry;
-      <code>--retry-failed</code> moves the old files to <code>failed/</code> and keeps the attempt count.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does a plain resume skip failed runs?</b> So that a failure you have not read is not repeated and overwritten without notice. You decide, after reading the error, whether to retry. <code>--retry-failed</code> moves the old files to <code>failed/</code> and keeps the attempt count.</p></aside>
 
     <h2 id="common">The common failures</h2>
     <div class="scroll-x"><table class="t">
@@ -109,10 +96,8 @@ python3 -m harness.campaign harness/campaigns/&lt;name&gt;.json --retry-failed  
         <tr><td><code>make lint</code> fails on the Mac in clippy or mypy only</td><td>Two Linux-only checks (<code>sched_setaffinity</code>, a resident-set test)</td><td>Expected; CI runs them on Linux. The other lint steps must pass</td></tr>
       </tbody>
     </table></div>
-    <p>A longer list, by symptom, is on <a href="code.html#symptoms">Something broke: where to look</a>.</p>
-    <p class="takeaway"><strong>In summary.</strong> status, then the journal, then the error file, then replay
-      the one run by hand with its own <code>launchFlags</code>. Retry only after reading why. The data check,
-      not status, is what says the campaign can be analysed.</p>
+    <p><a href="code.html#symptoms">Something broke: where to look</a> has a longer list, by symptom.</p>
+    <p class="takeaway"><strong>In summary.</strong> Read the status, then the journal, then the error file, then replay the one run by hand with its own <code>launchFlags</code>. Retry only after you know why it failed. The data check, not the status, says whether the campaign can be analysed.</p>
     <p class="src" data-files="harness/campaign/status/README.md, harness/campaign/runner.py, harness/native/cli.py, harness/launcher/cli.py, docs/adr/0051-foreign-cpu-threshold-and-data-check.md"></p>
 
     <footer class="pager" id="pager"></footer>

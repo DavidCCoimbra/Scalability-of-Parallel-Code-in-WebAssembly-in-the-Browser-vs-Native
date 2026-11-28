@@ -38,57 +38,43 @@
     <p class="lead">No number of the paper is typed from memory. Each one is in a table that a command wrote from the raw runs, and each command is a make target. This guide shows you the chain from <code>data/raw/*-v3</code> to <code>data/tables/*-v3</code> and <code>paper/figures/</code>, how to run it and check it, and a table that recomputes the main numbers from the committed data every time you open the page.</p>
 
     <h2 id="chain">The chain</h2>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why must every number be reproducible from a command?</b> Because a number typed
-      from a terminal is a number nobody can check: not a reviewer, not the author in a month. With the chain
-      below, "where does 0.42 come from?" has one answer, a file and the command that wrote it, and
-      <a href="#numbers">the table at the end of this page</a> recomputes the main numbers from those files every time it is opened.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why must every number be reproducible from a command?</b> Nobody can check a number that was typed from a terminal: not a reviewer, and not the author a month later. With the chain below, "where does 0.42 come from?" has one answer: a file and the command that wrote it. <a href="#numbers">The table at the end of this page</a> recomputes the main numbers from those files every time you open it.</p></aside>
     <div class="card">
       <div id="chain-svg" class="diagram"></div>
-      <div id="chain-panel" class="panel" aria-live="polite"><p class="muted">Pick a box above.</p></div>
+      <div id="chain-panel" class="panel" aria-live="polite"><p class="muted">Select a box above.</p></div>
     </div>
-    <p>The steps, for the main campaign, are exactly the lines of <code>make results</code>:</p>
+    <p>For the main campaign, the steps are the lines of <code>make results</code>:</p>
     <div data-code="make/results.mk|results: ## Every table|11" data-title="make results"></div>
     <ol>
       <li><b>Check.</b> <code>analysis.datacheck</code> writes the quality report and stops the chain if
         a run is missing, failed or disagrees on its checksum (<a href="campaigns.html#quality">The data
         check</a>).</li>
-      <li><b>Join.</b> <code>harness.collect</code> joins every run into one table, a convenience for
-        exploring; the statistics read the raw folder themselves.</li>
+      <li><b>Join.</b> <code>harness.collect</code> joins every run into one table, for exploring; the statistics read the raw folder themselves.</li>
       <li><b>Scale.</b> <code>analysis.v0</code>: one value per run (the median of its 10 measured
         iterations), the geometric mean over the 30 runs, speedup and efficiency with bootstrap
         intervals.</li>
-      <li><b>Infer.</b> <code>analysis.results</code>: the contrasts of the analysis plan, with
-        <code>--strict</code> and the 0.25 s foreign CPU threshold applying the plan's exclusions, and Holm
-        over the 10 primary contrasts.</li>
+      <li><b>Infer.</b> <code>analysis.results</code>: the contrasts of the analysis plan, with <code>--strict</code> and the 0.25 s foreign CPU threshold for the exclusions of the plan, and Holm over the 10 primary contrasts.</li>
       <li><b>Cross-check.</b> <code>analysis.robustness</code> (Mann-Whitney and Cliff's δ) and
         <code>analysis.karp_flatt</code>.</li>
       <li><b>Draw.</b> <code>analysis.figures</code> and <code>analysis.distributions</code> into
         <code>paper/figures/</code>.</li>
-      <li><b>Write.</b> <code>paper/final/paper.tex</code> includes the figures and quotes the tables.</li> <li><b>Guard.</b> <code>make tables-check</code> does all of the above again and fails if any table differs from the committed one; CI runs it on another machine whenever the analysis, the harness or the data change.</li>
+      <li><b>Write.</b> <code>paper/final/paper.tex</code> includes the figures and quotes the tables.</li> <li><b>Guard.</b> <code>make tables-check</code> does all of the above again and fails if a table differs from the committed one. CI runs it on another machine whenever the analysis, the harness or the data change.</li>
     </ol>
-    <p>The other campaigns follow the same pattern in <code>extras-results</code> (extras, weak, SIMD, hybrid), <code>cutoff-results</code>, <code>grain-results</code>, <code>perf-results</code> and <code>v3-results</code> (the sequential references, the engine arms, the grain by threads and the counters of the loop). The whole
-      thing, from a clean checkout with the raw data:</p>
+    <p>The other campaigns follow the same pattern in <code>extras-results</code> (extras, weak, SIMD, hybrid), <code>cutoff-results</code>, <code>grain-results</code>, <code>perf-results</code> and <code>v3-results</code> (the sequential references, the engine arms, the grain by threads and the counters of the loop). To run all of it from a clean checkout with the raw data:</p>
     <pre class="code" style="padding:10px 12px;overflow-x:auto">git checkout main
 make all-results           # every table and figure of every campaign
 make tables-check          # the same, then fail if a committed table differs
 make explainer             # this documentation's data.js</pre>
-    <p class="def"><b>Why the tables carry a sidecar.</b> Each <code>-scaling.json</code> and
-      <code>-contrasts.json</code> records the settings (summary, centre, bootstrap seed and resamples)
-      and the commit that wrote it, in a fixed key order. Regenerating a table on the same data changes
-      only the commit and the time stamp, so a diff shows at once whether a number moved.</p>
+    <p class="def"><b>Why do the tables have a sidecar?</b> Each <code>-scaling.json</code> and <code>-contrasts.json</code> records the settings (summary, centre, bootstrap seed and resamples) and the commit that wrote it, in a fixed key order. Regenerating a table from the same data changes only the commit and the time stamp, so a diff shows at once whether a number moved.</p>
     <p class="src" data-files="make/results.mk, analysis/README.md"></p>
 
     <h2 id="numbers">Every paper number, its file</h2>
-    <p>The main numbers of the study, as the paper and this documentation state them, next to what the table gives when this documentation reads it. The "Table gives" column is computed in your browser from <code>assets/data.js</code>, which is itself generated from the tables, so a mismatch here means the text and the data disagree.</p>
+    <p>These are the main numbers of the study as the paper and this documentation state them, next to the value of the table. The "Table gives" column is computed in your browser from <code>assets/data.js</code>, which is generated from the tables, so a mismatch here means that the text and the data disagree.</p>
     <div id="number-check"></div>
-    <p>Numbers not in the table above are in the same files. The paper's run counts come from the specs
-      (<a href="campaigns.html#list">Every campaign</a>), the machine description from
-      <code>data/raw/campaign-v3/sysinfo/</code>, the machine code of the atomic add from <code>data/probes/engine-code/</code>, the probe times from <code>data/probes/atomic-increment/</code>, and the pilot numbers that justify a design
-      decision from the pilot campaigns and their ADRs.</p>
+    <p>Numbers that are not in the table above are in the same files. The run counts of the paper come from the specs (<a href="campaigns.html#list">Every campaign of the study</a>), the description of the machine from <code>data/raw/campaign-v3/sysinfo/</code>, the machine code of the atomic add from <code>data/probes/engine-code/</code>, the probe times from <code>data/probes/atomic-increment/</code>, and the pilot numbers that justify a design decision from the pilot campaigns and their ADRs.</p>
 
     <h2 id="explainer">The numbers of this documentation</h2>
-    <p>The pages of this documentation contain no measured number in their text. They draw tables and charts
-      from <code>assets/data.js</code>, which one script writes:</p>
+    <p>Every table and chart of this documentation is drawn from <code>assets/data.js</code>, which one script writes. Where a sentence quotes a number, it is a copy: the table or chart next to it has the value from the file, and the table above recomputes the main ones.</p>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Part of data.js</th><th>Read from</th></tr></thead>
       <tbody>
@@ -101,9 +87,7 @@ make explainer             # this documentation's data.js</pre>
     <div data-code="scripts/explainer_data.py|def render|12" data-title="What goes into data.js"></div>
     <pre class="code" style="padding:10px 12px;overflow-x:auto">make explainer                                 # python3 -m scripts.explainer_data
 python3 -m scripts.explainer_data --check      # exit 1 if data.js is out of date</pre>
-    <p>An excerpt is found by the text of its first line, not by its line number, so it follows the
-      code when lines move; if that text disappears, the script stops instead of showing the wrong lines.
-      Run it again after any change to the tables or to the code a page shows.</p>
+    <p>An excerpt is found by the text of its first line, not by its line number, so it follows the code when lines move. If that text is gone, the script stops and does not show the wrong lines. Run it again after any change to the tables or to code that a page shows.</p>
     <p class="src" data-files="scripts/explainer_data.py, docs/explainer/README.md"></p>
 
     <footer class="pager" id="pager"></footer>
