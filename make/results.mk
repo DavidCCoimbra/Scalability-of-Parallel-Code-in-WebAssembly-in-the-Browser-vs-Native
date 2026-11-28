@@ -17,7 +17,7 @@ results: ## Every table and figure of the main campaign (MEASURED=v3 by default)
 	python3 -m analysis.calibration data/raw/campaign-$(MEASURED) --strict --foreign-cpu-threshold 0.25 --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-fork-join.csv
 	python3 -m analysis.throughput data/raw/campaign-$(MEASURED) --strict --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-throughput.csv
 	python3 -m analysis.karp_flatt data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-scaling.csv --output data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-karp-flatt.csv
-	uv run --no-project --with matplotlib python -m analysis.figures data/raw/campaign-$(MEASURED) --strict --output paper/figures --prefix campaign
+	uv run --no-project --with matplotlib python -m analysis.figures data/raw/campaign-$(MEASURED) --strict --output paper/figures --prefix campaign --paper
 	uv run --no-project --with matplotlib python -m analysis.distributions data/raw/campaign-$(MEASURED) --strict --figure paper/figures/campaign-distributions.pdf --table data/tables/campaign-$(MEASURED)/campaign-$(MEASURED)-distributions.csv
 
 # The sensitivity checks of the analysis plan (ADR 0037): per-run mean, median centre, and

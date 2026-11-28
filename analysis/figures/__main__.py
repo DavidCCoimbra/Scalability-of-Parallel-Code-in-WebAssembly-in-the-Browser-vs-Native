@@ -2,21 +2,31 @@
 
 Usage: uv run --no-project --with matplotlib python -m analysis.figures
        data/raw/<campaign>... --output paper/figures [--prefix campaign]
-       [--foreign-cpu-threshold SECONDS | --no-foreign-cpu-threshold] [--strict]
+       [--foreign-cpu-threshold SECONDS | --no-foreign-cpu-threshold] [--strict] [--paper]
 Writes <prefix>-speedup.pdf, <prefix>-efficiency.pdf, <prefix>-absolute.pdf,
-<prefix>-rq2.pdf (every k) and <prefix>-rq2-ends.pdf (k = 1 and 256, the paper's figure). Run values are per-run medians; centres are geometric
-means; intervals are 95 % percentile bootstraps over runs.
+<prefix>-rq2.pdf (every k) and <prefix>-rq2-ends.pdf (k = 1 and 256). With --paper it also
+writes the two figures of the paper, drawn at their printed size: <prefix>-efficiency-paper.pdf
+(efficiency against N for the filter and the local histogram) and <prefix>-rq2-effect.pdf
+(the RQ2 effect against N). Run values are per-run medians; centres are geometric means;
+intervals are 95 % percentile bootstraps over runs.
 """
 
 import argparse
 import sys
 from pathlib import Path
 
-from analysis.figures.campaign import absolute_figure, efficiency_figure, rq2_figure, speedup_figure
-from analysis.figures.points import absolute_ratios, rq2_ratios, scaling_curves
+from analysis.figures.campaign import (
+    absolute_figure,
+    efficiency_figure,
+    paper_efficiency_figure,
+    rq2_effect_figure,
+    rq2_figure,
+    speedup_figure,
+)
+from analysis.figures.points import absolute_ratios, rq2_effects, rq2_ratios, scaling_curves
 from analysis.loading import InvalidCampaign, add_exclusion_arguments, exclusion_rule, load_campaign
 
-# The paper's RQ2 figure shows the two ends of the contention sweep; the middle k are in its table.
+# The two ends of the contention sweep, whose shapes differ.
 PAPER_RQ2_KS = (1, 256)
 
 
@@ -26,6 +36,7 @@ def parser() -> argparse.ArgumentParser:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--prefix", default="campaign")
     parser.add_argument("--diagonal", default="ideal")
+    parser.add_argument("--paper", action="store_true", help="also write the two figures of the paper")
     add_exclusion_arguments(parser)
     return parser
 
@@ -45,6 +56,9 @@ def main(argv: list[str]) -> int:
     ratios = rq2_ratios(runs)
     rq2_figure(ratios, args.output / f"{args.prefix}-rq2.pdf")
     rq2_figure(ratios, args.output / f"{args.prefix}-rq2-ends.pdf", PAPER_RQ2_KS)
+    if args.paper:
+        paper_efficiency_figure(curves, args.output / f"{args.prefix}-efficiency-paper.pdf")
+        rq2_effect_figure(rq2_effects(runs), args.output / f"{args.prefix}-rq2-effect.pdf")
     return 0
 
 

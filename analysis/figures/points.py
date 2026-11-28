@@ -2,8 +2,12 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from analysis.configuration import Configuration, Environment, Workload
+from analysis.inference.cells import log_groups, rq2_cells
+from analysis.inference.estimation import estimate
+from analysis.inference.interaction import log_center
 from analysis.runs import RunSummary, values_by_configuration
 from analysis.scaling.table import scaling_table
+from analysis.stats.bootstrap import BOOTSTRAP_RESAMPLES, BOOTSTRAP_SEED
 from analysis.stats.ratio import ratio_of_geometric_means
 from analysis.stats.summary import CONFIGURATION_CENTER
 
@@ -30,6 +34,7 @@ class RatioPoint:
 ScalingCurves = dict[WorkloadKey, dict[str, list[ScalingPoint]]]
 RatioCurves = dict[WorkloadKey, dict[str, list[RatioPoint]]]
 Rq2Curves = dict[int | None, dict[str, list[RatioPoint]]]
+Rq2EffectCurves = dict[str, dict[int | None, list[RatioPoint]]]
 
 
 def scaling_curves(runs: list[RunSummary]) -> ScalingCurves:
@@ -72,3 +77,16 @@ def rq2_ratios(runs: list[RunSummary]) -> Rq2Curves:
         point = ratio_point(groups[local], groups[configuration], configuration.threads)
         ratios[configuration.k][configuration.environment].append(point)
     return ratios
+
+
+# exp(Δr) at every N: T(atomic) / T(local) in a browser over the same ratio natively, with the
+# estimator and the 95 % interval of the contrasts table. At N = 1 no thread contends, so the
+# value there is the cost of the code alone, and what changes with N is what the threads add.
+def rq2_effects(runs: list[RunSummary]) -> Rq2EffectCurves:
+    center = log_center(CONFIGURATION_CENTER)
+    effects: Rq2EffectCurves = defaultdict(lambda: defaultdict(list))
+    for cells in rq2_cells(log_groups(runs)):
+        contrast = estimate(cells, center, BOOTSTRAP_RESAMPLES, BOOTSTRAP_SEED, primary=False)
+        point = RatioPoint(contrast.threads, contrast.effect, contrast.interval.low, contrast.interval.high)
+        effects[contrast.environment][contrast.k].append(point)
+    return effects
