@@ -123,7 +123,7 @@
       add one, write it back. If two threads do those three steps at the same moment on the same counter, both read
       the same old value and one count is lost; the histogram would be wrong. An atomic add does the three steps as
       one indivisible step. What that costs, and why it costs more in Chrome, is
-      <a href="atomics.html">Atomics in machine code</a>.</p></aside>
+      <a href="atomics.html">Atomic operations</a>.</p></aside>
     <p>Both versions give exactly the same 256 counts, and a test checks it. They differ only in where the counting
       happens. The 256 shared counters are kept apart in memory so that two of them never sit on the same
       <span data-term="cache-line">cache line</span>; why that matters is <a href="memory.html#falsesharing">padding</a>.</p>

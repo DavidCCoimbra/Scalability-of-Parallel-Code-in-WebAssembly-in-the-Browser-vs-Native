@@ -120,7 +120,7 @@
         <tr><td><code>make quiet</code>, <code>make quiet-off</code></td><td>Hidden: close desktop apps, stop the indexer, updates and docker, and start them again. <code>make campaign</code> does this by itself (ADR 0070)</td></tr>
       </tbody>
     </table></div>
-    <p>See <a href="machine.html">The machine and its controls</a> for why each setting exists.</p>
+    <p>See <a href="machine.html">The machine and environment control</a> for why each setting exists.</p>
 
     <h3>Measure (<code>make/campaign.mk</code>)</h3>
     <div class="scroll-x"><table class="t">
@@ -213,8 +213,7 @@ last run  perf-v3-0359-chrome-hist-atomic-k256-n8-r29 (done), 2s ago</pre>
     <h2 id="analysis">Analysis commands</h2>
     <p>Every analysis command reads a raw campaign folder (or a table made from one) and writes a table,
       a figure or a report. The statistics are fixed by the analysis plan
-      (<code>docs/adr/0037-analysis-plan.md</code>, ADRs 0037 to 0039); <a href="reading.html#speedup">The
-      statistics</a> explains each one.</p>
+      (<code>docs/adr/0037-analysis-plan.md</code>, ADRs 0037 to 0039); <a href="reading.html#speedup">Analysis plan and statistics</a> explains each one.</p>
     <details class="deeper"><summary>In depth: every analysis command and what it writes</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Command</th><th>What it computes</th><th>Writes</th></tr></thead>

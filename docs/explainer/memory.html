@@ -121,7 +121,7 @@
       have taken 1 step now takes 100, because the line was last written by someone else. This single fact
       explains why the study's shared-counter histogram gets <i>slower</i> with more threads
       (<a href="rq2.html">RQ2</a>), and why the project counts exactly how many of these trips each add costs
-      (<a href="rq2.html#readfirst">Why Chrome</a>).</p>
+      (<a href="rq2.html#readfirst">RQ2: synchronization</a>).</p>
     <p>An atomic add (<a href="atomics.html#what">what that is</a>) reads the counter, adds one and writes it back as
       one indivisible step, so it always needs the counter's line for writing. If another core wrote that line last,
       the line must first travel over. On an 8-core chip that trip is of the order of a hundred clock ticks, a
@@ -154,7 +154,7 @@
     <p>At <i>k</i> = 1 every add moves the one hot line, and 8 threads take more than twice as long as one, in all three environments. At <i>k</i> = 256 two cores rarely want the same line at the same moment, but with 8 threads
       most adds still find their line last written by another core, so natively and in Firefox the speedup stays
       near 1: no gain from 8 threads, but no loss either. Chrome is the exception, and that is the subject of
-      <a href="rq2.html#code">Why Chrome</a>.</p>
+      <a href="rq2.html#code">RQ2: synchronization</a>.</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is this not a flaw of the histogram, to be fixed?</b> It is the thing being measured.
       Sharing one counter across threads is the simplest possible synchronization, and its cost is pure cache-line
       traffic. RQ2 asks whether that cost is the same in the browser as natively. A histogram that avoided the

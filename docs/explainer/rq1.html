@@ -45,7 +45,7 @@
   <article class="page">
     <h1>RQ1: scaling</h1>
     <p class="lead">RQ1 asks whether the same parallel code gains from threads in the browser as it does natively. The filter and the local histogram answer it: their threads never wait for each other. With enough work per parallel region they scale in the browsers as they do natively, and the browser is slower by a factor that does not grow with the thread count.</p>
-    <p>If you have not yet read <a href="ratios.html">Ratios, speedup and the log scale</a>, read it first: this
+    <p>If you have not yet read <a href="ratios.html">Ratios, speedup and intervals</a>, read it first: this
       page is written in those terms.</p>
 
     <h2 id="curves">Speedup curves</h2>
@@ -136,7 +136,7 @@
     <p>At N = 8 one empty fork-join costs about 110 µs in Chrome and 60 µs in Firefox against 7.9 µs natively: eight to fourteen times more. That sounds bad, until you compare it with the work: one filter pass over the 8192 x 8192 image
       takes several milliseconds, so the fork-join is about 3% of it in Chrome and 0.2% natively. With big pieces
       of work it is noise; with pieces of a few hundred microseconds it is the main cost.
-      <a href="extras.html#cutoff">When parallelism pays</a> measures exactly where that line is.</p>
+      <a href="extras.html#cutoff">Exploratory campaigns</a> measures exactly where that line is.</p>
     <details class="deeper"><summary>In depth: the step at N = 8 and the clock ticks</summary>
       <p>All three runtimes step up at N = 8, likely because the coordinating thread then shares the 8 cores with N
         workers; below N = 8 the browser values are one or two clock ticks (<code>performance.now()</code> is 5 µs in

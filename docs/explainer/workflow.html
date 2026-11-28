@@ -81,7 +81,7 @@
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a reviewer that is not the author?</b> The author of a benchmark is the person least
       able to see its blind spots: a warm-up that is too short, a timed region that includes an allocation, a
       comparison across builds. The checklist is the list of ways this study could fool itself, run on every
-      change (<a href="validity.html">Four ways a study fools itself</a>).</p></aside>
+      change (<a href="validity.html">How a study can be wrong</a>).</p></aside>
 
     <h2 id="adr">When a decision needs an ADR</h2>
     <p>An ADR (<span data-term="adr">architecture decision record</span>) is a short file in
@@ -95,8 +95,7 @@
       <li>the workflow itself, or what is reported from which build.</li>
     </ul>
     <p>Numbering is sequential; a decision is never edited, only superseded by a later one that names it.
-      <code>scripts/check_adrs.py</code> checks the structure in CI, and <a href="decisions.html">Decisions:
-      the ADRs</a> lists all of them by topic.</p>
+      <code>scripts/check_adrs.py</code> checks the structure in CI, and <a href="decisions.html">ADR index</a> lists all of them by topic.</p>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why write decisions down at all?</b> Because the paper has five pages and the defence
       has questions. "Why 30 runs?", "why 128 bytes?", "why not the E-cores?" each have an answer with the
       pilot data that gave it, and the ADR is where that answer waited. A decision in someone's head is lost

@@ -165,7 +165,7 @@
       its efficiency at 8 threads than the 8192 x 8192 one (128 MB):</p>
     <div id="w-q1-cut"></div>
     <p class="src" data-src="cutoff-4096-v3-scaling, cutoff-8192-v3-scaling"></p>
-    <p>Natively this agrees. In the browsers it does not show: their efficiency is <i>lower</i> on the smaller image, not higher (on small images the fixed cost of a parallel region also weighs in, see <a href="extras.html#cutoff">When parallelism pays</a>). So the cutoff supports the reading natively and is not clear for the browsers.</p>
+    <p>Natively this agrees. In the browsers it does not show: their efficiency is <i>lower</i> on the smaller image, not higher (on small images the fixed cost of a parallel region also weighs in, see <a href="extras.html#cutoff">Exploratory campaigns</a>). So the cutoff supports the reading natively and is not clear for the browsers.</p>
 
     <h2 id="q2">Question 2: why Firefox scales better</h2>
     <p>This is the one RQ1 contrast that came out different from native: Firefox's filter speedup at 8 threads is
@@ -218,8 +218,7 @@
       baseline got worse.</p>
 
     <h2 id="q67">Questions 6 and 7: Chrome's atomic add</h2>
-    <p>These two are the heart of RQ2 and have a page of their own: <a href="rq2.html#code">Why Chrome: code and
-      counters</a>. In short: V8's optimizing compiler adds to a shared counter with a read and a compare-and-swap
+    <p>These two are the heart of RQ2 and have a page of their own: <a href="rq2.html#code">RQ2: synchronization</a>. In short: V8's optimizing compiler adds to a shared counter with a read and a compare-and-swap
       that retries; a native program changed to add the same way comes within 3% of Chrome's one-thread times, slower on one counter (<a href="rq2.html#probe">question 6, answered</a>). On 256 counters with eight threads it is faster than the native add, as Chrome is, but 14% from Chrome's time (<a href="rq2.html#k256">question 7, answered for the direction</a>). Why the same sequence wins on 256 counters is a proposed mechanism, not a tested one.</p>
 
     <h2 id="q8">Question 8: Firefox below 1</h2>

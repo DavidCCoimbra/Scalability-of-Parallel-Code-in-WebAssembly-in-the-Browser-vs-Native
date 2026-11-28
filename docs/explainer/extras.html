@@ -240,7 +240,7 @@
       <div class="card"><h3>Avoid or spread synchronization</h3><p>Shared atomic counters that every thread hits cost Chrome up to 2.3 times what they cost natively (<a href="rq2.html">RQ2</a>). Give each thread its own counters
         and merge at the end, or spread the sharing over many padded counters.</p></div>
       <div class="card"><h3>Measure in the browser</h3><p>One source does not give one instruction stream: the engine
-        rewrites your atomics its own way, and that is part of the cost (<a href="rq2.html#code">Why Chrome</a>).</p></div>
+        rewrites your atomics its own way, and that is part of the cost (<a href="rq2.html#code">RQ2: synchronization</a>).</p></div>
     </div>
     <p>The rest of the page is where each number above comes from: the size of a whole parallel region (the cutoff
       campaign), a rule of thumb from the course, and the size of each task inside a region (the grain sweep).</p>

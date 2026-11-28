@@ -139,7 +139,7 @@
         filter, and that <i>changed the machine code of the parallel filter</i>, because a function with two callers
         is no longer inlined. Adding a workload can change another one. The sequential filter got its own copy, and
         <code>scripts/codegen_diff.sh</code> confirmed the parallel one was back to the bytes of v2
-        (<a href="changing.html">Change something safely</a>).</p>
+        (<a href="changing.html">Change the measured path safely</a>).</p>
     </details>
     <p class="src" data-files="docs/adr/0086-v3-build.md, scripts/build_twice.sh, scripts/codegen_diff.sh"></p>
 
@@ -210,7 +210,7 @@
         same command reads without error: a wrong computation, not a crash, on the degraded core. Since then,
         analysis on that PC outside a prepared session runs pinned away from CPUs 12 and 13, and CI regenerates
         every v3 table on another machine and compares it with the committed one (ADR 0094,
-        <a href="reproduce.html">From raw runs to the paper</a>).</p>
+        <a href="reproduce.html">Reproduce the tables and figures</a>).</p>
     </details>
     <p class="takeaway"><strong>In summary.</strong> Most of a trustworthy measurement happens before the
       measurement: check the machine, freeze the program, rehearse, and write down what you will do in each case.

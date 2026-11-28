@@ -58,7 +58,7 @@
     </svg><figcaption>Start a program and you get a process: the instructions, plus a private space to work in.</figcaption></figure>
     <p>Why does the study care? Because every measurement here is of <b>one whole process</b>, started fresh.
       A process that has been running for a while has warmed-up memory and half-done work in it; a fresh one has
-      nothing. <a href="protocol.html#unit">Runs, warm-up and order</a> explains why that matters.</p>
+      nothing. <a href="protocol.html#unit">The run protocol</a> explains why that matters.</p>
 
     <h2 id="threads">Threads: several hands, one memory</h2>
     <p>Inside one process, work can be done by more than one <b>thread</b>. A thread is one line of work going
@@ -106,7 +106,7 @@
     </svg><figcaption>The study's machine has 8 fast cores set aside for the test, and never runs more threads on them than that.</figcaption></figure>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the study stop at 8 threads?</b> Because its machine has 8 fast cores for the test.
       With 9 threads, one of them would be waiting for a core, and the time would go up for a reason that has nothing
-      to do with the browser or the code. <a href="machine.html#pcores">The machine and its controls</a> shows how
+      to do with the browser or the code. <a href="machine.html#pcores">The machine and environment control</a> shows how
       those 8 cores are kept free.</p></aside>
     <p>One more thing to know: many chips today mix <b>fast cores</b> and <b>slow cores</b> on the same chip
       (Intel calls them P-cores and E-cores). A thread that lands on a slow core takes longer through no fault
@@ -138,8 +138,7 @@
       threads share that memory, which makes them fast when they work apart and slow when they touch the same
       thing. A core does one thread at a time, and the study gives its 8 threads 8 cores that always run at the
       same speed, so that time only changes when the code does.</p>
-    <p>Used by: <a href="threads.html">Threads, workers and fork-join</a>, <a href="machine.html">The machine
-      and its controls</a>, <a href="protocol.html">Runs, warm-up and order</a>. Next foundation:
+    <p>Used by: <a href="threads.html">Thread pools and fork-join</a>, <a href="machine.html">The machine and environment control</a>, <a href="protocol.html">The run protocol</a>. Next foundation:
       <a href="memory.html">Memory and caches</a>.</p>
 
     <footer class="pager" id="pager"></footer>

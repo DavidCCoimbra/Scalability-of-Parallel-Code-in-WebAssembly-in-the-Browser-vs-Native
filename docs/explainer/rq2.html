@@ -116,7 +116,7 @@
     <div class="card"><div id="w-n1"></div></div>
     <p class="src" data-src="campaign-v3-scaling"></p>
     <p>At k = 1 the atomic histogram costs Chrome <span id="w-n1-chr"></span> times its local histogram, against
-      <span id="w-n1-nat"></span> times natively, with a single thread. So part of Chrome's extra cost is not about threads fighting at all: it is the atomic operation itself, which Chrome's engine turns into slower machine code. The exploratory <a href="extras.html#private">private atomics</a> are consistent with it with no sharing at all, and <a href="rq2.html#code">Why Chrome</a> shows the code and the two tests that pin the cause down.</p>
+      <span id="w-n1-nat"></span> times natively, with a single thread. So part of Chrome's extra cost is not about threads fighting at all: it is the atomic operation itself, which Chrome's engine turns into slower machine code. The exploratory <a href="extras.html#private">private atomics</a> are consistent with it with no sharing at all, and <a href="rq2.html#code">RQ2: synchronization</a> shows the code and the two tests that pin the cause down.</p>
 
     <h2 id="code">The machine code of one add</h2>
     <p>The same line of Rust, "add one to this shared counter", reaches both browsers as the same WebAssembly instruction. Each engine then turns it into machine code, and the two engines choose differently. If machine code is new to you, read <a href="compilers.html">From source to machine code</a> first; the two ways of adding are explained step by step in <a href="atomics.html#strategies">Two ways to add</a>.</p>

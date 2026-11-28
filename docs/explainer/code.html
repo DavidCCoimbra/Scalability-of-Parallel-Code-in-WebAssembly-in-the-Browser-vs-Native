@@ -59,28 +59,20 @@
 
     <div class="three">
       <div class="card"><h3>bench/</h3><span class="tag">Rust, compiled to native and WASM</span>
-        <p>The two workloads, the loop that times them, the checksum. The only code that runs while the clock
-          is running. One source builds the native program and the browser's WASM module.</p></div>
+        <p>The workloads, the loop that times them, and the checksum. This is the only code that runs inside the timed region. One source builds the native program and the WASM module.</p></div>
       <div class="card"><h3>harness/</h3><span class="tag">Python</span>
-        <p>Starts each run as a fresh process or a fresh browser, confined to the fast cores, and stores the
-          CSV it produced next to a record of the conditions it ran in. Never measures anything itself.</p></div>
+        <p>Starts each run as a fresh process or a fresh browser, confined to the P-cores, and stores the CSV it wrote next to a record of the conditions. It never measures anything itself.</p></div>
       <div class="card"><h3>analysis/</h3><span class="tag">Python</span>
-        <p>Reads the stored runs, reduces each run to one number, computes speedups, intervals and the ten
-          decisions, and draws the figures. Writes <code>data/tables/</code> and <code>paper/figures/</code>.</p></div>
+        <p>Reads the stored runs, reduces each run to one number, computes speedups, intervals and the ten decisions, and draws the figures. It writes <code>data/tables/</code> and <code>paper/figures/</code>.</p></div>
     </div>
 
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why three programs and not one?</b> If the timing code and the orchestration lived in
-      one process, the orchestrator's own work (writing files, polling, logging) could run on the same cores
-      at the same moment as a timed iteration and add to its time, and nobody could tell by how much. Keeping
-      them in separate processes, on separate cores, with files as the only link, means a slow harness cannot
-      make a workload look slow. How they are connected, process by process, is on
-      <a href="code.html#picture">How the pieces talk</a>.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p>The three never run inside each other: they are separate processes on separate cores, and files are their only link. <a href="#picture">How the three programs talk</a> says why.</p></aside>
 
     <h2 id="folders">The folders</h2>
-    <p>Left to right is the order data flows. Click a box to see what the folder holds and which page explains it.</p>
+    <p>Left to right is the order in which data flows. Select a box to see what the folder holds and which page explains it.</p>
     <div class="card">
       <div id="folders-svg" class="diagram"></div>
-      <div id="folders-panel" class="panel" aria-live="polite"><p class="muted">Pick a box above.</p></div>
+      <div id="folders-panel" class="panel" aria-live="polite"><p class="muted">Select a box above.</p></div>
     </div>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Folder</th><th>Contents</th></tr></thead>
@@ -100,21 +92,15 @@
       <code>Cargo.toml</code>. <code>bench/</code> is one crate.</p></p>
 
     <h2 id="picture">How the three programs talk</h2>
-    <p>Every box below is a separate <a href="machines.html#program">process</a>: its own program start, its own
-      memory. Arrows are what one hands to the next. Click a box.</p>
+    <p>Every box below is a separate <a href="machines.html#program">process</a>, with its own start and its own memory. An arrow is what one process hands to the next. Select a box.</p>
     <div class="card">
       <div id="pieces-svg" class="diagram"></div>
-      <div id="pieces-panel" class="panel" aria-live="polite"><p class="muted">Pick a box above.</p></div>
+      <div id="pieces-panel" class="panel" aria-live="polite"><p class="muted">Select a box above.</p></div>
     </div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why so many separate programs, and not one?</b> Because the thing being measured must
-      not be the thing doing the measuring. If the orchestrator lived inside the benchmark, its own work
-      (planning, writing files, waiting) would be inside the timed region, and worse, it would be inside it
-      <i>differently</i> natively and in a browser. So the Rust code times only itself, and everything
-      around it is another process on other cores (<a href="machine.html#quiet">Shield and quiet mode</a>).
-      The price is that the pieces have to agree on formats, and that is what this page lists.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why separate programs and not one?</b> The thing that is measured must not be the thing that measures. If the orchestrator ran inside the benchmark, its work (planning, writing files, waiting) could run on the same cores during a timed iteration, by an amount nobody could tell, and differently natively and in a browser. So the Rust code times only itself, and everything around it is another process on other cores (<a href="machine.html#quiet">Shield and quiet mode</a>). A slow harness cannot make a workload look slow. The price is that the programs have to agree on formats, which the next section lists.</p></aside>
 
     <h2 id="boundaries">What crosses each boundary</h2>
-    <p>Each hand-off carries one small, fixed thing. Knowing them is most of knowing the project.</p>
+    <p>Each hand-off carries one small, fixed thing. If you know the four of them, you know most of the project.</p>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>From</th><th>To</th><th>What crosses</th><th>Looks like</th></tr></thead>
       <tbody>
@@ -128,67 +114,39 @@
         <tr><td>disk</td><td>analysis</td><td>Only files. The analysis never talks to the harness.</td><td><code>python3 -m analysis.v0 data/raw/campaign-v3</code></td></tr>
       </tbody>
     </table></div>
-    <p class="def"><b>Query string.</b> The part of a web address after the <code>?</code>: pairs of
-      <code>name=value</code> joined by <code>&amp;</code>. The page reads it to know what to measure, the same
-      way the native program reads its command line. One parser in the Rust code reads both
-      (<a href="environments.html#same">same source, same flags</a>).</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the browser post the result instead of saving a file?</b> A web page cannot
-      write to disk. So a tiny web server (<code>harness/server.py</code>) serves the page and accepts the
-      result back; it is also what sends the two headers that let the page use shared memory
-      (<a href="environments.html#wasm">What WASM threads need</a>). It listens only on
-      <code>127.0.0.1</code>, the machine itself, never the network.</p></aside>
+    <p class="def"><b>Query string.</b> The part of a web address after the <code>?</code>: pairs of <code>name=value</code> joined by <code>&amp;</code>. The page reads it to know what to measure, as the native program reads its command line. One parser in the Rust code reads both (<a href="environments.html#same">Same source, same flags</a>).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the browser post the result instead of saving a file?</b> A web page cannot write to disk. A small web server (<code>harness/server.py</code>) serves the page and accepts the result. It also sends the two headers that let the page use shared memory (<a href="environments.html#wasm">What WASM threads need</a>). It listens only on <code>127.0.0.1</code>, never on the network.</p></aside>
     <div data-code="harness/server.py|    def do_POST|12" data-title="The server stores what the page posts"></div>
 
     <h2 id="who">Who starts whom</h2>
     <ol class="steps">
-      <li><b>You</b> type <code>make campaign SPEC=...</code>. <code>make</code> builds the right variant, turns
-        quiet mode on, and starts the orchestrator under <code>systemd-inhibit</code> so the PC cannot sleep.</li>
+      <li><b>You</b> type <code>make campaign SPEC=...</code>. <code>make</code> builds the right variant, turns quiet mode on, and starts the orchestrator under <code>systemd-inhibit</code>, so that the PC cannot sleep.</li>
       <li><b>The orchestrator</b> (<code>harness.campaign</code>) reads the spec, shuffles the runs with the
         spec's seed, checks the machine (strict campaigns), writes <code>campaign.json</code>, and starts the
         results server once for the whole campaign.</li>
-      <li><b>Per run</b>, it starts one fresh process in its own
-        <span data-term="systemd-scope-slice">systemd scope</span>: the native binary, or Chrome or Firefox
-        with a fresh profile. It waits for the CSV (standard output, or the server), then writes the JSON.</li>
-      <li><b>The run</b> starts its thread pool, warms up, times its rounds, writes the CSV, and exits. A
-        browser run is a page and a coordinating worker; the pool is more workers started by the page
-        (<a href="protocol.html#browser">A browser run</a>).</li>
+      <li><b>For each run</b>, it starts one fresh process in its own <span data-term="systemd-scope-slice">systemd scope</span>: the native binary, or Chrome or Firefox with a fresh profile. It waits for the CSV (standard output, or the server), then writes the JSON.</li>
+      <li><b>The run</b> starts its thread pool, warms up, times its iterations, writes the CSV, and exits. A browser run is a page and a coordinating worker; the pool is more workers that the page starts (<a href="protocol.html#browser">A browser run</a>).</li>
       <li><b>After the last run</b>, the orchestrator stops the server, prints the counts, and <code>make</code>
         turns quiet mode off.</li>
-      <li><b>Later, by hand</b>, <code>make results</code> runs the analysis commands over the folder.</li>
+      <li><b>Later</b>, you run <code>make results</code>, which runs the analysis commands over the folder.</li>
     </ol>
     <div data-code="harness/campaign/executors.py|class NativeExecutor|14" data-title="One native run, started by the orchestrator"></div>
-    <p>Nothing is kept in memory between runs that cannot be rebuilt from the folder, which is why a
-      campaign can be stopped and continued (<a href="campaigns.html#resume">Sessions, status and resume</a>).</p>
+    <p>Nothing stays in memory between runs that the folder cannot rebuild, which is why you can stop a campaign and continue it (<a href="campaigns.html#resume">Sessions, status and resume</a>).</p>
 
     <h2 id="onemachine">On the Mac and on the PC</h2>
     <div class="two">
       <div class="card"><h3>On the Mac</h3>
-        <p>Every box runs, but with no CPU mask, no scope, no machine check (<code>"strict": false</code>
-          specs, <code>make quick-*</code>). The pieces talk exactly the same way, so
-          a change to a format shows up here first. The times are not results.</p></div>
+        <p>Every box runs, with no CPU mask, no scope and no machine check (<code>"strict": false</code> specs, <code>make quick-*</code>). The programs talk the same way, so a change to a format shows up here first. The times are not results.</p></div>
       <div class="card"><h3>On the PC</h3>
-        <p>The same boxes, plus the ones that hold the machine still: the shield keeps everything but the
-          run off the 8 measured cores, each run gets its own scope so its CPU time and any escaped browser
-          process are counted, and a strict campaign refuses to start if any of that is missing
-          (<a href="machine.html#checked">Checked on every run</a>).</p></div>
+        <p>The same boxes, plus the ones that hold the machine still. The shield keeps everything but the run off the 8 measured cores. Each run has its own scope, so that its CPU time and any escaped browser process are counted. A strict campaign refuses to start if any of that is missing (<a href="machine.html#checked">Checked on every run</a>).</p></div>
     </div>
     <p class="src" data-files="harness/README.md, harness/campaign/README.md, harness/server.py, harness/campaign/executors.py, bench/src/config.rs"></p>
 
     <h2 id="bench">bench/</h2>
-    <p>One Rust crate builds two things from the same source: the native program
-      (<code>src/bin/native</code>) and the WASM library the browser page loads (<code>src/wasm.rs</code>,
-      <code>www/</code>). Both end up calling the same function, <code>run::run_in_pool</code>, so the code
-      inside the clock is identical in every environment. <a href="trace.html">One run, start to end</a>
-      follows that call line by line.</p>
-    <p>Every workload is a small object that promises three things, the
-      <span data-term="workload-trait">Workload trait</span>: <code>prepare</code> runs before the clock
-      starts, <code>run</code> is the only timed call, and <code>checksum</code> hashes the result afterwards.
-      The timing loop only knows about these three, so it cannot time anything else by accident.</p>
+    <p>One Rust crate builds two things from one source: the native program (<code>src/bin/native</code>) and the WASM library the browser page loads (<code>src/wasm.rs</code>, <code>www/</code>). Both call the same function, <code>run::run_in_pool</code>, so the code inside the timed region is the same in every environment. <a href="trace.html">Follow one run through the code</a> reads that call line by line.</p>
+    <p>Every workload implements the <span data-term="workload-trait">Workload trait</span>: <code>prepare</code> runs before the timed region, <code>run</code> is the only timed call, and <code>checksum</code> hashes the result afterwards. The timing loop knows only these three, so it cannot time anything else by accident.</p>
     <div data-code="bench/src/workloads/workload.rs|pub trait Workload {|10" data-title="The Workload trait"></div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why so small an interface?</b> Because "what exactly is inside the clock" is the
-      question a reviewer asks first. With three methods there is one answer, in one file
-      (<code>measurement/measure.rs</code>), for the filter, both histograms and every extra. A workload with
-      a fourth, untimed step would have to say so in its <code>prepare</code>.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why so small an interface?</b> "What exactly is inside the timed region" is the first question a reviewer asks. With three methods there is one answer, in one file (<code>measurement/measure.rs</code>), for the filter, both histograms and every extra workload.</p></aside>
     <details class="deeper"><summary>In depth: every folder of bench/src</summary>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Path</th><th>Responsibility</th></tr></thead>
@@ -213,16 +171,10 @@
     </details>
 
     <h2 id="harness">harness/</h2>
-    <p>The harness never measures anything. It does three things: start each run in a controlled way (a
-      fresh process, a <span data-term="cpu-affinity-mask">CPU mask</span> that keeps it on the fast cores, a
-      <span data-term="systemd-scope-slice">run scope</span> that groups its processes), store what the run
-      produced together with a record of the conditions, and join the stored runs into one table for
-      <code>analysis/</code>.</p>
-    <p>Whether a run is native or a browser, its confinement is the same single function:</p>
+    <p>The harness never measures anything. It does three things. It starts each run in a controlled way: a fresh process, a <span data-term="cpu-affinity-mask">CPU mask</span> that keeps it on the P-cores, and a <span data-term="systemd-scope-slice">run scope</span> that groups its processes. It stores what the run wrote, with a record of the conditions. And it joins the stored runs into one table for <code>analysis/</code>.</p>
+    <p>A native run and a browser run are confined by the same function:</p>
     <div data-code="harness/shield/confinement.py|def confine(argv|7" data-title="Every run starts through confine()"></div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why one function for both?</b> RQ1 compares browser against native. If native runs
-      were confined one way and browser runs another, part of any difference could be the confinement, not
-      the runtime. One function, one argument list, no second code path to drift.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why one function for both?</b> RQ1 compares a browser with native. If native runs were confined one way and browser runs another, part of any difference could be the confinement and not the environment. One function and one argument list leave no second code path to drift.</p></aside>
     <details class="deeper"><summary>In depth: every folder of harness/</summary>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Path</th><th>Responsibility</th></tr></thead>
@@ -244,22 +196,13 @@
     </details>
 
     <h2 id="analysis">analysis/</h2>
-    <p>Each file at the top of <code>analysis/</code> is a command you run as
-      <code>python3 -m analysis.&lt;name&gt;</code>; the folders under it are the library those commands
-      share. The statistics were fixed in an <span data-term="analysis-plan-pre-registration">analysis plan</span>
-      before the main campaign ran (ADR 0037), so the code has few knobs: it does what the plan says.</p>
-    <p>Two choices shape every number it produces: each run becomes one value, the
-      <span data-term="median">median</span> of its measured iterations; then the runs of a configuration
-      become one centre, their <span data-term="geometric-mean">geometric mean</span>.
-      <a href="reading.html">Reading the numbers</a> says why, in plain words.</p>
+    <p>Each file at the top of <code>analysis/</code> is a command that you run as <code>python3 -m analysis.&lt;name&gt;</code>. The folders under it are the library the commands share. An <span data-term="analysis-plan-pre-registration">analysis plan</span> fixed the statistics before the main campaign (ADR 0037), so the code has few options: it does what the plan says.</p>
+    <p>Two choices shape every number. Each run becomes one value, the <span data-term="median">median</span> of its measured iterations. Then the runs of a configuration become one centre, their <span data-term="geometric-mean">geometric mean</span>. <a href="reading.html">Analysis plan and statistics</a> says why.</p>
     <div data-code="analysis/stats/summary.py|# Analysis plan D1 and D2|4" data-title="The run summary and the configuration centre"></div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why fix the statistics before seeing the data?</b> With 30 runs and a dozen possible
-      summaries, there is nearly always one that makes a wished-for difference look real. Writing the rules
-      down first, and keeping them in a file CI checks, removes that choice. A reviewer can read the plan and
-      the code and see they match.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why fix the statistics before seeing the data?</b> With 30 runs and a dozen possible summaries, one of them nearly always makes a wished-for difference look real. Rules written first remove that choice, and a reviewer can read the plan and the code and see that they match.</p></aside>
     <details class="deeper"><summary>In depth: the commands and the library</summary>
     <div class="layers">
-      <div class="card"><h3>Commands</h3><p><code>datacheck</code>, <code>v0</code> (speedup tables), <code>results</code> (RQ1, RQ2 contrasts), <code>robustness</code>, <code>karp_flatt</code>, <code>distributions</code>, <code>cutoff</code>, <code>grain</code>, <code>perf_counters</code>, <code>figures</code></p></div>
+      <div class="card"><h3>Commands</h3><p><code>datacheck</code>, <code>v0</code> (speedup tables), <code>results</code> (RQ1 and RQ2 contrasts), <code>sensitivity</code>, <code>robustness</code>, <code>rq2_decomposition</code>, <code>calibration</code>, <code>throughput</code>, <code>karp_flatt</code>, <code>sequential</code>, <code>distributions</code>, <code>cutoff</code>, <code>grain</code>, <code>figures</code>, and in <code>extras/</code> the counters, the SIMD variants and the core split</p></div>
       <div class="card"><h3>stats/</h3><p>Generic statistics: summaries, bootstrap, Holm, Mann-Whitney U, Cliff's delta, Spearman, skewness</p></div>
       <div class="card"><h3>scaling/</h3><p>Speedup and efficiency tables, Karp-Flatt, the fork-join model, cutoff and grain</p></div>
       <div class="card"><h3>inference/</h3><p>The plan's contrasts (RQ1, RQ2, ABS), exclusions and the primary family</p></div>
@@ -270,63 +213,39 @@
     </details>
 
     <h2 id="style">Style rules and why</h2>
-    <p>These are the rules in <code>CLAUDE.md</code> ("Code style") that every file follows. Each one exists
-      because of a specific way the study could have gone wrong; <code>make lint</code> and CI enforce the
-      ones a machine can check.</p>
+    <p>These are the rules of <code>CLAUDE.md</code> ("Code style"). Each exists because of one way the study could go wrong. <code>make lint</code> and CI enforce the ones a machine can check.</p>
 
     <div class="rule"><h3>Comments only when they add information</h3>
-      <p>A comment says why, warns of a pitfall, or points to the paper, algorithm or ADR a value comes from.
-        Never a comment that repeats the code.</p>
-      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> A comment that restates the line drifts the first time
-        the line changes, and then it lies. A comment that says "128, because the prefetcher pairs lines
-        (ADR 0008)" tells the next reader the one thing the code cannot.</p></aside></div>
+      <p>A comment says why, warns of a pitfall, or points to the paper or algorithm a value comes from. It never repeats the code.</p>
+      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> A comment that restates a line goes stale the first time the line changes. A comment that says "128, because the prefetcher pairs lines" tells the next reader the one thing the code cannot.</p></aside></div>
 
     <div class="rule"><h3>Named constants, no magic numbers</h3>
       <p><code>CHUNK_BYTES</code>, <code>CACHE_LINE_BYTES</code>, <code>BOOTSTRAP_RESAMPLES</code>, each defined
         once with its source.</p>
-      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> The number 65536 appears in the atomic histogram and in
-        the local one. Change one and not the other, and the two histograms no longer split the image the same
-        way: the RQ2 control stops being a control, and no test says so.</p></aside></div>
+      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> The number 65536 appears in the atomic histogram and in the local one. Change one and not the other, and the two histograms no longer split the image the same way: the RQ2 control stops being a control, and no test says so.</p></aside></div>
 
     <div class="rule"><h3>A README with a diagram per module</h3>
       <p>What the module does, which file holds what, and a Mermaid flowchart of the flow.</p>
-      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> The harness has nine folders. Without a map a newcomer
-        changes the launcher when the bug is in the server, or adds a second place that writes result files.
-        The README is the map, and it is next to the code so it is updated with it.</p></aside></div>
+      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> The harness has nine folders. Without a map you change the launcher when the bug is in the server, or add a second place that writes result files. The README is the map, and it sits next to the code, so it is updated with it.</p></aside></div>
 
     <div class="rule"><h3>Python: one concept per module, fully typed, mypy strict</h3>
       <p>One class or idea per file; every function typed; <code>mypy --strict</code> passes; the standard
         library where possible (matplotlib is the one exception, run through <code>uv</code>).</p>
-      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> The analysis turns 150,000 CSV rows into 10 decisions.
-        A function that silently gets a string where it expected a number, or a list where it expected a run,
-        produces a wrong table that still looks like a table. Strict types make that a build error. The
-        standard library rule means the numbers can be recomputed anywhere, with no version of anything to
-        match.</p></aside></div>
+      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> The analysis turns about 150,000 CSV rows into 10 decisions. A function that gets a string where it expected a number produces a wrong table that still looks like a table. Strict types turn that into an error before the run. The standard library rule means that anyone can recompute the numbers, with no version of anything to match.</p></aside></div>
 
     <div class="rule"><h3>Rust: one struct or impl per file, strong types, clippy clean</h3>
       <p>Domain concepts are their own types (<code>ThreadCount</code>, <code>WorkloadKind</code>), never
         loose tuples; <code>rustfmt</code> and <code>clippy</code> with <code>-D warnings</code>.</p>
-      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> Passing <code>(8, 1)</code> where <code>(1, 8)</code> was
-        meant is one swapped argument and a whole campaign at the wrong N. A <code>ThreadCount</code> cannot be
-        handed to a parameter that wants a <code>K</code>. One struct per file also means the excerpts on
-        these pages can point at one small, stable file.</p></aside></div>
+      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> Passing <code>(8, 1)</code> where <code>(1, 8)</code> was meant is one swapped argument and a whole campaign at the wrong N. A <code>ThreadCount</code> cannot be passed to a parameter that wants a <code>K</code>. One struct per file also lets the excerpts on these pages point at one small, stable file.</p></aside></div>
 
     <div class="rule"><h3>The measured code is guarded</h3>
-      <p>The timed region, the kernels and the checksum change only with an ADR that says why, and a
-        <span data-term="codegen-neutral">codegen diff</span> (<code>scripts/codegen_diff.sh</code>) that shows
-        whether the machine code changed. A change that is not codegen-neutral makes a new tagged build, and
-        runs from different builds are never mixed in one comparison (ADR 0062).</p>
-      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> A harmless-looking tidy-up of a loop can let the
-        compiler unroll it differently, and the time per pixel moves by a few percent. If half the runs of a
-        campaign came from before the tidy-up and half from after, the comparison would be between two
-        programs, not two runtimes. <a href="changing.html#hotpath">Touching the measured code</a> walks through
-        the procedure.</p></aside></div>
+      <p>The timed region, the kernels and the checksum change only with an ADR that says why and a <span data-term="codegen-neutral">codegen diff</span> (<code>scripts/codegen_diff.sh</code>) that shows whether the machine code changed. A change that is not codegen-neutral makes a new tagged build, and runs of different builds are never mixed in one comparison (ADR 0062).</p>
+      <aside class="callout why"><p class="callout-title">Why</p><p><b>What goes wrong otherwise.</b> A harmless-looking cleanup of a loop can let the compiler unroll it differently, and the time per pixel moves by a few percent. If half the runs of a campaign came from before the cleanup and half from after, the comparison would be between two programs, not two environments. <a href="changing.html#hotpath">Change the measured code</a> gives the procedure.</p></aside></div>
 
     <p class="src" data-files="CLAUDE.md, make/test.mk, scripts/codegen_diff.sh"></p>
 
     <h2 id="questions">Lookup: where is it done?</h2>
-    <p>Type a word in the box to filter both tables. Rows whose name uses a technical term carry a one-line
-      gloss under it; the glossary and the linked page have the rest.</p>
+    <p>Type a word in the box to filter both tables. A row whose name uses a technical term has a one-line gloss under it; the glossary and the linked page have the rest.</p>
     <div class="filter-row">
       <label for="where-filter" class="sr">Filter</label>
       <input id="where-filter" type="search" placeholder="Filter both tables, for example: checksum">
@@ -336,14 +255,8 @@
     <div id="questions-table"></div>
 
     <h2 id="symptoms">Lookup: something broke</h2>
-    <p>Most failures stop a run or a campaign with a message, on purpose: a run that would give a wrong
-      number fails instead, and is counted. Tests run with <code>make test</code> (Rust, Python) and
-      <code>make lint</code>; CI runs both on every PR. For the step-by-step, from <code>make status</code>
-      to re-running one id by hand, see <a href="debugging.html">Debugging a run</a>.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does so much fail on purpose?</b> A benchmark's worst outcome is not a crash
-      but a wrong number that looks right. A run at the wrong N, on the wrong cores, or with a wrong
-      checksum would sit in the table like any other and move a result. So every check that can tell
-      refuses the run, writes an error file, and the data check counts it; nothing is dropped quietly.</p></aside>
+    <p>Most failures stop a run or a campaign with a message, by design: a run that would give a wrong number fails instead, and is counted. <code>make test</code> runs the tests and <code>make lint</code> the checks; CI runs both on every PR. <a href="debugging.html">Debug a run</a> goes from <code>make status</code> to replaying one run by hand.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does so much fail on purpose?</b> The worst outcome of a benchmark is not a crash but a wrong number that looks right. A run at the wrong N, on the wrong cores or with a wrong checksum would sit in the table like any other and move a result. So every check that can tell refuses the run and writes an error file, and the data check counts it. Nothing is dropped silently.</p></aside>
     <div id="symptoms-table"></div>
     <p class="takeaway"><strong>In summary.</strong> Three programs and four hand-offs: a spec path, a command line or URL, a CSV and a JSON. Only <code>bench/</code> runs inside the timed region, so changing it is a procedure, not an edit; the Rust code never knows about campaigns and the analysis never knows about browsers. To find a file, use the first lookup table; to find why something stopped, use the second.</p>
 

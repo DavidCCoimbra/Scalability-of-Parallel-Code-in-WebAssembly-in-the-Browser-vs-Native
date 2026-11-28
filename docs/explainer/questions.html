@@ -70,7 +70,7 @@
     <p>Two words carry the questions:</p>
     <p class="def"><b>Speedup.</b> How many times faster the program is with N threads than with one thread, in the
       same place. If one thread takes 80 ms and eight threads take 10 ms, the speedup is 8. Dividing by N gives the
-      efficiency: 8 / 8 = 1, perfect. More in <a href="ratios.html#speedup">Ratios, speedup and the log scale</a>.</p>
+      efficiency: 8 / 8 = 1, perfect. More in <a href="ratios.html#speedup">Ratios, speedup and intervals</a>.</p>
     <p class="def"><b>Synchronization.</b> Anything that makes threads coordinate instead of working alone. Here it
       is one thing: many threads adding to the same shared counters, each add made
       <span data-term="atomic-operation">atomic</p> so that no count is lost.</span>
@@ -123,13 +123,13 @@
       <tbody>
         <tr><th colspan="3">Varied</th></tr>
         <tr><td>Environment</td><td><span class="chip native">native</span> <span class="chip chrome">chrome</span> <span class="chip firefox">firefox</span></td><td>The thing compared: a normal Linux program, Chrome's engine (V8), Firefox's engine (SpiderMonkey). <a href="environments.html">Environments and builds</a></td></tr>
-        <tr><td>Workload</td><td>filter, <code>hist-atomic</code>, <code>hist-local</code></td><td>No coordination (RQ1); shared atomics against their no-sharing control (RQ2). <a href="workloads.html">The workloads</a></td></tr>
+        <tr><td>Workload</td><td>filter, <code>hist-atomic</code>, <code>hist-local</code></td><td>No coordination (RQ1); shared atomics against their no-sharing control (RQ2). <a href="workloads.html">Workloads</a></td></tr>
         <tr><td><span data-term="k">k</span>, distinct grey levels</td><td>1, 4, 16, 256</td><td>How many counters the adds spread over: all on one, or over 256. <a href="workloads.html#k">k: the contention dial</a></td></tr>
         <tr><td>Threads N</td><td>1, 2, 4, 6, 7, 8</td><td>Up to one per fast core; 6 and 7 show whether a curve bends before the last core is used; the decisive comparisons are at 8 (ADR 0044)</td></tr>
         <tr><th colspan="3">Held fixed</th></tr>
         <tr><td>Source, compiler, flags</td><td>One Rust crate, <code>nightly-2026-10-03</code>, <code>lto=fat</code>, 128-bit SIMD on both sides</td><td>So that the code is the same and only the environment differs. <a href="environments.html#same">Same source, same flags</a></td></tr>
         <tr><td>Input</td><td>8192 x 8192 grey image, fixed seed</td><td>The same bytes everywhere; a checksum proves the same result. <a href="workloads.html#inputs">Inputs and checksums</a></td></tr>
-        <tr><td>Machine</td><td>8 P-cores, turbo and SMT off, governor performance, the rest of the system on the E-cores</td><td>So that the same run gives the same time twice. <a href="machine.html">The machine and its controls</a></td></tr>
+        <tr><td>Machine</td><td>8 P-cores, turbo and SMT off, governor performance, the rest of the system on the E-cores</td><td>So that the same run gives the same time twice. <a href="machine.html">The machine and environment control</a></td></tr>
         <tr><td>Browsers</td><td>Chrome for Testing 155.0.8059.84, Firefox 158.0, headless, fresh profile</td><td>Pinned, so the engine cannot change halfway through the study</td></tr>
         <tr><th colspan="3">Protocol</th></tr>
         <tr><td>Run</td><td>One fresh process or browser launch; warm-up, then 10 measured iterations</td><td>The run is the unit of analysis, not the iteration. <a href="protocol.html#unit">The run is the unit</a></td></tr>
@@ -168,7 +168,7 @@
       <div class="card"><h3>Workload</h3><p>The job being timed: <code>filter</code> (the filter),
         <code>hist-atomic</code> (the histogram with a shared tally) or <code>hist-local</code> (private tallies, the
         control). The exploratory campaigns add <code>hist-atomic-private</code>, <code>hist-atomic-packed</code> and
-        two sorts. <a href="workloads.html">The workloads</a>.</p></div>
+        two sorts. <a href="workloads.html">Workloads</a>.</p></div>
       <div class="card"><h3>N</h3><p>How many worker threads the run uses: 1, 2, 4, 6, 7 or 8 in the main campaign, never
         more than the 8 fast cores. The decisive comparisons are at N = 8; 7 is there to see where Firefox starts to bend.</p></div>
       <div class="card"><h3><span data-term="k">k</span></h3><p>How many distinct grey shades the histogram's input has: 1, 4,
@@ -187,7 +187,7 @@
       <div class="card"><h3>Configuration</h3><p>One cell (environment, workload, k, N) with its 30 runs. The main campaign has 162 configurations (and 15 more for the sequential references); "the filter in Chrome at N = 8" is one of them.</p></div>
       <div class="card"><h3><span data-term="campaign">Campaign</span></h3><p>Every run of a whole experiment, run in one
         seeded random order and kept in one folder, <code>data/raw/&lt;name&gt;/</code>. The main one,
-        <code>campaign-v3</code>, has 5310 runs. <a href="campaigns.html">Campaigns, specs and resume</a>.</p></div>
+        <code>campaign-v3</code>, has 5310 runs. <a href="campaigns.html">Run a campaign</a>.</p></div>
       <div class="card"><h3>Primary and exploratory</h3><p>The 10 comparisons that answer RQ1 and RQ2 are <b>primary</b>:
         they were fixed before the data and get a stricter bar. Everything else (weak scaling, SIMD, E-cores, cutoffs)
         is <b>exploratory</b>: reported, but with the ordinary bar and no claim of having been planned.</p></div>
@@ -212,7 +212,7 @@
     <ul>
       <li><b>T<sub>N</sub></b>: the typical time with N threads, an average of the 30 run values that respects ratios
         (the <span data-term="geometric-mean">geometric mean</span>; why that one is in
-        <a href="reading.html#average">Reading the numbers</a>).</li>
+        <a href="reading.html#average">Analysis plan and statistics</a>).</li>
       <li><b><span data-term="speedup-relative">Speedup</span></b> S<sub>N</sub> = T<sub>1</sub> / T<sub>N</sub>: how many
         times faster N threads are than one, each environment against itself. 8 means perfect use of 8 threads; below 1
         means 8 threads are slower than one.</li>
@@ -231,8 +231,8 @@
       <p class="muted" id="calc-say" style="margin-bottom:0"></p>
     </div>
     <p class="src" data-src="campaign-v3-scaling"></p>
-    <p>The statistics behind these, step by step, are in <a href="reading.html">Reading the numbers</a> (plain) and
-      <a href="reading.html#speedup">The statistics, in detail</a>.</p>
+    <p>The statistics behind these, step by step, are in <a href="reading.html">Analysis plan and statistics</a> (plain) and
+      <a href="reading.html#speedup">Analysis plan and statistics</a>.</p>
 
     <h2 id="related">What others measured</h2>
     <p>Each source, what it measured, and how this study differs. The short version: others measured WASM on one

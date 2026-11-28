@@ -79,8 +79,7 @@
     <p>Timings always look like the picture: a tight group and a tail of slow ones, never a tail of fast ones
       (nothing can run faster than the code allows). So inside one run, the study takes the median of its
       timed rounds. Across runs it uses an average that respects ratios, explained on
-      <a href="ratios.html">Ratios, speedup and the log scale</a> and <a href="reading.html">Reading the
-      numbers</a>.</p>
+      <a href="ratios.html">Ratios, speedup and intervals</a> and <a href="reading.html">Analysis plan and statistics</a>.</p>
     <p>The <b>spread</b> is how far apart the 30 numbers are. Tight spread: the summary means a lot. Wide
       spread: be careful. The study reports the spread of every setup and looks at the ones that are wide.</p>
 
@@ -92,7 +91,7 @@
       minutes". And if your commute is 20 give or take 2, and mine is 21 give or take 2, nobody can say that yours is faster: the ranges overlap.</p>
     <p>That last point is how the study decides things. Two setups are called different only when their ranges
       do not overlap. And "the measurement could not tell them apart" is <b>not</b> the same as "they are the same": with
-      wider ranges, a real difference can hide. <a href="reading.html#sure">Reading the numbers</a> shows the
+      wider ranges, a real difference can hide. <a href="reading.html#sure">Analysis plan and statistics</a> shows the
       intervals on the real data, and <a href="measuring.html#fair">the next section</a> what else has to hold
       before a comparison means anything.</p>
 
@@ -101,7 +100,7 @@
       that is not the thing you wanted to compare. Three rules keep the study's comparisons fair:</p>
     <ul>
       <li><b>Same machine, same settings.</b> Native, Chrome and Firefox all run on the same PC with the same
-        cores, clock and nothing else running (<a href="machine.html">The machine and its controls</a>). A faster
+        cores, clock and nothing else running (<a href="machine.html">The machine and environment control</a>). A faster
         machine for one of them would decide the result before it was measured.</li>
       <li><b>Mixed order.</b> The 30 runs of every setup are shuffled together with everyone else's, so that if the
         machine drifts over the hours (gets warmer, say), the drift lands on all of them equally instead of on
@@ -119,9 +118,7 @@
       something a slow outlier cannot drag, report a range and not a point, call two things different only when
       the ranges do not overlap, and measure everything the same way on the same machine, in a shuffled order,
       after a warm-up.</p>
-    <p>Used by: <a href="protocol.html">Runs, warm-up and order</a>, <a href="reading.html">Reading the
-      numbers</a>, <a href="threats.html">Threats to validity</a>. Next foundation: <a href="ratios.html">Ratios,
-      speedup and the log scale</a>.</p>
+    <p>Used by: <a href="protocol.html">The run protocol</a>, <a href="reading.html">Analysis plan and statistics</a>, <a href="threats.html">Threats to validity</a>. Next foundation: <a href="ratios.html">Ratios, speedup and intervals</a>.</p>
 
     <footer class="pager" id="pager"></footer>
   </article>
