@@ -58,7 +58,9 @@ flowchart LR
   the file, a substring of the line where it starts, and how many lines. The generator fails if
   the substring is not on exactly one line, so excerpts follow the code. A leading `^` matches
   the start of a line. Pick a substring without `&`, `<`, `>` or `|`.
-- No measured number is typed into a page when a table has it. A made-up number for a worked
+- Every table and chart is drawn from `assets/data.js`. A measured number quoted inside a
+  sentence is a copy: check it against its table when you write it, and add it to the table
+  of the `reproduce` page if it is one of the main results. A made-up number for a worked
   example says so. Nothing from a pilot or an earlier build is shown as a result.
 
 ## Page anatomy

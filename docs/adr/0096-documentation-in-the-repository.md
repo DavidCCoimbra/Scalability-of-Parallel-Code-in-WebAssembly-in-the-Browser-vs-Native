@@ -54,10 +54,12 @@ for a page is `docs/explainer/README.md`; this record fixes its main points.
   paragraphs, a term explained at its first use or linked to the glossary, one name per
   concept. Each explanation is stated at its level: measured, tested by an intervention,
   supported by measurements that agree, or open.
-- **Numbers only from `assets/data.js`.** `scripts/explainer_data.py` writes that file from the
-  tables of `data/tables/*-v3`, the fork-join calibration of `data/raw/campaign-v3`, the
-  per-core check, the atomic increment probe and the code excerpts the pages ask for. No
-  measured number is typed into a page when a table has it. `make explainer` regenerates the
+- **Tables and charts only from `assets/data.js`.** `scripts/explainer_data.py` writes that file
+  from the tables of `data/tables/*-v3`, the fork-join calibration of `data/raw/campaign-v3`,
+  the per-core check, the atomic increment probe and the code excerpts the pages ask for. Every
+  table and chart of a page is drawn from it. A measured number quoted inside a sentence is a
+  copy, checked against its table when it was written and not regenerated; the `reproduce` page
+  recomputes the main ones next to the values the pages state. `make explainer` regenerates the
   file, and `python3 -m scripts.explainer_data --check` fails when it is out of date; `make
   lint` and the `python` job of CI run that check.
 - **Juniors first stays, as a rule of writing.** The reader ADR 0074 wrote for is still the
