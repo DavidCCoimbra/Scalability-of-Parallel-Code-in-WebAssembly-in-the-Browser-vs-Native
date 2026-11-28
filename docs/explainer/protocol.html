@@ -190,7 +190,7 @@
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is the first browser run of each session thrown away?</b> The first launch of a
       browser after the machine was prepared is much slower than every later one (likely because its files
       are read from disk for the first time). If it counted, one run of one configuration would be an
-      outlier for a reason that is not the runtime. So that launch is run and discarded, in every session,
+      outlier for a reason that is not the environment. So that launch is run and discarded, in every session,
       and the first <i>counted</i> run is like all the others (<span data-term="discarded-first-launch">discarded
       first launch</span>, <a href="../adr/0034-campaign-orchestrator.md">ADR 0034</a>,
       <a href="../adr/0040-campaign-enforces-the-environment.md">ADR 0040</a>).</p></aside>

@@ -37,12 +37,8 @@
     <p class="lead">Every task in this repository runs through <code>make</code>. A make target is a short name for one or more shell commands, most of which call a Python module of <code>harness/</code> or <code>analysis/</code> that you can also run with <code>python3 -m</code>. This page lists the targets and the modules behind them.</p>
 
     <h2 id="daily">The six you use daily</h2>
-    <p>You will type these six far more than all the others together. Each one stands for a longer command
-      that you never have to remember.</p>
-    <p class="def"><b>make.</b> A tool that runs named recipes. <code>make build</code> looks up
-      <code>build</code> in the <code>Makefile</code> and runs the shell commands written under it. The
-      recipes of this project are in <code>make/*.mk</code>, one file per concern, and
-      <code>make help</code> lists the ones meant for you.</p>
+    <p>You type these six far more than all the others together. Each stands for a longer command that you do not need to remember.</p>
+    <p class="def"><b>make.</b> A tool that runs named recipes. <code>make build</code> looks up <code>build</code> in the <code>Makefile</code> and runs the shell commands under it. The recipes of this project are in <code>make/*.mk</code>, one file per concern, and <code>make help</code> lists the ones meant for you.</p>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Command</th><th>When</th><th>What happens</th></tr></thead>
       <tbody>
@@ -54,17 +50,10 @@
         <tr><td><code>make results</code> (or <code>all-results</code>)</td><td>After a campaign, on any machine</td><td>Every table and figure of the paper from the raw runs; <code>all-results</code> adds the exploratory campaigns.</td></tr>
       </tbody>
     </table></div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does everything go through make?</b> Because the long commands have twenty
-      flags that must be the same every time (<code>--strict</code>, the 0.25 s threshold, the mask), and
-      a flag typed differently once would make one table silently unlike the others. The recipe is the
-      single place those flags live, and it is committed. The reference below shows what each recipe expands
-      to.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does everything go through make?</b> The long commands have many flags that must be the same every time (<code>--strict</code>, the 0.25 s threshold, the mask). A flag typed differently once would make one table unlike the others without notice. The recipe is the one place where those flags are, and it is committed. The reference below shows what each recipe expands to.</p></aside>
 
     <h2 id="make">make targets</h2>
-    <p>The <code>Makefile</code> holds only the shared variables and <code>help</code>; the rules live in
-      <code>make/*.mk</code>, one file per concern. A target whose line ends in <code>## text</code> is
-      listed by <code>make help</code>; one marked <code>#: text</code> is a helper that <code>help</code>
-      hides. Both kinds are in the tables below.</p>
+    <p>The <code>Makefile</code> holds only the shared variables and <code>help</code>; the rules are in <code>make/*.mk</code>, one file per concern. <code>make help</code> lists a target whose line ends in <code>## text</code> and hides a helper marked <code>#: text</code>. The tables below have both kinds.</p>
     <div data-code="Makefile|P_MASK ?= |9" data-title="The variables every target shares"></div>
     <p class="def"><b>SPEC.</b> The campaign a target works on: a JSON file in
       <code>harness/campaigns/</code>. Its <code>name</code> key gives the results folder
@@ -120,7 +109,7 @@
         <tr><td><code>make quiet</code>, <code>make quiet-off</code></td><td>Hidden: close desktop apps, stop the indexer, updates and docker, and start them again. <code>make campaign</code> does this by itself (ADR 0070)</td></tr>
       </tbody>
     </table></div>
-    <p>See <a href="machine.html">The machine and environment control</a> for why each setting exists.</p>
+    <p><a href="machine.html">The machine and environment control</a> explains why each setting exists.</p>
 
     <h3>Measure (<code>make/campaign.mk</code>)</h3>
     <div class="scroll-x"><table class="t">
@@ -153,14 +142,10 @@
         <tr><td><code>make explainer</code></td><td><code>data/tables/*-v3</code>, <code>data/raw/campaign-v3</code>, the pages</td><td><code>docs/explainer/assets/data.js</code>, the numbers and code of this documentation</td></tr>
       </tbody>
     </table></div>
-    <p>The figure commands run matplotlib through <code>uv run --no-project --with matplotlib</code>: it is
-      not a project dependency, and the rest of the analysis needs only the Python standard library.</p>
+    <p>The figure commands run matplotlib through <code>uv run --no-project --with matplotlib</code>. It is not a project dependency: the rest of the analysis needs only the Python standard library.</p>
 
     <h3>Quick checks (<code>make/quick.mk</code>): never results</h3>
-    <p>Tiny copies of every campaign, to check the pipeline end to end or to watch a run. They keep each
-      real spec's environments, workloads, warm-up, build variant and CPU mask, and shrink the rest (3
-      runs, few N, 4096², 5 measured iterations). They are <code>"strict": false</code> with no run
-      scope, so they run on any machine without sudo, into <code>data/raw/quick-*</code> (ignored by git).</p>
+    <p>Small copies of every campaign, to check the pipeline end to end or to watch a run. They keep the environments, workloads, warm-up, build variant and CPU mask of each real spec and shrink the rest (3 runs, few N, 4096², 5 measured iterations). They are <code>"strict": false</code> with no run scope, so they run on any machine without sudo, into <code>data/raw/quick-*</code> (ignored by git).</p>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Target</th><th>What it runs</th><th>Mirrors</th></tr></thead>
       <tbody>
@@ -178,8 +163,7 @@
 
 </details>
     <h2 id="campaign">Campaign commands</h2>
-    <p>The harness never measures: the Rust code times its own iterations. These commands start runs,
-      watch them and gather their files. Each module has a <code>README.md</code> in its folder.</p>
+    <p>The harness never measures: the Rust code times its own iterations. These commands start runs, watch them and collect their files. Each module has a <code>README.md</code> in its folder.</p>
     <details class="deeper"><summary>In depth: every harness command and what it prints</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Command</th><th>What it does</th><th>What it prints or writes</th></tr></thead>
@@ -198,7 +182,7 @@
       </tbody>
     </table></div>
 </details>
-    <p>The status of a finished campaign looks like this (the perf-v3 campaign):</p>
+    <p>The status of a finished campaign (the perf-v3 campaign):</p>
     <pre class="code" style="padding:10px 12px;overflow-x:auto">campaign  perf-v3
 progress  [########################################] 100.0%  360 done, 0 failed, 0 remaining of 360
           native  120 done, 0 failed, 0 remaining of 120
@@ -211,9 +195,7 @@ eta       finished
 last run  perf-v3-0359-chrome-hist-atomic-k256-n8-r29 (done), 2s ago</pre>
 
     <h2 id="analysis">Analysis commands</h2>
-    <p>Every analysis command reads a raw campaign folder (or a table made from one) and writes a table,
-      a figure or a report. The statistics are fixed by the analysis plan
-      (<code>docs/adr/0037-analysis-plan.md</code>, ADRs 0037 to 0039); <a href="reading.html#speedup">Analysis plan and statistics</a> explains each one.</p>
+    <p>Every analysis command reads a raw campaign folder, or a table made from one, and writes a table, a figure or a report. The analysis plan fixes the statistics (<code>docs/adr/0037-analysis-plan.md</code>, ADRs 0037 to 0039); <a href="reading.html">Analysis plan and statistics</a> explains each one.</p>
     <details class="deeper"><summary>In depth: every analysis command and what it writes</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Command</th><th>What it computes</th><th>Writes</th></tr></thead>

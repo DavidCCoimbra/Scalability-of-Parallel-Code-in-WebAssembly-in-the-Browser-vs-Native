@@ -48,46 +48,31 @@
 
     <h2 id="three">Three ideas</h2>
 
-    <p>Everything else on this page is detail. These three are what you need to read
-      <code>bench/src/</code> and to see why the filter and the local histogram can run on 8 threads with
-      no lock at all.</p>
+    <p>These three ideas are enough to read <code>bench/src/</code> and to see why the filter and the local histogram run on 8 threads with no lock. The rest of the page is detail.</p>
 
-    <p>A library book. One person has it checked out (the owner). Many
-      people may read a photocopy at the same time, but nobody may write in the book while photocopies are
-      out, and only one person at a time may hold the pen. Rust's compiler is the librarian: it refuses to
-      let you leave with a plan that breaks those rules.</p>
+    <p>Think of a library book. One person has borrowed it (the owner). Many people can read a photocopy at the same time, but nobody writes in the book while photocopies are out, and only one person at a time holds the pen. The Rust compiler is the librarian: it rejects a program that breaks those rules.</p>
 
     <div class="ideas">
       <div class="card"><h3>1. Every value has one owner</h3>
-        <p>A value belongs to one variable. Give it to another and the first can no longer use it. No
-          two places ever think they own the same thing, so nothing is freed twice or changed behind your back.</p>
+        <p>A value belongs to one variable. Give it to another, and the first can no longer use it. No two places own the same value, so nothing is freed twice or changed from elsewhere.</p>
 <pre>let a = Histogram::default();
 let b = a;       // a moves into b
 // a.merge(..)   // error: moved</pre></div>
       <div class="card"><h3>2. Many readers or one writer, never both</h3>
-        <p>You may lend a value out to be read (<code>&amp;</code>) to as many places as you like, or lend
-          it out to be changed (<code>&amp;mut</code>) to exactly one place, but never both at the same time.</p>
+        <p>You can lend a value to be read (<code>&amp;</code>) to as many places as you like, or lend it to be changed (<code>&amp;mut</code>) to exactly one place, never both at the same time.</p>
 <pre>let r1 = &amp;image;     // read
 let r2 = &amp;image;     // read, fine
 let w = &amp;mut image;  // error: r1, r2 live</pre></div>
       <div class="card"><h3>3. The compiler refuses racy code</h3>
-        <p>Those two rules are checked when the program is built, not when it runs. Hand each thread its own
-          <code>&amp;mut</code> row and no thread can touch another's row; try to share one <code>&amp;mut</code>
-          and the build fails. A <span data-term="data-race">data race</span> cannot reach the benchmark.</p>
+        <p>The compiler checks those two rules when it builds the program, not when the program runs. Give each thread its own <code>&amp;mut</code> row, and no thread can touch the row of another; try to share one <code>&amp;mut</code>, and the build fails. A <span data-term="data-race">data race</span> cannot reach the benchmark.</p>
 <pre>rows.par_chunks_mut(1)   // own rows
   .for_each(|r| blur(r)); <span class="ok">compiles</span>
 spawn(|| total += 1);     <span class="no">refused</span></pre></div>
     </div>
 
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the study care?</b> RQ2 compares a histogram that shares counters with one
-      that does not. If the "does not share" version secretly shared something, or the filter had a hidden
-      race that sometimes produced a wrong pixel, every ratio in the paper would be measuring a bug. Rust
-      makes the no-sharing claim a property the compiler proved, and the checksum of every iteration
-      confirms it at run time (<a href="workloads.html#inputs">Inputs and checksums</a>).</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the study care?</b> RQ2 compares a histogram that shares counters with one that does not. If the local histogram shared something after all, or the filter had a race that sometimes produced a wrong pixel, every ratio in the paper would measure a bug. With Rust, "nothing is shared" is a property that the compiler proved, and the checksum of every iteration confirms it at run time (<a href="workloads.html#inputs">Inputs and checksums</a>).</p></aside>
 
-    <p>The rest of this page is a reference. Read it with <code>bench/src/</code> open; every excerpt is read
-      from the real file when the data file is generated, and the link in its header opens the file. The
-      "Nearest TS" panels use TypeScript; where a TypeScript word is new, it is explained in one line.</p>
+    <p>The rest of this page is a reference. Read it with <code>bench/src/</code> open. Every excerpt is read from the file when <code>data.js</code> is generated, and the link in its header opens the file. The "Nearest TS" panels use TypeScript, and explain in one line any TypeScript term that may be new.</p>
 
     <h2 id="basics">Types, ownership, borrowing</h2>
 
@@ -336,9 +321,7 @@ Atomics.add(counters, value * STRIDE, 1n);</pre></figure>
       not called directly; the parallel iterators use it internally to split work in halves.</p>
     </details>
 
-    <p class="takeaway"><strong>In summary.</strong> One owner per value; many readers or one writer; and the
-      compiler, not a test, is what guarantees no two threads write the same memory. Everything in
-      <code>bench/src/</code> that looks strange is one of those three rules written down.</p>
+    <p class="takeaway"><strong>In summary.</strong> One owner per value, and many readers or one writer. The compiler, not a test, guarantees that no two threads write the same memory. What looks unusual in <code>bench/src/</code> is one of those rules applied.</p>
     <footer class="pager" id="pager"></footer>
   </article>
   </main>

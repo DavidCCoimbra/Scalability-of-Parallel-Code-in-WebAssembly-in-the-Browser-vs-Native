@@ -38,29 +38,14 @@
     <p class="lead">Every run leaves a pair of files in <code>data/raw/&lt;campaign&gt;/</code>: a CSV of times and a JSON of context. Every derived number is in a table in <code>data/tables/&lt;campaign&gt;/</code>. This page describes each folder, each column of the CSV, each field of the run context and each table. Nothing in <code>data/raw/</code> is ever edited; everything in <code>data/tables/</code> can be deleted and made again.</p>
 
     <h2 id="onerow">One row, read aloud</h2>
-    <p>Before the folders, one line of one real file. This is a measured iteration of the main campaign's run
-      number 4646, native, the filter, eight threads, repetition 11:</p>
+    <p>Start with one line of one file. This is a measured iteration of run 4646 of the main campaign: native, the filter, eight threads, repetition 11:</p>
     <div data-code="data/raw/campaign-v3/campaign-v3-0047-native-filter-noise-n8-r11.csv|8,measured,0,|1" data-title="One row of a run's CSV"></div>
-    <p>Read left to right, with the header's names: <code>env</code> native; <code>workload</code> filter;
-      <code>input</code> noise (<code>k</code> empty, because noise has no k); <code>width</code> and
-      <code>height</code> 8192; <code>seed</code> of the input; <code>threads</code> 8; <code>phase</code>
-      measured, so this row counts; <code>iter</code> 0, the first measured round; <code>ns</code>, the time
-      of that round in nanoseconds, about 3.3 million, which is 3.3 ms; then two hashes that prove the input
-      was the same image and the output the same blur as in every other environment; then addresses and
-      memory sizes recorded for the record. <a href="setup.html#firstrow">Installation and first run</a> walks a row like
-      this one field by field.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does every row repeat the whole configuration?</b> So that a row can be read
-      alone. A thousand files later, nobody has to remember which folder meant what: the row says native,
-      filter, 8 threads. The joined table that <code>harness.collect</code> makes is just all the rows of all
-      the runs, with the run id added, and it needs no other key.</p></aside>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why two files per run and not one?</b> The CSV is what the measured program wrote and
-      nothing else; the JSON is what the harness knew about the machine around it. Keeping them apart means
-      the Rust code never has to know about governors or scopes, and the harness never has to parse a
-      time (<a href="code.html#boundaries">What crosses each boundary</a>).</p></aside>
+    <p>Read it left to right with the names of the header. <code>env</code> native; <code>workload</code> filter; <code>input</code> noise (<code>k</code> is empty, because noise has no k); <code>width</code> and <code>height</code> 8192; the <code>seed</code> of the input; <code>threads</code> 8; <code>phase</code> measured, so this row counts; <code>iter</code> 0, the first measured iteration; <code>ns</code>, the time of that iteration in nanoseconds, about 3.3 million, or 3.3 ms. Then come two hashes, which show that the input was the same image and the output the same filtered image as in every other environment, and addresses and memory sizes kept for the record. <a href="setup.html#firstrow">Installation and first run</a> reads a row like this one field by field.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does every row repeat the whole configuration?</b> So that a row can be read alone. A thousand files later, you do not need to remember which folder meant what: the row says native, filter, 8 threads. The joined table of <code>harness.collect</code> is all the rows of all the runs with the run id added, and it needs no other key.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why two files per run and not one?</b> The CSV holds what the measured program wrote and nothing else; the JSON holds what the harness knew about the machine around it. Kept apart, the Rust code never needs to know about governors or scopes, and the harness never parses a time (<a href="code.html#boundaries">What crosses each boundary</a>).</p></aside>
 
     <h2 id="raw">data/raw</h2>
-    <p>One folder per campaign, named after the spec's <code>name</code>. Inside, the files of the main
-      campaign of the final build:</p>
+    <p>One folder per campaign, named after the <code>name</code> of the spec. These are the files of the main campaign of the final build:</p>
     <pre class="tree">data/raw/campaign-v3/
 ├── campaign.json                                   spec, build identity, the planned run ids
 ├── campaign.jsonl                                  one line per run, as it was logged
@@ -86,22 +71,12 @@
       </tbody>
     </table></div>
 </details>
-    <p>Other folders of <code>data/</code>: <code>probes/</code> holds one-off measurements and
-      disassemblies (the store-forwarding chain, the V8 and native loops of ADR 0060);
-      <code>data/raw/quick-*</code> and <code>data/mac-smoke/</code> are ignored by git, because they are
-      never results. <code>python3 -m harness.collect</code> writes a joined table such as
-      <code>data/campaign-v3.csv</code> on demand; it is not kept.</p>
-    <p class="def"><b>Raw is never edited.</b> A wrong run is not fixed in place: it is excluded by a
-      rule fixed before the analysis (the plan's D7), or re-run and moved to <code>excluded/</code> with an
-      ADR saying why. So every table can always be traced back to the files as the runs wrote them.</p>
+    <p>Other folders of <code>data/</code>: <code>probes/</code> holds one-off measurements and disassemblies (the store-forwarding chain, the V8 and native loops of ADR 0060). <code>data/raw/quick-*</code> and <code>data/mac-smoke/</code> are ignored by git, because they are never results. <code>python3 -m harness.collect</code> writes a joined table such as <code>data/campaign-v3.csv</code> on demand; it is not kept.</p>
+    <p class="def"><b>Raw is never edited.</b> A wrong run is not fixed in place. It is excluded by a rule fixed before the analysis (D7 of the plan), or run again and moved to <code>excluded/</code> with an ADR that says why. So every table traces back to the files as the runs wrote them.</p>
 
     <h2 id="tables">data/tables</h2>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a second folder at all?</b> Raw is what happened; tables are what was computed
-      from it, by a command that can be run again. Delete <code>data/tables/</code> and <code>make
-      all-results</code> brings it back identical, except for the time stamp in each sidecar. If a number
-      in the paper is ever doubted, that one command is the answer.</p></aside>
-    <p>One folder per campaign (or per family of campaigns), written by the <code>*-results</code> make
-      targets. Every folder ends in <code>-v3</code>: the final build, and the only one this documentation and the paper read. The tables of the earlier build are at the tag <code>data/v2</code>.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a second folder?</b> Raw is what happened; tables are what was computed from it, by a command that can run again. Delete <code>data/tables/</code>, and <code>make all-results</code> writes it back identical, except for the time stamp in each sidecar. If a number in the paper is doubted, that command is the answer.</p></aside>
+    <p>One folder per campaign, or per family of campaigns, written by the <code>*-results</code> make targets. Every folder ends in <code>-v3</code>: the final build, and the only one that this documentation and the paper read. The tables of the earlier build are at the tag <code>data/v2</code>.</p>
     <details class="deeper"><summary>In depth: every table suffix and its columns</summary>
 <div class="scroll-x"><table class="t">
       <thead><tr><th>Suffix</th><th>Written by</th><th>One row per</th><th>Main columns</th></tr></thead>
@@ -122,7 +97,7 @@
       </tbody>
     </table></div>
 </details>
-    <p>Every <code>-v3</code> table, as this documentation read it:</p>
+    <p>Every <code>-v3</code> table, as this documentation reads it:</p>
     <div id="table-list"></div>
     <p>The first rows of the main scaling table:</p>
     <div id="scaling"></div>
@@ -130,8 +105,7 @@
 
     <h2 id="json">The run record</h2>
     <h3>The CSV: one row per iteration</h3>
-    <p>The Rust code writes the same schema natively and in the browser. Each row carries the whole
-      configuration, so a single row says what it measured:</p>
+    <p>The Rust code writes the same schema natively and in the browser. Each row has the whole configuration, so one row says what it measured:</p>
     <div data-code="bench/src/results.rs|pub const CSV_HEADER|1" data-title="The header, shared by native and WASM"></div>
     <div data-code="data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.csv|calibration-pause|3" data-title="The first rows of a Chrome run: the pause, then warm fork-join samples"></div>
     <details class="deeper"><summary>In depth: every CSV column</summary>
@@ -153,8 +127,7 @@
     <p class="src" data-files="bench/src/results/README.md, bench/src/results.rs, harness/native/row_schema.py"></p>
 
     <h3>The JSON: the run's context</h3>
-    <p>Written by the harness around the run. It is what lets the analysis refuse a run that did not run in
-      the conditions it claims (strict validation, ADR 0027):</p>
+    <p>The harness writes it around the run. It lets the analysis refuse a run that was not taken under the conditions it claims (strict validation, ADR 0027):</p>
     <div data-code="data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.json|^{|34" data-title="Build, clock and machine state"></div>
     <div data-code="data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.json|orderSeed|30" data-title="Order, times, artifact hash, shield and CPU time"></div>
     <details class="deeper"><summary>In depth: every key of the run's JSON</summary>
@@ -165,7 +138,7 @@
         <tr><td><code>clockResolutionNs</code>, <code>clockSmallestStepNs</code></td><td>The browser clock's resolution, measured by the page</td></tr>
         <tr><td><code>commit</code></td><td>The git commit; a <code>-dirty</code> one fails strict validation</td></tr>
         <tr><td><code>cpuModel</code>, <code>governor</code>, <code>turbo</code>, <code>kernel</code>, <code>smt</code></td><td>Machine state read just before the run</td></tr>
-        <tr><td><code>environment</code>, <code>browserVersion</code>, <code>headless</code></td><td>Runtime and its exact version (checked against the pin)</td></tr>
+        <tr><td><code>environment</code>, <code>browserVersion</code>, <code>headless</code></td><td>Environment and its exact version (checked against the pin)</td></tr>
         <tr><td><code>cpuMask</code>, <code>pCpus</code>, <code>maskSiblings</code></td><td>The mask the run got and the topology behind it: one CPU per physical P-core</td></tr>
         <tr><td><code>launchFlags</code></td><td>The full command: <code>systemd-run --scope</code> with <code>AllowedCPUs</code>, <code>taskset</code>, the browser and its flags, the URL with the configuration</td></tr>
         <tr><td><code>orderSeed</code>, <code>orderPosition</code></td><td>Seed and place in the shuffled order</td></tr>
@@ -182,9 +155,7 @@
     <p class="src" data-files="harness/context/record.py, harness/context/validation.py, harness/context/README.md"></p>
 
     <h2 id="figures">Figures</h2>
-    <p>Every figure is a PDF in <code>paper/figures/</code>, written by an analysis command from the raw
-      runs, never drawn by hand. The paper includes three; the others are for the exploratory sections, the
-      slides and the defence.</p>
+    <p>Every figure is a PDF in <code>paper/figures/</code>, written by an analysis command from the raw runs, never drawn by hand. The paper includes three; the others are for the exploratory sections, the slides and the defence.</p>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Figure</th><th>Written by</th><th>In the paper</th></tr></thead>
       <tbody>

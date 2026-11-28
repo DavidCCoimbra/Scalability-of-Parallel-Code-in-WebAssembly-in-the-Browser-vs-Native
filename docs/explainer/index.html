@@ -42,11 +42,7 @@
         and as WebAssembly in the browser?</li>
       <li><b>RQ2.</b> To what extent does synchronization between threads change the gap found in RQ1?</li>
     </ul>
-    <p>Two workloads answer them. A 3x3 image filter splits the image into rows and never makes two threads wait
-      for each other. An image histogram is built twice: once with counters that every thread shares (atomic
-      counters), once with private counters merged at the end. The difference between the two histograms is the
-      cost of sharing. The input sets how many counters the pixels are spread over, from 1 to 256, which the
-      study calls <span data-term="k">k</span>.</p>
+    <p>Two workloads answer them. A 3x3 image filter splits the image into rows, and no thread ever waits for another. An image histogram is counted twice: with counters that every thread shares (atomic counters), and with local counters merged at the end. The difference between the two histograms is the cost of sharing. The input sets how many counters the pixels are spread over, from 1 to 256, which the study calls <span data-term="k">k</span>.</p>
     <p>Every configuration is run 30 times, each run in a fresh process, in one shuffled order.
       <a href="questions.html">Research questions and design</a> has the full design.</p>
 
@@ -93,9 +89,7 @@
         <tr><td>Reference</td><td>Commands, the campaign spec, the CSV schema, the tables, the glossary and every decision record</td><td><a href="commands.html">Commands</a></td></tr>
       </tbody>
     </table></div>
-    <p>Every measured number on these pages is read from a table generated from the raw runs, and each chart
-      names its table. An underlined term opens its definition; the <a href="glossary.html">glossary</a> has all
-      of them.</p>
+    <p>Every table and chart on these pages is read from a table generated from the raw runs, and each names its table. An underlined term opens its definition; the <a href="glossary.html">glossary</a> has all of them.</p>
     <p class="src" data-files="README.md, docs/adr/README.md, data/README.md"></p>
 
     <footer class="pager" id="pager"></footer>

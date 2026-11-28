@@ -343,7 +343,7 @@ window.page = function (UI) {
     ENVS.forEach(function (e) { legend.appendChild(el("span", { class: "chip " + e[0], text: e[1] })); });
     wrap.appendChild(legend);
     wrap.appendChild(UI.table(pts, [
-      { label: "Build", key: "build" }, { label: "Runtime", value: function (p) { return envName(p.env); } },
+      { label: "Build", key: "build" }, { label: "Environment", value: function (p) { return envName(p.env); } },
       { label: "MB/s with one thread", num: true, value: function (p) { return fmt(p.mbs, 0); } },
       { label: "Efficiency at N = 8", num: true, value: function (p) { return fmt(p.eff, 3); } }
     ]));

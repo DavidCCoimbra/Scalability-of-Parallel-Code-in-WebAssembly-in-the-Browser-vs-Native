@@ -56,69 +56,44 @@
       <div class="card"><h4>Consequences</h4><p>What it costs, what it rules out, what has to be reported as a threat.</p></div>
       <div class="card"><h4>Status</h4><p>Accepted, amended by a later ADR, or superseded by one.</p></div>
     </div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why write decisions down at all?</b> Six months later, "why is the delay 3 seconds?"
-      has only two possible answers: a file that says so, or a guess. A guess might lead someone to remove
-      the delay, and the Firefox start-up effect it hides (below) would quietly come back into the numbers.
-      The ADR also lets a reviewer check that a setting was chosen for a reason, not tuned until the result
-      looked good.</p></aside>
-    <p>Three rules keep the record honest:</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why write decisions down?</b> Six months later, "why is the delay 3 seconds?" has two possible answers: a file that says so, or a guess. A guess could lead someone to remove the delay, and the Firefox start-up effect that it removes (below) would return to the numbers unnoticed. The ADR also lets a reviewer check that a setting was chosen for a reason, not tuned until the result looked good.</p></aside>
+    <p>Three rules keep the record reliable:</p>
     <ul>
-      <li><b>Never rewritten.</b> When new data changes a decision, a new ADR says what changed and why, and
-        the old one's status points to it ("amended by 0048"). The old reasoning stays readable.</li>
-      <li><b>Fixed before the data it governs.</b> The analysis plan (ADR 0037) was fixed before the main
-        campaign ran, so the statistics could not be chosen to fit the results
-        (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>).</li>
+      <li><b>Never rewritten.</b> When new data changes a decision, a new ADR says what changed and why, and the status of the old one points to it ("amended by 0048"). The old reasoning stays readable.</li>
+      <li><b>Fixed before the data it governs.</b> The analysis plan (ADR 0037) was fixed before the main campaign ran, so the statistics could not be chosen to fit the results (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>).</li>
       <li><b>Pilot data only justifies design.</b> Pilot numbers appear in ADRs to explain a parameter
         (W, 30 runs, 8192², the 3 s delay); results come from the campaigns on <code>measured/v3</code>.</li>
     </ul>
     <p class="src" data-files="docs/adr/README.md, scripts/check_adrs.py"></p>
 
     <h2 id="changed">Decisions that changed</h2>
-    <p>Most amendments are small (a field added to the run record, a name fixed to match the code). These
-      five changed what the study measures or how it is read, and each is a lesson about how a benchmark
-      can fool its own author.</p>
+    <p>Most amendments are small: a field added to the run record, a name corrected to match the code. The ones below changed what the study measures or how it is read, and each shows a way in which a benchmark can mislead its own author.</p>
 
     <div class="story">
       <h4>The start delay explained three earlier findings (ADR 0048)</h4>
-      <p>Pilots had shown a Firefox "knee" at N = 7 and 8 (ADR 0044), Firefox faster with E-cores
-        (ADR 0045), and slow early iterations (ADR 0043). With a 3 s wait before each browser run starts,
-        the knee disappeared: the cause was Firefox's own start-up work running during the measurement,
-        not its threads. Every browser run now waits 3000 ms, and ADRs 0029, 0043, 0044, 0045 and 0047
-        were amended.</p>
-      <p><b>The lesson:</b> three separate "findings" had one cause that was not the thing being measured.
-        Without the ADR trail, the knee might have gone into the paper as a property of Firefox.</p>
+      <p>Pilots had shown a Firefox "knee" at N = 7 and 8 (ADR 0044), Firefox faster with E-cores (ADR 0045), and slow early iterations (ADR 0043). With a 3 s wait before each browser run, the knee disappeared: the cause was Firefox's own start-up work during the measurement, not its threads. Every browser run now waits 3000 ms, and ADRs 0029, 0043, 0044, 0045 and 0047 were amended.</p>
+      <p><b>The lesson:</b> three separate "findings" had one cause, and it was not what was being measured. Without the ADR trail, the knee could have gone into the paper as a property of Firefox.</p>
     </div>
     <div class="story">
       <h4>From a hypothesis to machine code and counters (ADR 0049, 0068, 0072)</h4>
-      <p>ADR 0049 kept the 128-byte padding and recorded Chrome's odd counter pattern as a hypothesis: "the
-        code was not inspected". The v2 audit then read the JIT code from each browser's memory: V8 compiles
-        the atomic add as a load plus a <code>lock cmpxchg</code> loop. ADR 0068 made the hardware counters readable, and ADR 0072 counted with 30 runs per cell: the loop retries once every four adds at k = 1, N = 8, and Chrome reads the line before it writes it. That was still an observation. ADR 0088 wrote down what a test would show, and ADR 0089 ran it on <code>measured/v3</code>: a native program in which only the instructions of the add change comes within 3% of Chrome's one-thread times, and reproduces the direction of the effect at k = 256.</p> <p><b>The lesson:</b> a hypothesis is allowed in an ADR as long as it is labelled one; it took four more ADRs to turn it first into a measurement and then into a tested cause. <a href="rq2.html#code">RQ2: synchronization</a>.</p>
+      <p>ADR 0049 kept the 128-byte padding and recorded Chrome's unusual counter pattern as a hypothesis: "the code was not inspected". The v2 audit then read the JIT code from the memory of each browser: V8 compiles the atomic add as a load and a <code>lock cmpxchg</code> loop. ADR 0068 made the hardware counters readable, and ADR 0072 counted with 30 runs per configuration: the loop retries about once every four adds at k = 1, N = 8, and Chrome reads the line before it writes it. That was still an observation. ADR 0088 wrote down what a test would show, and ADR 0089 ran it on <code>measured/v3</code>: a native program in which only the instructions of the add change comes within 3% of Chrome's one-thread times, and reproduces the direction of the effect at k = 256.</p> <p><b>The lesson:</b> an ADR may hold a hypothesis as long as it is labelled as one. It took four more ADRs to turn it into a measurement and then into a tested cause (<a href="rq2.html#code">The machine code of one add</a>).</p>
     </div>
     <div class="story">
       <h4>The v2 build: asymmetries in the measured code (ADR 0069)</h4>
-      <p>A review against the textbook and the cited papers found that the shared-counter histograms paid a
-        per-pixel bounds check the local control did not, and that some variants timed their final merge
-        and others did not. Both were fixed in one tagged build, <code>measured/v2</code>, and every campaign was run again on it. Earlier campaigns stay valid for their own build but are never mixed with v2 in one comparison (ADR 0062).</p>
-      <p><b>The lesson:</b> the control and the thing it controls for must differ in exactly one way; two
-        hidden differences meant every earlier RQ2 number had to be remeasured.
-        <a href="environments.html#v2">Asymmetries in the measured code: the v2 build</a>.</p>
+      <p>A review against the textbook and the cited papers found that the shared-counter histograms paid a bounds check per pixel that the local histogram did not, and that some variants timed their final merge and others did not. One tagged build, <code>measured/v2</code>, fixed both, and every campaign was run again on it. Earlier campaigns stay valid for their own build and are never mixed with v2 in one comparison (ADR 0062).</p>
+      <p><b>The lesson:</b> the control and what it controls for must differ in exactly one way. Two hidden differences meant that every earlier RQ2 number had to be measured again (<a href="environments.html#v2">The build history</a>).</p>
     </div>
     <div class="story">
       <h4>A pinned browser that updated itself (ADR 0071)</h4>
-      <p>The pinned Firefox 158.0 updated itself to 160.0 during a campaign, although the profile disabled
-        updates. The affected runs of that build were repeated on 158.0, Firefox now gets an enterprise policy that turns
-        updates off, and a campaign refuses to start with an unpinned browser.</p>
-      <p><b>The lesson:</b> "pinned" is a claim until something checks it on every start.
-        <a href="environments.html#update">A pinned Firefox updates itself</a>.</p>
+      <p>The pinned Firefox 158.0 updated itself to 160.0 during a campaign, although the profile disabled updates. The affected runs of that build were repeated on 158.0. Firefox now gets an enterprise policy that turns updates off, and a campaign refuses to start with a browser that is not the pinned version.</p>
+      <p><b>The lesson:</b> "pinned" is a claim until something checks it at every start (<a href="environments.html#update">A pinned Firefox that updated itself</a>).</p>
     </div>
     <div class="story">
-      <h4>Notion out, Markdown in (ADR 0063)</h4> <p>ADR 0010 mirrored every ADR to Notion. Keeping two copies in sync by hand was dropped: the files in <code>docs/adr/</code> are the only copy.</p>
-      <p><b>The lesson:</b> a record that lives in two places is soon two records.</p> </div> <div class="story"> <h4>Measured again, with the rules written first (ADR 0084, 0095)</h4> <p>The v2 results were valid, and what they could not establish was declared (ADR 0080). Some of those items a new build could answer instead of declare, so <code>measured/v3</code> was built and every campaign run again. Because the v2 numbers were known, ADR 0084 fixed in advance when v3 would be the reported build, in terms that read counts of runs and never a result. ADR 0095 records that the criteria were met and that all ten primary decisions came out as before.</p> <p><b>The lesson:</b> a second measurement is worth the most when nothing about it could have been chosen after seeing the first. <a href="session.html">The session of a build</a>.</p> </div> <div class="story"> <h4>A gate that failed, and was not turned into a pass (ADR 0087)</h4> <p>The rehearsal before the v3 campaigns failed one criterion on one cell, twice. The cell was looked at, the behaviour turned out to exist in v2 as well, its effect on the analysed value was measured at 0.1%, and the campaign went ahead with the parameters unchanged and the failure recorded as a failure.</p> <p><b>The lesson:</b> a check that fails is information; changing the measurement to make it pass would have been choosing the method by the data. <a href="session.html#gate">The gate</a>.</p> </div> <div class="story"> <h4>An explanation that lost its support (ADR 0077, 0085)</h4> <p>Five slow runs of v2 fitted a degraded core running below its clock, and ADR 0077 said so as a likely reading. The per-core check then timed every core alone: the degraded one was as fast as the others. The explanation was withdrawn, and in v3 the slow runs did not come back.</p> <p><b>The lesson:</b> "it fits" is not "it was tested"; the record keeps both the guess and the test that undid it. <a href="session.html#cores">The per-core check</a>.</p> </div>
+      <h4>Notion out, Markdown in (ADR 0063)</h4> <p>ADR 0010 mirrored every ADR to Notion. Keeping two copies in step by hand was dropped: the files in <code>docs/adr/</code> are the only copy.</p>
+      <p><b>The lesson:</b> a record that lives in two places is soon two records.</p> </div> <div class="story"> <h4>Measured again, with the rules written first (ADR 0084, 0095)</h4> <p>The v2 results were valid, and what they could not establish was declared (ADR 0080). A new build could answer some of those items, so <code>measured/v3</code> was built and every campaign run again. Because the v2 numbers were known, ADR 0084 fixed in advance when v3 would be the reported build, in terms of counts of runs and never of a result. ADR 0095 records that the criteria were met and that all ten primary decisions came out as before.</p> <p><b>The lesson:</b> a second measurement is worth most when nothing about it could have been chosen after seeing the first (<a href="session.html">The session of a build</a>).</p> </div> <div class="story"> <h4>A gate that failed, and was not turned into a pass (ADR 0087)</h4> <p>The rehearsal before the v3 campaigns failed one criterion on one configuration, twice. The configuration was examined: the behaviour exists in v2 as well, and its effect on the analysed value was measured at 0.1%. The campaign went ahead with the parameters unchanged and the failure recorded as a failure.</p> <p><b>The lesson:</b> a check that fails is information. Changing the measurement to make it pass would have been choosing the method by the data (<a href="session.html#gate">The gate</a>).</p> </div> <div class="story"> <h4>An explanation that lost its support (ADR 0077, 0085)</h4> <p>Five slow runs of v2 fitted a degraded core running below its clock, and ADR 0077 recorded that as a likely reading. The per-core check then timed every core alone: the degraded one was as fast as the others. The explanation was withdrawn, and in v3 the slow runs did not return.</p> <p><b>The lesson:</b> "it fits" is not "it was tested". The record keeps both the guess and the test that refuted it (<a href="session.html#cores">The per-core check</a>).</p> </div>
 
     <h2 id="map">The ADRs by topic</h2>
-    <p>All 96, each in one topic. Rows in colour were later amended or partly superseded; the last column
-      says by which ADR. Click a number to open the file. Open the block to see them all, or type in the box
-      to find one.</p>
+    <p>All 96, each under one topic. Rows in colour were later amended or partly superseded; the last column says by which ADR. Select a number to open the file. Open the block to see them all, or type in the box to find one.</p>
     <details class="deeper"><summary>In depth: all 96 ADRs, by topic</summary>
     <div class="filter-row">
       <label for="adr-filter" class="sr">Filter ADRs</label>
@@ -127,7 +102,7 @@
     </div>
     <div id="adr-topics">
     <h3>Hardware and environment control</h3>
-    <p class="muted">How the PC is held still: P-cores only, clock, SMT, the shield, quiet mode and the checks that refuse a bad machine.</p>
+    <p class="muted">How the PC is held still: P-cores only, the clock, SMT, the shield, quiet mode and the checks that refuse a machine in the wrong state.</p>
     <div class="scroll-x"><table class="t adr">
       <thead><tr><th>ADR</th><th>Decision</th><th>Status</th></tr></thead>
       <tbody>
@@ -309,9 +284,7 @@
     </div>
     </details>
 
-    <p class="takeaway"><strong>In summary.</strong> Before changing any setting, find its ADR: it says why
-      the setting is what it is, and often what went wrong the last time it was different. If you change it,
-      you write the next ADR; you never edit the old one.</p>
+    <p class="takeaway"><strong>In summary.</strong> Before you change a setting, find its ADR: it says why the setting is what it is, and often what went wrong when it was different. If you change it, write the next ADR; never edit the old one.</p>
     <footer class="pager" id="pager"></footer>
   </article>
   </main>
