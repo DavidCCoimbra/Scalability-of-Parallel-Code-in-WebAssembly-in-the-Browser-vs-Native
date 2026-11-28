@@ -61,8 +61,9 @@ benchmarking that we had to control.
 \section{Introduction}
 
 Heavy work increasingly runs on the web client (image and video processing,
-documents, visualization, machine learning). WebAssembly with threads makes it
-possible to parallelize that work in the browser~\cite{haas2017}, but it is
+documents, visualization, machine learning). WebAssembly~\cite{haas2017}
+with threads~\cite{watt2019} makes it possible to parallelize that work in
+the browser, but it is
 not known whether it scales like the same code natively, or whether thread
 synchronization widens the gap. We ask:
 
@@ -99,8 +100,8 @@ Single-threaded WASM was measured 45 to 55\% slower than native on average
 by Jangda et al.~\cite{jangda2019}, and Yan et al.~\cite{yan2021} showed
 that compiler, flags, input and browser change WASM results; both are
 single-threaded, so we pin all four and add threads. Szewczyk et
-al.~\cite{szewczyk2022} found that bounds checks cost under 20\% in fast
-runtimes and up to 650\% in others, outside browsers.
+al.~\cite{szewczyk2022} found fast runtimes within 20\% of native and
+bounds checks costing up to 650\%, outside browsers.
 S{\'a}nchez-Artigas and Bohoyo-Bengoetxea~\cite{sanchez2025} found allocator
 and atomics overheads in portable WASM multithreading outside the browser.
 Schweizer et al.~\cite{schweizer2015} showed that atomic operations on x86
