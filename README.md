@@ -105,7 +105,7 @@ python3 ../scripts/check_simd.py bench.wasm.dis wasm32
 | `data/` | `raw/` (one folder per campaign, the measured runs) and `tables/` (derived from them) |
 | `docs/adr/` | The decision records, with those of the exploratory campaigns in `extras/` |
 | `scripts/` | Repository checks: ADR structure, SIMD, codegen diff, hardware counters |
-| `paper/` | LaTeX: `final/` (the paper), `pilot/`, `proposal/`, with shared `figures/` and `bib/` |
+| `paper/` | LaTeX: `final/` (the paper), with `figures/`, `bib/` and the kept PDF in `pdf/` |
 
 ```mermaid
 flowchart LR
