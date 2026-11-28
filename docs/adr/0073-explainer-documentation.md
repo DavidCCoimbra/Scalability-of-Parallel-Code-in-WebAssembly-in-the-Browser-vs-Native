@@ -41,4 +41,4 @@ numbers come from the measured reports, and the same model was chosen here.
 
 ## Status
 
-Accepted. The explainer is not part of this repository.
+Accepted. The explainer is part of this repository since ADR 0096, which also replaces its structure (six groups, one job per page).

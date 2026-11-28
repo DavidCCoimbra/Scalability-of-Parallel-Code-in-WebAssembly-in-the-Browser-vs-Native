@@ -192,9 +192,11 @@
   }
 
   // Right column: the h2 and h3 of this page, with the section in view highlighted.
+  var markOutline = function () {}, outlineBound = false;
   function initOutline() {
     var host = $("#outline");
     if (!host) return;
+    host.innerHTML = "";
     var heads = $$("main h2[id], main h3[id]").filter(function (h) { return !h.closest("details, .card, .page-sources"); });
     if (heads.length < 2) return;
     host.appendChild(el("h4", { text: "On this page" }));
@@ -213,12 +215,17 @@
         if (on && host.scrollHeight > host.clientHeight) host.scrollTop = Math.max(0, a.offsetTop - host.clientHeight / 2);
       });
     }
-    var queued = false;
-    window.addEventListener("scroll", function () {
-      if (queued) return;
-      queued = true;
-      requestAnimationFrame(function () { queued = false; mark(); });
-    }, { passive: true });
+    // A page that rebuilds its headings (the glossary) calls UI.outline() again: one listener, the latest marker.
+    markOutline = mark;
+    if (!outlineBound) {
+      outlineBound = true;
+      var queued = false;
+      window.addEventListener("scroll", function () {
+        if (queued) return;
+        queued = true;
+        requestAnimationFrame(function () { queued = false; markOutline(); });
+      }, { passive: true });
+    }
     mark();
   }
 
@@ -591,7 +598,7 @@
   window.UI = {
     D: D, G: G, STATIC: STATIC, REDUCED: REDUCED, REPO: REPO, PAGES: PAGES,
     $: $, $$: $$, el: el, fmt: fmt, int: int, get: get, rows: rows, row: row, repoLink: repoLink, hrefFor: hrefFor,
-    code: code, sources: initSources, segmented: segmented, stepper: stepper, trace: trace, table: table, bars: bars, clickable: clickable, store: store
+    code: code, sources: initSources, segmented: segmented, stepper: stepper, trace: trace, table: table, bars: bars, clickable: clickable, store: store, outline: initOutline
   };
 
   // <div data-code="bench/src/x.rs|fn name|12" data-title="..."></div> becomes a code excerpt.

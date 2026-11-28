@@ -82,7 +82,7 @@ window.page = function (UI) {
     e.appendChild(el("dt", { text: t.term }));
     var dd = el("dd", {}, [t.def + " "]);
     var p = pages[t.page];
-    if (p) dd.appendChild(el("a", { href: p.file, text: "→ " + p.title }));
+    if (p) dd.appendChild(el("a", { href: p.file, text: p.title }));
     if (t.more) dd.appendChild(el("span", { class: "more", text: t.more }));
     e.appendChild(dd);
     return e;
@@ -95,7 +95,7 @@ window.page = function (UI) {
     terms.forEach(function (t) { (groups[t.page] = groups[t.page] || []).push(t); });
     Object.keys(groups).sort(function (a, b) { return (order[a] == null ? 999 : order[a]) - (order[b] == null ? 999 : order[b]); }).forEach(function (id) {
       var p = pages[id];
-      var head = el("h3", { class: "group-head" }, [p ? p.title + " " : id + " ", el("small", { text: p ? p.group : "" })]);
+      var head = el("h3", { class: "group-head", id: "terms-" + id }, [p ? p.title : id]);
       var dl = el("dl", { class: "terms" });
       groups[id].forEach(function (t) { dl.appendChild(entry(t, true)); });
       host.append(head, dl);
@@ -109,7 +109,13 @@ window.page = function (UI) {
     var dl = el("dl", { class: "terms" }), seen = {};
     terms.forEach(function (t) {
       var first = sortKey(t).charAt(0).toUpperCase();
-      if (!seen[first]) { seen[first] = true; letters.appendChild(el("a", { href: "#" + t.id, text: first })); }
+      if (!seen[first]) {
+        seen[first] = true;
+        letters.appendChild(el("a", { href: "#letter-" + first, text: first }));
+        if (dl.children.length) host.appendChild(dl);
+        dl = el("dl", { class: "terms" });
+        host.appendChild(el("h3", { class: "group-head", id: "letter-" + first, text: first }));
+      }
       dl.appendChild(entry(t, true));
     });
     host.appendChild(dl);
@@ -135,6 +141,7 @@ window.page = function (UI) {
     host.innerHTML = "";
     if (v === "az") alphabetical(); else byTopic();
     filter();
+    UI.outline();
   }, mode);
   filterBox.addEventListener("input", filter);
   if (location.hash) { var target = document.getElementById(location.hash.slice(1)); if (target) target.scrollIntoView(); }

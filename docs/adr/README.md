@@ -32,8 +32,9 @@ The records were written over several weeks, so a few symbols changed meaning:
 - **F**, the fork-join cost, is quoted with different values because the records took it from
   different builds, campaigns and statistics; each names its source, and ADR 0076 gives the
   values of the main campaign of `measured/v2`.
-- ADR 0063, 0073 and 0074 record tooling used while the study was developed (Notion, the
-  explainer), which is not part of this repository.
+- ADR 0063 records tooling used while the study was developed (Notion), which is not part of
+  this repository. ADR 0073 and 0074 record the first two designs of the explainer; the
+  documentation of this repository is `docs/explainer/`, decided in ADR 0096.
 - The result records 0054, 0056, 0058, 0061, 0065 and 0067 hold the numbers of the build they
   were first measured on and say so; the numbers of `measured/v2` are listed in ADR 0079, with
   their tables at the tag `data/v2`, and those of `measured/v3` in ADR 0089 and ADR 0091 to 0095.
@@ -112,8 +113,8 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0070](0070-quiet-campaigns.md) | Campaigns run in quiet mode, with the coding assistant stopped | Accepted |
 | [0071](0071-firefox-pin-guard.md) | Firefox cannot update itself, and a campaign checks the pinned browser versions first | Accepted |
 | [0072](0072-perf-counters-v2.md) | Hardware counters of the atomic histogram on measured/v2 | Accepted |
-| [0073](0073-explainer-documentation.md) | Documentation as a multi-page explainer | Accepted. The explainer is not part of this repository. |
-| [0074](0074-explainer-for-juniors.md) | The explainer is written for juniors first, in two layers | Accepted. The explainer is not part of this repository. |
+| [0073](0073-explainer-documentation.md) | Documentation as a multi-page explainer | Accepted; the explainer is part of this repository and its structure is replaced by ADR 0096 |
+| [0074](0074-explainer-for-juniors.md) | The explainer is written for juniors first, in two layers | Accepted; the two-layer design is superseded by ADR 0096 |
 | [0075](0075-pad64-feature-removed.md) | The pad64 feature is removed from the bench, codegen-neutral | Accepted; amends ADR 0008 and ADR 0049 |
 | [0076](0076-below-the-shared-source.md) | What differs below the shared source, and what the v2 calibration measured | Accepted; amends ADR 0009 and ADR 0030 |
 | [0077](0077-sensitivity-checks-on-campaign-v2.md) | The plan's sensitivity checks, run on the main campaign of measured/v2 | Accepted; amends ADR 0037 and ADR 0038 |
@@ -135,3 +136,4 @@ The records were written over several weeks, so a few symbols changed meaning:
 | [0093](0093-extras-on-v3.md) | The extras campaign on measured/v3 | Accepted |
 | [0094](0094-hybrid-on-v3.md) | The hybrid campaign on measured/v3, and analysis on this PC after the measurements | Accepted |
 | [0095](0095-v3-is-the-reported-build.md) | measured/v3 is the reported build | Accepted |
+| [0096](0096-documentation-in-the-repository.md) | The documentation is part of the repository, in six groups with one job per page | Accepted; supersedes the "not part of this repository" notes of ADR 0073 and ADR 0074 and the two-layer design of ADR 0074 |

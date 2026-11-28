@@ -43,7 +43,7 @@
   <article class="page">
     <h1>ADR index</h1>
 
-    <p class="lead">Every setting of the study is a recorded decision: 8 cores and not 16, 30 runs and not 10, a 3 second delay before a browser run, counters padded to 128 bytes. Each one is a short file in <code>docs/adr/</code> with what forced it, what was decided and what it costs. A decision is never edited away: a later record amends or supersedes it, so you can read the reasons in the order they happened. This page explains the format, tells the decisions that changed, and lists all 95 records by topic.</p>
+    <p class="lead">Every setting of the study is a recorded decision: 8 cores and not 16, 30 runs and not 10, a 3 second delay before a browser run, counters padded to 128 bytes. Each one is a short file in <code>docs/adr/</code> with what forced it, what was decided and what it costs. A decision is never edited away: a later record amends or supersedes it, so you can read the reasons in the order they happened. This page explains the format, tells the decisions that changed, and lists all 96 records by topic.</p>
 
     <h2 id="how">How decisions are kept</h2>
     <p>An <span data-term="adr">ADR</span> (Architecture Decision Record) is a short Markdown file named
@@ -116,10 +116,10 @@
       <p><b>The lesson:</b> a record that lives in two places is soon two records.</p> </div> <div class="story"> <h4>Measured again, with the rules written first (ADR 0084, 0095)</h4> <p>The v2 results were valid, and what they could not establish was declared (ADR 0080). Some of those items a new build could answer instead of declare, so <code>measured/v3</code> was built and every campaign run again. Because the v2 numbers were known, ADR 0084 fixed in advance when v3 would be the reported build, in terms that read counts of runs and never a result. ADR 0095 records that the criteria were met and that all ten primary decisions came out as before.</p> <p><b>The lesson:</b> a second measurement is worth the most when nothing about it could have been chosen after seeing the first. <a href="session.html">The session of a build</a>.</p> </div> <div class="story"> <h4>A gate that failed, and was not turned into a pass (ADR 0087)</h4> <p>The rehearsal before the v3 campaigns failed one criterion on one cell, twice. The cell was looked at, the behaviour turned out to exist in v2 as well, its effect on the analysed value was measured at 0.1%, and the campaign went ahead with the parameters unchanged and the failure recorded as a failure.</p> <p><b>The lesson:</b> a check that fails is information; changing the measurement to make it pass would have been choosing the method by the data. <a href="session.html#gate">The gate</a>.</p> </div> <div class="story"> <h4>An explanation that lost its support (ADR 0077, 0085)</h4> <p>Five slow runs of v2 fitted a degraded core running below its clock, and ADR 0077 said so as a likely reading. The per-core check then timed every core alone: the degraded one was as fast as the others. The explanation was withdrawn, and in v3 the slow runs did not come back.</p> <p><b>The lesson:</b> "it fits" is not "it was tested"; the record keeps both the guess and the test that undid it. <a href="session.html#cores">The per-core check</a>.</p> </div>
 
     <h2 id="map">The ADRs by topic</h2>
-    <p>All 95, each in one topic. Rows in colour were later amended or partly superseded; the last column
+    <p>All 96, each in one topic. Rows in colour were later amended or partly superseded; the last column
       says by which ADR. Click a number to open the file. Open the block to see them all, or type in the box
       to find one.</p>
-    <details class="deeper"><summary>In depth: All 95 ADRs, by topic</summary>
+    <details class="deeper"><summary>In depth: all 96 ADRs, by topic</summary>
     <div class="filter-row">
       <label for="adr-filter" class="sr">Filter ADRs</label>
       <input id="adr-filter" type="search" placeholder="Filter by number or word">
@@ -301,8 +301,9 @@
         <tr class="changed"><td><a data-repo="docs/adr/0010-workflow-adrs-notion.md" href="../adr/0010-workflow-adrs-notion.md">0010</a></td><td>Development workflow: PRs with CI and AI review, ADRs mirrored to Notion</td><td>Accepted; Notion part superseded by ADR 0063</td></tr>
         <tr><td><a data-repo="docs/adr/0032-adr-consistency.md" href="../adr/0032-adr-consistency.md">0032</a></td><td>ADRs brought in line with the code</td><td>Accepted; amends ADR 0011, ADR 0015, ADR 0016, ADR 0019 and ADR 0024</td></tr>
         <tr><td><a data-repo="docs/adr/0063-notion-replaced-by-markdown.md" href="../adr/0063-notion-replaced-by-markdown.md">0063</a></td><td>Notion replaced by Markdown files in the repository</td><td>Accepted; supersedes the Notion part of ADR 0010</td></tr>
-        <tr><td><a data-repo="docs/adr/0073-explainer-documentation.md" href="../adr/0073-explainer-documentation.md">0073</a></td><td>Documentation as a multi-page explainer</td><td>Accepted. The explainer is not part of this repository.</td></tr>
-        <tr><td><a data-repo="docs/adr/0074-explainer-for-juniors.md" href="../adr/0074-explainer-for-juniors.md">0074</a></td><td>The explainer is written for juniors first, in two layers</td><td>Accepted. The explainer is not part of this repository.</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0073-explainer-documentation.md" href="../adr/0073-explainer-documentation.md">0073</a></td><td>Documentation as a multi-page explainer</td><td>Accepted; the explainer is part of this repository and its structure is replaced by ADR 0096</td></tr>
+        <tr class="changed"><td><a data-repo="docs/adr/0074-explainer-for-juniors.md" href="../adr/0074-explainer-for-juniors.md">0074</a></td><td>The explainer is written for juniors first, in two layers</td><td>Accepted; the two-layer design is superseded by ADR 0096</td></tr>
+        <tr><td><a data-repo="docs/adr/0096-documentation-in-the-repository.md" href="../adr/0096-documentation-in-the-repository.md">0096</a></td><td>The documentation is part of the repository, in six groups with one job per page</td><td>Accepted; supersedes the "not part of this repository" notes of ADR 0073 and ADR 0074 and the two-layer design of ADR 0074</td></tr>
       </tbody>
     </table></div>
     </div>
