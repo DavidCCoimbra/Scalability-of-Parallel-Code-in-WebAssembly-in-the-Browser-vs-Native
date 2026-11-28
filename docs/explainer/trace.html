@@ -337,7 +337,7 @@ window.page = function (UI) {
       memory: [["native hist-atomic k = 1, N = 1", ms(nat1)], ["native hist-atomic k = 1, N = 8", ms(nat)]] },
     { title: "speedup_of: T1 / TN", code: K.speedup, highlight: /return Speedup|bootstrap_interval/,
       plain: "Speedup is the time with 1 thread divided by the time with N threads, inside one environment. Below 1 means more threads made it slower.",
-      say: "Speedup within one environment: the centre at N = 1 over the centre at N. With k = 1 natively it is below 1: 8 threads fighting over one counter are slower than one thread alone.",
+      say: "Speedup within one environment: the centre at N = 1 over the centre at N. With k = 1 natively it is below 1: 8 threads contending for one counter are slower than one thread alone.",
       memory: [["speedup", nat ? fmt(nat.speedup, 3) : "-"], ["95% CI", nat ? "[" + fmt(nat.speedup_low, 3) + ", " + fmt(nat.speedup_high, 3) + "]" : "-"]] },
     { title: "The bootstrap interval", code: K.boot, highlight: /random\.Random|choices|sorted/,
       plain: "\"With replacement\" means: draw 30 runs out of the 30, putting each one back before drawing the next, so some are picked twice and some not at all. Doing that 10,000 times shows how much the answer could move with another 30 runs; the middle 95 % of those answers is the interval.",

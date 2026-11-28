@@ -59,7 +59,7 @@
     <div class="controls-row"><span class="muted">k:</span><span id="w-k"></span></div>
     <div class="grid two">
       <div class="card"><h3 style="font-size:1rem">Step 1 and 2: atomic time / local time, per environment</h3><div id="w-ratio"></div></div>
-      <div class="card"><h3 style="font-size:1rem">Step 3: browser's price / native's price</h3><div id="w-effect"></div></div>
+      <div class="card"><h3 style="font-size:1rem">Step 3: browser ratio / native ratio</h3><div id="w-effect"></div></div>
     </div>
     <p class="src" data-src="campaign-v3-scaling, campaign-v3-contrasts"></p>
     <p>Left: at k = 1 sharing makes the histogram tens of times slower with 8 threads in <i>every</i> environment. That is the hardware, not the browser (<a href="memory.html#contention">Contention</a>). Right: the comparison that RQ2 asks for. Above the dashed line at 1 the browser pays more than native for sharing; below it, less. The band is the 95% interval.</p>
@@ -257,9 +257,9 @@ window.page = function (UI) {
   // The worked example: the four real times at N = 8, k = 1.
   var natR = ratio("native", 1, 8), chrR = ratio("chrome", 1, 8);
   $("#w-worked").appendChild(UI.table([
-    { what: "Atomic histogram (shared tally)", native: T("native", "hist-atomic", 1, 8), chrome: T("chrome", "hist-atomic", 1, 8) },
+    { what: "Atomic histogram (shared counters)", native: T("native", "hist-atomic", 1, 8), chrome: T("chrome", "hist-atomic", 1, 8) },
     { what: "Local histogram (nothing shared)", native: T("native", "hist-local", 1, 8), chrome: T("chrome", "hist-local", 1, 8) },
-    { what: "Price of sharing: atomic / local", native: natR, chrome: chrR, ratio: true }
+    { what: "Cost of sharing: atomic / local", native: natR, chrome: chrR, ratio: true }
   ], [
     { label: "N = 8, k = 1", key: "what" },
     { label: "Native", num: true, value: function (r) { return r.ratio ? UI.fmt(r.native, 1) + "×" : ms(r.native); } },
@@ -287,7 +287,7 @@ window.page = function (UI) {
       }) };
     });
     effs.push(1);
-    h2.appendChild(lineChart(s2, { xs: THREADS, ymin: Math.min.apply(null, effs) * 0.9, ymax: Math.max.apply(null, effs) * 1.1, log: true, ref: 1, xlabel: "threads N", ylabel: "browser price / native price", label: "exp(delta r) against N, k = " + k }));
+    h2.appendChild(lineChart(s2, { xs: THREADS, ymin: Math.min.apply(null, effs) * 0.9, ymax: Math.max.apply(null, effs) * 1.1, log: true, ref: 1, xlabel: "threads N", ylabel: "browser ratio / native ratio", label: "exp(delta r) against N, k = " + k }));
   });
 
   $("#w-speedups").appendChild(UI.table(KS.map(function (k) {
