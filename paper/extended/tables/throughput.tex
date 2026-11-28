@@ -1,0 +1,43 @@
+{\small
+\begin{longtable}{llrrrrrr}
+\caption{Throughput: nanoseconds per pixel and the absolute speedup $T(\mathrm{native},1)/T(\mathrm{environment},N)$ at $N=1$ and 8.}\label{tab:throughput} \\
+\toprule
+ &  & \multicolumn{2}{c}{Native} & \multicolumn{2}{c}{Chrome} & \multicolumn{2}{c}{Firefox} \\
+Workload & $N$ & ns/px & abs.\ $S$ & ns/px & abs.\ $S$ & ns/px & abs.\ $S$ \\
+\midrule
+\endfirsthead
+\toprule
+ &  & \multicolumn{2}{c}{Native} & \multicolumn{2}{c}{Chrome} & \multicolumn{2}{c}{Firefox} \\
+Workload & $N$ & ns/px & abs.\ $S$ & ns/px & abs.\ $S$ & ns/px & abs.\ $S$ \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+filter & 1 & 0.3368 & 1 & 0.3947 & 0.8533 & 0.4591 & 0.7336 \\
+filter & 8 & 0.04842 & 6.955 & 0.057 & 5.908 & 0.06258 & 5.382 \\
+\midrule
+atomic, $k$=1 & 1 & 5.657 & 1 & 10.4 & 0.5439 & 5.658 & 0.9997 \\
+atomic, $k$=1 & 8 & 12.76 & 0.4433 & 28.15 & 0.201 & 13.09 & 0.4321 \\
+\midrule
+atomic, $k$=4 & 1 & 5.657 & 1 & 8.773 & 0.6448 & 5.659 & 0.9998 \\
+atomic, $k$=4 & 8 & 12.87 & 0.4396 & 24.56 & 0.2303 & 12.66 & 0.4469 \\
+\midrule
+atomic, $k$=16 & 1 & 5.656 & 1 & 7.279 & 0.777 & 5.659 & 0.9994 \\
+atomic, $k$=16 & 8 & 8.107 & 0.6976 & 14.43 & 0.3919 & 8.166 & 0.6926 \\
+\midrule
+atomic, $k$=256 & 1 & 5.656 & 1 & 6.137 & 0.9216 & 5.66 & 0.9993 \\
+atomic, $k$=256 & 8 & 6.178 & 0.9155 & 3.135 & 1.804 & 5.856 & 0.9658 \\
+\midrule
+local, $k$=1 & 1 & 2.309 & 1 & 2.246 & 1.028 & 2.319 & 0.9954 \\
+local, $k$=1 & 8 & 0.2902 & 7.956 & 0.2833 & 8.15 & 0.2947 & 7.835 \\
+\midrule
+local, $k$=4 & 1 & 0.6398 & 1 & 0.6843 & 0.935 & 0.6551 & 0.9768 \\
+local, $k$=4 & 8 & 0.08048 & 7.95 & 0.08675 & 7.376 & 0.08169 & 7.832 \\
+\midrule
+local, $k$=16 & 1 & 0.4266 & 1 & 0.5307 & 0.8038 & 0.543 & 0.7856 \\
+local, $k$=16 & 8 & 0.05425 & 7.864 & 0.06777 & 6.295 & 0.06574 & 6.489 \\
+\midrule
+local, $k$=256 & 1 & 0.4037 & 1 & 0.4972 & 0.8119 & 0.514 & 0.7855 \\
+local, $k$=256 & 8 & 0.0509 & 7.931 & 0.06211 & 6.5 & 0.06058 & 6.664 \\
+\end{longtable}
+}

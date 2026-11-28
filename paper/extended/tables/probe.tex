@@ -1,0 +1,15 @@
+\begin{table}[htbp]
+\caption{Native atomic-increment probe: median time of a pass in ms over 10 timed passes, by increment sequence. Only the instructions of the increment change between rows.}\label{tab:probe}
+\centering\small
+\begin{tabular}{lrrrrrr}
+\toprule
+Sequence & $k$=1, $N$=1 & $k$=1, $N$=8 & $k$=16, $N$=1 & $k$=16, $N$=8 & $k$=256, $N$=1 & $k$=256, $N$=8 \\
+\midrule
+\texttt{lock-inc} & 379.9 & 976.2 & 379.8 & 550.1 & 379.8 & 415.0 \\
+\texttt{compare-and-swap} & 677.1 & 2131.8 & 484.9 & 1018.9 & 408.2 & 239.5 \\
+\texttt{lock-xadd} & 382.6 & 975.3 & 380.7 & 547.1 & 380.3 & 437.2 \\
+\texttt{lock-inc-checked} & 381.6 & 972.9 & 380.3 & 556.1 & 380.0 & 401.6 \\
+\texttt{lock-xadd-checked} & 392.4 & 983.9 & 383.5 & 556.4 & 380.2 & 348.8 \\
+\bottomrule
+\end{tabular}
+\end{table}

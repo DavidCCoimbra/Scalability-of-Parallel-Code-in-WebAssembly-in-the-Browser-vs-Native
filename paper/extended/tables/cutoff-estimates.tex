@@ -1,0 +1,16 @@
+\begin{table}[htbp]
+\caption{Cutoff at $N=8$: the image side at which the efficiency crosses 0.5 (interpolated, 95\,\% interval) and the sequential work of that image in \textmu s; then the fork-join model $T_N=W/N+F$ with this campaign's warm fork-join $F$ in \textmu s: the work it predicts for efficiency 0.5, and the side at which $F$ is 1\,\% and 5\,\% of $T_N$.}\label{tab:cutoff-estimates}
+\centering\footnotesize
+\begin{tabular}{llcrrrrr}
+\toprule
+Workload & Environment & Side at 0.5 & Work & $F$ & Model & Side 1\,\% & Side 5\,\% \\
+\midrule
+filter & Native & 613 [610, 616] & 124.9 & 10.8 & 86.1 & 5031 & 2204 \\
+local, $k$=256 & Native & 691 [679, 701] & 183.4 & 10.8 & 86.1 & 4595 & 2013 \\
+filter & Chrome & 996 [989, 1002] & 395.6 & 105.0 & 840.0 & 14518 & 6360 \\
+local, $k$=256 & Chrome & 815 [797, 832] & 324.6 & 105.0 & 840.0 & 12938 & 5668 \\
+filter & Firefox & 994 [976, 1009] & 459.4 & 60.0 & 480.0 & 10151 & 4447 \\
+local, $k$=256 & Firefox & 858 [840, 873] & 361.9 & 60.0 & 480.0 & 9607 & 4209 \\
+\bottomrule
+\end{tabular}
+\end{table}

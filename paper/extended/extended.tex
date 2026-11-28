@@ -1,0 +1,74 @@
+%%
+%% Extended report - PPC 2026/27 (AI-written draft from the measured/v3 data
+%% and decision records, for the author's review; see the Use of AI paragraph).
+%% The long version of paper/final/paper.tex: same template family, same
+%% conclusions, and everything the 5 + 2 page paper had to leave out.
+%% The tables in tables/ are written by make_tables.py; never edit them by hand.
+%%
+\documentclass[acmsmall,nonacm,screen]{acmart}
+\settopmatter{printacmref=false}
+\renewcommand\footnotetextcopyrightpermission[1]{}
+\usepackage[english]{babel}
+\usepackage{booktabs}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc,fit}
+
+\colorlet{native}{blue!60!black}
+\colorlet{chrome}{red!75!black}
+\colorlet{firefox}{orange!85!black}
+\newcommand{\adr}[1]{\textsc{adr}~#1}
+\newcommand{\code}[1]{\texttt{#1}}
+
+\begin{document}
+\setlength{\emergencystretch}{5em}
+
+\title[Scalability of Parallel Code in WebAssembly vs.\ Native: Extended Report]{Scalability of Parallel Code in WebAssembly in the Browser vs.\ Native: Extended Report}
+
+\author{David Coimbra - fc68024}
+\affiliation{%
+ \institution{Programação Paralela e Concorrente, Mestrado em Engenharia Informática, Faculdade de Ciências, Universidade de Lisboa}
+ \country{Portugal}
+ }
+\email{fc68024@alunos.fc.ul.pt}
+
+\input{sections/00-abstract}
+
+\keywords{WebAssembly, multithreading, scalability, synchronization, atomics, performance evaluation}
+
+\maketitle
+
+\tableofcontents
+
+\input{sections/01-introduction}
+\input{sections/02-background}
+\input{sections/03-related-work}
+\input{sections/04-overview}
+\input{sections/05-platform}
+\input{sections/06-builds}
+\input{sections/07-workloads}
+\input{sections/08-harness}
+\input{sections/09-pilots}
+\input{sections/10-analysis-plan}
+\input{sections/11-quality}
+\input{sections/12-rq1}
+\input{sections/13-rq2}
+\input{sections/14-explanations}
+\input{sections/15-exploratory}
+\input{sections/16-problems}
+\input{sections/17-threats}
+\input{sections/18-reproducibility}
+\input{sections/19-discussion}
+
+\paragraph{Use of AI} Written with Claude (Anthropic) from the project's
+data and decision records.
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{../bib/referencias}
+
+\appendix
+\input{sections/20-appendix}
+
+\end{document}

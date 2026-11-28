@@ -1,0 +1,417 @@
+\section{What Explains the Results}
+\label{sec:why}
+
+The main campaign gives two findings that need an explanation: the filter
+scales better in Firefox than natively (RQ1), and Chrome's shared atomics
+cost more than native ones at small $k$ and less at $k=256$ (RQ2). After
+the main campaign and before the campaigns and probes that test them, nine
+questions were written down, each with its hypothesis, its test and what
+the test would show if the hypothesis held and if it did not
+(Table~\ref{tab:questions}). Nothing in this section is a primary result:
+it supports or weakens an explanation of one.
+
+\begin{table}[htbp]
+\caption{The nine questions, written before their tests, and how each
+ended. \emph{Answered}: an intervention that changes one thing reproduces
+the effect. \emph{Supported}: independent observations agree with the
+prediction. \emph{Open}: not explained.}
+\label{tab:questions}
+\centering\scriptsize
+\begin{tabular}{rp{0.22\linewidth}p{0.24\linewidth}p{0.17\linewidth}p{0.22\linewidth}}
+\toprule
+\# & What is seen & Hypothesis & Tested by & Outcome \\
+\midrule
+1 & The filter's efficiency is 0.87 at $N=8$ natively and in Chrome & At eight threads the filter is bound by memory, not by the cores & Counters of the loop, SIMD builds, image sizes & Supported, for about half of the loss natively \\
+2 & Firefox's filter scales better (0.917) with a slower thread & Slower code per thread asks less of the shared memory & The same three, and the engine arms & Supported \\
+3 & At $N=1$ the filter takes 1.36 times the native time in Firefox, 1.17 in Chrome & The engines' code for the same WASM is longer or slower & Counters of the loop, the machine code & Answered as far as counters go: a third more instructions \\
+4 & The local histogram's efficiency dips at $N=6$ and 7 & Rayon splits in powers of two, which loads six or seven threads unevenly & Fixed grains at $N=6$, 7, 8 & Not supported; open \\
+5 & The local histogram's speedup passes 8 in Firefox & One thread pays for cache misses that eight do not & Counters of the loop & Supported \\
+6 & With one thread, Chrome's atomic time depends on $k$; native and Firefox do not & V8's optimizing compiler emits a load and a compare-and-swap, a chain through memory & Engine arms, machine code, native probe & Answered \\
+7 & At $k=256$, $N=8$ Chrome's atomic histogram is twice as fast as native & The same sequence changes how eight cores contend for 256 lines & Engine arms, native probe & Answered for the sequence; the mechanism is open \\
+8 & Firefox's RQ2 ratio is under 1 at $k=16$ and 256 & It comes from the denominator: its local histogram scales more & The two factors of the ratio & Shown by the times; its cause is question 5 \\
+9 & The atomic cells at $k=1$ fall on several time levels & The levels are states of contention that differ from run to run & Counters per run & Supported \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{What the tests can show.} The native probe changes one thing, the
+instructions of the increment, and looks at the effect: it is the test that
+can show a cause. The engine arms change the whole compiler, so every
+instruction of the loop changes with the increment; they show that an
+effect follows the compiler. Counters, image sizes and SIMD builds give
+correlations: several sources that agree support an explanation, and none
+of them is an intervention on what the filter asks of the memory.
+
+\subsection{The machine code}
+\label{sec:engine-code}
+
+We captured the machine code that runs each kernel: LLVM's from the native
+binary, the WASM both browsers receive, V8's from a diagnostic run in which
+it writes its compiled code (for both of its compilers), and
+SpiderMonkey's by sampling a long run with \code{perf} and reading the
+sampled pages of its code from the process memory (its release build writes
+no dump; the bytes were read twice, five seconds apart, and had to be
+equal). LLVM unrolls alike for both targets: eight atomic increments per
+turn and four plain ones, in x86 and in WASM. What differs between native
+and browser is made by the engine from the same WASM.
+
+\begin{figure}[tbp]
+\footnotesize
+\begin{minipage}[t]{0.47\linewidth}
+\textbf{LLVM, native}
+\begin{verbatim}
+movzbl (%r8),%r9d
+shl    $0x7,%r9d
+lock incq (%rsi,%r9,1)
+\end{verbatim}
+\textbf{SpiderMonkey, optimizing}
+\begin{verbatim}
+movzbl (%r15,%rdi,1),%r8d
+shl    $0x7,%r8d
+add    %ebx,%r8d
+test   $0x7,%r8b      ; alignment
+jne    <trap>
+mov    $0x1,%r9d
+lock add %r9,(%r15,%r8,1)
+\end{verbatim}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.47\linewidth}
+\textbf{V8, optimizing (TurboFan)}
+\begin{verbatim}
+movzbl (%rdi,%rsi,1),%r8d
+shl    $0x7,%r8d
+add    %r15d,%r8d
+...                   ; alignment
+mov    $0x1,%r11d
+mov    (%rdi,%r8,1),%rax   ; load
+mov    %rax,%rcx
+add    %r11,%rcx           ; add
+lock cmpxchg %rcx,(%rdi,%r8,1)
+jne    <back to the load>  ; retry
+\end{verbatim}
+\textbf{V8, baseline (Liftoff)}
+\begin{verbatim}
+...             ; alignment, bounds
+lock xadd %rcx,(%r12,%rax,1)
+\end{verbatim}
+\end{minipage}
+\caption{One atomic increment of the shared histogram, as each compiler
+emits it for the same \code{i64.atomic.rmw.add} (the first of the eight
+increments of a loop turn, from the captured listings; comments added).}
+\Description{Four short assembly listings: lock inc for LLVM, lock add for SpiderMonkey, a load, add and lock cmpxchg with a retry jump for V8's optimizing compiler, and lock xadd for V8's baseline compiler.}
+\label{fig:listings}
+\end{figure}
+
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{Atomic increment} (Figure~\ref{fig:listings}). LLVM emits one
+\code{lock inc}. SpiderMonkey emits one \code{lock add} behind an alignment
+check. V8's optimizing compiler emits a load, an add and a \code{lock
+cmpxchg} that jumps back to the load until it succeeds: a compare-and-swap
+loop, for an add whose result the program does not use. V8's baseline
+compiler emits a \code{lock xadd} behind an alignment check and a bounds
+check.
+\item \emph{Plain increment} (the local histogram). LLVM: \code{inc} on
+memory, four per turn. Both engines: a load, an add and a store.
+\item \emph{Filter.} LLVM: SSE2 in legacy encoding, 65 instructions for 16
+pixels. V8 optimizing: the same 128-bit operations in VEX encoding, with one
+SSE4.1 operation, 87 instructions. SpiderMonkey: a mix of VEX-encoded and
+legacy-encoded vector instructions, with \code{palignr}, 85 instructions.
+That is 4.06, 5.44 and 5.31 instructions per pixel.
+\end{itemize}
+A listing says which instructions run, not how long each takes. The Chrome
+listings come from diagnostic runs with flags that no campaign uses, at a
+smaller size; that the code is the one a campaign runs is assumed.
+SpiderMonkey's baseline code was not captured.
+
+\subsection{RQ2: one instruction sequence}
+\label{sec:why-rq2}
+
+\begin{figure}[tbp]
+\centering
+\begin{tikzpicture}[font=\scriptsize, x=1cm, y=1cm,
+  stp/.style={draw, rounded corners=1pt, minimum height=5mm, inner sep=2pt},
+  arr/.style={-{Stealth[length=1.6mm]}}]
+  \node[font=\footnotesize\bfseries, anchor=west] at (0,2.6) {Locked add (LLVM, SpiderMonkey)};
+  \node[stp, fill=native!15] (a1) at (1.2,1.8) {take line exclusive};
+  \node[stp, fill=native!15, right=3mm of a1] (a2) {add 1};
+  \node[stp, fill=native!15, right=3mm of a2] (a3) {done};
+  \draw[arr] (a1) -- (a2); \draw[arr] (a2) -- (a3);
+  \node[anchor=west, text width=5.4cm] at (0,1.0) {One transfer of the line per increment. Never repeated.};
+  \node[font=\footnotesize\bfseries, anchor=west] at (6.6,2.6) {Compare-and-swap loop (V8 optimizing)};
+  \node[stp, fill=chrome!15] (b1) at (7.4,1.8) {load value};
+  \node[stp, fill=chrome!15, right=3mm of b1] (b2) {add 1};
+  \node[stp, fill=chrome!15, right=3mm of b2] (b3) {\code{lock cmpxchg}};
+  \node[stp, fill=chrome!15, right=3mm of b3] (b4) {done};
+  \draw[arr] (b1) -- (b2); \draw[arr] (b2) -- (b3); \draw[arr] (b3) -- node[above]{same} (b4);
+  \draw[arr] (b3.south) -- ++(0,-4mm) -| node[pos=0.25, below]{value changed by another core: retry} (b1.south);
+  \node[anchor=west, text width=6.6cm] at (6.6,0.35) {A read of the line, then a write. If another core wrote in between, everything is done again.};
+\end{tikzpicture}
+\caption{The two ways an atomic add is compiled. Under concentrated
+contention the right-hand sequence is retried once every four adds
+(Table~\ref{tab:retries}).}
+\Description{Two diagrams: a locked add that takes the line and adds, and a compare-and-swap loop that loads, adds, tries a locked compare-and-swap and retries when another core changed the value.}
+\label{fig:cas}
+\end{figure}
+
+\paragraph{Prediction.} If the cause of Chrome's RQ2 effect is the sequence
+of Figure~\ref{fig:cas}, then (a) Chrome with its baseline compiler only,
+which emits a \code{lock xadd}, should not depend on $k$ with one thread
+and should lose the advantage at $k=256$; and (b) a native program with the
+compare-and-swap sequence should be slower at $k=1$ and faster at $k=256$
+with eight threads.
+
+\paragraph{The engine arms.} The tier campaign (2100 runs) ran each browser
+as shipped, with its optimizing compiler only and with its baseline
+compiler only, for the filter and both histograms at $k=1$ and 256, $N=1$
+and 8 (Table~\ref{tab:tier}). In every cell of both browsers the arm as
+shipped and the optimizing-only arm give the same time after the warm-up
+(Chrome's atomic histogram at $k=1$ with one thread: 697.97 and 697.98~ms;
+within 1\% in 17 of the 20 cells and at most 2.5\% apart in the other
+three, whose intervals overlap): \emph{the campaigns measure the optimizing
+compiler}. The baseline-only arm
+differs everywhere. With one thread, Chrome's atomic time is 698~ms at
+$k=1$ and 412~ms at $k=256$ with the optimizing compiler, and 419 and
+403~ms with the baseline one: the dependence on $k$ follows the optimizing
+compiler, as predicted. The RQ2 effect at $k=1$ follows: 2.17 with the
+optimizing compiler, 1.04 with the baseline one. With its baseline compiler
+Chrome pays for the shared counter at $k=1$ what native code pays.
+
+\input{tables/tier}
+
+\paragraph{The native probe.} A native C program counts into the bench's
+table (256 counters, 128 bytes apart) on the bench's input, with 1 or 8
+threads each pinned to one P-core and given one slice of the image. Only
+the instructions of one increment change between its five sequences
+(Table~\ref{tab:probe}).
+
+\input{tables/probe}
+
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{The prediction holds.} The compare-and-swap is 1.78 times the
+locked increment at $k=1$ with one thread and 2.18 times with eight, and
+0.58 times at $k=256$ with eight.
+\item \emph{It gives Chrome's times.} Chrome's atomic histogram takes 698,
+488 and 412~ms with one thread at $k=1$, 16 and 256; the compare-and-swap
+gives 677, 485 and 408~ms, within 3\%. At $k=256$ with eight threads Chrome
+takes 210~ms and the probe 240~ms, 14\% more.
+\item \emph{The locked increment gives the native times}: 380~ms with one
+thread at every $k$, 415~ms at $k=256$ with eight.
+\end{itemize}
+The engine arms show that the effect follows the compiler; the probe
+isolates the increment. Together: the cost of Chrome's atomic histogram at
+$k=1$ is the compare-and-swap sequence of V8's optimizing compiler
+(question 6, answered). That it costs more already with one thread fits a
+chain through memory at $k=1$, each load waiting for the previous locked
+write; this was not tested by itself.
+
+\paragraph{Retries, counted.} A separate campaign (720 runs) ran
+\code{perf stat} on the P-cores during the runs
+(Tables~\ref{tab:counters-atomic} and~\ref{tab:retries}). Each
+compare-and-swap attempt is a locked load, so locked loads per add above
+the one-thread count are retries. At $k=1$ with eight threads Chrome makes
+0.242 more per add (95\% CI [0.225, 0.259]) against 0.001 natively and
+0.002 in Firefox, which runs the same WASM module and the same pool: about
+one add in four is retried. Chrome also reads the contended line from
+another core before writing it (0.30 read HITMs per add at $k=1$, 0.71 at
+$k=256$; under 0.01 elsewhere), which the load of its sequence explains.
+At $k=256$ Chrome needs the line for writing from another core 0.52 times
+per add where native code needs it 1.04 times and Firefox 0.89 times, and
+takes 86 cycles per add against 158 and 164.
+
+\input{tables/counters-atomic}
+\input{tables/retries}
+
+\paragraph{The advantage at $k=256$: the sequence is enough, the mechanism
+is open.} The probe's prediction held (240~ms against 415). The tier
+campaign's held only in part: the baseline arm was expected to lose the
+advantage over native and keeps most of it (270~ms), and Firefox's baseline
+compiler gains one that its optimizing compiler does not have (327 against
+393~ms). The probe shows the same for the baseline sequence: the
+exchange-and-add behind an alignment and a bounds check takes 349~ms, while
+the checks alone (402~ms) and the exchange-and-add alone (437~ms) do not
+gain. So at $k=256$ with eight threads the time is not ordered by how fast
+one increment is: the sequences that do more around the locked write finish
+sooner. The explanation offered, and not tested, is that eight cores
+hitting 256 lines at random spend their time moving lines between caches,
+and a sequence that reads the line first, or does other work between two
+locked writes, asks for exclusive ownership less often. The prediction that
+failed in part is kept as such (question 7).
+
+\paragraph{Limits of the probe.} Each thread has a fixed slice and a fixed
+core, where the bench splits the image into Rayon tasks and leaves
+placement to the kernel, so its eight-thread times at $k=1$ and 16 are not
+the bench's (976 against 856~ms at $k=1$). One session, ten passes per
+cell. It shows that the sequence is enough to produce the effect on this
+CPU, which is less than showing that nothing else contributes to Chrome's
+times.
+
+\paragraph{What the arms show besides.} In the arm as shipped, the first
+warm-up iteration of Chrome's atomic histogram at $k=1$ is 0.949 times the
+steady value; with one compiler only it is 1.00 and 1.01. A run as shipped
+starts in baseline code, which is the faster one for this loop: the warm-up
+here ends in slower code, the opposite of the usual tier-up. And the RQ2
+effect at $k=256$ does not read cleanly for the baseline arms (0.32 in
+Chrome, 0.40 in Firefox), because the baseline compilers' local histogram
+is much slower (7.0 against 4.2~ms in Chrome at eight threads) and the
+effect divides by it: the times are the reading.
+
+\subsection{RQ1: why the filter is slower in the browsers}
+\label{sec:why-rq1}
+
+\paragraph{Counters of the loop alone.} A counter of a whole browser run is
+mostly not the loop: the first counters campaign gave 3.7 instructions per
+pixel for the native local histogram, 12.6 in Chrome and 21.3 in Firefox,
+where the loop itself is 2.75. So two campaigns were run that differ only
+in the passes per timed sample, one and eight, counted the same way; a run
+of the second does seven more passes of every timed sample than a run of
+the first and nothing else differs (same start, same input, same checksums).
+For each cell and counter,
+\[
+\frac{\overline{C}_{8\,\mathrm{passes}} - \overline{C}_{1\,\mathrm{pass}}}{7 \times \mathrm{samples} \times \mathrm{pixels}}
+\]
+is the count per pixel of the loop alone, with an interval from a bootstrap
+over the runs of both campaigns (10 runs each per cell). The check that the
+difference works: the native local histogram at one thread gives 2.77
+[2.76, 2.79] instructions per pixel against the 2.75 of its code.
+Tables~\ref{tab:counters-loop} and~\ref{tab:counters-loop-rises} have
+the result. The two campaigns ran one
+after the other, 25 minutes apart, so the pass count is confounded with the
+block; a count of instructions does not drift as a time does, but cycles
+and misses could.
+
+\input{tables/counters-loop}
+\input{tables/counters-loop-rises}
+
+\paragraph{Question 3: a third more instructions.} With one thread the
+filter runs 4.10 instructions per pixel natively, 5.52 in Chrome and 5.41
+in Firefox: both engines run about a third more instructions than native
+code (1.34 and 1.32 times), and the listings give the same counts. Chrome
+runs them at a higher rate (4.44 instructions per cycle against 3.84) and
+ends at 1.17 times the native cycles; Firefox runs them at the native rate
+or below (3.73) and ends at 1.36 times. Those two ratios are the time
+ratios of the main campaign. Firefox's loop is as long as Chrome's and runs
+slower; it mixes two encodings of vector instructions, and whether that is
+why was not tested. The local histogram is the same in larger: 2.77
+instructions per pixel natively against 7.0 in Chrome and 6.8 in Firefox,
+for 1.23 and 1.31 times the cycles at $k=256$.
+
+\subsection{RQ1: why the filter does not reach 8, and why Firefox comes closer}
+
+\paragraph{Question 1: bound by memory.} The prediction for a loop bound by
+memory at eight threads was: the same instructions per pixel as with one
+thread, more cache misses, and about 1.15 times the cycles (the inverse of
+the efficiency). The first two hold (Table~\ref{tab:counters-loop-rises}): from
+one to eight threads the instructions per pixel change by under 1\% in the
+three environments and the last-level misses rise by 1.43, 1.47 and 1.25
+times. The cycles rise by 8.5\% natively [7.6, 9.3], not 15\%: the cores'
+own work per pixel explains about half of the lost efficiency. The rest is
+time in which a core is not running the loop at all, which a counter of
+cycles does not see; it fits the cost of handing out and collecting the
+tasks and was not measured.
+
+\paragraph{Question 2: a slower loop asks less.} The rise of the cycles
+from one to eight threads is smaller in Firefox than natively, 1.032
+[1.012, 1.054] against 1.085 [1.076, 1.093], the intervals apart, and its
+last-level misses rise less. Two other sources agree.
+
+\input{tables/simd}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{../figures/simd-efficiency.pdf}
+\caption{Filter efficiency per build: scalar (no SIMD on either side), the
+baseline (128-bit SIMD) and native AVX2.}
+\Description{Efficiency against thread count for the scalar, baseline and AVX2 builds of the filter, one panel per environment.}
+\label{fig:simd}
+\end{figure}
+
+\emph{The SIMD builds} (720 runs; Table~\ref{tab:simd},
+Figure~\ref{fig:simd}). Two builds of the filter change only vectorization:
+\emph{scalar}, with the vectorizers off natively and no \code{simd128} in
+WASM, and native \emph{AVX2}. Ordered by what one thread reads per second,
+the efficiency at eight threads falls on one curve across three builds and
+three environments: 0.98, 0.97 and 0.98 for the scalar builds at 476 to
+760~MB/s; 0.92 (Firefox), 0.87 (Chrome) and 0.87 (native) for the baseline
+at 2178, 2533 and 2969~MB/s; 0.72 for AVX2 at 4337~MB/s. The faster one
+thread goes through memory, the less eight threads gain, and Firefox's
+baseline filter sits where its throughput puts it. At eight threads the
+native baseline filter reads 20.6~GB/s and writes as much.
+
+\emph{The image size.} Natively the efficiency at eight threads is 0.940 at
+4096$^2$, where input and output together are 32~MB and fit the last-level
+cache, and 0.866 at 8192$^2$, where they are 128~MB
+(Table~\ref{tab:cutoff}). The browsers do not show this cleanly (Chrome
+0.758 and 0.863, Firefox 0.885 and 0.928): the size supports the reading
+natively and is not clear for the browsers.
+
+\emph{An intervention inside one engine.} With the slower baseline compiler
+the filter scales slightly better in both browsers (speedup at eight
+threads: Chrome 7.09 against 6.83 with the optimizing compiler, Firefox
+7.51 against 7.44, Table~\ref{tab:tier}).
+
+So Firefox does not scale better because of how it runs threads. Its filter
+does more work between two accesses to memory, and eight such threads ask
+less of the memory. In time Firefox stays the slowest at every thread
+count. Chrome is the case this does not close: its cycles rise less than
+the native ones (1.049) and its efficiency is the native one, so by the
+same accounting Chrome loses more outside the loop, which fits the larger
+cost of its parallel region and was not measured.
+
+\subsection{The speedup above 8 in Firefox}
+\label{sec:why-superlinear}
+
+Firefox's local histogram reaches 8.26 at $k=16$ and 8.48 at $k=256$ with
+eight threads. In Firefox a pixel costs fewer cycles with eight threads
+than with one: 0.983 times [0.972, 0.994] at $k=16$ and 0.947 [0.881,
+0.991] at $k=256$, 5\% fewer, which is the size of the excess over 8. Its
+L2 misses per pixel fall by a quarter (0.72 and 0.74 times), those of
+native code and Chrome by about a twentieth (0.93 to 0.96). The prediction
+held: the one-thread run pays for cache misses that the eight-thread run
+does not (question 5, supported). The speedup above 8 is also there against
+the sequential reference, so it is not a slow pool. What SpiderMonkey's
+one-thread loop does to miss more is not known. This is also what puts
+Firefox's RQ2 ratio under 1 at $k=16$ and 256 (question 8).
+
+\subsection{The dip at six and seven threads}
+\label{sec:dip}
+
+The local histogram's efficiency dips at $N=6$ and 7 and recovers at 8, in
+every environment (natively at $k=16$: 0.956, 0.952, 0.983). The hypothesis
+was that Rayon splits work in powers of two, so six or seven threads share
+eight pieces unevenly. A campaign of 1080 runs ran the local histogram at
+$k=16$ with the adaptive split and with two fixed grains
+(Table~\ref{tab:grain-threads}).
+
+\input{tables/grain-threads}
+
+A fixed grain does not make six or seven threads faster: natively the
+times with 256~KB are those of the adaptive split (4.99 against 4.98~ms at
+$N=6$) and with 1024~KB they are worse. The efficiencies with a fixed grain
+look better only because the one-thread run with a fixed grain is slower
+(29.8 against 28.7~ms), which raises every speedup computed from it. In
+Chrome and Firefox the times do not improve either. The hypothesis is not
+supported; the dip stays unexplained, and placement of six or seven threads
+on eight cores was not tested (question 4).
+
+\subsection{The time levels of the contended cells}
+\label{sec:levels}
+
+In the counters campaign the atomic histogram at $k=1$ with eight threads
+spreads over 25\% to 32\% between its fastest and slowest run, and a run's
+time follows its own count of contended line transfers: Spearman's $\rho$
+between the time and the lines taken for writing from another core is
+$+0.94$ in Chrome, $+0.63$ natively and $+0.56$ in Firefox; in Chrome it is
+also $+0.92$ with the compare-and-swap attempts. At $k=256$ the runs are
+within 1\% and there is nothing to follow. The levels are states of
+contention that differ from run to run (question 9, supported); what sets
+the state of a run is not known. Thread placement, left to the kernel, is a
+candidate.
+
+\subsection{What stays open}
+
+Why SpiderMonkey's filter loop runs fewer instructions per cycle than
+V8's, and why its local histogram misses more with one thread; what Chrome
+loses outside the loop; the mechanism that makes the compare-and-swap
+faster at $k=256$; the dip at six and seven threads; what sets a run's
+state of contention; the slow early iterations of one Firefox cell; and the
+step of the fork-join cost at eight threads.

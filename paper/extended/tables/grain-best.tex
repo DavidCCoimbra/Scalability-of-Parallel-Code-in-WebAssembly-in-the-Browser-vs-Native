@@ -1,0 +1,25 @@
+\begin{table}[htbp]
+\caption{Grain sweeps at $N=8$: the best fixed grain (rows for the filter, KB for the histograms), its time per pass in \textmu s, the flat region (grains whose interval overlaps the best), Rayon's adaptive split over the best, and the cost of one task in ns with its 95\,\% interval.}\label{tab:grain-best}
+\centering\footnotesize
+\begin{tabular}{lllrrcrc}
+\toprule
+Side & Workload & Environment & Best & Time & Flat & Adaptive & Task cost \\
+\midrule
+1024$^2$ & filter & Chrome & 32 & 90.2 & 32 to 32 & 1.128 & 149 [143, 155] \\
+1024$^2$ & filter & Firefox & 128 & 101.9 & 128 to 128 & 1.162 & 199 [191, 207] \\
+1024$^2$ & filter & Native & 128 & 50.1 & 128 to 128 & 1.183 & 93 [89, 96] \\
+1024$^2$ & local, $k$=256 & Chrome & 128 & 100.5 & 128 to 128 & 1.042 & 641 [631, 650] \\
+1024$^2$ & local, $k$=256 & Firefox & 128 & 102.6 & 128 to 128 & 1.056 & 1197 [1189, 1205] \\
+1024$^2$ & local, $k$=256 & Native & 128 & 67.5 & 128 to 128 & 1.029 & 504 [498, 510] \\
+8192$^2$ & filter & Chrome & 4 & 3848.9 & 2 to 4 & 0.999 & 83 [48, 118] \\
+8192$^2$ & filter & Firefox & 4 & 4190.8 & 2 to 8 & 0.996 & 85 [33, 137] \\
+8192$^2$ & filter & Native & 4 & 3248.4 & 2 to 4 & 1.002 & 22 [6, 35] \\
+8192$^2$ & atomic, $k$=256 & Chrome & 1 & 209470.4 & 1 to 8 & 1.004 & - \\
+8192$^2$ & atomic, $k$=256 & Firefox & 4096 & 392514.2 & 512 to 8192 & 1.001 & 537 [481, 592] \\
+8192$^2$ & atomic, $k$=256 & Native & 1 & 413763.2 & 1 to 128 & 1.002 & - \\
+8192$^2$ & local, $k$=256 & Chrome & 64 & 4094.2 & 64 to 128 & 1.027 & 598 [589, 606] \\
+8192$^2$ & local, $k$=256 & Firefox & 128 & 4071.2 & 64 to 128 & 1.010 & 1010 [1003, 1017] \\
+8192$^2$ & local, $k$=256 & Native & 128 & 3434.5 & 128 to 256 & 0.995 & 461 [460, 462] \\
+\bottomrule
+\end{tabular}
+\end{table}

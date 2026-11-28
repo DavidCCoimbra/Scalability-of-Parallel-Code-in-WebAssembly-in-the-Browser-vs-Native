@@ -1,0 +1,23 @@
+\begin{table}[htbp]
+\caption{Counters of the loop alone at one thread, per pixel, by the difference of two pass counts (10 runs with one pass and 10 with eight), with 95\,\% bootstrap intervals. LLC and L2 are cache misses.}\label{tab:counters-loop}
+\centering\scriptsize
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{llcccc}
+\toprule
+Workload & Environment & Instructions & Cycles & LLC misses & L2 misses \\
+\midrule
+filter & Native & 4.103 [4.098, 4.108] & 1.067 [1.062, 1.072] & 0.01378 [0.01374, 0.01383] & 0.000329 [0.0003247, 0.0003335] \\
+filter & Chrome & 5.517 [5.478, 5.539] & 1.243 [1.221, 1.26] & 0.01285 [0.01277, 0.01292] & 0.0003967 [0.0003883, 0.0004042] \\
+filter & Firefox & 5.408 [5.371, 5.431] & 1.451 [1.428, 1.473] & 0.01049 [0.01034, 0.01064] & 0.000424 [0.0004113, 0.0004354] \\
+\midrule
+local, $k$=16 & Native & 2.761 [2.755, 2.767] & 1.359 [1.356, 1.363] & 0.003641 [0.003621, 0.003661] & 0.0004206 [0.0004167, 0.0004239] \\
+local, $k$=16 & Chrome & 7.025 [7.02, 7.03] & 1.708 [1.699, 1.718] & 0.003774 [0.003697, 0.003856] & 0.0004188 [0.0004122, 0.0004257] \\
+local, $k$=16 & Firefox & 6.819 [6.814, 6.825] & 1.751 [1.745, 1.755] & 0.003558 [0.003474, 0.003644] & 0.0004669 [0.0004556, 0.0004786] \\
+\midrule
+local, $k$=256 & Native & 2.772 [2.761, 2.785] & 1.294 [1.288, 1.3] & 0.004266 [0.004236, 0.004299] & 0.0004456 [0.00044, 0.0004517] \\
+local, $k$=256 & Chrome & 7.004 [6.978, 7.025] & 1.593 [1.564, 1.637] & 0.00307 [0.002981, 0.00317] & 0.0004338 [0.0004246, 0.0004416] \\
+local, $k$=256 & Firefox & 6.817 [6.811, 6.822] & 1.701 [1.638, 1.819] & 0.003646 [0.003578, 0.003714] & 0.0004924 [0.0004735, 0.0005083] \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

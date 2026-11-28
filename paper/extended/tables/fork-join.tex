@@ -1,0 +1,44 @@
+{\small
+\begin{longtable}{lllrrrrrr}
+\caption{Fork-join calibration of the main campaign in \textmu s, over the 270 runs of each environment and $N$: the median over runs of the per-run median, and the mean of the per-run means, of 20 empty regions. Warm: back to back; cold: after a pause that lets the workers sleep.}\label{tab:fork-join} \\
+\toprule
+ &  &  & \multicolumn{2}{c}{Native} & \multicolumn{2}{c}{Chrome} & \multicolumn{2}{c}{Firefox} \\
+Probe & Phase & $N$ & median & mean & median & mean & median & mean \\
+\midrule
+\endfirsthead
+\toprule
+ &  &  & \multicolumn{2}{c}{Native} & \multicolumn{2}{c}{Chrome} & \multicolumn{2}{c}{Firefox} \\
+Probe & Phase & $N$ & median & mean & median & mean & median & mean \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+broadcast & warm & 1 & 2.6 & 24.2 & 5.0 & 23.8 & 0.0 & 23.5 \\
+broadcast & warm & 2 & 2.8 & 28.7 & 5.0 & 31.6 & 0.0 & 29.8 \\
+broadcast & warm & 4 & 3.1 & 33.4 & 7.5 & 58.4 & 0.0 & 33.8 \\
+broadcast & warm & 6 & 1.9 & 35.0 & 10.0 & 70.1 & 0.0 & 44.3 \\
+broadcast & warm & 7 & 1.8 & 38.2 & 10.0 & 76.4 & 10.0 & 49.9 \\
+broadcast & warm & 8 & 7.9 & 46.2 & 110.0 & 164.3 & 60.0 & 90.9 \\
+\midrule
+broadcast & cold & 1 & 14.4 & 55.0 & 25.0 & 62.7 & 45.0 & 64.8 \\
+broadcast & cold & 2 & 12.4 & 52.7 & 20.0 & 62.3 & 20.0 & 64.2 \\
+broadcast & cold & 4 & 19.2 & 55.7 & 37.5 & 88.1 & 40.0 & 81.9 \\
+broadcast & cold & 6 & 28.7 & 68.4 & 60.0 & 117.4 & 55.0 & 90.9 \\
+broadcast & cold & 7 & 27.7 & 65.4 & 60.0 & 131.5 & 60.0 & 91.6 \\
+broadcast & cold & 8 & 34.2 & 64.5 & 65.0 & 111.3 & 90.0 & 105.9 \\
+\midrule
+par-iter & warm & 1 & 0.0 & 0.0 & 0.0 & 0.2 & 0.0 & 0.1 \\
+par-iter & warm & 2 & 2.6 & 3.6 & 5.0 & 9.1 & 0.0 & 4.6 \\
+par-iter & warm & 4 & 3.1 & 4.2 & 5.0 & 14.3 & 0.0 & 5.7 \\
+par-iter & warm & 6 & 4.2 & 5.1 & 5.0 & 14.9 & 0.0 & 7.4 \\
+par-iter & warm & 7 & 4.9 & 6.6 & 5.0 & 15.9 & 0.0 & 8.6 \\
+par-iter & warm & 8 & 5.4 & 6.5 & 25.0 & 31.7 & 20.0 & 25.3 \\
+\midrule
+par-iter & cold & 1 & 0.0 & 0.2 & 0.0 & 0.7 & 0.0 & 0.9 \\
+par-iter & cold & 2 & 11.1 & 29.0 & 15.0 & 39.9 & 20.0 & 34.7 \\
+par-iter & cold & 4 & 17.2 & 37.3 & 40.0 & 74.1 & 30.0 & 48.8 \\
+par-iter & cold & 6 & 22.2 & 41.6 & 50.0 & 82.8 & 40.0 & 58.6 \\
+par-iter & cold & 7 & 26.5 & 44.9 & 57.5 & 90.3 & 40.0 & 66.3 \\
+par-iter & cold & 8 & 33.5 & 52.6 & 65.0 & 99.8 & 80.0 & 88.4 \\
+\end{longtable}
+}

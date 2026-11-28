@@ -1,0 +1,63 @@
+\section{Background}
+\label{sec:background}
+
+\paragraph{WebAssembly threads.} A WASM module addresses one flat
+\emph{linear memory}. With the threads proposal that memory is a
+\code{SharedArrayBuffer}, which a page may use only when it is
+\emph{cross-origin isolated}: the server must send the COOP and COEP headers.
+A thread is a Web Worker that instantiates the same module over the same
+memory. The module's atomic instructions (\code{i64.atomic.rmw.add},
+\code{memory.atomic.wait32}, \code{memory.atomic.notify}) are sequentially
+consistent, and data-race-free programs get sequential
+consistency~\cite{watt2019}. The main thread of a page may not block, so it
+cannot wait on an atomic; a program that needs to join its threads runs its
+coordinating code in a dedicated worker.
+
+\paragraph{Rayon.} Rayon is Rust's data-parallelism library. A parallel
+iterator splits its input recursively into tasks, and a pool of worker
+threads runs them with \emph{work stealing}: an idle worker takes a pending
+task from another worker's queue. A parallel region is a \emph{fork-join}:
+the caller hands the work to the pool and waits until every task is done.
+The fixed cost of starting and ending a region does not shrink with the
+number of threads. In the browser Rayon runs through
+\code{wasm-bindgen-rayon}, which creates one worker per pool thread; an idle
+worker sleeps in \code{memory.atomic.wait32}, which each engine implements,
+where a native worker sleeps on a futex.
+
+\paragraph{Two compilers per engine.} A browser engine compiles a WASM
+function twice. A fast \emph{baseline} compiler (Liftoff in V8) produces
+code at once, so the page starts quickly; an \emph{optimizing} compiler
+(TurboFan in V8) recompiles hot functions and replaces their code
+(\emph{tier-up}). The first iterations of a workload may therefore run
+different machine code from the later ones, which is one reason for a
+warm-up inside each run.
+
+\paragraph{Cache lines and atomics on x86.} Caches move memory in 64-byte
+lines. A core that writes a line must own it exclusively; if another core
+holds it modified, the line is transferred between caches (a \emph{HITM}
+event). Two threads that update the same counter make its line bounce
+between their cores (\emph{true sharing}); two threads that update different
+counters on the same line do too (\emph{false sharing}). An atomic add on
+x86 is a \code{lock}-prefixed instruction that holds the line for the whole
+read-modify-write. Such instructions are full barriers whatever memory
+ordering the source asks for, so \code{Relaxed} and \code{SeqCst} generate
+the same code on x86, and their cost under contention is bound by line
+transfers~\cite{schweizer2015}. A \emph{compare-and-swap} (\code{lock
+cmpxchg}) writes only if the value is still the one read before; code built
+on it loads the value, computes the new one and retries when another core
+changed the value in between.
+
+\paragraph{Speedup and efficiency.} With $T_N$ the time with $N$ threads,
+the relative speedup is $S_N = T_1/T_N$ and the efficiency $E_N = S_N/N$.
+The speedup is relative to the same environment with one thread, so it
+compares each environment with itself; it says nothing about which
+environment is faster, which is why it is always read next to the time in
+the browser over the native time at the same $N$~\cite{hoefler2015}.
+\emph{Strong scaling} keeps the input fixed while $N$ grows; \emph{weak
+scaling} grows the input with $N$ so that the work per thread is
+fixed~\cite{gustafson1988}, and its efficiency is $T_1/T_N$. Amdahl's
+law~\cite{amdahl1967} bounds the speedup of a program with a serial fraction
+$f$ by $1/(f + (1-f)/N)$. The Karp-Flatt metric~\cite{karp1990} inverts it:
+from a measured speedup, $e = (1/S_N - 1/N)/(1 - 1/N)$ is the serial
+fraction that would explain it. An $e$ that grows with $N$ points to an
+overhead of running in parallel, not to serial code.

@@ -1,0 +1,165 @@
+\section{RQ1: Scaling Without Synchronization}
+\label{sec:rq1}
+
+The main campaign ran 3 environments $\times$ (9 workload configurations
+$\times$ $N \in \{1,2,4,6,7,8\}$ + 5 sequential references) $\times$ 30
+runs = 5310 runs in one random order (seed 2026112201), in 14.0 hours.
+Tables~\ref{tab:times}, \ref{tab:speedup} and~\ref{tab:efficiency} give the
+time, the speedup and the efficiency of every cell;
+Figures~\ref{fig:speedup} and~\ref{fig:efficiency} draw them.
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{../figures/campaign-speedup.pdf}
+\caption{Relative speedup against $N$ per workload (30 runs per point,
+bands: 95\% CI; dashed: ideal).}
+\Description{Speedup against thread count, one panel per workload, for native, Chrome and Firefox.}
+\label{fig:speedup}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{../figures/campaign-efficiency.pdf}
+\caption{Efficiency $S_N/N$ against $N$ per workload (bands: 95\% CI).}
+\Description{Efficiency against thread count, one panel per workload, for native, Chrome and Firefox.}
+\label{fig:efficiency}
+\end{figure}
+
+\subsection{The primary result}
+
+The filter reaches a speedup of 6.96 at $N=8$ natively (95\% CI [6.94,
+6.97]), 6.92 in Chrome [6.89, 6.96] and 7.34 in Firefox [7.24, 7.42]: an
+efficiency of 0.869, 0.865 and 0.917. The two primary RQ1 contrasts
+(Table~\ref{tab:primary}) are the ratios of those speedups to native's:
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{Chrome}: 0.996, 99.5\% CI [0.987, 1.004], not rejected
+(Holm-adjusted $p = 0.28$). Chrome's filter speedup is within $-1.3$\% to
+$+0.4$\% of native's. A non-rejection is not proof of equality; the
+interval is the bound.
+\item \emph{Firefox}: 1.055, 99.5\% CI [1.034, 1.072], rejected. Firefox's
+speedup is 5.5\% higher than native's, from a slower baseline: its filter
+takes 30.8~ms on one thread against 22.6~ms natively, and 4.20 against
+3.25~ms on eight. Section~\ref{sec:why-rq1} explains why a slower loop
+scales better here.
+\end{itemize}
+
+\input{tables/primary}
+
+The local histogram, which also has no shared write, reaches 7.83 to 8.48
+at $N=8$ in every environment and at every $k$ (efficiency 0.98 to 1.06).
+The exploratory speedup ratios of every cell are in
+Table~\ref{tab:rq1-ratios}: for the local histogram they stay between 0.99
+and 1.07 at $N=8$. Two features of these curves are taken up later: the
+efficiency above 1 in Firefox at $k \geq 16$ (speedups of 8.26 and 8.48,
+Section~\ref{sec:why-superlinear}), and a dip of the efficiency at six and
+seven threads that recovers at eight, in every environment
+(Section~\ref{sec:dip}).
+
+\subsection{Absolute time: a factor that does not grow}
+
+A speedup compares an environment with itself.
+Table~\ref{tab:absolute} and Figure~\ref{fig:absolute} give the time in the
+browser over the native time at the same $N$. On one thread WASM is slower
+for the filter (Chrome 1.172 times native [1.167, 1.177], Firefox 1.363
+[1.356, 1.372]) and for the local histogram at $k \geq 16$ (1.23 to 1.27
+times), and within 7\% at $k \leq 4$. The ratio does not grow with $N$:
+for the filter at eight threads it is 1.177 in Chrome and 1.292 in Firefox.
+WASM threads cost time, not scalability; in Firefox the factor even falls
+with $N$.
+
+One cell goes the other way: at $k=1$ Chrome's local histogram is 2.7\%
+\emph{faster} than native (0.973 [0.972, 0.974]). With every pixel on one
+counter the loop is a chain through memory, bound by store-to-load
+forwarding and not by throughput; LLVM uses one read-modify-write
+instruction per pixel (\code{inc} on memory) and V8 a load, an add and a
+store. An investigation on the first build timed both sequences by hand in
+a native microbenchmark and reproduced the campaign's difference within
+about 1\%. It is evidence from an earlier build, and it matches the
+listings of v3 (Section~\ref{sec:engine-code}); the point for the reader is
+that the engine's code generator is part of what is measured, in both
+directions.
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{../figures/campaign-absolute.pdf}
+\caption{Absolute time of one iteration against $N$ per workload and
+environment.}
+\Description{Absolute time against thread count per workload for the three environments.}
+\label{fig:absolute}
+\end{figure}
+
+\subsection{Is the speedup inflated by a slow baseline?}
+\label{sec:sequential}
+
+Relative speedup divides by the time of a pool of one thread. If that pool
+were slow compared with code that has no pool at all, every speedup would
+be inflated. The sequential references answer it
+(Table~\ref{tab:sequential}): the sequential kernel takes between 0.957 and
+1.072 times the time of the pool of one thread, that is, the pool costs
+between 7\% less and 5\% more than sequential code, in every environment.
+For the filter the pool costs under 1\% natively and in Chrome and 2.5\%
+in Firefox. Against the sequential reference the filter still reaches 6.90,
+6.86 and 7.15 at eight threads, and the local histogram's speedup above 8
+in Firefox is still there (8.09 and 8.12 at $k=16$ and 256). Natively the
+sequential histogram and one task of the local histogram are the same
+machine-code loop.
+
+\input{tables/sequential}
+
+Table~\ref{tab:throughput} gives the same data as nanoseconds per pixel and
+as the \emph{absolute} speedup, the native one-thread time over the time of
+the environment at $N$: on eight threads the filter is 6.96 times faster
+than one native thread natively, 5.91 times in Chrome and 5.38 times in
+Firefox.
+
+\subsection{Fork-join: what does not divide with the work}
+\label{sec:forkjoin}
+
+That factor divides with the work; the cost of starting and ending
+a parallel region does not. The calibration of every run measures it
+(Table~\ref{tab:fork-join}). With the workers awake (warm), an empty
+\code{broadcast} at $N=8$ takes 110~\textmu s in Chrome and 60~\textmu s in
+Firefox against 7.9~\textmu s natively (medians over 270 runs of the
+per-run median), and an empty parallel iterator 25, 20 and 5.4~\textmu s.
+The means are larger (164, 91 and 46~\textmu s for the broadcast), so the
+distribution has a tail. Three cautions go with these numbers:
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{Resolution.} With a 20~\textmu s clock, Firefox's warm values
+are multiples of 20 and read 0 at $N \leq 4$; Chrome's are multiples of 5.
+Twenty samples per probe do not resolve them better.
+\item \emph{A step at $N=8$.} Natively the broadcast takes 1.8 to
+3.1~\textmu s up to $N=7$ and 7.9 at $N=8$, and Chrome's goes from 10 to
+110. At eight threads the coordinating thread shares the eight cores with
+eight workers; that this is the cause was not tested.
+\item \emph{Cold depends on what ran before.} After a pause the workers are
+asleep, as before a measured iteration. In filter runs the cold broadcast
+at $N=8$ takes 205~\textmu s natively, 460 in Chrome and 270 in Firefox; in
+histogram runs 31 to 34, 65 and 80 to 85, so that Chrome's cold call is
+cheaper than its warm one there. The pause is as long as the workload's
+checksum, which differs between workloads; the cause is not established.
+\end{itemize}
+With iterations of milliseconds these costs are amortized (0.33\% of $T_8$
+natively at 8192$^2$, 1.4\% in Firefox and 2.7\% in Chrome with the warm
+cost, Section~\ref{sec:cutoff}); with regions under a millisecond they are a
+large share of the time.
+
+\subsection{Karp-Flatt}
+
+Table~\ref{tab:karp-flatt} gives the serial fraction that Amdahl's law
+would need to explain each speedup. For the filter at $N=8$ it is 0.021
+natively, 0.022 in Chrome and 0.013 in Firefox, and it does not fall as $N$
+grows (natively 0.018, 0.019, 0.021 at $N=2$, 4, 8). But the timed region
+of the filter has no serial part: every row is processed in parallel and
+nothing else is timed. So $e$ here is not serial code, it is a cost of
+running in parallel, and Section~\ref{sec:why-rq1} attributes about half of
+it natively to the cores' own slower work on shared memory. For the local
+histogram $e$ is between $-0.008$ and $0.013$ from $N=4$ on.
+
+\input{tables/times}
+\input{tables/speedup}
+\input{tables/efficiency}
+\input{tables/absolute}
+\input{tables/rq1-ratios}
+\input{tables/throughput}
+\input{tables/fork-join}
+\input{tables/karp-flatt}

@@ -1,0 +1,96 @@
+\section{Analysis Plan}
+\label{sec:plan}
+
+Choosing the statistics after seeing the data invites picking the one that
+gives the nicest answer. The plan was written, committed and tagged before
+any campaign data; later changes are dated amendments with their reason. It
+is eight decisions.
+
+\begin{description}[leftmargin=2.5em]
+\item[Unit.] The run, one fresh process. Iterations inside a run are not
+independent observations (they share the process's memory layout, its
+compiled code and its thread placement), so treating them as such would be
+pseudo-replication~\cite{georges2007,kalibera2013}. Run times are positive
+and right-skewed and the questions are about ratios, so the analysis works
+on log times and reports ratios.
+\item[D1, per run.] The median of its 10 measured iterations.
+\item[D2, per configuration.] A configuration is (environment, workload,
+input, $k$, $N$). Its central value $T$ is the geometric mean of its 30 run
+values. Speedup is $T(1)/T(N)$ within the same environment.
+\item[D3, intervals.] Percentile bootstrap, 10\,000 resamples, fixed seed.
+Runs are resampled, never iterations, and groups that are different
+processes ($N=1$ and $N$; atomic and local; native and browser) are
+resampled independently, since they are not paired.
+\item[D4, RQ1.] The ratio of speedups $S(\mathrm{browser})/S(\mathrm{native})$
+for each browser, workload and $N$; 1 means the browser scales like native.
+\item[D5, RQ2.] For each environment $e$, $r(e,k,N) = \log T_{\mathrm{atomic}}
+- \log T_{\mathrm{local}}$: how much slower the shared atomics are than the
+lock-free control on the same input. The estimand is the interaction
+$\Delta r = r(\mathrm{browser}) - r(\mathrm{native})$ at the same $k$ and
+$N$, a difference of differences. Comparing within one input is what
+removes the input's own effect on both variants.
+\item[D6, effect sizes.] The ratios themselves: the speedup ratio for RQ1
+and $\exp(\Delta r)$ for RQ2, the relative cost of the atomic variant in
+the browser over the same relative cost natively.
+\item[D7, exclusions.] No statistical outlier removal. Only three exclusions
+exist, decided in advance and counted: failed runs, runs that fail strict
+validation, and runs whose foreign CPU time is above 0.25~s.
+\item[D8, multiple comparisons.] The \emph{primary family} has ten
+contrasts, all at $N=8$: $\Delta r$ for $k \in \{1,4,16,256\}$ and both
+browsers (eight), and the filter's log speedup ratio for both browsers
+(two). Each has a two-sided bootstrap $p$-value, twice the smaller share of
+bootstrap estimates on one side of zero, floored at $1/10\,000$. The
+decision is Holm's procedure at a family-wise $\alpha=0.05$. Primary
+contrasts are shown with Bonferroni 99.5\% intervals, which hold
+simultaneously for the family. Everything else is exploratory: uncorrected
+95\% intervals, labelled as such.
+\end{description}
+
+\paragraph{Why these choices.} Intervals on ratios show the size of an
+effect and its uncertainty together, which a bare test does not. The
+bootstrap makes no assumption about the shape of the run times. The
+geometric mean is the natural centre for quantities compared by ratio. A
+small primary family, fixed in advance, keeps the correction for multiple
+comparisons from being diluted by the hundreds of descriptive cells.
+
+\paragraph{Amendments.} Two were made before any data: every scaling
+comparison is read next to the absolute time ratio
+$T(\mathrm{browser},N)/T(\mathrm{native},N)$, because a relative speedup can
+look better only because its baseline is slow~\cite{hoefler2015}; and a
+configuration whose run value is under 100 clock ticks is flagged. One was
+made after the first campaign's primary results existed, and is labelled as
+such: a \emph{robustness check} that tests each primary contrast with
+Mann-Whitney $U$~\cite{mann1947} and Cliff's $\delta$ on per-run ratios
+($\log(T_1/T_N)$ for RQ1, $\log(T_{\mathrm{atomic}}/T_{\mathrm{local}})$ for
+RQ2), Holm-adjusted. The two runs of a ratio are separate processes, paired
+by repetition index, so the check is repeated over 1000 random re-pairings.
+The bootstrap decisions stay the reported ones; a disagreement would be
+reported as not robust.
+
+\paragraph{Sensitivity checks.} The plan names three: the per-run mean
+instead of the median, the median across runs instead of the geometric
+mean, and no exclusion by foreign CPU time. A conclusion that changes under
+one of them is reported as not robust.
+
+\paragraph{The data check.} Before any analysis a report counts the runs
+done, missing and failed, the checksum conflicts, the runs failing strict
+validation, the runs above the threshold, the configurations under the
+clock factor, and the configurations whose run values trend with the
+execution order (Spearman's $|\rho| > 0.5$ between position and value; with
+30 runs and no drift this has a probability of about 0.5\%, so about one
+configuration of the main campaign can be flagged by chance). What is done
+with each finding was fixed beforehand: a conflict or a missing run stops
+the analysis; a trending configuration is reported and kept, since the
+random order turns drift into variance, not bias; no outlier is removed.
+Every analysis command reads a campaign through one loader that applies
+these rules.
+
+\paragraph{Post hoc tables.} Three descriptive tables were added after the
+plan and decide nothing: the two factors of each RQ2 ratio
+(Section~\ref{sec:decomposition}), throughput with the absolute speedup,
+and the Karp-Flatt fraction.
+
+\paragraph{The explanations have their own rule.} For the questions of
+Section~\ref{sec:why}, each hypothesis, the test of it and what the test
+would show if the hypothesis held or failed were written in a dated record
+before the test ran. Without that, any outcome can be read as support.

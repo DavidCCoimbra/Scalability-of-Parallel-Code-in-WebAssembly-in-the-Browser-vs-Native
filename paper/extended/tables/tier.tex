@@ -1,0 +1,54 @@
+{\small
+\begin{longtable}{lllrrcr}
+\caption{Engine arms (tier campaign, 2100 runs): each browser as shipped (default), with its optimizing compiler only and with its baseline compiler only. Time in ms at $N=1$ and 8, speedup at $N=8$ with its 95\,\% interval, and the first warm-up iteration over the run's value at $N=1$.}\label{tab:tier} \\
+\toprule
+Workload & Environment & Arm & $T_1$ & $T_8$ & $S_8$ [95\,\%] & First it. \\
+\midrule
+\endfirsthead
+\toprule
+Workload & Environment & Arm & $T_1$ & $T_8$ & $S_8$ [95\,\%] & First it. \\
+\midrule
+\endhead
+\bottomrule
+\endfoot
+filter & Native &  & 22.597 & 3.259 & 6.933 [6.919, 6.947] & 2.005 \\
+filter & Chrome & default & 26.674 & 3.839 & 6.948 [6.878, 7.06] & 1.027 \\
+filter & Chrome & optimizing & 26.494 & 3.877 & 6.833 [6.798, 6.868] & 1.436 \\
+filter & Chrome & baseline & 32.080 & 4.523 & 7.093 [7.06, 7.127] & 1.012 \\
+filter & Firefox & default & 30.799 & 4.178 & 7.372 [7.295, 7.45] & 1.012 \\
+filter & Firefox & optimizing & 31.185 & 4.192 & 7.44 [7.333, 7.546] & 1.002 \\
+filter & Firefox & baseline & 39.124 & 5.206 & 7.515 [7.454, 7.575] & 1.001 \\
+\midrule
+atomic, $k$=1 & Native &  & 379.6 & 857.2 & 0.4429 [0.43, 0.4563] & 1.001 \\
+atomic, $k$=1 & Chrome & default & 698.0 & 1835.0 & 0.3804 [0.3675, 0.3936] & 0.9486 \\
+atomic, $k$=1 & Chrome & optimizing & 698.0 & 1823.2 & 0.3828 [0.3701, 0.3956] & 1.014 \\
+atomic, $k$=1 & Chrome & baseline & 419.0 & 898.4 & 0.4665 [0.4532, 0.4798] & 1.001 \\
+atomic, $k$=1 & Firefox & default & 379.7 & 853.9 & 0.4447 [0.4326, 0.4568] & 1.007 \\
+atomic, $k$=1 & Firefox & optimizing & 379.7 & 874.2 & 0.4343 [0.4205, 0.4484] & 1 \\
+atomic, $k$=1 & Firefox & baseline & 411.3 & 896.7 & 0.4587 [0.4469, 0.4714] & 1 \\
+\midrule
+atomic, $k$=256 & Native &  & 379.6 & 414.0 & 0.9168 [0.9158, 0.9177] & 1.001 \\
+atomic, $k$=256 & Chrome & default & 411.9 & 210.3 & 1.958 [1.957, 1.959] & 0.9993 \\
+atomic, $k$=256 & Chrome & optimizing & 411.9 & 210.3 & 1.958 [1.957, 1.959] & 1.024 \\
+atomic, $k$=256 & Chrome & baseline & 402.7 & 270.1 & 1.491 [1.49, 1.492] & 1.001 \\
+atomic, $k$=256 & Firefox & default & 379.8 & 392.9 & 0.9668 [0.9662, 0.9674] & 1.002 \\
+atomic, $k$=256 & Firefox & optimizing & 379.8 & 393.1 & 0.9662 [0.9658, 0.9666] & 1 \\
+atomic, $k$=256 & Firefox & baseline & 384.0 & 326.5 & 1.176 [1.176, 1.177] & 1.001 \\
+\midrule
+local, $k$=1 & Native &  & 154.9 & 19.475 & 7.956 [7.951, 7.959] & 1.002 \\
+local, $k$=1 & Chrome & default & 150.7 & 19.004 & 7.929 [7.922, 7.936] & 1.007 \\
+local, $k$=1 & Chrome & optimizing & 150.5 & 19.082 & 7.888 [7.874, 7.9] & 1.075 \\
+local, $k$=1 & Chrome & baseline & 154.5 & 19.638 & 7.867 [7.855, 7.878] & 1.005 \\
+local, $k$=1 & Firefox & default & 155.7 & 19.785 & 7.867 [7.858, 7.876] & 1.005 \\
+local, $k$=1 & Firefox & optimizing & 155.7 & 19.788 & 7.866 [7.858, 7.874] & 1.002 \\
+local, $k$=1 & Firefox & baseline & 150.8 & 19.143 & 7.876 [7.867, 7.885] & 1.002 \\
+\midrule
+local, $k$=256 & Native &  & 27.058 & 3.425 & 7.901 [7.874, 7.926] & 1.021 \\
+local, $k$=256 & Chrome & default & 33.624 & 4.194 & 8.017 [7.88, 8.164] & 1.11 \\
+local, $k$=256 & Chrome & optimizing & 33.486 & 4.091 & 8.184 [8.073, 8.312] & 1.342 \\
+local, $k$=256 & Chrome & baseline & 53.921 & 6.979 & 7.726 [7.615, 7.84] & 1.012 \\
+local, $k$=256 & Firefox & default & 34.411 & 4.090 & 8.413 [8.28, 8.568] & 1.122 \\
+local, $k$=256 & Firefox & optimizing & 34.074 & 4.052 & 8.409 [8.323, 8.487] & 1.016 \\
+local, $k$=256 & Firefox & baseline & 54.435 & 6.686 & 8.142 [7.861, 8.541] & 1.008 \\
+\end{longtable}
+}

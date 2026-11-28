@@ -6,15 +6,22 @@ references). Every number in it is from the build `measured/v3`.
 | Path | What it holds |
 |---|---|
 | `final/paper.tex` | The paper |
+| `extended/extended.tex`, `extended/sections/*.tex` | The extended report: the long version of the paper, with every campaign, probe, pilot decision and problem of the study, and no page limit |
+| `extended/make_tables.py` | Writes the tables of the extended report from `data/tables/*-v3`, `data/probes` and the campaign journals |
+| `extended/tables/*.tex` | The generated tables; never edited by hand |
 | `bib/referencias.bib` | The references of the paper |
 | `figures/*.pdf` | The figures, written by the result targets from `data/raw/*-v3` (`make all-results`); never edited by hand |
 | `pdf/paper.pdf` | The compiled paper that is kept |
+| `pdf/extended.pdf` | The compiled extended report that is kept |
 
 ## Building it
 
 ```sh
 make all-results                      # the figures, from the measured runs
 cd paper/final && tectonic -X compile paper.tex --outdir ../pdf
+
+python3 paper/extended/make_tables.py # the tables of the extended report
+cd paper/extended && tectonic -X compile extended.tex --outdir ../pdf
 ```
 
 `latexmk -pdf paper.tex` works as well; the PDFs built next to the sources are ignored by git.
@@ -33,6 +40,13 @@ flowchart LR
     figures --> tex
     bib["paper/bib/referencias.bib"] --> tex
     tex --> pdf["paper/pdf/paper.pdf"]
+    tables --> gen["paper/extended/make_tables.py"]
+    probes --> gen
+    gen --> long["paper/extended/extended.tex"]
+    adr --> long
+    figures --> long
+    bib --> long
+    long --> longpdf["paper/pdf/extended.pdf"]
 ```
 
 | In the paper | Source |
@@ -61,3 +75,6 @@ flowchart LR
 | Per-core check, the gate, the two builds | ADR 0085, ADR 0086, ADR 0087 |
 | Pilot facts in the methodology (E-cores, headful, start delay, mask escape) | ADR 0045, ADR 0046, ADR 0048 |
 | Threats to validity | ADR 0080, as amended by ADR 0085, 0087 and 0091 |
+
+The extended report maps each of its sections to the decision records and tables behind it in
+its appendix (Table "Where each section comes from").

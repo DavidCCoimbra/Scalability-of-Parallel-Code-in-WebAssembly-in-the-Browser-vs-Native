@@ -1,0 +1,116 @@
+\section{Pilot Decisions}
+\label{sec:pilots}
+
+The analysis plan left a few values to pilot data. Each was fixed before
+the first campaign from a pilot run on the measuring machine, and is listed
+here with the number behind it (Table~\ref{tab:pilots}). Pilot numbers are
+evidence for a decision; none is a result, and none is mixed with the
+campaigns. The pilots ran on the first build.
+
+\begin{table}[htbp]
+\caption{The values fixed from pilots, and the evidence for each. All
+numbers in this table are pilot numbers, not results.}
+\label{tab:pilots}
+\centering\footnotesize
+\begin{tabular}{p{0.2\linewidth}p{0.2\linewidth}p{0.5\linewidth}}
+\toprule
+Decision & Value & Evidence from the pilot \\
+\midrule
+Image size & 8192$\times$8192 & Smallest size at which the fastest browser cell at $N=8$ is over 100 clock ticks in both browsers (Firefox 213 ticks, Chrome 802) \\
+Clock factor & 100 ticks & A factor of 1000 would need images above 20\,000$^2$ in Firefox; 100 caps the quantization of one sample at 1\% \\
+Warm-up $W$ & 5 to 71, per workload & 1.5 times the largest warm-up observed in any environment, thread count and run of 100-iteration runs \\
+Thread counts & 1, 2, 4, 6, 7, 8 & $N=7$ locates where a knee at the last thread would start \\
+Mask & 8 P-cores & With the E-cores added, $N=8$ runs were slower in 5 of 6 cells (3 to 19\%) and several times more variable \\
+Display & headless & Headful over headless within 0.3\% in four cells, intervals within 1.2\% \\
+Start delay & 3 s & Without it, Firefox's local histogram at $N=8$ was 1.32 times slower (ratio 0.756 [0.721, 0.790]) with bursts in 3 of 10 runs \\
+Runs & 30 per cell & 99.5\% half-widths under 1\% for RQ1 and 1.1 to 7.5\% for RQ2 \\
+Iterations & 10 per run & More iterations do not improve the agreement of the per-run median (93 to 96\% within 2\% for every count tried) \\
+Foreign CPU threshold & 0.25 s & Twice the largest value of 1638 pilot runs (0.125 s) \\
+Chrome build & Chrome for Testing & Within 1.3\% of the branded stable Chrome of the same version in four cells \\
+Padding & 128 bytes & No difference detected against 64 bytes (Section~\ref{sec:workloads}) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Image size and the clock.} A browser clock that is coarse
+compared with an iteration makes the measured time mostly quantization
+error. The size sweep measured the resolution of \code{performance.now()}
+in every browser run, 5~\textmu s in Chrome and 20~\textmu s in Firefox, and
+the fastest configuration at $N=8$ in clock ticks: 24, 68, 213 and 322 in
+Firefox at sides of 2048, 4096, 8192 and 10\,240. The plan started with a
+factor of 1000, which is out of reach at any usable size; the factor became
+100, a warning and not an exclusion, and the image 8192$\times$8192, the
+smallest size that clears it with a margin of two in Firefox. The sweep
+also showed, with 3 runs and no intervals, that the gap between the
+environments grows as the image shrinks (filter speedup at $N=8$ of 4.91
+natively against 3.45 in Chrome at 2048$^2$, 6.68 against 6.61 at
+8192$^2$), which is what the cutoff campaigns later measured properly
+(Section~\ref{sec:cutoff}).
+
+\paragraph{Warm-up.} Every workload ran with no warm-up and 100 measured
+iterations at $N=1$ and 8. The first iteration is the most expensive
+everywhere, natively too (the filter's first iteration takes five times the
+steady state at $N=8$: the first write to the output buffer). Most cells
+are steady after two or three iterations. The rule: a run's observed
+warm-up is the first iteration whose next window of 10 has its median
+within a tolerance of the steady state, the tolerance being the larger of
+2\% and 1.5 times the largest window deviation inside the steady state, so
+that noise is not read as warm-up; a workload's $W$ is 1.5 times the
+largest observed value over environments, thread counts and runs, at least
+5, and \emph{the same in every environment}. The values: 15 for the filter;
+5 for the atomic histogram at every $k$; 71, 21, 15 and 15 for the local
+histogram at $k=1$, 4, 16 and 256. The 71 comes from Firefox's local
+histogram at $k=1$, which runs about 15\% slower for its first 26 to 47
+iterations at $N=8$. A single $W$ of 71 for everything would have cost
+about 20 more hours, spent on atomic iterations that show no warm-up.
+
+\paragraph{Thread counts and oversubscription.} A browser runs threads of
+its own. At $N=8$ the workers plus those threads may ask for more than the
+eight cores of the mask, and the slowdown would look like poor scaling. The
+first thread pilot showed a knee in Firefox's local histogram at $N=7$ and
+8. The start-delay pilot then removed it: with a 3~s delay no browser shows
+a knee. The knee most likely came from Firefox's start-up work competing
+with eight workers, not from its threads during the measurement.
+Oversubscription stays a possible, much smaller threat, and $N=7$ stays in
+the design to show where a knee would start.
+
+\paragraph{The mask, and the first pitfall.} The pilot that compared the
+P-core mask with all cores found a problem before it found a result: a
+sampler of every thread's allowed CPUs showed Chrome's browser process
+outside the mask (Section~\ref{sec:problems}). With that fixed, runs at
+$N=1$ agree within 1\% between the masks, and at $N=8$ the wider mask is
+slower in 5 of 6 cells, by 3\% (Chrome filter) to 19\% (native local
+histogram), with run-to-run variation growing from 0.9\% to 7.2\% for the
+native filter: the workers share the cores with the system and land on
+slower cores.
+
+\paragraph{Headless.} The rule was fixed before measuring: run headless if
+the 95\% interval of headful over headless includes 1 and the ratio is
+within 2\%. In the filter and the local histogram at $N=8$, the four ratios
+are 0.998 to 1.003 and every interval includes 1.
+
+\paragraph{Start delay.} A freshly launched browser keeps doing start-up
+work after the page loads, inside the same mask as the measurement. With no
+delay, Firefox's local histogram at $k=16$ and $N=8$ took 5.89~ms against
+4.46~ms with a 3~s delay, and its within-run spread (slowest over fastest
+iteration) fell from 1.37 to 1.03; the other three cells did not move. A
+6~s delay changed the medians by at most 1.3\% against 3~s. Native runs
+have no delay, a known asymmetry: it affects $T_1$ and $T_N$ of an
+environment alike.
+
+\paragraph{Runs and iterations.} Thirty runs of every cell the primary
+contrasts need were subsampled to see how the 99.5\% intervals narrow: with
+30 runs the half-width is under 1\% for RQ1 and 1.1\% to 7.5\% for RQ2, the
+widest being Chrome at $k=1$. A 5\% target everywhere would need about 60
+runs; against RQ2 effects of a factor of two, a few percent is small. Two
+thresholds proposed before the pilot (a 5\% half-width, a 1\% agreement of
+the per-run median) were dropped after seeing its data, and the achieved
+values are reported instead.
+
+\paragraph{Chrome for Testing.} The pinned Chrome is Google's build for
+testing, chosen because a fixed version can be downloaded later. Against
+the branded stable Chrome of the same version, the filter and the atomic
+histogram differ by at most 1.3\% (one interval, the filter at $N=8$,
+excludes 1: [1.005, 1.020]), and two versions of the testing build differ
+by at most 0.6\%. The comparison ran one build after the other, so a 1\%
+effect of the build cannot be told from drift.

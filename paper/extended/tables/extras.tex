@@ -1,0 +1,23 @@
+\begin{table}[htbp]
+\caption{Extras campaign (5400 runs): time in ms at $N=1$ and 8, and the time at $N=8$ over the native one.}\label{tab:extras}
+\centering\small
+\begin{tabular}{lrrrrrrrr}
+\toprule
+ & \multicolumn{2}{c}{Native} & \multicolumn{3}{c}{Chrome} & \multicolumn{3}{c}{Firefox} \\
+Workload & $T_1$ & $T_8$ & $T_1$ & $T_8$ & /nat. & $T_1$ & $T_8$ & /nat. \\
+\midrule
+atomic, $k$=1 & 379.6 & 878.0 & 698.0 & 1805.4 & 2.06 & 379.7 & 891.5 & 1.02 \\
+packed, $k$=1 & 381.2 & 878.8 & 699.9 & 1871.1 & 2.13 & 380.1 & 886.0 & 1.01 \\
+private, $k$=1 & 379.6 & 47.674 & 697.9 & 88.031 & 1.85 & 379.7 & 47.800 & 1.00 \\
+local, $k$=1 & 154.9 & 19.475 & 150.7 & 19.008 & 0.98 & 155.6 & 19.775 & 1.02 \\
+\midrule
+atomic, $k$=256 & 379.6 & 414.6 & 411.9 & 210.3 & 0.51 & 379.8 & 392.8 & 0.95 \\
+packed, $k$=256 & 379.8 & 490.3 & 407.7 & 725.7 & 1.48 & 379.8 & 492.0 & 1.00 \\
+private, $k$=256 & 379.6 & 47.677 & 411.6 & 52.110 & 1.09 & 379.9 & 47.835 & 1.00 \\
+local, $k$=256 & 27.104 & 3.422 & 33.391 & 4.195 & 1.23 & 34.528 & 4.139 & 1.21 \\
+\midrule
+sort & 1468.0 & 188.5 & 1600.0 & 205.8 & 1.09 & 1531.7 & 196.3 & 1.04 \\
+sort-unstable & 539.2 & 84.358 & 683.6 & 109.9 & 1.30 & 682.1 & 110.2 & 1.31 \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,51 @@
+\section{Data Quality}
+\label{sec:quality}
+
+\input{tables/quality}
+
+Table~\ref{tab:quality} is the data check of every campaign of
+\code{measured/v3}: 27\,150 runs in 20 campaigns over four days, all on the
+binaries of the tag, on one kernel. No run failed, none is missing, none
+was excluded by strict validation or by the foreign-CPU threshold, no
+checksum differs between environments or thread counts, and no
+configuration is under 100 clock ticks. No campaign has an excluded run.
+
+\paragraph{Order trends.} Three configurations trend with the execution
+order, one in each of three campaigns: Firefox, local histogram, $k=1$,
+$N=7$ in the main campaign ($\rho=+0.54$); Chrome, private atomics, $k=1$,
+$N=2$ in the extras ($\rho=+0.52$); the native filter at $N=1$ in the
+counters campaign ($\rho=+0.55$). With 177 configurations in the main
+campaign alone, about one such flag is expected by chance. None is a cell
+of a primary contrast; all are kept, as the plan says.
+
+\paragraph{Quiet.} Over the 5310 runs of the main campaign the one-minute
+load average before a run has a median of 3.00, a 95th percentile of 4.57
+and a maximum of 6.13, and the foreign CPU time a 95th percentile of
+0.036~s and a maximum of 0.205~s, under the threshold of 0.25~s.
+
+\paragraph{Iteration drift.} The ratio of the first three to the last three
+measured iterations is the gate's criterion (Section~\ref{sec:gate}); over
+30 runs it flags the same Firefox cell wherever that cell appears (1.04 in
+the weak-scaling campaign) and, in the hybrid campaign, a few cells with
+E-cores at 1.03 to 1.04. The run value, a median of ten, does not move with
+it.
+
+\paragraph{Spread.} The runs of a cell are tight
+(Table~\ref{tab:distributions}, Figure~\ref{fig:distributions}): the
+interquartile range is 0.1\% to 2.8\% of the median for the filter and
+0.2\% to 0.3\% for the atomic histogram at $k=256$. The exception is the
+atomic histogram at $k=1$ with eight threads, whose runs fall on several
+time levels (interquartile range 12\% to 20\% of the median in the three
+environments); Section~\ref{sec:levels} shows what the levels are. Per-run
+medians and bootstrap intervals are robust to both.
+
+\input{tables/distributions}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.7\linewidth]{../figures/campaign-distributions.pdf}
+\caption{Distribution of the 30 per-run values of the filter and of the
+atomic histogram, per environment.}
+\Description{Violin plots of per-run medians for the filter and the atomic histogram in the three environments.}
+\label{fig:distributions}
+\end{figure}

@@ -1,0 +1,138 @@
+\section{RQ2: The Effect of Synchronization}
+\label{sec:rq2}
+
+\subsection{Shared atomics do not scale anywhere}
+
+At $k \leq 16$ the atomic histogram is slower with eight threads than with
+one in every environment: its speedup at $N=8$ is between 0.36 and 0.70
+(Table~\ref{tab:speedup}). Natively it takes 380~ms on one thread at every
+$k$ and 856, 864, 544 and 415~ms on eight at $k=1$, 4, 16 and 256
+(Table~\ref{tab:times}); the local control takes 3.4 to 19.5~ms on eight.
+At $N=8$ the shared counters cost 44 to 160 times the control natively.
+This is the textbook cost of true sharing, and it is the same story in the
+three environments. RQ2 asks something narrower: whether that cost,
+relative to the control, differs between a browser and native code.
+
+\subsection{The primary result}
+
+\begin{table}[htbp]
+\caption{Primary RQ2 contrasts at $N=8$: $\exp(\Delta r)$, the atomic/local
+time ratio in the browser over the same ratio natively, with Bonferroni
+99.5\% intervals. Bold: rejected by Holm ($\alpha=0.05$, 10 contrasts).
+From Table~\ref{tab:primary}.}
+\label{tab:rq2}
+\centering\small
+\begin{tabular}{lcc}
+\toprule
+$k$ & Chrome [99.5\% CI] & Firefox [99.5\% CI] \\
+\midrule
+1 & \textbf{2.26} [2.11, 2.41] & 1.01 [0.96, 1.07] \\
+4 & \textbf{1.77} [1.75, 1.79] & \textbf{0.97} [0.96, 0.98] \\
+16 & \textbf{1.43} [1.40, 1.45] & \textbf{0.83} [0.82, 0.84] \\
+256 & \textbf{0.42} [0.41, 0.43] & \textbf{0.80} [0.78, 0.81] \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Table~\ref{tab:rq2} is the answer in the plan's metric, and
+Figures~\ref{fig:rq2-ends} and~\ref{fig:rq2} draw the ratio
+$T_{\mathrm{atomic}}/T_{\mathrm{local}}$ against $N$.
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{Chrome.} When contention is concentrated on a few counters,
+synchronization costs 1.4 to 2.3 times what it costs natively (2.26 at
+$k=1$, 1.77 at $k=4$, 1.43 at $k=16$). When it is spread over 256 counters
+it costs 0.42 times, and Chrome's atomic histogram even scales: a speedup
+of 1.96 at $N=8$ against 0.92 natively and 0.97 in Firefox. The effect
+changes sign with $k$.
+\item \emph{Firefox}'s ratio is never above native's: no detectable difference
+at $k=1$ (1.01, an interval of $\pm6$\%), and lower ratios from $k=4$ on
+(0.97, 0.83, 0.80).
+\end{itemize}
+Seven of the eight contrasts are rejected; the smallest rejected effect,
+Firefox at $k=4$, is 3\%.
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.8\linewidth]{../figures/campaign-rq2-ends.pdf}
+\caption{RQ2: $T_{\mathrm{atomic}}/T_{\mathrm{local}}$ against $N$ at the
+two ends of the sweep (log scale, 95\% CI).}
+\Description{Atomic over local time ratio against thread count at k = 1 and k = 256, per environment.}
+\label{fig:rq2-ends}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{../figures/campaign-rq2.pdf}
+\caption{RQ2: $T_{\mathrm{atomic}}/T_{\mathrm{local}}$ against $N$ for the
+four values of $k$.}
+\Description{Atomic over local time ratio against thread count for k = 1, 4, 16 and 256, per environment.}
+\label{fig:rq2}
+\end{figure}
+
+\subsection{Every \texorpdfstring{$N$}{N}}
+
+Table~\ref{tab:rq2-all} gives $\exp(\Delta r)$ for every thread count
+(exploratory). Two things stand out. Part of Chrome's penalty exists
+already with one thread: 1.89 at $k=1$ and 1.45 at $k=4$ with $N=1$, where
+nothing is contended. At $k=1$ the atomic/local time ratio on one thread is
+4.6 in Chrome against 2.5 natively and 2.4 in Firefox. So Chrome's effect
+is a cost per operation as well as a cost of contention, which is what
+Section~\ref{sec:why-rq2} finds in the machine code. And at $k=256$ both
+browsers fall below 1 as soon as there are two threads, most at $N=4$
+(Chrome 0.34, Firefox 0.45), because native code is at its worst there
+(speedup 0.59 at $N=4$, Table~\ref{tab:speedup}).
+
+\input{tables/rq2-all}
+
+\subsection{The two factors of the ratio}
+\label{sec:decomposition}
+
+$\exp(\Delta r)$ is a ratio of ratios:
+\[
+\exp(\Delta r) = \frac{A_b/A_n}{L_b/L_n},
+\]
+with $A$ the time of the atomic histogram, $L$ of the local one, $b$ a
+browser and $n$ native. At $N=8$ the local kernel is about 1\% of the
+atomic time, yet its own environment gap $L_b/L_n$ divides the result with
+full weight: a browser whose local kernel is slower than native's gets a
+lower $\exp(\Delta r)$ even if its atomics cost exactly what native's do.
+The ratio is therefore always read with its two factors
+(Table~\ref{tab:decomposition}), which tell the two engines apart.
+
+\input{tables/decomposition}
+
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{Chrome's effect is in the numerator.} Its atomic histogram
+takes 2.21, 1.91 and 1.78 times the native time at $k=1$, 4 and 16, and
+0.51 times at $k=256$; its local kernel is within 0.98 to 1.25 of native.
+$\exp(\Delta r)$ falls from 2.26 to 1.43 between $k=1$ and 16 mostly
+because Chrome's local kernel gets slower relative to native as $k$ grows,
+while the atomic ratio stays near 2.
+\item \emph{Firefox's effect is in the denominator.} Its atomic times are
+the native ones (1.03, 0.98, 1.01 and 0.95 times) and its local histogram
+is 1.21 and 1.19 times slower at $k=16$ and 256. ``Synchronization is
+relatively cheaper in Firefox'' at $k \geq 16$ is true of the ratio and
+misleading as a statement about synchronization.
+\end{itemize}
+The last column answers RQ2 in absolute terms, the time the shared counters
+add in the browser over the time they add natively: about 2.2, 1.9 and 1.8
+times in Chrome at $k \leq 16$ and 0.50 times at $k=256$; in Firefox 1.03,
+0.98, 1.01 and 0.95. The two readings tell the same story for Chrome. For
+Firefox they differ most at $k=16$: 0.83 by the ratio, 1.006 [1.001, 1.011]
+by the excess.
+
+\subsection{Robustness and sensitivity}
+
+\input{tables/robustness}
+\input{tables/sensitivity}
+
+Mann-Whitney agrees with the bootstrap decision on all ten primary
+contrasts (Table~\ref{tab:robustness}). The eight rejected ones have
+$|\delta| \geq 0.74$, six of them $|\delta| = 1$: every browser run is on
+one side of every native run. The two not rejected have $p = 0.11$ (Chrome,
+RQ1) and $p = 0.71$ (Firefox, $k=1$). The decision is the same in at least
+99.9\% of 1000 random re-pairings of the runs. All ten decisions also hold
+under the plan's three sensitivity checks (Table~\ref{tab:sensitivity}):
+the per-run mean, the median across runs (which widens Chrome's interval at
+$k=1$ to [1.99, 2.51], the cell whose runs fall on levels) and no exclusion
+threshold (identical, since no run was excluded).

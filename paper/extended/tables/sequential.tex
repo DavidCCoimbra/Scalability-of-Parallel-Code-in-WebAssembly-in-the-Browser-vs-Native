@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\caption{Sequential references: time of the kernel without Rayon in ms, the pool of one thread against it ($T_{seq}/T_1$ with its 95\,\% interval; 1 means the pool costs nothing), and the speedup of eight threads against it.}\label{tab:sequential}
+\centering\scriptsize
+\resizebox{\linewidth}{!}{%
+\begin{tabular}{lrcrrcrrcr}
+\toprule
+ & \multicolumn{3}{c}{Native} & \multicolumn{3}{c}{Chrome} & \multicolumn{3}{c}{Firefox} \\
+Workload & $T_{seq}$ & $T_{seq}/T_1$ & $T_{seq}/T_8$ & $T_{seq}$ & $T_{seq}/T_1$ & $T_{seq}/T_8$ & $T_{seq}$ & $T_{seq}/T_1$ & $T_{seq}/T_8$ \\
+\midrule
+filter & 22.413 & 0.9917 [0.9911, 0.9922] & 6.898 & 26.237 & 0.9906 [0.9854, 0.9958] & 6.859 & 30.035 & 0.9749 [0.9627, 0.986] & 7.152 \\
+local, $k$=1 & 155.1 & 1.001 [1.001, 1.001] & 7.967 & 153.8 & 1.02 [1.019, 1.021] & 8.092 & 152.8 & 0.9815 [0.9724, 0.9885] & 7.725 \\
+local, $k$=4 & 42.704 & 0.9945 [0.9939, 0.9951] & 7.907 & 43.916 & 0.9563 [0.9531, 0.9582] & 7.544 & 42.655 & 0.9703 [0.9648, 0.9747] & 7.78 \\
+local, $k$=16 & 27.695 & 0.9674 [0.9596, 0.9743] & 7.607 & 38.178 & 1.072 [1.062, 1.08] & 8.395 & 35.676 & 0.979 [0.9768, 0.9813] & 8.086 \\
+local, $k$=256 & 26.593 & 0.9816 [0.9741, 0.987] & 7.785 & 33.964 & 1.018 [1.003, 1.03] & 8.149 & 32.993 & 0.9566 [0.9363, 0.9728] & 8.116 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}

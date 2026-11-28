@@ -1,0 +1,93 @@
+\section{Workloads}
+\label{sec:workloads}
+
+Every workload implements one interface: \code{prepare} (untimed, before
+each iteration), \code{run} (the timed work) and \code{checksum} (untimed).
+Buffers are allocated in the constructor: WASM's default allocator takes a
+global lock, so an allocation inside the timed region would add a
+synchronization cost that native code does not have.
+
+\paragraph{Inputs.} Images are 8192$\times$8192 single-channel \code{u8}
+pixels (67 megapixels, 64~MiB), generated outside the timed region by a
+SplitMix64 generator implemented in the crate and seeded with a fixed
+constant, so the pixels are bit-identical in every environment. The
+\emph{noise} input takes uniform values 0 to 255. The \emph{few-colours}
+input takes $k$ values evenly spaced over 0 to 255, each pixel picking one
+uniformly. Every run records the seed, $k$ and a fingerprint of the input.
+
+\paragraph{Gaussian filter: no synchronization.} A $3\times3$ kernel
+$[1\,2\,1; 2\,4\,2; 1\,2\,1]/16$ in integer arithmetic with rounding, edges
+clamped. Rows are processed in parallel (\code{par\_chunks\_mut} over the
+output rows): each task writes its own row and reads the shared, immutable
+source, so threads never coordinate, and any loss of speedup comes from the
+environment. Integer arithmetic gives the same result on every target and
+thread count, where floating point could differ with SIMD. The interior
+loop works on 16-bit values (the largest sum, $16\times255$, fits) and is
+the function whose vectorization is checked. The filter reads one 64~MiB
+image and writes another.
+
+\paragraph{Histogram: two variants with the same result.} The histogram
+counts the pixels of each value into 256 bins.
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{Atomic}: all threads increment 256 shared \code{AtomicU64}
+counters (\code{fetch\_add(1)}). Each counter is padded to its own 128-byte
+block, so that two different counters never share a cache line: what is
+measured is true sharing, not false sharing. 128 and not 64 bytes because
+the adjacent-line prefetcher fetches 64-byte lines in pairs. The counters
+are reset in \code{prepare}, outside the timed region.
+\item \emph{Local}, the lock-free control: each task counts into its own
+plain table and the tables are merged at the end (\code{fold} and
+\code{reduce}). No write is shared.
+\end{itemize}
+Both split the pixels into 64~KiB chunks and build their tasks through the
+same code, both index fixed-size tables (no bounds check per pixel), and
+both time their final step (the reduce, or the read-back of the shared
+counters). They differ in how the counts are combined, which is the factor
+of RQ2. The memory ordering asked for is \code{Relaxed}; it makes no
+difference on these targets, since x86 locked instructions are full
+barriers and WASM atomics are always sequentially consistent.
+
+\paragraph{Contention is set by $k$.} The histograms run on the few-colours
+input with $k \in \{1, 4, 16, 256\}$: the updates are spread over $k$
+counters, from every pixel on one counter to a uniform spread over all 256.
+The first design called the two ends ``high'' and ``low'' contention; a
+review before any data replaced the names, because with 256 counters and
+eight threads most increments still find their line modified by another
+core. What $k$ changes is how the contention is spread. $k$ also changes
+the control: with few values the local histogram increments the same
+address again and again, a chain in which each increment waits for the
+previous store (store-to-load forwarding), with no synchronization
+involved. The RQ2 metric is built so that this effect of the input cancels
+(Section~\ref{sec:plan}).
+
+\paragraph{Padding, checked.} A pilot compared 64-byte with 128-byte padding
+natively (10 runs per cell): every one-thread cell within 0.6\%, and at
+eight threads ratios of 0.99 to 1.02 with intervals that reach 7\% either
+way at $k=1$; no difference was detected and 128 was kept as the safer
+choice. A \code{perf c2c} run in Chrome at $k=16$ showed 16 contended lines
+0x800 bytes apart (16 bins of 128 bytes), each accessed at one offset: the
+alignment holds inside WASM linear memory. The 64-byte variant was later
+removed from the code.
+
+\paragraph{Checksums.} Every workload hashes its output (FNV-1a, which
+depends on the position of every byte) outside the timed region. The
+checksum of a run must equal that of every other run of the same workload
+and input, whatever the environment and the thread count; a conflict stops
+the analysis. Golden checksums are pinned in the tests, and the continuous
+integration runs every workload in both browsers and compares checksums and
+input fingerprints with the native run. No campaign of v3 has a conflict.
+
+\paragraph{Sequential references.} \code{filter-seq} and \code{hist-seq} are
+the same kernels called from a plain loop with no Rayon, at one thread
+only. They answer whether a pool of one thread is a fair baseline for the
+speedup (Section~\ref{sec:sequential}).
+
+\paragraph{Variants of the exploratory campaigns.} \emph{Private} atomics:
+every thread increments its own padded table of atomic counters, so the
+atomic instruction is paid and no line is shared; with local and shared it
+forms a ladder that separates the cost of the instruction from the cost of
+contention. \emph{Packed} atomics: the 256 shared counters are contiguous,
+eight per 64-byte line, the false-sharing level next to the padded one.
+\emph{Sorts}: Rayon's stable parallel sort, a merge sort that allocates its
+buffer and so exercises WASM's allocator, and the unstable in-place sort as
+its control, on the pixels read as 32-bit keys.

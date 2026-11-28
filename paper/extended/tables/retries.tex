@@ -1,0 +1,14 @@
+\begin{table}[htbp]
+\caption{Locked loads per operation at $N=8$ above the one-thread count, with its 95\,\% interval. For the atomic histogram in Chrome each is a retried compare-and-swap.}\label{tab:retries}
+\centering\small
+\begin{tabular}{llccc}
+\toprule
+Workload &  & Native & Chrome & Firefox \\
+\midrule
+filter &  & 0.0004 [0.0003, 0.0005] & 0.0011 [0.0007, 0.0016] & 0.0001 [-0.0004, 0.0005] \\
+atomic, $k$=1 &  & 0.0010 [0.0001, 0.0020] & 0.2422 [0.2251, 0.2588] & 0.0021 [0.0017, 0.0025] \\
+atomic, $k$=256 &  & 0.0004 [-0.0008, 0.0017] & 0.0146 [0.0142, 0.0151] & 0.0008 [0.0003, 0.0014] \\
+local, $k$=256 &  & 0.0003 [-0.0000, 0.0005] & 0.0014 [0.0011, 0.0017] & 0.0004 [0.0003, 0.0006] \\
+\bottomrule
+\end{tabular}
+\end{table}

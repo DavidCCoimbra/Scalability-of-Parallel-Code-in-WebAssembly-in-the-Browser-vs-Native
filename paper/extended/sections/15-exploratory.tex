@@ -1,0 +1,292 @@
+\section{The Exploratory Campaigns}
+\label{sec:exploratory}
+
+Seven groups of campaigns ran on the same build with the same protocol (30
+runs per cell, the same machine state, start delay and warm-up rules).
+Three of them (the engine arms, the counters, the grain by threads) were
+used in Section~\ref{sec:why}. The rest bound the primary results: they say
+how far the two answers reach. All are exploratory: 95\% intervals, no
+correction, no primary conclusion rests on them.
+
+\subsection{Atomics without sharing, atomics with false sharing, sorts}
+\label{sec:extras}
+
+The extras campaign (5400 runs, 16.5 hours) measured a ladder at the two
+ends of the contention sweep: local counters, \emph{private} atomics (one
+padded table per thread), shared padded atomics, and \emph{packed} shared
+atomics (eight counters per line), plus two parallel sorts
+(Tables~\ref{tab:extras} and~\ref{tab:extras-speedup}; Figures~\ref{fig:extras-speedup},
+\ref{fig:extras-absolute}, \ref{fig:extras-efficiency}
+and~\ref{fig:extras-rq2}).
+
+\input{tables/extras}
+\input{tables/extras-speedup}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.8\linewidth]{../figures/extras-speedup.pdf}
+\caption{Extras campaign: relative speedup per workload.}
+\Description{Speedup against thread count for the extras workloads in the three environments.}
+\label{fig:extras-speedup}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.8\linewidth]{../figures/extras-absolute.pdf}
+\caption{Extras campaign: absolute time per workload and environment.}
+\Description{Absolute time against thread count for the extras workloads.}
+\label{fig:extras-absolute}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.8\linewidth]{../figures/extras-efficiency.pdf}
+\caption{Extras campaign: efficiency per workload.}
+\Description{Efficiency against thread count for the extras workloads.}
+\label{fig:extras-efficiency}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{../figures/extras-rq2.pdf}
+\caption{Extras campaign: $T_{\mathrm{atomic}}/T_{\mathrm{local}}$ against
+$N$ for the shared padded atomics at $k=1$ and 256, measured again.}
+\Description{Atomic over local time ratio against thread count in the extras campaign.}
+\label{fig:extras-rq2}
+\end{figure}
+
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{The cells shared with the main campaign reproduce it.} The
+local and shared histograms at $k=1$ and 256 were measured again,
+interleaved, in this campaign: for example the shared atomics at $k=256$,
+$N=8$ take 414.6, 210.3 and 392.8~ms here against 414.6, 210.4 and 393.0 in
+the main campaign.
+\item \emph{Private atomics scale like the local control} (speedup 7.90 to
+7.96 in the three environments): the atomic instruction alone does not hurt
+scaling. But it costs Chrome 88.0~ms at $k=1$, $N=8$ against 47.7~ms
+natively and 47.8 in Firefox (1.85 times), and 52.1 against 47.7~ms at
+$k=256$ (1.09 times). No line is shared here, so this is the cost of V8's
+sequence without contention; it has the shape the native probe found for
+the compare-and-swap with one thread (slower at $k=1$, close to the locked
+add at $k=256$). Firefox matches native. Shared against private then gives
+the part that contention adds: at $k=1$ Chrome's shared histogram takes
+2.06 times the native one where its private one takes 1.85 times.
+\item \emph{Packing the counters removes Chrome's advantage.} With eight
+counters per line the atomic histogram at $k=256$, $N=8$ slows by 1.18
+times natively (490 against 415~ms), 1.25 times in Firefox and 3.45 times
+in Chrome (726 against 210~ms), which then takes 1.48 times the native
+time. Chrome's advantage under spread contention depends on each counter
+having its own line. At $k=1$ packing changes little (within 4\%): one counter is hit.
+\item \emph{Sorts.} The stable parallel sort, which allocates, reaches
+7.78 to 7.80 at $N=8$ in the three environments at 1.04 (Firefox) and 1.09
+(Chrome) times the native time; the unstable in-place sort reaches 6.19 to
+6.39 at 1.30 and 1.31 times. The sort that goes through WASM's allocator
+does not show the larger gap, so the allocator's global lock is not visible
+at this allocation rate.
+\end{itemize}
+One configuration trends with the execution order (Chrome, private, $k=1$,
+$N=2$). Against the earlier build, every cell at eight threads is within
+1\% of its v2 time except the two shared counters at $k=1$ (within 3.4\%),
+the cells whose runs fall on levels; this is a consistency observation, not
+a comparison of results.
+
+\clearpage
+\subsection{Weak scaling}
+
+In strong scaling each thread gets $1/N$ of the work; in weak scaling the
+input grows with $N$. The campaign (1080 runs) used an image 8192 pixels
+wide and $1024N$ rows high, so that every thread gets the work it has in
+the main campaign at $N=8$ (Table~\ref{tab:weak},
+Figure~\ref{fig:weak}).
+
+\input{tables/weak}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.75\linewidth]{../figures/weak-absolute.pdf}
+\caption{Weak scaling: absolute time against $N$ (ideal: flat).}
+\Description{Absolute time against thread count in weak scaling for the filter and the local histogram.}
+\label{fig:weak}
+\end{figure}
+
+At eight threads the filter keeps 0.860 of its one-thread rate natively
+[0.858, 0.863], 0.851 in Chrome and 0.915 in Firefox; the local histogram
+0.993 to 0.997. These are the strong-scaling efficiencies (0.869, 0.865,
+0.917) within one to two points: the filter's loss is the same whether the
+work per thread shrinks or stays fixed, which fits a cost of sharing the
+memory and not a serial part. The browser over native time ratio stays flat
+in Chrome (1.16 to 1.20) and falls in Firefox from 1.36 at $N=1$ to 1.28 at
+$N=8$.
+
+\clearpage
+\subsection{E-cores}
+
+The hybrid campaign (900 runs) put the eight P-cores and twelve E-cores in
+the mask and ran $N$ up to 20, to see how work stealing copes with cores of
+two speeds (Table~\ref{tab:hybrid}, Figures~\ref{fig:hybrid-speedup}
+and~\ref{fig:hybrid-absolute}).
+
+\input{tables/hybrid}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.75\linewidth]{../figures/hybrid-speedup.pdf}
+\caption{Hybrid campaign: speedup against $N$ with P-cores and E-cores.}
+\Description{Speedup against thread count up to twenty threads for the filter and the local histogram.}
+\label{fig:hybrid-speedup}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.75\linewidth]{../figures/hybrid-absolute.pdf}
+\caption{Hybrid campaign: absolute time against $N$.}
+\Description{Absolute time against thread count up to twenty threads.}
+\label{fig:hybrid-absolute}
+\end{figure}
+
+The filter gains little from the E-cores: its speedup goes from 6.46 at
+eight threads to 8.01 at twenty natively, 6.55 to 7.62 in Chrome and 7.02
+to 8.62 in Firefox; in Chrome it is flat from twelve threads on. The three
+environments use the extra cores about alike. The local histogram at $k=1$
+goes far beyond the thread count (25.5 natively, 29.5 in Chrome and 25.4 in
+Firefox at twenty threads): its one-thread time is a dependent chain on a
+P-core, and the analysis of the earlier build traced the excess to the
+E-cores running that chain faster than the P-cores do. Which threads the
+kernel puts on which kind of core is not controlled and not recorded per
+thread, and the cells with E-cores vary more than the others. With the
+wider mask the eight-thread cells are slower than in the P-only campaign
+(native filter 3.50 against 3.25~ms), as the mask pilot had found.
+
+\clearpage
+\subsection{Small regions: the cutoff}
+\label{sec:cutoff}
+
+RQ1 is answered at one size, where the work of a parallel region dominates
+its fixed cost. The cutoff campaigns ask where that stops: five image sides
+from 512 to 8192, $N \in \{1,2,4,8\}$, the filter and the local histogram
+at $k=256$ (3600 runs, plus 480 native control runs). A 512$^2$ filter on
+eight threads takes about 26~\textmu s natively, far under the 2~ms that
+100 ticks of Firefox's clock need, so each timed sample repeats the work
+$K = (8192/\mathrm{side})^2$ times and reports the time per pass. Sizes are
+compared only through speedups within a size, where $K$ cancels
+(Table~\ref{tab:cutoff}, Figure~\ref{fig:cutoff}).
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{../figures/cutoff-speedup.pdf}
+\caption{Cutoff campaigns: speedup against the image side, per environment
+and $N$.}
+\Description{Speedup against image side from 512 to 8192 for the filter and the local histogram in the three environments.}
+\label{fig:cutoff}
+\end{figure}
+
+\input{tables/cutoff}
+\input{tables/cutoff-estimates}
+
+\begin{figure}[tbp]
+\centering
+\begin{tikzpicture}[font=\scriptsize, x=1cm, y=1cm]
+  \node[anchor=east] at (0,1.5) {large region};
+  \draw[fill=native!20] (0.1,1.25) rectangle ++(6.0,0.5) node[midway] {work $W/N$};
+  \draw[fill=chrome!30] (6.1,1.25) rectangle ++(0.25,0.5);
+  \node[anchor=west] at (6.45,1.5) {$F$: under 3\% of $T_N$};
+  \node[anchor=east] at (0,0.6) {small region};
+  \draw[fill=native!20] (0.1,0.35) rectangle ++(0.9,0.5) node[midway] {$W/N$};
+  \draw[fill=chrome!30] (1.0,0.35) rectangle ++(0.9,0.5) node[midway] {$F$};
+  \node[anchor=west] at (2.0,0.6) {$W = NF$: half of $T_N$ is fork-join, efficiency 0.5};
+\end{tikzpicture}
+\caption{The fork-join model $T_N = W/N + F$. The work of a region divides
+by $N$; its fixed cost $F$ does not, and $F$ is six to ten times larger in
+the browsers.}
+\Description{Two bars: a long bar of work with a small fork-join part, and a short bar where work and fork-join are equal.}
+\label{fig:forkjoin-model}
+\end{figure}
+
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{No size measured reached break-even.} The speedup is above 1 at
+every size and thread count, in every environment: even at 512$^2$ eight
+threads give 3.4 natively and 1.9 in the browsers for the filter.
+\item \emph{Worth it at half the ideal speedup.} At $N=8$ the efficiency
+crosses 0.5 at a side of 613 natively and about 995 in both browsers for
+the filter (Table~\ref{tab:cutoff-estimates}): 125~\textmu s of sequential
+work natively, 396 in Chrome and 459 in Firefox. A region must hold about
+three to four times more work in a browser than natively before eight
+threads pay half of what they could.
+\item \emph{The fork-join model} (Figure~\ref{fig:forkjoin-model}). $T_N = W/N + F$, with $W$ the work of a
+region and $F$ the warm fork-join cost of these campaigns' calibration
+(10.8, 105 and 60~\textmu s), predicts efficiency 0.5 at $W = NF$: 86, 840
+and 480~\textmu s. The measured 125, 396 and 459 agree for Firefox, are 1.5
+times the model natively and half of it in Chrome: the calibration's
+broadcast is a barrier that every worker must run and overstates what an
+ordinary region pays in Chrome. The model is a guide, not a fit.
+\item \emph{The 100:1 rule.} A common rule asks that the fork overhead be
+under 1\% of a region. At 8192$^2$ the warm fork-join is 0.33\% of $T_8$
+natively, 1.4\% in Firefox and 2.7\% in Chrome; by that rule the browsers
+would need images of about 10\,000$^2$ and 14\,500$^2$, larger than this
+study measured.
+\end{itemize}
+
+\paragraph{The sizes are lower bounds for a single call.} With repeated
+passes the workers are still awake between passes, which a single call does
+not enjoy. Two native control campaigns ran one pass per sample: at 512$^2$
+the filter on eight threads takes 33.0~\textmu s per call against
+25.8~\textmu s per pass with 256 passes, and at 2048$^2$ 330 against
+192~\textmu s, a speedup of 4.56 against 6.86 (the local histogram barely
+changes there, 235 against 229~\textmu s). A program that calls a parallel
+region once, cold, needs more work per region than the table says.
+
+\clearpage
+\subsection{Inside a region: the grain}
+\label{sec:grain}
+
+The other half of the question is the size of a task inside one region.
+The grain sweeps (5400 runs at $N=8$) give every task a fixed size, in
+powers of two, from one row or 1~KB up to one task per thread, with Rayon's
+adaptive split as the reference (Table~\ref{tab:grain-best},
+Figures~\ref{fig:grain} and~\ref{fig:grain-all}).
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=0.8\linewidth]{../figures/grain-ucurve-8192.pdf}
+\caption{Grain sweep at 8192$^2$, $N=8$: time per pass against the task
+grain (log-log, 95\% CI); dashed: Rayon's adaptive split.}
+\Description{Time per pass against task grain for the filter and the local histogram at 8192 squared, one line per environment.}
+\label{fig:grain}
+\end{figure}
+
+\begin{figure}[tbp]
+\centering
+\includegraphics[width=\linewidth]{../figures/grain-ucurve.pdf}
+\caption{Grain sweeps at both sizes and for every workload swept.}
+\Description{Time per pass against task grain at 1024 squared and 8192 squared.}
+\label{fig:grain-all}
+\end{figure}
+
+\input{tables/grain-best}
+
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{A U-curve, as expected.} For the local histogram at 8192$^2$,
+tasks of 1~KB cost 2.1 times the best natively, 2.2 times in Chrome and 3.0
+times in Firefox: each task builds and merges a 2~KB table. One task per
+thread costs 1.01 times natively and 1.11 to 1.16 times in the browsers:
+nothing is left to steal when a thread falls behind. For the filter the
+curve is shallow: one row per task costs 0.5\% to 1.7\% more than the best,
+and 1024 rows per task 7\% to 13\% more.
+\item \emph{The best grain is the same in the three environments}: 4 rows
+for the filter, 64 to 128~KB for the histogram. The browsers' fork-join is
+six to ten times native's, yet their best grain is not coarser, because
+what a task pays is not the region's fork-join but the cost of one task:
+0.46~\textmu s natively, 0.60 in Chrome and 1.0 in Firefox for the
+histogram. The 100:1 rule lands in the flat region when applied to that
+cost (110, 117 and 201~KB).
+\item \emph{Rayon's adaptive split is within 3\% of the best fixed grain at
+8192$^2$} (0.995 to 1.027 times) and 3\% to 18\% slower at 1024$^2$. The
+main campaign's use of the adaptive split costs it nothing at its size.
+\item \emph{The atomic histogram hardly depends on the grain}: at $k=256$
+its time over fifteen grains stays within 0.3\% of the best natively, 0.6\%
+in Chrome and 1.3\% in Firefox. Its time is set by contention for the
+counters. This also bounds what the v3 change to its task code could have
+moved.
+\end{itemize}
+One feature is unexplained: between grains of 8 and 16 rows the filter
+steps up by 4\% natively, 7\% in Chrome and 2\% in Firefox.

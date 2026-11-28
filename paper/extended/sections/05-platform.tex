@@ -1,0 +1,147 @@
+\section{Platform and Environment Control}
+\label{sec:platform}
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[x=6.2mm,y=6mm,font=\scriptsize]
+  \foreach \i/\c in {0/0,1/2,2/4,3/6,4/8,5/10,6/12,7/14} {
+    \draw[fill=native!15, draw=native, thick] (\i*1.5,0) rectangle ++(1.2,1.2);
+    \node at (\i*1.5+0.6,0.6) {\c};
+  }
+  \draw[fill=red!12, draw=native, thick] (9,0) rectangle ++(1.2,1.2);
+  \node at (9.6,0.6) {12};
+  \node[anchor=south] at (5.85,1.3) {8 P-cores, one CPU per core (SMT off): the measured mask};
+  \foreach \i in {0,...,15} {
+    \draw[fill=gray!15] (\i*0.75,-2.2) rectangle ++(0.6,0.9);
+  }
+  \node[anchor=north] at (6,-2.3) {16 E-cores (CPUs 16 to 31): the system, the harness, the results server};
+  \draw[dashed] (-0.3,-0.35) -- (12.3,-0.35);
+  \node[anchor=west] at (12.4,0.6) {run scope};
+  \node[anchor=west] at (12.4,-1.75) {shield};
+\end{tikzpicture}
+\caption{The CPU layout during a measurement. A run is confined to the eight
+P-cores by a systemd scope and a process-level mask; everything else is
+confined to the E-cores. CPU 12 is the degraded core
+(Section~\ref{sec:core}).}
+\Description{Eight boxes for the P-core CPUs 0 to 14 and sixteen smaller boxes for the E-cores, separated by a dashed line.}
+\label{fig:cores}
+\end{figure}
+
+\paragraph{Machine.} An Intel Core i9-14900KF on a ProArt Z790-CREATOR
+WIFI (BIOS 3202), 64~GB of RAM, Ubuntu 26.04.1 LTS, kernel 7.0.0-43,
+microcode 0x133. The CPU is hybrid: 8 P-cores with two hardware threads
+each and 16 E-cores. The last-level cache is 36~MB.
+
+\paragraph{P-cores only, one mask for all.} The study measures how the time
+changes with $N$. If threads could land on either kind of core, the speed of
+a thread would change with $N$ for reasons that have nothing to do with
+WASM. The usual control, pinning each thread, is not available: a web page
+cannot choose the core of a worker. So both sides get the same
+process-level mask, the eight P-cores, and the kernel places threads inside
+it (Figure~\ref{fig:cores}). A pilot confirmed the choice
+(Section~\ref{sec:pilots}).
+
+\paragraph{SMT off.} Linux numbers the two hardware threads of a P-core side
+by side, so a mask such as \code{0-7} is four cores, not eight. SMT is off
+for every session and the mask is \code{0,2,4,6,8,10,12,14}; every run
+records the SMT state and the siblings of each masked CPU, and a run whose
+mask has two CPUs on one core is rejected.
+
+\paragraph{Turbo off, governor \code{performance}.} With turbo on, one busy
+core runs at a higher clock than eight busy ones, so $T_1$ would be measured
+at a higher frequency than $T_8$ and the speedup would be deflated for a
+reason unrelated to parallelism. With turbo off the P-cores run at their
+3.2~GHz base clock (the recorded maximum of every measured CPU is
+3\,200\,000~kHz).
+
+\paragraph{Shield.} A mask keeps the run on the P-cores; it does not keep
+anything else off them. On a hybrid CPU the scheduler even prefers the
+P-cores. The system, user and init slices are therefore confined to the
+E-cores at run time, the harness and the results server pin themselves
+there, and each run is started in its own systemd scope whose allowed CPUs
+are the mask. What the shield cannot stop (per-CPU kernel threads,
+interrupts) is measured: every run records the busy time of the measured
+CPUs minus its own CPU time, the \emph{foreign CPU time}, and a run above a
+threshold fixed from pilot data is excluded (Section~\ref{sec:pilots}).
+
+\paragraph{Quiet mode.} Before a campaign the desktop session and bursty
+services (containers, package timers, snaps) are stopped, because they share
+the last-level cache and the memory bandwidth with the measured cores even
+when they run on other CPUs; the machine does not sleep during a campaign.
+
+\paragraph{Checked before every start, recorded with every run.} None of
+these settings survives a reboot. A campaign refuses to start, and to
+resume, unless turbo is off, the governor is \code{performance} on every
+measured CPU, SMT is off, the mask is exactly one CPU per P-core, the shield
+holds and the pinned browser versions are the installed ones. Each run
+stores the commit, the CPU model, kernel, governor, turbo and SMT state, the
+mask, the browser version, the launch command, the order seed and position,
+the foreign CPU time, the processes found outside its scope, the load
+average, and for every measured CPU its busy time. \emph{Strict validation}
+rejects a run in which any of them is missing or wrong. Since v3 the host
+state that the setup leaves alone is recorded too: transparent huge pages
+(\code{madvise}), the kernel command line, the mitigations, the idle driver
+and its C-states, the firmware and the memory size.
+
+\subsection{The degraded core}
+\label{sec:core}
+
+One P-core of the machine is degraded: the seventh, CPU 12 of the mask.
+Before the v3 build every P-core was checked, with the rule fixed in
+advance: the eight cores stay whatever times the check shows, and a core
+leaves the mask only on a wrong checksum or a crash.
+
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{On the machine as found it fails.} With turbo on, SMT on, the
+governor \code{powersave} and no shield, a test suite pinned to that core
+crashed with a segmentation fault in 17 of 18 runs, and in 0 of 28 runs
+pinned elsewhere.
+\item \emph{On the prepared machine it does not.} After the setup the same
+tests passed 30 of 30 times on CPU 12. The setup changes four things
+together, so the check does not say which one matters; turbo is the likely
+one, since it is what lets the core run above 3.2~GHz.
+\item \emph{On the prepared machine it is as fast as the others}
+(Table~\ref{tab:core-check}): the native filter at one thread pinned to one
+core at a time gives 22.41 to 22.53~ms on every core, 22.44 on CPU 12, the
+right checksum in all 80 runs, and no iteration above 22.9~ms among 800.
+\end{itemize}
+
+\begin{table}[htbp]
+\caption{Per-core check on the prepared machine: the native filter at one
+thread, 8192$\times$8192, pinned to one P-core at a time, 10 runs per core
+in rotating order (a check, not a result).}
+\label{tab:core-check}
+\centering\small
+\begin{tabular}{lrrrrrrrr}
+\toprule
+CPU & 0 & 2 & 4 & 6 & 8 & 10 & 12 & 14 \\
+\midrule
+Median (ms) & 22.53 & 22.41 & 22.43 & 22.42 & 22.42 & 22.53 & 22.44 & 22.44 \\
+Against all runs & 1.004 & 0.999 & 0.999 & 0.999 & 0.999 & 1.004 & 1.000 & 1.000 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Three decisions followed. CPU 12 stays in the mask. The measured build is
+made on the prepared machine and twice from scratch, tagged only if the
+digests agree, because on the unprepared machine a process that is not
+pinned can land on the failing core, the compiler included, and a failing
+core can compute wrongly without crashing. And tests and analysis on this
+machine run after the setup, or pinned away from that core. The last rule
+was needed once: after the machine was restored for the hybrid campaign, a
+table command stopped with a \code{TypeError} raised inside Python's own
+\code{statistics} module on data that the same command reads without error,
+a wrong computation with no crash and no kernel log entry. The tables were
+written pinned away from the core, and the continuous integration now
+regenerates every table on another machine and compares it with the
+committed one.
+
+The main campaign adds what a pinned check cannot. With one thread the
+kernel put the work on CPU 12 or 14 (Table~\ref{tab:core-split}); the
+native filter ran mostly on CPU 12 in 9 of its 30 runs, with a median
+1.0003 times that of the configuration. The slow one-thread runs that the
+earlier build showed (five filter runs 1.21 times their configuration's
+median) did not come back: no native filter run at one thread is above
+1.005 times the median.
+
+\input{tables/core-split}

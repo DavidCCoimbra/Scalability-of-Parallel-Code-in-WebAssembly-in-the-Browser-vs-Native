@@ -1,0 +1,105 @@
+\section{Builds}
+\label{sec:builds}
+
+\paragraph{One source, one compiler, one profile.} The crate is compiled by
+a pinned nightly Rust (\code{nightly-2026-10-03}, rustc 1.101.0) with
+\code{lto = "fat"}, one codegen unit and \code{panic = "abort"}, for two
+targets: x86-64 with its baseline instruction set (SSE2; no
+\code{target-cpu=native} anywhere) and \code{wasm32} with the target
+features \code{+atomics}, \code{+bulk-memory}, \code{+mutable-globals} and
+\code{+simd128}. WASM threads need the standard library rebuilt with
+atomics (\code{-Z build-std}), which exists only on nightly; a fixed date
+makes the compiler, the library and LLVM the same for both targets. The
+crates are locked: Rayon 1.12.0, rayon-core 1.13.0, wasm-bindgen 0.2.129,
+wasm-bindgen-rayon 1.3.0. No \code{wasm-opt} pass rewrites the module.
+
+\paragraph{128-bit SIMD on both sides, verified on the artifacts.} WASM has
+128-bit SIMD only, so the native build is held to SSE2, also 128-bit. The
+code has no explicit SIMD: the vector instructions come from the compiler's
+auto-vectorization, so parity is a property to test, not to assume. The
+filter's interior loop is a separate, never-inlined function
+(\code{blur\_interior}) so that it keeps a symbol in the final binaries, and
+the continuous integration disassembles the final native binary and the
+final WASM module on every change and requires packed 16-bit arithmetic in
+that function on both. With whole-program optimization the vectorization
+happens at the final link, so checking a library's assembly would mislead.
+
+\paragraph{What differs below the shared source.} ``The same code'' is
+claimed for the crate, not for the layers below it, which are the
+environment under study:
+\begin{itemize}[leftmargin=1.5em]
+\item \emph{Flags.} The target features and link arguments exist only for
+WASM; a native run records empty extra flags.
+\item \emph{Standard library.} Native links the prebuilt library; WASM
+rebuilds it under the project's profile.
+\item \emph{Locks inside Rayon.} \code{wasm-bindgen-rayon} enables a Rayon
+feature that replaces its mutex and condition variable with spin-based ones,
+on WASM only.
+\item \emph{Idle threads.} On \code{wasm32} with atomics the standard
+library's \code{yield\_now} does nothing, so the yield rounds of Rayon's
+idle loop spin without giving up the CPU where native code calls
+\code{sched\_yield}; to sleep, a WASM worker waits in
+\code{memory.atomic.wait32} and a native worker on a futex.
+\item \emph{A second compiler.} The engines compile the WASM for the host
+CPU, so they may use encodings newer than the SSE2 the native build is held
+to. The vector width is fixed at 128 bits, not the instruction set
+(Section~\ref{sec:engine-code}).
+\end{itemize}
+The idle and wake path is inside every timed iteration of a parallel
+region. It is the leading candidate for the browsers' larger fork-join cost
+(Section~\ref{sec:forkjoin}); no experiment here isolates it.
+
+\paragraph{The build is reproducible and made twice.} On the prepared
+machine the build stage runs the tests and then builds twice from scratch;
+the tag \code{measured/v3} (commit \code{ac65af6a}) was made only because
+both builds gave the same SHA-256 digests for the native runner
+(\code{525707de...}), the WASM module (\code{38787129...}) and the
+JavaScript glue. Every campaign records the digests of the binaries it ran,
+and refuses to resume with another commit, artifact or browser version.
+
+\subsection{What changed in v3, and what the compiler made of it}
+\label{sec:codegen}
+
+A change in the measured path is allowed only with a record of why, and is
+checked by a script that builds the base and the new source at the same
+path and compares the normalized instructions of every hot function. Before
+any change, the source of this repository gave the machine code of v2:
+native 88 of 88 hot functions identical, WASM 87 of 87.
+
+\begin{enumerate}[leftmargin=2em]
+\item \emph{Every shared-counter histogram builds its tasks through the
+grain control}, as the local histogram and the filter do. With Rayon's
+adaptive split this calls the library's default, and a test counts the
+tasks with and without the call on a pool of one thread: the counts are
+equal. The script reports the \code{run} of the three histograms as
+changed (it now reads the grain) and the Rayon functions instantiated for
+them as renamed. The counting loops were therefore compared by hand, from
+just before the first atomic add to just after the last: natively the loop
+of 37 instructions is identical (\code{movzbl; shl \$7; lock incq} eight
+times per turn, the same registers), and in WASM the loop of 127
+instructions is identical. The code that counts is unchanged; the code that
+splits now is the same for every histogram.
+\item \emph{Sequential references.} Two workloads with no Rayon call, at
+one thread only: one loop over the rows that calls \code{blur\_interior},
+and one loop that counts into one plain table. Adding a workload can change
+another one: the first draft called the parallel filter's row function,
+which had one caller and was inlined; with a second caller the compiler
+kept it as a call and the machine code of the parallel filter changed,
+though its source had not. The sequential filter therefore has its own copy
+of the row and edge handling and shares only \code{blur\_interior}; a test
+keeps its output equal to the parallel filter's. With both changes, the
+parallel filter's task function, \code{blur\_interior}, the local histogram
+and the checksum functions are identical to v2 in every variant.
+\item \emph{The memory size before the measured phase is written.} It was
+already sampled, for the check that fails a WASM run whose memory grows
+while it is measured; no new sample is taken. A native filter run shows
+what it is for: 69.7~MB before the warm-up, 136.8~MB before the first
+measured iteration, 136.8~MB after the last. The 64~MiB of the output
+buffer are first touched in the warm-up.
+\end{enumerate}
+
+The golden checksums are unchanged. Because the split code changed, the
+times of v3 are never compared number by number with those of v2; the
+exploratory twin campaigns still show, as a consistency observation, that
+the cells whose task code changed kept their times (the private histogram
+within 0.2\% of v2 at eight threads, Section~\ref{sec:extras}).

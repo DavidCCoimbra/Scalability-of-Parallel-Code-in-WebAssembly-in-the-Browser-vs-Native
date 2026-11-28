@@ -1,0 +1,20 @@
+\begin{table}[htbp]
+\caption{The ten primary contrasts at $N=8$: effect, 95\,\% interval, Bonferroni 99.5\,\% interval, bootstrap $p$, Holm-adjusted $p$ and the decision at $\alpha=0.05$.}\label{tab:primary}
+\centering\footnotesize
+\begin{tabular}{lllccrrl}
+\toprule
+RQ & Browser & Cell & Effect [95\,\%] & [99.5\,\%] & $p$ & Holm $p$ & Rejected \\
+\midrule
+RQ1 & Chrome & filter & 0.9955 [0.9896, 1.002] & [0.9868, 1.004] & 0.1416 & 0.2832 & no \\
+RQ1 & Firefox & filter & 1.055 [1.041, 1.067] & [1.034, 1.072] & 0.0001 & 0.001 & yes \\
+RQ2 & Chrome & atomic, $k$=1 & 2.259 [2.157, 2.365] & [2.11, 2.406] & 0.0001 & 0.001 & yes \\
+RQ2 & Chrome & atomic, $k$=4 & 1.771 [1.754, 1.787] & [1.746, 1.793] & 0.0001 & 0.001 & yes \\
+RQ2 & Chrome & atomic, $k$=16 & 1.425 [1.408, 1.442] & [1.399, 1.451] & 0.0001 & 0.001 & yes \\
+RQ2 & Chrome & atomic, $k$=256 & 0.4159 [0.4096, 0.4222] & [0.4072, 0.4251] & 0.0001 & 0.001 & yes \\
+RQ2 & Firefox & atomic, $k$=1 & 1.01 [0.9724, 1.049] & [0.9573, 1.067] & 0.5994 & 0.5994 & no \\
+RQ2 & Firefox & atomic, $k$=4 & 0.9691 [0.9597, 0.9788] & [0.9555, 0.9827] & 0.0001 & 0.001 & yes \\
+RQ2 & Firefox & atomic, $k$=16 & 0.8311 [0.824, 0.8385] & [0.8208, 0.8417] & 0.0001 & 0.001 & yes \\
+RQ2 & Firefox & atomic, $k$=256 & 0.7965 [0.7864, 0.8058] & [0.782, 0.8089] & 0.0001 & 0.001 & yes \\
+\bottomrule
+\end{tabular}
+\end{table}

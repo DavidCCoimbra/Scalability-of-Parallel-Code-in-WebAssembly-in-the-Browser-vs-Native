@@ -144,6 +144,12 @@ jobs:
           mkdir -p "$RUNNER_TEMP/paper"
           tectonic -X compile paper.tex --keep-logs --keep-intermediates --outdir "$RUNNER_TEMP/paper"
           ! grep -n -E "(Reference|Citation) .* undefined" "$RUNNER_TEMP/paper/paper.log"
+      - name: The extended report compiles with every reference and citation defined
+        working-directory: paper/extended
+        run: |
+          mkdir -p "$RUNNER_TEMP/extended"
+          tectonic -X compile extended.tex --keep-logs --keep-intermediates --outdir "$RUNNER_TEMP/extended"
+          ! grep -n -E "(Reference|Citation) .* undefined" "$RUNNER_TEMP/extended/extended.log"
 
   python:
     runs-on: ubuntu-latest

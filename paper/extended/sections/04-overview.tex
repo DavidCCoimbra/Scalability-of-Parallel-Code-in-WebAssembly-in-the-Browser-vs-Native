@@ -1,0 +1,103 @@
+\section{The Study in One Picture}
+\label{sec:overview}
+
+\begin{figure}[t]
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[
+  node distance=5mm and 7mm,
+  box/.style={draw, rounded corners=2pt, align=center, font=\footnotesize, inner sep=4pt, minimum height=9mm},
+  env/.style={box, minimum width=23mm},
+  arr/.style={-{Stealth[length=2mm]}, thick}]
+  \node[box] (src) {One Rust/Rayon crate\\filter, histograms};
+  \node[box, right=of src] (rustc) {rustc nightly\\same release profile};
+  \node[env, right=14mm of rustc, yshift=11mm, draw=native, text=native] (nat) {native x86-64\\SSE2};
+  \node[env, right=14mm of rustc, yshift=-11mm] (wasm) {wasm32\\threads, simd128};
+  \node[env, right=of wasm, yshift=7mm, draw=chrome, text=chrome] (chr) {Chrome (V8)};
+  \node[env, right=of wasm, yshift=-7mm, draw=firefox, text=firefox] (ffx) {Firefox\\(SpiderMonkey)};
+  \draw[arr] (src) -- (rustc);
+  \draw[arr] (rustc) -- (nat.west);
+  \draw[arr] (rustc) -- (wasm.west);
+  \draw[arr] (wasm) -- (chr.west);
+  \draw[arr] (wasm) -- (ffx.west);
+  \node[box, below=20mm of src] (camp) {Campaign: seeded\\random order};
+  \node[box, right=of camp] (run) {Run = fresh process\\warm-up, 10 iterations};
+  \node[box, right=of run] (raw) {Raw: CSV + context\\per run, checksum};
+  \node[box, right=of raw] (ana) {Analysis: median per run,\\geometric mean, bootstrap};
+  \node[box, right=of ana] (res) {10 primary\\contrasts, Holm};
+  \draw[arr] (camp) -- (run);
+  \draw[arr] (run) -- (raw);
+  \draw[arr] (raw) -- (ana);
+  \draw[arr] (ana) -- (res);
+  \draw[arr, dashed] (wasm.south) |- ($(run.north)+(0,4mm)$) -- (run.north);
+\end{tikzpicture}}
+\caption{The study. Top: one source and one compiler give two artifacts and
+three environments. Bottom: a campaign runs every configuration of the three
+environments in one random order; each run is a fresh process that records
+its times, its checksum and its context; the analysis is fixed before the
+data.}
+\Description{A flow from one Rust crate through the compiler to a native binary and a WASM module that runs in Chrome and Firefox, and a second flow from campaign to runs to raw data to analysis to contrasts.}
+\label{fig:pipeline}
+\end{figure}
+
+Figure~\ref{fig:pipeline} is the whole design. One Rust crate holds the
+workloads. The same compiler and release profile build a native x86-64
+runner and a WASM module; the module runs in Chrome and in Firefox. A
+campaign is a list of configurations (environment, workload, input, thread
+count, repetition) shuffled once with a recorded seed, so native, Chrome and
+Firefox runs are interleaved. Each run is one fresh process or one fresh
+browser launch; it measures itself, checks its output against a checksum and
+stores its times with the state of the machine. The analysis reads the runs,
+never the iterations, as independent observations.
+
+\subsection{Three builds}
+\label{sec:builds-history}
+
+The measured code was built three times, and the study was measured in full
+twice. Code layout alone moves timings~\cite{mytkowicz2009}, so a rule holds
+from the first build on: every campaign runs one tagged build, and no table,
+figure or comparison combines runs of two builds.
+
+\begin{description}[leftmargin=1.5em]
+\item[v1.] The first build ran the main campaign and the first exploratory
+ones. A review of the measured path on 2026-11-09 then found two asymmetries
+that our own code had introduced into RQ2. The shared-counter histograms
+indexed a table whose length the compiler did not know, so every pixel paid
+a bounds check that the local control did not pay; and the final step of a
+histogram (the reduce of the local variant, the read-back of the shared
+counters) was timed in some variants and not in others.
+\item[\code{measured/v2}.] The second build removed both asymmetries
+(fixed-size counter tables; every variant times its final step), added
+settings the next campaigns needed (passes per timed sample, a grain per
+task, a second fork-join probe, the memory size) and nothing that optimizes.
+Every campaign was run again on it. An audit of the finished study on
+2026-11-20 found no reason to measure again, but listed what v2 could only
+declare: the speedup had no sequential reference, the two histograms did not
+build their tasks through the same code, the slow one-thread runs had no
+established cause, the compiler tier that the campaigns measure was
+inferred, and several explanations were hypotheses.
+\item[\code{measured/v3}.] The third build turns those declared items into
+measurements. It adds sequential versions of the kernels, sends the atomic
+histogram through the same task-building code as the local one, and records
+the memory size before the measured phase; the harness also records, per
+run, the busy time of every measured CPU, and can run a browser with one
+compiler only. No change is an optimization, and the code that counts is
+the same machine code as in v2 (Section~\ref{sec:codegen}).
+\end{description}
+
+The results of v2 were known when v3 was designed, so v3 is a replication
+with corrections, not a blind experiment. To keep the choice of the reported
+build from following the numbers, the rule was written before any v3 run
+existed: v3 is reported if, by 2026-11-27, its main campaign has every
+planned run, no checksum conflict, and at least 10 runs left in every
+configuration of the primary contrasts after the plan's exclusions;
+otherwise v2 is reported and v3 is not used. The criteria read counts of
+runs, never a time or a contrast. They were met on 2026-11-22: 5310 of 5310
+runs, none failed, missing or excluded, no checksum conflict.
+
+\paragraph{The replication agrees.} All ten primary decisions of v3 are
+those of v2: the two contrasts not rejected in v2 are not rejected in v3
+(Chrome on the filter, 0.996 in v3 and 0.990 in v2; Firefox at $k=1$, 1.010
+and 0.994), and the other eight are rejected in both with effects of the
+same sign. Every exploratory campaign of v2 has its twin on v3. This report
+gives the v3 numbers only.
