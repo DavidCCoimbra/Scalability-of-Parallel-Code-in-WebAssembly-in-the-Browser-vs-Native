@@ -53,51 +53,21 @@
     <p class="lead">Every number of the study comes from one PC, prepared the same way for every run: eight identical cores at a fixed clock for the measured program, everything else on the other cores. This page lists each control, why it exists, how the harness checks it on every run, and two problems of the machine that the checks now catch.</p>
 
     <h2 id="pc">One PC, slowed down on purpose</h2>
-    <p>A modern computer is built to be fast on average, not to be the same every second. It speeds up
-      when it is cool and slows down when it is hot. It gives a program more or less of a core depending on
-      what else is running. It wakes up background jobs at random moments. None of that is a problem for a
-      user. All of it is a problem for a measurement, because the same program can take a different time
-      each time you run it, for reasons that have nothing to do with the program.</p>
-    <p>This study does that to one machine (the page <a href="machines.html">Threads and cores</a> explains the words core, thread and clock, if they are new). The PC is an
-      <span data-term="i9-14900kf">Intel i9-14900KF</span> with 64 GB of RAM, running Ubuntu 26.04 LTS (kernel 7.0.0-43 for every campaign of the study).
-      Its chip is <b>hybrid</b>: it has 8 big, fast cores (the <span data-term="p-core">P-cores</span>) and
-      16 small, slower cores (the <span data-term="e-core">E-cores</span>). The measured program gets the 8
-      fast cores and nothing else. Everything else on the machine gets the 16 slow ones.</p>
-    <p>Click a row to see what runs on each group of cores during a campaign:</p>
+    <p>A computer is built to be fast on average, not to behave the same every second. It speeds up when it is cool and slows down when it is hot. It gives a program more or less of a core depending on what else runs. It wakes background jobs at arbitrary moments. For a measurement that is a problem: the same program takes a different time on each run, for reasons that are not the program.</p>
+    <p>So the study holds one machine still, and gives up some of its speed to do it (<a href="machines.html">Threads and cores</a> explains core, thread and clock). The PC is an <span data-term="i9-14900kf">Intel i9-14900KF</span> with 64 GB of RAM, running Ubuntu 26.04 LTS, with kernel 7.0.0-43 for every campaign. Its chip is <b>hybrid</b>: 8 fast cores (the <span data-term="p-core">P-cores</span>) and 16 slower ones (the <span data-term="e-core">E-cores</span>). The measured program gets the 8 P-cores and nothing else; everything else on the machine gets the E-cores.</p>
+    <p>Select a row to see what runs on each group of cores during a campaign:</p>
     <div class="card">
       <div id="cpu-svg" class="diagram"></div>
-      <div id="cpu-panel" class="panel" aria-live="polite"><p class="muted">Pick a group above.</p></div>
+      <div id="cpu-panel" class="panel" aria-live="polite"><p class="muted">Select a group above.</p></div>
     </div>
     <p class="src" data-files="harness/env/setup.sh, paper/final/paper.tex"></p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why one machine, and not several?</b> Because the study compares runtimes, not
-      machines. If native ran on one PC and Chrome on another, a difference between them could be the PCs.
-      With one machine, the machine is the same in both halves of every comparison and cancels out. The
-      price is that the results describe this PC; the page <a href="threats.html#external">External threats</a>
-      says so.</p></aside>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not develop on it too?</b> Development happens on a Mac. The Mac has a different
-      CPU, turbo on, and no way to shield cores, so its numbers would not be comparable with anything.
-      Numbers from the Mac are never results (<a href="setup.html#machines">Two machines, two jobs</a>).</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why one machine and not several?</b> The study compares environments, not machines. If native ran on one PC and Chrome on another, a difference could be the PCs. With one machine, the machine is the same on both sides of every comparison and cancels. The price is that the results describe this PC, which <a href="threats.html#external">Threats to validity</a> states.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not develop on it too?</b> Development happens on a Mac. The Mac has another CPU, turbo on, and no way to shield cores, so its numbers compare with nothing. Numbers from the Mac are never results (<a href="setup.html#machines">Two machines, two jobs</a>).</p></aside>
 
     <h2 id="pcores">P-cores only</h2>
-    <p>The measured program is told which cores it may use: the 8 P-cores, numbered
-      <code>0,2,4,6,8,10,12,14</code>. This list is a <span data-term="cpu-affinity-mask">CPU mask</span>, and
-      the tool that applies it is <span data-term="taskset">taskset</span>. The mask is set on the whole
-      <b>process</b>, not on each of its threads: a web page cannot choose which core each of its workers
-      runs on, so to keep the comparison fair native is given exactly the same treatment
-      (<a href="../adr/0001-p-cores-only.md">ADR 0001</a>).</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not use all 24 cores?</b> Because the slow cores would make the fast ones wait.
-      Rayon splits the work into pieces and lets idle threads take pieces from busy ones. With E-cores in the
-      mix, some threads land on cores that are about half as fast, and share them with the rest of the
-      system. In a pilot, adding the E-cores made runs at N = 8 up to 19 % slower and several times more
-      variable (<a href="../adr/0045-p-cores-confirmed-and-browser-scope.md">ADR 0045</a>). The P+E case is
-      still interesting, so it is measured on its own as an exploratory campaign
-      (<a href="extras.html#hybrid">P-cores plus E-cores</a>); it just is not the baseline.</p></aside>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is a mask on the process not enough for a browser?</b> Because a browser is not
-      one process: Chrome starts helper processes, and one of them once moved itself out of the mask by
-      asking the desktop for a new process (<a href="machine.html#mask">Chrome escapes the CPU mask</a>).
-      So every run starts inside its own <span data-term="systemd-scope-slice">systemd scope</span>: a group
-      the operating system keeps track of, whose <code>AllowedCPUs</code> bounds every process the browser
-      creates, however it creates them. The run's own CPU time is later read from that same group.</p></aside>
+    <p>The measured program is told which cores it may use: the 8 P-cores, CPUs <code>0,2,4,6,8,10,12,14</code>. This list is a <span data-term="cpu-affinity-mask">CPU mask</span>, and <span data-term="taskset">taskset</span> applies it. The mask is set on the whole <b>process</b>, not on each thread: a web page cannot choose the core of each of its workers, so native gets the same treatment (<a href="../adr/0001-p-cores-only.md">ADR 0001</a>).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not use all 24 cores?</b> The E-cores would make the P-cores wait. Rayon splits the work into pieces, and idle threads take pieces from busy ones. With E-cores in the mask, some threads land on cores that are about half as fast and are shared with the rest of the system. In a pilot, adding the E-cores made runs at N = 8 up to 19% slower and several times more variable (<a href="../adr/0045-p-cores-confirmed-and-browser-scope.md">ADR 0045</a>). The P+E case is measured on its own as an exploratory campaign (<a href="extras.html#hybrid">P-cores plus E-cores</a>).</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is a mask on the process not enough for a browser?</b> A browser is not one process: Chrome starts helper processes, and one of them once left the mask (<a href="#mask">A browser that left the mask</a>). So every run starts in its own <span data-term="systemd-scope-slice">systemd scope</span>: a group that the operating system tracks, whose <code>AllowedCPUs</code> bounds every process the browser creates, however it creates it. The run's CPU time is later read from that group.</p></aside>
     <details class="deeper"><summary>In depth: the mask and the scope in the code</summary>
       <div data-code="harness/shield/confinement.py|def confine(|7" data-title="The mask, and the scope around it"></div>
       <div data-code="harness/shield/scope.py|def scope_prefix(|18" data-title="Every run in its own scope"></div>
@@ -108,28 +78,10 @@
     </details>
 
     <h2 id="clock">Turbo, governor, SMT</h2>
-    <p>Three features of the CPU make the same run take different times. All three are fixed before a
-      session by <code>make env-setup</code>, and stay fixed until the next reboot. Each one has a short
-      story of what would go wrong if it were left alone.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Turbo: off.</b> <span data-term="turbo-boost">Turbo</span> lets the chip run faster
-      than its normal speed while it is cool, and faster still when only a few cores are busy. Imagine it on:
-      a run with 1 thread uses one core, which stays cool and turbos high; a run with 8 threads heats the
-      chip and turbos less. Then "8 threads are only 6 times faster than 1" would be partly true and partly
-      an artefact: the 1-thread run had a faster clock. Speedup would mix how well the code parallelizes with
-      how the chip manages heat. With turbo off, every core runs at the same
-      <span data-term="base-clock">base clock</span>, 3.2 GHz, whatever the load
-      (<a href="../adr/0002-turbo-off-performance-governor.md">ADR 0002</a>).</p></aside>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Governor: performance.</b> The <span data-term="governor">governor</span> is the
-      rule the operating system uses to pick the clock speed. The default saves power: it lowers the clock
-      when the machine looks idle, and raises it again when work arrives. Between two iterations the machine
-      does look idle for a moment, so the next iteration would start slow and speed up. With the governor
-      set to <code>performance</code>, the clock never drops.</p></aside>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>SMT: off.</b> <span data-term="smt-hyperthreading">SMT</span> (hyper-threading)
-      makes one physical core look like two. Two threads can then run "at once" on it, but they share its
-      arithmetic units and its cache, so each gets roughly half. If SMT were on, a run with 8 threads could
-      have two of them on the same core, and "8 cores" would really be 7 and a half. With SMT off, the odd
-      CPU numbers 1 to 15 disappear, and each CPU in the mask is one whole core
-      (<a href="../adr/0025-smt-off.md">ADR 0025</a>).</p></aside>
+    <p>Three features of the CPU make the same run take different times. <code>make env-setup</code> fixes all three before a session, and they stay fixed until the next reboot.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Turbo: off.</b> <span data-term="turbo-boost">Turbo</span> lets the chip run above its base clock while it is cool, and higher still when few cores are busy. With turbo on, a run with 1 thread keeps one core cool and fast, and a run with 8 threads heats the chip and gets less. "8 threads are only 6 times faster than 1" would then be partly an artefact: the 1-thread run had a faster clock. With turbo off, every core runs at the same <span data-term="base-clock">base clock</span>, 3.2 GHz, whatever the load (<a href="../adr/0002-turbo-off-performance-governor.md">ADR 0002</a>).</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Governor: performance.</b> The <span data-term="governor">governor</span> is the rule by which the operating system picks the clock speed. The default saves power: it lowers the clock when the machine looks idle and raises it when work arrives. Between two iterations the machine looks idle for a moment, so the next iteration would start slow. With the governor set to <code>performance</code>, the clock never drops.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>SMT: off.</b> <span data-term="smt-hyperthreading">SMT</span> (hyper-threading) presents one physical core as two. Two threads then run on it at once, but they share its arithmetic units and its cache, so each gets about half. With SMT on, a run with 8 threads could have two of them on one core. With SMT off, the odd CPU numbers 1 to 15 disappear and each CPU in the mask is one whole core (<a href="../adr/0025-smt-off.md">ADR 0025</a>).</p></aside>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Setting</th><th>On the PC</th><th>What it would do to a measurement</th><th>Decision</th></tr></thead>
       <tbody>
@@ -138,103 +90,53 @@
         <tr><td>SMT</td><td><b>off</b></td><td>Two measured threads could share one core and each get half of it.</td><td><a href="../adr/0025-smt-off.md">ADR 0025</a></td></tr>
       </tbody>
     </table></div>
-    <p class="def"><b>Degraded core.</b> One core of this particular CPU is faulty at high frequencies.
-      With turbo off it never reaches them: a check of every core before the build found it as fast as the others and computing correctly (<a href="session.html#cores">The per-core check</a>). It is the same core for every environment, so it does not favour one; it is listed as a threat (<a href="threats.html#internal">Internal threats</a>).</p>
+    <p class="def"><b>Degraded core.</b> One core of this CPU fails at high frequencies. With turbo off it never reaches them; the next section tells what the check before the build found.</p>
     <details class="deeper"><summary>In depth: how env-setup does it, and what is not logged</summary>
       <div data-code="harness/env/setup.sh|smt/control|14" data-title="make env-setup: SMT off, turbo off, governor performance"></div>
-      <p>The frequency is not sampled during a run: reading it sends an interrupt to the measured cores, which is exactly the kind of disturbance the setup removes. The governor, turbo and SMT settings are recorded before and after each run. Since <code>measured/v3</code> each run also records, per measured CPU, its busy time and a frequency reading before and after; the busy time says which cores worked, but the frequency reading turned out to be taken while a core is already going idle and is not used (ADR 0085). With turbo off, the
-        <span data-term="degraded-core">degraded core</span> never reaches the frequencies at which it fails,
-        which is also why turbo stays off for every experiment on this PC, not only the reported ones.</p>
+      <p>The frequency is not sampled during a run: reading it interrupts the measured cores, which is the kind of disturbance the setup removes. The governor, turbo and SMT settings are recorded before and after each run. Since <code>measured/v3</code> each run also records, for every measured CPU, its busy time and a frequency reading before and after. The busy time says which cores worked; the frequency reading is taken while a core is already going idle, and is not used (ADR 0085). Turbo stays off for every experiment on this PC, not only the reported ones.</p>
     </details>
 
-    <h2 id="core">The degraded core</h2> <p>One of the PC's eight fast cores is degraded. With the desktop's usual settings (turbo on), a test pinned to it crashed in 17 of 18 tries. With turbo off, the setting of every measurement, it passed 30 of 30 and timed the filter as fast as the other cores.</p> <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> A core that crashes is easy: you see it. A core that sometimes computes a wrong value and carries on is the dangerous one, and not only for the runs. The compiler that builds the measured program is a program too, and so is the analysis. That happened once: with the PC restored after the last campaign, an analysis command stopped with an error raised from inside Python's own statistics code, on data it reads without trouble elsewhere.</p></aside> <ul> <li><b>Fix:</b> the measured build is made on the prepared PC, twice from scratch, and tagged only if both builds are byte for byte equal. Outside a prepared session, analysis on that PC runs pinned away from that core.</li> <li><b>Check:</b> every run has a checksum that must match across environments and thread counts, and CI regenerates every table on another machine and compares it with the committed one.</li> </ul> <p class="src" data-files="docs/adr/0085-per-core-check.md, docs/adr/0094-hybrid-on-v3.md"></p> <p>The whole story is on <a href="session.html#cores">The per-core check</a>.</p>
+    <h2 id="core">The degraded core</h2> <p>One of the eight P-cores of the PC is degraded: CPU 12 of the mask. With the desktop's usual settings (turbo on), a test pinned to it crashed in 17 of 18 tries. With turbo off, the setting of every measurement, it passed 30 of 30 and timed the filter as fast as the other cores.</p> <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> A core that crashes is easy to see. A core that sometimes computes a wrong value and carries on is the dangerous one, and not only for the runs: the compiler that builds the measured program is a program too, and so is the analysis. It happened once. With the PC restored after the last campaign, an analysis command stopped with an error raised inside Python's own statistics code, on data that it reads without error elsewhere.</p></aside> <ul> <li><b>Fix:</b> the measured build is made on the prepared PC, twice from scratch, and tagged only if the two builds are byte for byte equal. Outside a prepared session, analysis on that PC runs pinned away from that core.</li> <li><b>Check:</b> every run has a checksum that must match across environments and thread counts, and CI regenerates every table on another machine and compares it with the committed one.</li> </ul> <p class="src" data-files="docs/adr/0085-per-core-check.md, docs/adr/0094-hybrid-on-v3.md"></p> <p><a href="session.html#cores">The per-core check</a> has the measurements.</p>
 
     <h2 id="quiet">Shield and quiet mode</h2>
-    <p>The mask keeps the measured program <i>on</i> the 8 P-cores. It does not keep anything else
-      <i>off</i> them: the desktop, the terminal, a file indexer, an update check, all of them may still be
-      scheduled on a P-core. Two more steps handle that.</p>
+    <p>The mask keeps the measured program <i>on</i> the 8 P-cores. It does not keep anything else <i>off</i> them: the desktop, a terminal, a file indexer or an update check can still be scheduled on a P-core. Two more steps handle that.</p>
     <ul>
-      <li><b>The <span data-term="shield">shield</span></b> moves every other process on the machine to the
-        E-cores, 16 to 31. The harness, the results server and your terminal all run there. A run's own scope
-        is the only thing allowed on the P-cores (<a href="../adr/0028-shield-the-measured-cpus.md">ADR 0028</a>).</li>
-      <li><b><span data-term="quiet-mode">Quiet mode</span></b> closes desktop apps and stops the background
-        services that wake up at random times: the file indexer, update timers, snap, docker. Every campaign
-        turns it on before the first run and off again at the end, also when it fails
-        (<a href="../adr/0042-quiet-mode-before-measuring.md">ADR 0042</a>,
-        <a href="../adr/0070-quiet-campaigns.md">ADR 0070</a>).</li>
+      <li><b>The <span data-term="shield">shield</span></b> moves every other process on the machine to the E-cores, CPUs 16 to 31. The harness, the results server and your terminal run there. The scope of a run is the only thing allowed on the P-cores (<a href="../adr/0028-shield-the-measured-cpus.md">ADR 0028</a>).</li>
+      <li><b><span data-term="quiet-mode">Quiet mode</span></b> closes desktop applications and stops the background services that wake at arbitrary times: the file indexer, update timers, snap, docker. Every campaign turns it on before its first run and off at the end, also when it fails (<a href="../adr/0042-quiet-mode-before-measuring.md">ADR 0042</a>, <a href="../adr/0070-quiet-campaigns.md">ADR 0070</a>).</li>
     </ul>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why both, if the shield already moves everything away?</b> Because the E-cores and
-      the P-cores are not fully separate. They share the chip's last cache and its memory. A background job
-      on an E-core that reads a lot of data pushes the measured program's data out of that cache, and the
-      measured program slows down without anything touching its cores. Quiet mode keeps those jobs from
-      starting in the first place. The page <a href="memory.html">Memory and caches</a> explains why a
-      shared cache matters.</p></aside>
-    <p>The machine also does not go to sleep in the middle of a campaign: <code>make campaign</code> runs
-      under <span data-term="systemd-inhibit">systemd-inhibit</span>.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why both, if the shield already moves everything away?</b> The E-cores and the P-cores are not fully separate: they share the last-level cache and the memory. A background job on an E-core that reads a lot of data pushes the measured program's data out of that cache, and the measured program slows down although nothing touched its cores. Quiet mode keeps those jobs from starting. <a href="memory.html">Memory and caches</a> explains why a shared cache matters.</p></aside>
+    <p>The machine also does not sleep during a campaign: <code>make campaign</code> runs under <span data-term="systemd-inhibit">systemd-inhibit</span>.</p>
     <details class="deeper"><summary>In depth: the shield and quiet mode in the code</summary>
       <div data-code="harness/env/shield.sh|for unit in|7" data-title="The shield: everything else to the E-cores"></div>
       <div data-code="harness/env/quiet.sh|apps=(|8" data-title="Quiet mode: what it closes and stops"></div>
-      <p>The shield is a <span data-term="cgroup-cpuset">cpuset</span> on <code>system.slice</code>,
-        <code>user.slice</code> and <code>init.scope</code>. Kernel threads such as
-        <span data-term="kworker-irq">kworkers and interrupt handlers</span> cannot be moved and are the
-        reason "foreign CPU time" below is measured rather than assumed to be zero.</p>
+      <p>The shield is a <span data-term="cgroup-cpuset">cpuset</span> on <code>system.slice</code>, <code>user.slice</code> and <code>init.scope</code>. Kernel threads such as <span data-term="kworker-irq">kworkers and interrupt handlers</span> cannot be moved, which is why the "foreign CPU time" below is measured and not assumed to be zero.</p>
     </details>
 
     <h2 id="mask">A browser that left the mask</h2>
     <p class="def"><b>Pilot numbers.</b> The numbers that found the problems on this page come from pilots and from the earlier build, <code>measured/v2</code>. They justify the fixes; they are not results of the study. Every fix was in place before the first run of <code>measured/v3</code>.</p>
 
-    <p>Every run is told to use only the 8 fast cores (a <span data-term="taskset">taskset</span> mask), inside its
-      own <span data-term="systemd-scope-slice">systemd scope</span>, a box the operating system keeps the run's
-      processes in. During the pilot, a sampler that checked where every thread was allowed to run found that
-      <b>Chrome's main process had moved itself out of the box</b>: through the <span data-term="session-bus-d-bus">session
-      bus</span> it asked the system for a box of its own, in the user's area, and ran on the slow cores, outside the
-      mask. Firefox's processes stayed in (ADR 0045).</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> Chrome would have had the 8 fast cores for its workers plus
-      extra cores for its own housekeeping, and Firefox would not. A difference between the two browsers would then
-      have been partly a difference in how many cores each really had, and it would have been read as a difference between the engines.</p></aside>
+    <p>Every run is told to use only the 8 P-cores (a <span data-term="taskset">taskset</span> mask), inside its own <span data-term="systemd-scope-slice">systemd scope</span>. During a pilot, a sampler that checked where every thread was allowed to run found that <b>Chrome's main process had left the scope</b>: through the <span data-term="session-bus-d-bus">session bus</span> it asked the system for a scope of its own, in the user's slice, and ran on the E-cores, outside the mask. Firefox's processes stayed in (ADR 0045).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> Chrome would have had the 8 P-cores for its workers plus other cores for its own housekeeping, and Firefox would not. A difference between the two browsers would then have been partly a difference in how many cores each had, and it would have been read as a difference between the engines.</p></aside>
     <ul>
-      <li><b>Fix:</b> the harness launches the browsers without the session bus address. Without it, every Chrome
-        process stays in the run's box.</li>
-      <li><b>Check:</b> every run records <span data-term="escaped-process">escapedProcesses</span>, the browser
-        processes found outside the box, and <span data-term="strict-validation">strict validation</span> rejects any
-        run where it is not 0.</li>
+      <li><b>Fix:</b> the harness launches the browsers without the session bus address. Without it, every Chrome process stays in the scope of the run.</li>
+      <li><b>Check:</b> every run records <span data-term="escaped-process">escapedProcesses</span>, the browser processes found outside the scope, and <span data-term="strict-validation">strict validation</span> rejects a run where it is not 0.</li>
     </ul>
     <div data-code="harness/context/validation.py|escaped = self.data.get(|3" data-title="A run with escaped processes fails validation"></div>
 
     <h2 id="checked">Checked on every run</h2>
-    <p>Setting all of this once is not enough. A reboot undoes it. A step can be forgotten. A background job
-      can slip through. So the study does not trust the setup: it <b>checks</b> it, at two moments, and
-      records what it found with every run.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why check a setting that was just set?</b> Because a measurement taken with turbo back on
-      would look exactly like a normal one, only faster, and nobody would notice. The only protection is a
-      check that refuses to run, and a record that lets the analysis throw the run out later.</p></aside>
+    <p>Setting all of this once is not enough. A reboot undoes it, a step can be forgotten, a background job can slip through. So the study does not trust the setup: it <b>checks</b> it at two moments, and records what it finds with every run.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why check a setting that was just set?</b> A measurement taken with turbo back on looks like a normal one, only faster, and nobody would notice. The protection is a check that refuses to run, and a record that lets the analysis exclude the run later.</p></aside>
     <div class="checks">
-      <div class="card"><h3>Before a session</h3><p>Every start and every resume of a campaign checks turbo,
-        the governor, SMT, that the mask is every P-core, that the shield is up and that the browsers are the
-        pinned versions. On any problem it refuses to run. It saves the state in <code>sysinfo/</code>
-        (<a href="../adr/0040-campaign-enforces-the-environment.md">ADR 0040</a>,
-        <a href="../adr/0071-firefox-pin-guard.md">ADR 0071</a>).</p></div>
-      <div class="card"><h3>With every run</h3><p>Each run's record (its JSON file) notes the commit, the CPU
-        model, governor, turbo, SMT, the mask, the shield's cores, the browser version, the build hashes and
-        the run's position in the order (<a href="../adr/0023-result-context.md">ADR 0023</a>).</p></div>
-      <div class="card"><h3>Foreign CPU time</h3><p>How busy were the 8 measured cores during the run, minus
-        how busy the run itself made them? Whatever is left was something else, running where it should not.
-        Above 0.25 s the run is excluded
-        (<a href="../adr/0051-foreign-cpu-threshold-and-data-check.md">ADR 0051</a>).</p></div>
-      <div class="card"><h3>Strict validation</h3><p>The analysis re-reads every record and excludes any run
-        with an unclean build, turbo on, the wrong governor, SMT on, the wrong mask, an unpinned browser or a
-        browser process outside the scope.</p></div>
+      <div class="card"><h3>Before a session</h3><p>Every start and every resume of a campaign checks turbo, the governor, SMT, that the mask is every P-core, that the shield is up and that the browsers are the pinned versions. On any problem it refuses to run. It saves the state in <code>sysinfo/</code> (<a href="../adr/0040-campaign-enforces-the-environment.md">ADR 0040</a>, <a href="../adr/0071-firefox-pin-guard.md">ADR 0071</a>).</p></div>
+      <div class="card"><h3>With every run</h3><p>The record of each run (its JSON file) holds the commit, the CPU model, the governor, turbo, SMT, the mask, the shield's cores, the browser version, the digests of the build and the run's position in the order (<a href="../adr/0023-result-context.md">ADR 0023</a>).</p></div>
+      <div class="card"><h3>Foreign CPU time</h3><p>The busy time of the 8 measured cores during the run, minus the busy time the run itself caused. What remains is something else that ran where it should not. Above 0.25 s the run is excluded (<a href="../adr/0051-foreign-cpu-threshold-and-data-check.md">ADR 0051</a>).</p></div>
+      <div class="card"><h3>Strict validation</h3><p>The analysis reads every record again and excludes a run with an unclean build, turbo on, the wrong governor, SMT on, the wrong mask, a browser that is not the pinned version, or a browser process outside the scope.</p></div>
     </div>
     <p>In the main campaign, no run failed strict validation and no run went over the foreign CPU
       threshold (<code>data/tables/campaign-v3/campaign-v3-quality.md</code>; see
       <a href="campaigns.html#quality">The data check</a>).</p>
     <details class="deeper"><summary>In depth: how foreign CPU time is read, and the validation code</summary>
-      <p>The busy time of the 8 CPUs comes from <span data-term="proc-stat">/proc/stat</span>, read before
-        and after the run, in clock ticks. The run's own CPU time comes from its scope's
-        <code>cpu.stat</code>. <span data-term="foreign-cpu-time">Foreign CPU time</span> is the difference.
-        The 0.25 s threshold was fixed before any campaign result was read, as twice the largest value seen
-        over 1638 pilot runs (0.125 s, in Chrome; the 99th percentile was 0.062 s). Small negative values are
-        normal: <code>/proc/stat</code> counts in 10 ms ticks.</p>
+      <p>The busy time of the 8 CPUs comes from <span data-term="proc-stat">/proc/stat</span>, read before and after the run, in clock ticks. The run's own CPU time comes from the <code>cpu.stat</code> of its scope. <span data-term="foreign-cpu-time">Foreign CPU time</span> is the difference. The 0.25 s threshold was fixed before any campaign result was read, as twice the largest value seen in 1638 pilot runs (0.125 s, in Chrome; the 99th percentile was 0.062 s). Small negative values are normal: <code>/proc/stat</code> counts in 10 ms ticks.</p>
       <div data-code="harness/context/validation.py|    def machine(self)|11" data-title="Part of strict validation"></div>
       <p class="src" data-files="harness/env/setup.sh, harness/env/check.sh, harness/environment/, harness/shield/cpu_time.py, harness/context/validation.py, analysis/quality/foreign_cpu.py"></p>
     </details>

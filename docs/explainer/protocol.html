@@ -53,50 +53,29 @@
     <p class="lead">A run is one fresh process that warms up, times the workload ten times and writes the times to a file. This page follows a run from the harness to the two files it leaves on disk, then gives the rules of the protocol: the run as the unit of analysis, the warm-up, the start delay, 30 runs in one shuffled order, and the fork-join calibration.</p>
 
     <h2 id="unit">The run is the unit</h2>
-    <p>Inside one run, the workload is timed 10 times in a row. Those 10 times mostly agree. It is tempting to
-      treat them as 10 measurements. They are not, and understanding why is the key to this whole page.</p>
+    <p>Inside one run the workload is timed 10 times in a row, and those 10 times mostly agree. They look like 10 measurements. They are not, and the rest of this page follows from that.</p>
     <div class="layers">
-      <div class="card"><h3>Iterations, inside one run</h3><p>Same process, same compiled code, same memory
-        layout, warm caches. Everything a program start decides, these 10 share. If the start happened to be a
-        slow one, all 10 are slow together. They are 10 looks at <b>one</b> situation.</p></div>
-      <div class="card"><h3>Runs, between starts</h3><p>A fresh process or a fresh browser re-draws everything
-        a start decides: which machine code the browser's compiler produced this time, where the buffers
-        landed in memory, which cores the threads got. Each run is a <b>new</b> situation. Only runs are
-        independent (<a href="../adr/0005-fresh-process-per-run.md">ADR 0005</a>).</p></div>
+      <div class="card"><h3>Iterations, inside one run</h3><p>Same process, same compiled code, same memory layout, warm caches. The 10 iterations share everything that a program start decides. If the start was a slow one, all 10 are slow together: they are 10 looks at <b>one</b> situation.</p></div>
+      <div class="card"><h3>Runs, between starts</h3><p>A fresh process or a fresh browser decides again everything that a start decides: the machine code the engine produces this time, where the buffers land in memory, which cores the threads get. Each run is a <b>new</b> situation. Only runs are independent (<a href="../adr/0005-fresh-process-per-run.md">ADR 0005</a>).</p></div>
     </div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does it matter which one is counted?</b> Because the number of measurements decides how sure the study claims to be. With 30 runs of 10 iterations, counting iterations would say "300 measurements,
-      very sure"; counting runs says "30 measurements, fairly sure". The 300 would be a lie, because the 10
-      inside a run are not 10 pieces of new information. That mistake has a name,
-      <span data-term="pseudo-replication">pseudo-replication</span>, and it is the most common error in
-      benchmark papers (Georges et al. 2007; Kalibera and Jones 2013). The study avoids it by reducing each
-      run to <b>one</b> number first, the <span data-term="median">median</span> of its 10 iterations (the
-      middle one when sorted), and doing every statistic over those 30 numbers.</p></aside>
-    <p>Here are the 30 run values of one configuration, each dot one run (pick a configuration):</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does it matter which one is counted?</b> The number of measurements decides how sure the study claims to be. With 30 runs of 10 iterations, counting iterations says "300 measurements"; counting runs says "30". The 300 would be false, because the 10 inside a run are not 10 pieces of new information. The mistake is called <span data-term="pseudo-replication">pseudo-replication</span> (Georges et al. 2007; Kalibera and Jones 2013). The study reduces each run to <b>one</b> number first, the <span data-term="median">median</span> of its 10 iterations, and computes every statistic over those 30 numbers.</p></aside>
+    <p>These are the 30 run values of one configuration, one dot per run. Pick a configuration:</p>
     <div class="card">
       <div id="strip-seg"></div>
       <div id="strip" class="strip" style="margin-top:10px"></div>
       <div class="stats" id="strip-stats"></div>
     </div>
     <p class="src" data-files="data/raw/campaign-v3/, analysis/runs.py"></p>
-    <p>For the filter, the 30 runs sit within a few percent of each other. For the atomic histogram at k = 1
-      they spread over about a quarter of their value, and in clusters: how the 8 threads of one particular
-      start happen to take turns on the one hot counter differs from start to start. No number of iterations
-      inside one run could show that spread; only new starts can. That is the whole argument for the run as
-      the unit, drawn.</p>
+    <p>For the filter, the 30 runs lie within a few percent of each other. For the atomic histogram at k = 1 they spread over about a quarter of their value, in clusters: how the 8 threads of one start take turns on the one contended counter differs from start to start. No number of iterations inside one run shows that spread; only new starts do.</p>
     <details class="deeper"><summary>In depth: the spread of every summarized configuration</summary>
-      <p>Per configuration: the median of the 30 run values, the smallest and largest, the interquartile range
-        over the median, and the largest over the median.</p>
+      <p>For each configuration: the median of the 30 run values, the smallest and the largest, the interquartile range over the median, and the largest over the median.</p>
       <div id="dist"></div>
       <p class="src" data-src="campaign-v3-distributions"></p>
     </details>
 
     <h2 id="pipeline">From the harness to two files</h2>
-    <p>Start with the word. A <span data-term="run">run</span> is <b>one start of one program</b>. For native,
-      it is the compiled program starting, measuring and exiting. For a browser, it is Chrome or Firefox
-      starting with a brand-new, empty profile, loading one page that does the measuring, and being closed.
-      Nothing survives from one run to the next: no process, no cache, no window.</p>
-    <p>One run goes through seven stages, from the command you type to the number in the paper. Step through
-      them (the arrow keys work too):</p>
+    <p>A <span data-term="run">run</span> is <b>one start of one program</b>. For native, the compiled program starts, measures and exits. For a browser, Chrome or Firefox starts with a new, empty profile, loads one page that measures, and is closed. Nothing survives from one run to the next: no process, no cache, no window.</p>
+    <p>A run goes through seven stages, from the command you type to the number in the paper. Step through them (the arrow keys work too):</p>
     <div id="pipe" class="card"></div>
     <figure class="figure">
       <svg viewBox="0 0 760 170" role="img" aria-label="Processes and files of one run: the harness on the E-cores starts a native program or a browser on the P-cores; the native program prints CSV, the browser posts it to the server; both end as two files">
@@ -124,80 +103,43 @@
         <text class="sub" x="520" y="52" text-anchor="middle">prints CSV</text>
         <text class="sub" x="236" y="150" text-anchor="middle">POST</text>
       </svg>
-      <figcaption>The harness starts one program per run and waits. Native prints its CSV; the browser's page
-        sends it to the local server. Either way, the run ends as two files.</figcaption>
+      <figcaption>The harness starts one program per run and waits. Native prints its CSV; the browser page posts it to the local server. Either way, the run ends as two files.</figcaption>
     </figure>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is nothing automated inside the browser?</b> Tools such as Puppeteer, Playwright
-      or the DevTools protocol can drive a browser from a script, which would make the harness simpler. But
-      they do it by living inside the browser process: extra threads, extra messages, extra timers, all in the
-      thing being measured. The measurement would time the browser plus the automation. So the harness only
-      launches the browser with a URL and waits for the result file to appear
-      (<a href="../adr/0006-harness-without-automation.md">ADR 0006</a>).</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is nothing automated inside the browser?</b> Puppeteer, Playwright or the DevTools protocol can drive a browser from a script, which would make the harness simpler. They do it from inside the browser process: more threads, more messages and more timers in what is measured. So the harness only launches the browser with a URL and waits for the result file to appear (<a href="../adr/0006-harness-without-automation.md">ADR 0006</a>).</p></aside>
 
     <h2 id="native">A native run</h2>
-    <p>For a native run the harness starts the compiled program, <code>bench/target/release/native</code>,
-      with the configuration as command-line flags (which workload, how big an image, how many threads).
-      The program prints its results as CSV text to its standard output, the harness catches that text and
-      writes it to disk next to a record of the run's context.</p>
-    <p>Inside, the program does four things in order, and they are the same four things the browser page
-      does, because it is the same Rust code: it builds the pool of N worker threads; it generates the input
-      image from a fixed seed; it times a few empty parallel regions (the
-      <a href="protocol.html#calibration">calibration</a>); then it runs the warm-up and the measured
-      iterations, timing each one.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is only the parallel work timed?</b> Each iteration also prepares its buffers and
-      checks its result. Those happen outside the clock. If they were inside, the time would include work that
-      has nothing to do with scaling, and native and the browsers do that work at different speeds for reasons
-      unrelated to threads. The clock starts right before the parallel region and stops right after.</p></aside>
-    <p class="def"><b>Checksum.</b> Every iteration ends by boiling its whole output down to one number
-      (a hash). The first iteration's number is the reference; a later one that differs means the program
-      computed something different, and the run fails. The numbers must also match across environments and
-      thread counts, which <code>harness.collect</code> checks before any analysis. It shows that all three environments did the same work.</p>
+    <p>For a native run the harness starts the compiled program, <code>bench/target/release/native</code>, with the configuration as command-line flags (workload, image size, threads). The program prints its results as CSV to standard output. The harness captures that text and writes it to disk, next to a record of the context of the run.</p>
+    <p>The program does four things in order, and the browser page does the same four, because it is the same Rust code. It builds the pool of N worker threads. It generates the input image from a fixed seed. It times a few empty parallel regions (the <a href="#calibration">calibration</a>). Then it runs the warm-up and the measured iterations, timing each one.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is only the parallel work timed?</b> Each iteration also prepares its buffers and checks its result, outside the timed region. Inside it, the time would include work that has no relation to scaling, which native and the browsers do at different speeds for reasons that are not threads. The timed region starts right before the parallel region and ends right after it.</p></aside>
+    <p class="def"><b>Checksum.</b> Every iteration ends by hashing its whole output to one number. The first iteration's number is the reference: a later one that differs means that the program computed something else, and the run fails. The numbers must also match across environments and thread counts, which <code>harness.collect</code> checks before any analysis.</p>
     <details class="deeper"><summary>In depth: the native runner and the shared run function</summary>
       <div data-code="bench/src/bin/native/main.rs|fn run()|8" data-title="The native runner: start the pool, run, print CSV"></div>
-      <p>The pool is a global Rayon pool of N threads, built before anything is timed
-        (<span data-term="run-in-pool">run_in_pool</span>). Then <code>execute</code> does the work that is
-        the same in every environment:</p>
+      <p>The pool is a global Rayon pool of N threads, built before anything is timed (<span data-term="run-in-pool">run_in_pool</span>). Then <code>execute</code> does the work that is the same in every environment:</p>
       <div data-code="bench/src/run.rs|pub fn execute|29" data-title="One run, the same code in all three environments"></div>
       <div data-code="bench/src/measurement/measure.rs|fn timed_iteration|12" data-title="One timed iteration"></div>
     </details>
 
     <h2 id="browser">A browser run</h2>
-    <p>A browser run starts Chrome or Firefox the way the harness wants it: with a temporary, empty profile;
-      without a window (<span data-term="headless">headless</span>); with its own updates, telemetry and
-      background features switched off; and with a URL that carries the configuration, the same values the
-      native program got as flags (<a href="../adr/0022-browser-launcher.md">ADR 0022</a>,
-      <a href="../adr/0029-quiet-browsers-and-start-delay.md">ADR 0029</a>).</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a fresh profile every time?</b> A browser profile is its memory: caches, compiled
-      code it saved, settings, history. If run 2 reused run 1's profile, it could start with code already
-      compiled or files already cached, and be faster for a reason that is not the runtime. A fresh profile
-      makes every browser run start from zero, like every native run does
-      (<span data-term="fresh-profile">fresh profile</span>).</p></aside>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why headless?</b> A window means drawing, compositing and a desktop talking to the
-      browser, all of it work on the measured cores that has nothing to do with the workload. A pilot measured
-      the difference between headless and headful at under 0.3 %, so headless costs nothing and removes a
-      source of noise (<a href="../adr/0046-headless.md">ADR 0046</a>).</p></aside>
+    <p>A browser run starts Chrome or Firefox with a temporary, empty profile, without a window (<span data-term="headless">headless</span>), with its updates, telemetry and background features off, and with a URL that carries the configuration: the same values the native program gets as flags (<a href="../adr/0022-browser-launcher.md">ADR 0022</a>, <a href="../adr/0029-quiet-browsers-and-start-delay.md">ADR 0029</a>).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a fresh profile every time?</b> A profile is the browser's state: caches, compiled code it saved, settings, history. If run 2 reused the profile of run 1, it could start with code already compiled or files already cached, and be faster for a reason that is not the environment. A <span data-term="fresh-profile">fresh profile</span> makes every browser run start from nothing, as every native run does.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why headless?</b> A window means drawing, compositing and a desktop that talks to the browser: work on the measured cores that is not the workload. A pilot measured the difference between headless and a visible window at under 0.3%, so headless costs nothing and removes a source of noise (<a href="../adr/0046-headless.md">ADR 0046</a>).</p></aside>
     <div class="two">
       <div class="card"><h3>What the harness does</h3><ol>
         <li>Creates a fresh profile (Firefox also gets a <code>user.js</code> that turns off updates, telemetry and safe browsing).</li>
-        <li>Starts the browser in the run's scope and CPU mask, with <code>index.html?run=&lt;id&gt;&amp;threads=8&amp;...</code>.</li>
-        <li>Waits for <code>&lt;id&gt;.csv</code> to appear (or for a timeout).</li>
-        <li>Stops the whole scope, so no browser process survives into the next run, and deletes the profile.</li>
-        <li>Adds the machine's context (mask, governor, foreign CPU time) to <code>&lt;id&gt;.json</code>.</li>
+        <li>Starts the browser in the scope and CPU mask of the run, with <code>index.html?run=&lt;id&gt;&amp;threads=8&amp;...</code>.</li>
+        <li>Waits for <code>&lt;id&gt;.csv</code> to appear, or for a timeout.</li>
+        <li>Stops the whole scope, so that no browser process survives into the next run, and deletes the profile.</li>
+        <li>Adds the context of the machine (mask, governor, foreign CPU time) to <code>&lt;id&gt;.json</code>.</li>
       </ol></div>
       <div class="card"><h3>What the page does</h3><ol>
-        <li>Refuses to run unless the page is <span data-term="cross-origin-isolation">cross-origin isolated</span> (explained below).</li>
-        <li>Waits the <span data-term="start-delay">start delay</span> (3 s), so the browser finishes its own start-up first.</li>
+        <li>Refuses to run unless it is <span data-term="cross-origin-isolation">cross-origin isolated</span> (<a href="#server">The results server</a>).</li>
+        <li>Waits the <span data-term="start-delay">start delay</span> (3 s), so that the browser finishes its own start-up first.</li>
         <li>Starts a <span data-term="coordinator-worker">coordinating Web Worker</span>, which loads the WASM module and starts N pool workers.</li>
         <li>The worker calls the same Rust <code>run</code> function and gets the CSV back as a string.</li>
-        <li>The page sends <code>{csv, meta}</code> to the local server.</li>
+        <li>The page posts <code>{csv, meta}</code> to the local server.</li>
       </ol></div>
     </div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does a worker run it, and not the page itself?</b> While the pool works, the
-      thread that started the parallel region waits for the others to finish, and in the browser that wait is
-      a call that blocks the thread (<span data-term="atomics-wait-atomics-notify">Atomics.wait</span>). A
-      page's main thread is not allowed to block, because it also draws the page and handles input. So the
-      page hands the job to a Web Worker, which may block, and waits for its message. More on
-      <a href="threads.html#threads">Threads and Web Workers</a>.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does a worker run it, and not the page itself?</b> While the pool works, the thread that started the parallel region waits for the others, and in a browser that wait blocks the thread (<span data-term="atomics-wait-atomics-notify">Atomics.wait</span>). The main thread of a page may not block, because it also draws the page and handles input. So the page gives the work to a Web Worker, which may block, and waits for its message (<a href="threads.html#threads">Threads and Web Workers</a>).</p></aside>
     <details class="deeper"><summary>In depth: the page, the worker and the browser flags</summary>
       <div data-code="bench/www/main.js|async function measure(runId, startDelay, query, status)|15" data-title="The page: check isolation, wait, run, post"></div>
       <div data-code="bench/www/worker.js|async function measure(query, meta)|13" data-title="The coordinating worker"></div>
@@ -209,67 +151,29 @@
     </details>
 
     <h2 id="server">The results server</h2>
-    <p>A web page cannot write a file to your disk. So the harness runs a tiny web server on the machine,
-      <code>harness/server.py</code>, on the E-cores, reachable only from the machine itself
-      (<code>127.0.0.1</code>). It has two jobs:</p>
+    <p>A web page cannot write a file to your disk. So the harness runs a small web server on the machine, <code>harness/server.py</code>, on the E-cores, reachable only from the machine itself (<code>127.0.0.1</code>). It does two things:</p>
     <ul>
-      <li><b>It serves the page.</b> The browser loads <code>bench/www/index.html</code> from it, with two
-        special headers attached that make the page <span data-term="cross-origin-isolation">cross-origin
-        isolated</span>.</li>
-      <li><b>It receives the result.</b> When the page is done, it sends the CSV and some context to the server
-        (<code>POST /results?run=&lt;id&gt;</code>), and the server writes <code>&lt;id&gt;.csv</code> and
-        <code>&lt;id&gt;.json</code>, the same two files a native run gets.</li>
+      <li><b>It serves the page.</b> The browser loads <code>bench/www/index.html</code> from it, with two headers that make the page <span data-term="cross-origin-isolation">cross-origin isolated</span>.</li>
+      <li><b>It receives the result.</b> When the page finishes, it posts the CSV and some context to the server (<code>POST /results?run=&lt;id&gt;</code>), and the server writes <code>&lt;id&gt;.csv</code> and <code>&lt;id&gt;.json</code>, the same two files a native run gets.</li>
     </ul>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why do the headers matter?</b> Threads in the browser share memory through a
-      <span data-term="sharedarraybuffer">SharedArrayBuffer</span>. Years ago that feature was used in a
-      security attack, so browsers now refuse it unless the page promises, through those two headers, that
-      it will not mix in content from other sites. No headers, no shared memory, no threads. The page checks
-      the promise took effect before it starts, and fails loudly if not.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why do the headers matter?</b> Threads in a browser share memory through a <span data-term="sharedarraybuffer">SharedArrayBuffer</span>. That feature was once used in a security attack, so browsers now refuse it unless the page declares, through those two headers, that it loads no content from other sites. Without the headers there is no shared memory and no threads. The page checks that it is isolated before it starts, and fails with an error if it is not.</p></aside>
     <details class="deeper"><summary>In depth: the headers and the write order</summary>
       <div data-code="harness/server.py|Cross-Origin-Opener-Policy|3" data-title="The isolation headers"></div>
-      <p>The server writes the JSON first and the CSV last, so an existing CSV always means a complete run.
-        It never overwrites a run (it answers 409): a repeated id is a harness bug to notice, not to hide
-        (<a href="../adr/0019-local-results-server.md">ADR 0019</a>). The headers are
-        <span data-term="coop-coep-corp">COOP and COEP</span>.</p>
+      <p>The server writes the JSON first and the CSV last, so a CSV that exists always means a complete run. It never overwrites a run (it answers 409): a repeated id is a bug in the harness to notice, not to hide (<a href="../adr/0019-local-results-server.md">ADR 0019</a>). The headers are <span data-term="coop-coep-corp">COOP and COEP</span>.</p>
     </details>
 
     <h2 id="csv">One CSV row, field by field</h2>
-    <p>Here is what a run leaves behind. The CSV file has one row per timed thing: every warm-up iteration,
-      every measured iteration and every calibration sample. Native and the browsers write exactly the same
-      columns. Below is a real file from the main campaign, its header and its first measured row, and then
-      each field read aloud:</p>
+    <p>The CSV file has one row per timed thing: every warm-up iteration, every measured iteration and every calibration sample. Native and the browsers write the same columns. Below are the header and the first measured row of a file of the main campaign, and then each field:</p>
     <div data-code="data/raw/campaign-v3/campaign-v3-0047-native-filter-noise-n8-r11.csv|env,workload,input|1" data-title="Header"></div>
     <div data-code="data/raw/campaign-v3/campaign-v3-0047-native-filter-noise-n8-r11.csv|8,measured,0,|1" data-title="First measured row"></div>
     <div id="fields"></div>
-    <p>Two columns matter most. <code>phase</code> says what kind of row this is: a calibration sample, a
-      warm-up iteration, or a measured one. Only <code>measured</code> rows are used for timing. And
-      <code>ns</code> is the time of that one iteration, in nanoseconds (billionths of a second): the row above
-      says 3 274 887 ns, which is about 3.3 ms, for one filter pass over the whole image with 8 threads.</p>
-    <p>The JSON file next to the CSV is the run's <b>record</b>: which commit was built, the hashes of the
-      binary and the WASM module, the CPU mask, governor, turbo and SMT, the browser version, the run's
-      position in the shuffled order, the foreign CPU time, and the exact command that started it
-      (<a href="../adr/0023-result-context.md">ADR 0023</a>, <a href="../adr/0027-provenance-and-failed-runs.md">ADR 0027</a>).
-      It is what lets the analysis throw out a run that was not taken under the right conditions. More in
-      <a href="data.html#json">The run record</a>.</p>
+    <p>Two columns matter most. <code>phase</code> says what kind of row this is: a calibration sample, a warm-up iteration or a measured one. Only <code>measured</code> rows are used for timing. <code>ns</code> is the time of that one iteration in nanoseconds: the row above says 3 274 887 ns, about 3.3 ms, for one pass of the filter over the whole image with 8 threads.</p>
+    <p>The JSON file next to the CSV is the <b>record</b> of the run: the commit that was built, the digests of the binary and of the WASM module, the CPU mask, the governor, turbo and SMT, the browser version, the position of the run in the shuffled order, the foreign CPU time and the exact command that started it (<a href="../adr/0023-result-context.md">ADR 0023</a>, <a href="../adr/0027-provenance-and-failed-runs.md">ADR 0027</a>). It lets the analysis exclude a run that was not taken under the right conditions. <a href="data.html#json">The run record</a> lists every field.</p>
     <p class="src" data-files="bench/src/results.rs, bench/src/results/phase.rs, harness/native/row_schema.py, analysis/runs.py"></p>
 
     <h2 id="warmup">Warm-up inside the run</h2>
-    <p>The first iterations of a run are slow. In a browser, the engine is still turning the WebAssembly into
-      fast machine code, in stages, while the program already runs
-      (<span data-term="jit-tier-up">tier-up</span>; see <a href="compilers.html#jit">Engines and JIT</a>).
-      Natively, the first pass touches memory that was never used before, and the caches are cold. These
-      iterations are timed, so you can see them in the CSV, but they are not used: they are the
-      <span data-term="warm-up-w">warm-up</span>, W iterations before the 10 measured ones.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not just skip one iteration?</b> Because how long the start-up effect lasts
-      depends on the workload and on the environment. Firefox kept recompiling one histogram function for
-      dozens of iterations. If W were too small, the measured iterations of that cell would still be slow,
-      and Firefox would look worse than it is. If W were huge, campaigns would take days for nothing. So W was
-      chosen per workload, from pilot runs with no warm-up and 100 iterations: find the iteration where each
-      run settles, take the largest over every environment and thread count, multiply by 1.5 for safety,
-      and never go below 5 (<a href="../adr/0043-warm-up-per-workload.md">ADR 0043</a>). The same W is then
-      used in native, Chrome and Firefox, so the environments compared within a workload get the same
-      procedure. That choice came from pilot data, which is fine for a <i>design decision</i>; pilot data
-      never appears as a result.</p></aside>
+    <p>The first iterations of a run are slow. In a browser, the engine is still compiling the WebAssembly to fast machine code, in tiers, while the program already runs (<span data-term="jit-tier-up">tier-up</span>, <a href="compilers.html#jit">Engines and JIT</a>). Natively, the first pass touches memory for the first time and the caches are cold. These iterations are timed, so you can see them in the CSV, but they are not used: they are the <span data-term="warm-up-w">warm-up</span>, W iterations before the 10 measured ones.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not skip one iteration and be done?</b> How long the start-up effect lasts depends on the workload and on the environment: Firefox kept recompiling one histogram function for dozens of iterations. With W too small, the measured iterations of that configuration would still be slow, and Firefox would look worse than it is. With W very large, campaigns would take days. So W is chosen per workload, from pilot runs with no warm-up and 100 iterations: find the iteration at which each run settles, take the largest over every environment and thread count, multiply by 1.5, and never go below 5 (<a href="../adr/0043-warm-up-per-workload.md">ADR 0043</a>). The same W is used in native, Chrome and Firefox. Pilot data decided it, which is its proper use; pilot data is never a result.</p></aside>
     <div class="scroll-x"><table class="t">
       <thead><tr><th>Workload</th><th class="n">W</th><th>What the warm-up pilot saw (2 runs per cell, no warm-up, 100 iterations)</th></tr></thead>
       <tbody>
@@ -281,13 +185,8 @@
       </tbody>
     </table></div>
     <p class="src" data-files="harness/campaigns/campaign-v3.json, analysis/warmup.py, paper/figures/warmup-n1.pdf, paper/figures/warmup-n8.pdf"></p>
-    <p>Two more things happen before the clock starts. The pool of worker threads is built. And in the
-      browser, the page first waits 3 seconds, the <span data-term="start-delay">start delay</span>.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why wait 3 seconds?</b> A browser keeps doing things of its own for a while after it
-      opens: loading extensions, checking files, warming its own caches. In a pilot, Firefox was still doing
-      that during the first short iterations and made them up to 32 % slower. Three seconds lets the browser
-      finish being a browser before the page starts being a benchmark
-      (<a href="../adr/0048-start-delay.md">ADR 0048</a>).</p></aside>
+    <p>Two more things happen before the timed region. The pool of worker threads is built. And in a browser, the page first waits 3 seconds, the <span data-term="start-delay">start delay</span> (<a href="#startup">The start delay</a> tells how it was found).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is the first browser run of each session discarded?</b> The first launch of a browser after the machine is prepared is much slower than every later one, likely because its files are read from disk for the first time. If it counted, one run of one configuration would be an outlier for a reason that is not the environment. So every session runs that launch and discards it (<span data-term="discarded-first-launch">discarded first launch</span>, <a href="../adr/0034-campaign-orchestrator.md">ADR 0034</a>, <a href="../adr/0040-campaign-enforces-the-environment.md">ADR 0040</a>).</p></aside>
     <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is the first browser run of each session thrown away?</b> The first launch of a
       browser after the machine was prepared is much slower than every later one (likely because its files
       are read from disk for the first time). If it counted, one run of one configuration would be an
@@ -299,98 +198,53 @@
     <h2 id="startup">The start delay</h2>
     <p>The numbers in this section come from pilots and from the earlier build, <code>measured/v2</code>. They justify the fix; they are not results of the study.</p>
 
-    <p>A browser keeps working for seconds after the page has loaded: it compiles code, loads components, starts
-      services. The warm-up pilot ran with no delay, so its short measurements ended less than a second after the page
-      loaded. The delay pilot (ADR 0048) then showed <b>Firefox's local histogram at N = 8 up to 32% slower and
-      erratic</b> without a delay: Firefox's own start-up work was competing with the 8 workers for the 8 cores.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> Firefox would have looked worse at scaling than it is, and
-      the loss would have been blamed on WASM threads. The cause had nothing to do with threads: it was the browser
-      still starting up during the measurement.</p></aside>
+    <p>A browser keeps working for seconds after the page has loaded: it compiles code, loads components, starts services. The warm-up pilot ran with no delay, so its short measurements ended less than a second after the page loaded. The delay pilot (<a href="../adr/0048-start-delay.md">ADR 0048</a>) then showed <b>Firefox's local histogram at N = 8 up to 32% slower and erratic</b> without a delay: Firefox's own start-up work competed with the 8 workers for the 8 cores.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> Firefox would have looked worse at scaling than it is, and the loss would have been attributed to WASM threads. The cause was not threads: the browser was still starting during the measurement.</p></aside>
     <ul>
-      <li><b>Fix:</b> every browser run waits 3 s before it creates the coordinating worker (the
-        <span data-term="start-delay">start delay</span>), recorded with the run.</li>
-      <li><b>Left:</b> native has no delay, a known asymmetry that does not change a speedup within one runtime; 3 s
-        against 6 s differs by about 1% (<a href="threats.html#internal">Threats</a>).</li>
+      <li><b>Fix:</b> every browser run waits 3 s before it creates the coordinating worker (the <span data-term="start-delay">start delay</span>), and records it with the run.</li>
+      <li><b>Left:</b> native has no delay, a known asymmetry that does not change a speedup inside one environment; 3 s against 6 s differs by about 1% (<a href="threats.html#internal">Threats to validity</a>).</li>
     </ul>
 
     <h2 id="thirty">30 runs, 10 iterations</h2>
-    <p>Each configuration (one environment, one workload, one N) is measured by 30 runs, each with 10 measured
-      iterations (<a href="../adr/0047-runs-and-iterations.md">ADR 0047</a>). The main campaign is 3 environments, 9 workload settings and 6 thread counts (N in {1, 2, 4, 6, 7, 8}), times 30: 4860 runs, plus 450 runs of plain sequential code at one thread (<a href="explains.html#baseline">Is the one-thread baseline fair?</a>): 5310 in all.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why 30, and not 5 or 100?</b> More runs make the estimate more precise, but each one
-      costs machine time, and the gain shrinks: going from 5 to 30 narrows the uncertainty a lot; going from
-      30 to 100 narrows it only a little more. Thirty is the course's rule, and a pilot checked that 30 gives
-      the precision the questions need: the intervals below are within a few percent of the estimate. More
-      iterations <i>per run</i> would not have helped at all, because what varies is between runs, not inside
-      them.</p></aside>
-    <p>Here is the precision those 30 runs bought, for the 10 comparisons that decide the study's answers.
-      The <a href="reading.html#sure">interval</a> is the range the true value is probably in; the half-width
-      is how far its edges are from the estimate, as a percentage. (These are the stricter 99.5 % intervals
-      explained on <a href="reading.html#decisions">Ten decisions, a stricter bar</a>.)</p>
+    <p>Each configuration (one environment, one workload, one N) has 30 runs, each with 10 measured iterations (<a href="../adr/0047-runs-and-iterations.md">ADR 0047</a>). The main campaign is 3 environments, 9 workload settings and 6 thread counts (N in {1, 2, 4, 6, 7, 8}), times 30: 4860 runs. With 450 runs of sequential code at one thread (<a href="explains.html#baseline">Is the one-thread baseline fair?</a>) it has 5310.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why 30, and not 5 or 100?</b> More runs make the estimate more precise, but each costs machine time and the gain shrinks: from 5 to 30 the interval narrows a lot, from 30 to 100 only a little more. Thirty is the rule of the course, and a pilot checked that 30 gives the precision the questions need. More iterations <i>per run</i> would not help, because the variation is between runs, not inside them.</p></aside>
+    <p>This is the precision that 30 runs give for the 10 primary comparisons. The half-width is how far the ends of the <a href="reading.html#sure">interval</a> are from the estimate, as a percentage. These are the stricter 99.5% intervals of <a href="reading.html#decisions">Ten decisions, a stricter bar</a>.</p>
     <div id="precision"></div>
     <p class="src" data-src="campaign-v3-contrasts"></p>
 
     <h2 id="order">Random interleaved order</h2>
-    <p>The 5310 runs took 14 hours. Over that time, a machine drifts: it warms up, a background job wakes
-      up, memory fragments. Now imagine all the native runs were taken first and all the Firefox runs last.
-      Any slow change of the machine would land on Firefox and not on native, and would look like a
-      difference between the two environments. It would be invisible, and it would be wrong.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why shuffle, and why with a seed?</b> The campaign builds the full list of runs
-      (every environment, workload, N and repetition) and shuffles it once, so native, Chrome and Firefox runs
-      are mixed throughout. Drift still happens, but it now falls on all three alike: it becomes noise, which
-      the intervals account for, instead of a bias, which nothing would catch. The shuffle uses a recorded
-      <span data-term="order-seed">seed</span> (2026112201 for the main campaign), so the same order can be
-      rebuilt later: a stopped campaign resumes at exactly the position it stopped, and anyone can reproduce
-      the sequence (<a href="../adr/0034-campaign-orchestrator.md">ADR 0034</a>).</p></aside>
-    <p>After the campaign, the data check looks for drift that slipped through anyway: in each configuration,
-      do the run values trend with the run's position in the order? One of the 177 configurations showed a trend, about what chance alone would produce. It is kept, and it is not one of the cells the ten primary comparisons use.</p>
+    <p>The 5310 runs took 14 hours. Over that time a machine drifts: it warms up, a background job wakes, memory fragments. Suppose every native run came first and every Firefox run last. A slow change of the machine would fall on Firefox and not on native, and would look like a difference between the two environments.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why shuffle, and why with a seed?</b> The campaign builds the full list of runs (every environment, workload, N and repetition) and shuffles it once, so native, Chrome and Firefox runs are mixed from start to end. Drift still happens, but it falls on all three alike: it becomes noise, which the intervals account for, and not a bias, which nothing would catch. The shuffle uses a recorded <span data-term="order-seed">seed</span> (2026112201 for the main campaign), so the same order can be rebuilt: a stopped campaign resumes at the position where it stopped, and anyone can reproduce the sequence (<a href="../adr/0034-campaign-orchestrator.md">ADR 0034</a>).</p></aside>
+    <p>After the campaign, the data check looks for drift that remains: in each configuration, do the run values trend with the position of the run in the order? One of the 177 configurations shows a trend, about what chance alone produces. It is kept, and it is not one of the configurations of the ten primary comparisons.</p>
     <details class="deeper"><summary>In depth: the plan, the seed and the drift check</summary>
       <div data-code="harness/campaign/plan.py|def plan(spec: CampaignSpec)|14" data-title="The shuffled plan"></div>
-      <p>The drift check is <span data-term="spearman-s-rho">Spearman's rho</span> between a run's order
-        position and its value, flagged at |rho| above 0.5 with at least 10 runs. With 30 runs and no drift
-        that happens by chance about 0.7 % of the time, so about 1.2 of the 177 configurations are expected
-        (<a href="../adr/0051-foreign-cpu-threshold-and-data-check.md">ADR 0051</a>).</p>
+      <p>The drift check is <span data-term="spearman-s-rho">Spearman's rho</span> between the order position of a run and its value, flagged at |rho| above 0.5 with at least 10 runs. With 30 runs and no drift that happens by chance about 0.7% of the time, so about 1.2 of the 177 configurations are expected (<a href="../adr/0051-foreign-cpu-threshold-and-data-check.md">ADR 0051</a>).</p>
       <div data-code="data/tables/campaign-v3/campaign-v3-quality.md|Configurations whose valid run values trend|4" data-title="From the data check of the main campaign"></div>
     </details>
 
     <h2 id="calibration">Fork-join calibration</h2>
-    <p>Starting a parallel region has a cost of its own: the worker threads must be told there is work, and
-      the thread that asked must wait until all of them are done. That is the
-      <span data-term="fork-join">fork-join</span> cost (<a href="threads.html#forkjoin">Fork-join and its
-      cost</a>). To know how big it is, every run times a few parallel regions with <b>nothing</b> inside
-      them, before its warm-up: what remains is the pure price of starting and joining
-      (<a href="../adr/0030-fork-join-calibration.md">ADR 0030</a>).</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why measure it at all, if the workload's time already includes it?</b> Because
-      without a separate number nothing tells a slow workload from a slow start. If the browsers scale
-      worse on small images, is the parallel code slower, or is the fixed cost of each region bigger? The
-      calibration answers that: it is the fixed cost. Nothing is subtracted from the measured times; the
-      calibration describes, it does not correct.</p></aside>
-    <p>Two kinds of sample, 20 of each in every run:</p>
+    <p>A parallel region has a cost of its own: the worker threads must be told that there is work, and the thread that asked must wait until all of them finish. That is the <span data-term="fork-join">fork-join</span> cost (<a href="threads.html#forkjoin">Fork-join and its cost</a>). To measure it, every run times a few parallel regions with <b>nothing</b> inside, before its warm-up (<a href="../adr/0030-fork-join-calibration.md">ADR 0030</a>).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why measure it, if the time of the workload already includes it?</b> Without a separate number, nothing tells a slow workload from a slow start. If the browsers scale worse on small images, is the parallel code slower, or is the fixed cost of each region larger? The calibration answers that. Nothing is subtracted from the measured times: the calibration describes, it does not correct.</p></aside>
+    <p>Each run takes 20 samples of each of two kinds:</p>
     <ul>
       <li><b>warm</b>: back to back, so the workers are still awake and looking for work;</li>
-      <li><b>cold</b>: each after a pause at least as long as the workload's checksum, so the workers have gone
-        to sleep, as they have before every measured iteration. Cold minus warm is the cost of waking them.</li>
+      <li><b>cold</b>: each after a pause at least as long as the checksum of the workload, so the workers are asleep, as they are before every measured iteration. Cold minus warm is the cost of waking them.</li>
     </ul>
-    <p>The warm one, as the median over runs of each run's median of its 20 samples, in microseconds
-      (millionths of a second):</p>
+    <p>The warm sample, as the median over runs of the median of the 20 samples of each run, in microseconds:</p>
     <div id="fj-table"></div>
     <div id="fj-bars"></div>
     <p class="src" data-files="data/raw/campaign-v3/, bench/src/calibration.rs, scripts/explainer_data.py"></p>
-    <p>At N = 8 the browsers pay about 110 µs (Chrome) and 60 µs (Firefox) against 7.9 µs natively. Against
-      a filter iteration of several milliseconds that is nothing; against a small parallel region it is
-      everything. That is the subject of <a href="extras.html#cutoff">Exploratory campaigns</a>.</p>
+    <p>At N = 8 the browsers pay about 110 µs (Chrome) and 60 µs (Firefox) against 7.9 µs natively. Against a filter iteration of several milliseconds that is negligible; against a small parallel region it dominates, which <a href="extras.html#cutoff">Cutoff: the smallest image worth threading</a> measures.</p>
     <details class="deeper"><summary>In depth: the step at N = 8, the clock ticks and the code</summary>
-      <p>All three environments step up at N = 8, likely because the coordinating thread then shares the 8
-        cores with N workers. Below N = 8 the browser values are one or two ticks of their coarse clocks
-        (<span data-term="performance-now">performance.now()</span> steps by 5 µs in Chrome and 20 µs in
-        Firefox), so a 0 there means "under one tick", not free.</p>
+      <p>All three environments step up at N = 8, likely because the coordinating thread then shares the 8 cores with N workers. Below N = 8 the browser values are one or two ticks of their coarse clocks (<span data-term="performance-now">performance.now()</span> steps by 5 µs in Chrome and 20 µs in Firefox), so a 0 there means "under one tick", not zero cost.</p>
       <div data-code="bench/src/calibration.rs|pub fn calibrate_probes|12" data-title="The calibration inside every run"></div>
     </details>
     <details class="deeper"><summary>In depth: the empty broadcast, and how the calibration table is computed</summary>
       <div data-code="bench/src/calibration/empty_broadcast.rs|fn fork_join(|6" data-title="The empty broadcast: only wake-up and join are left"></div>
-      <p class="muted" style="font-size:var(--fs-sm)">The median over runs of each run's median of 20 warm calls, computed from the per-run calibration rows of <code>data/raw/campaign-v3</code> (all 30 runs of every configuration, 270 per environment and N) by <code>scripts/explainer_data.py</code>. <code>broadcast</code> runs an empty closure on every thread; <code>par_iter</code> is an empty parallel iterator. The browser clock ticks in 5 µs (Chrome) and 20 µs (Firefox), so small browser values are a tick or two.</p>
+      <p class="muted" style="font-size:var(--fs-sm)">The table is computed by <code>scripts/explainer_data.py</code> from the calibration rows of <code>data/raw/campaign-v3</code>: all 30 runs of every configuration, 270 per environment and N. <code>broadcast</code> runs an empty closure on every thread; <code>par_iter</code> is an empty parallel iterator.</p>
     </details>
 
-    <p class="takeaway"><strong>In summary.</strong> A run is one fresh start of one program, and it gives one number. The same Rust code times the workload in all three environments; the harness differs only in how it starts the program (flags or a URL) and how the result reaches the disk (printed, or posted to a local server). Each configuration has 30 runs, each run discards its warm-up iterations, browser runs wait 3 s first, and the runs of all three environments are shuffled into one order.</p>
+    <p class="takeaway"><strong>In summary.</strong> A run is one fresh start of one program, and it gives one number. The same Rust code times the workload in all three environments; the harness differs only in how it starts the program (flags or a URL) and how the result reaches the disk (printed, or posted to a local server). Each configuration has 30 runs, each run discards its warm-up iterations, browser runs wait 3 s first, and the runs of the three environments are shuffled into one order.</p>
 
     <footer class="pager" id="pager"></footer>
   </article>

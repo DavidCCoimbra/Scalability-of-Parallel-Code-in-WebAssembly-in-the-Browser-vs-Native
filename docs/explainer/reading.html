@@ -55,36 +55,20 @@
     <p class="lead">Thirty runs give thirty slightly different times. The study reports one time with an interval around it, and answers ten questions with yes or no. This page explains how, first in words (one value per run, an average that respects ratios, the interval, the ten decisions) and then statistic by statistic with the formula, a live example on the measured data and the code.</p>
 
     <div class="steps4">
-      <div class="card"><h3>One value per run</h3><p>10 timed iterations become 1 number: the middle one.</p></div>
+      <div class="card"><h3>One value per run</h3><p>10 measured iterations become 1 number: the median.</p></div>
       <div class="card"><h3>One time per configuration</h3><p>30 run values become 1 time: an average made for ratios.</p></div>
-      <div class="card"><h3>A range around it</h3><p>Re-draw the 30 runs many times to see how much the time could move.</p></div>
-      <div class="card"><h3>Ten decisions</h3><p>The ten answers that matter get a stricter bar, so they hold together.</p></div>
+      <div class="card"><h3>A range around it</h3><p>Resample the 30 runs many times to see how far the time could move.</p></div>
+      <div class="card"><h3>Ten decisions</h3><p>The ten primary comparisons get a stricter bar, so they hold together.</p></div>
     </div>
 
     <h2 id="onevalue">One value per run</h2>
-    <p>Each run times the workload 10 times. Those 10 are not independent measurements, as
-      <a href="protocol.html#unit">The run is the unit</a> explains: they share everything the program start
-      decided. So the first thing the analysis does is collapse them into <b>one number per run</b>. Which
-      one? The <span data-term="median">median</span>: sort the 10 times, take the one in the middle.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why the middle one, and not the average of the 10?</b> Because one odd iteration
-      should not drag the run. If a background interrupt makes one iteration take twice as long, the average
-      of the 10 moves up by 10 %, but the median does not move at all: the middle value is still in the middle.
-      The median is the honest "typical iteration" of that run. (If the words median and mean are new, the
-      page <a href="measuring.html#spread">Median, mean and spread</a> has them with pictures.)</p></aside>
-    <p>From here on, every statistic works on <b>30 numbers per configuration</b>, one per run, and the
-      iterations are never looked at again.</p>
+    <p>Each run times the workload 10 times. Those 10 are not independent measurements: they share everything that the program start decided (<a href="protocol.html#unit">The run is the unit</a>). So the analysis first reduces them to <b>one number per run</b>, the <span data-term="median">median</span>: sort the 10 times and take the middle.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why the median, and not the mean of the 10?</b> One odd iteration should not move the run. If an interrupt makes one iteration take twice as long, the mean of the 10 rises by 10%, and the median does not move. <a href="measuring.html#spread">Median, mean and spread</a> explains both terms.</p></aside>
+    <p>From here on every statistic works on <b>30 numbers per configuration</b>, one per run. The iterations are not used again.</p>
 
     <h2 id="average">An average that respects ratios</h2>
-    <p>Now 30 run values have to become one time for the configuration. The usual average, add them up and
-      divide by 30, is not the one used. The study uses the <span data-term="geometric-mean">geometric
-      mean</span>, and the reason is that every answer in the study is a <b>ratio</b>: "8 threads are 7 times
-      faster", "Chrome takes 1.2 times native's time". Ratios have a symmetry that the usual average
-      breaks.</p>
-    <p>One run came out twice as slow as expected (ratio 2) and
-      another twice as fast (ratio 0.5). Common sense says these two cancel: on average, no change. The
-      usual average says (2 + 0.5) / 2 = 1.25, a 25 % slowdown. The geometric mean says 1, no change. Move
-      the two ratios below and watch both averages: only the geometric one lands on "no change" when the
-      two cancel.</p>
+    <p>The 30 run values now become one time for the configuration. The study does not use the arithmetic mean (add and divide by 30). It uses the <span data-term="geometric-mean">geometric mean</span>, because every answer of the study is a <b>ratio</b>: "8 threads are 7 times faster", "Chrome takes 1.2 times the native time". Ratios have a symmetry that the arithmetic mean breaks.</p>
+    <p>Say one run is twice as slow as expected (ratio 2) and another twice as fast (ratio 0.5). The two cancel: on average, no change. The arithmetic mean says (2 + 0.5) / 2 = 1.25, a 25% slowdown. The geometric mean says 1. Move the two ratios below: only the geometric mean gives "no change" when the two cancel.</p>
     <div class="card">
       <div class="ctl">
         <label><span class="lab">ratio a</span><input type="range" id="gm-a" min="-2" max="2" step="0.05" value="1"> <output id="gm-a-out"></output></label>
@@ -92,34 +76,15 @@
       </div>
       <div id="gm-svg" class="plot"></div>
       <div class="stats" id="gm-stats"></div>
-      <p class="muted" style="font-size:var(--fs-sm)">The sliders are free inputs, not data. The axis is a
-        log scale: equal distances are equal ratios, so 0.5 and 2 sit at the same distance from 1
-        (<a href="ratios.html#log">Why 2x and 0.5x are the same distance</a>).</p>
+      <p class="muted" style="font-size:var(--fs-sm)">The sliders are free inputs, not data. The axis is a log scale: equal distances are equal ratios, so 0.5 and 2 are at the same distance from 1 (<a href="ratios.html#log">Why 2x and 0.5x are the same distance</a>).</p>
     </div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does this matter for times, which are not ratios?</b> Two reasons. First, the
-      times only ever appear in the answers as ratios, and the ratio of two geometric means is the geometric
-      mean of the ratios, so the answer does not depend on whether you divide first or average first. With
-      the usual average it would. Second, run times are lopsided: a run can be much slower than typical (a
-      hiccup), never much faster than typical. The usual average is pulled toward the slow tail; the
-      geometric mean much less. The plan fixed this choice before the campaign ran
-      (<a href="../adr/0037-analysis-plan.md">ADR 0037</a>).</p></aside>
-    <p>So: one configuration, one time, the geometric mean of its 30 run values. The speedup of 8 threads is
-      that time at N = 1 divided by that time at N = 8 (<a href="ratios.html#speedup">Speedup and
-      efficiency</a>).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does this matter for times, which are not ratios?</b> For two reasons. The times appear in the answers only as ratios, and with the geometric mean the answer is the same whether you divide first or average first; with the arithmetic mean it is not. And run times are skewed: a run can be much slower than usual, never much faster. The slow tail pulls the arithmetic mean much more than the geometric one. The analysis plan fixed this choice before the campaign ran (<a href="../adr/0037-analysis-plan.md">ADR 0037</a>).</p></aside>
+    <p>So one configuration has one time: the geometric mean of its 30 run values. The speedup at 8 threads is that time at N = 1 divided by that time at N = 8 (<a href="ratios.html#speedup">Speedup and efficiency</a>).</p>
 
     <h2 id="sure">How sure: the interval</h2>
-    <p>There are 30 runs. With 30 more, the geometric mean would come out a little different. How
-      different? That is what the <b>interval</b> says: the range in which the time would most probably land
-      if the whole thing were done again. A narrow interval means 30 runs were plenty; a wide one means the
-      configuration is noisy and the one number should be held loosely.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>How do you know what 30 more runs would give, without taking them?</b> With a trick
-      called the <span data-term="bootstrap-percentile">bootstrap</span>. Pretend the 30 runs are the whole world. Draw 30 of them at random, <i>with replacement</i> (so some get picked twice and some not
-      at all), and compute the geometric mean of that pretend sample. Do it again. And again, 10 000 times.
-      The 10 000 pretend means spread out; throw away the lowest 2.5 % and the highest 2.5 %, and what is
-      left is the 95 % interval. It assumes nothing about the shape of the data, which matters because run
-      times are lopsided (Efron and Tibshirani 1993).</p></aside>
-    <p>Try it on the real run values. Each click draws one pretend sample (the dots it picked fill in) and
-      adds its mean to the pile below:</p>
+    <p>There are 30 runs. With 30 other runs, the geometric mean would be a little different. The <b>interval</b> says how different: the range in which the time would likely fall if the campaign were taken again. A narrow interval means that 30 runs are plenty; a wide one means that the configuration is noisy.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>How do you know what 30 more runs would give, without taking them?</b> With the <span data-term="bootstrap-percentile">bootstrap</span>. Treat the 30 runs as the whole population. Draw 30 of them at random <i>with replacement</i> (some are drawn twice, some not at all) and compute the geometric mean of that resample. Repeat 10 000 times. Drop the lowest 2.5% and the highest 2.5% of the 10 000 means: what remains is the 95% interval. The method assumes nothing about the shape of the data, which matters because run times are skewed (Efron and Tibshirani 1993).</p></aside>
+    <p>Try it on the measured run values. Each click draws one resample (the dots it drew fill in) and adds its mean to the pile below:</p>
     <div class="card">
       <div class="ctl"><span id="bs-seg"></span></div>
       <div class="ctl">
@@ -132,61 +97,28 @@
       <div class="lab" style="font-size:var(--fs-xs);color:var(--muted);margin-top:10px">Geometric mean of each resample</div>
       <div id="bs-hist" class="plot"></div>
       <div class="stats" id="bs-stats"></div>
-      <p class="muted" style="font-size:var(--fs-sm)">Drawn live in your browser, so the interval moves a little
-        each time. The analysis draws 10 000 resamples with a fixed seed, so its intervals are the same to the
-        last digit on every rerun.</p>
+      <p class="muted" style="font-size:var(--fs-sm)">The widget draws in your browser, so the interval moves a little each time. The analysis draws 10 000 resamples with a fixed seed, so its intervals are identical on every run.</p>
     </div>
     <p class="src" data-files="data/raw/campaign-v3/, scripts/explainer_data.py"></p>
-    <p>Notice how much narrower the pile is than the spread of the dots. The dots are single runs; the pile is
-      averages of 30. Averages of 30 wobble far less than single runs, and the interval measures that wobble.
-      For the filter, the pile is a sliver: the time is known to within about 1 %. For the atomic histogram
-      at k = 1 it is wider, because single runs of that configuration differ a lot.</p>
-    <p class="def"><b>Half-width.</b> Half the width of the interval, as a percentage of the estimate.
-      "±4 %" means the true value is probably within 4 % above or below the number given. The study's main
-      answers have half-widths of a few percent (<a href="protocol.html#thirty">30 runs, 10 iterations</a>).</p>
+    <p>The pile is much narrower than the spread of the dots. The dots are single runs; the pile is means of 30, which vary far less, and the interval measures that variation. For the filter the pile is very narrow: the time is known to about 1%. For the atomic histogram at k = 1 it is wider, because single runs of that configuration differ a lot.</p>
+    <p class="def"><b>Half-width.</b> Half the width of the interval, as a percentage of the estimate. "±4%" means that the true value is likely within 4% of the number given. The primary comparisons have half-widths of a few percent (<a href="protocol.html#thirty">30 runs, 10 iterations</a>).</p>
 
     <h2 id="decisions">Ten decisions, a stricter bar</h2>
-    <p>Most of the study describes: here is a speedup, here is its interval. But ten comparisons are the
-      study's actual <b>answers</b>, and for each the study says yes or no: "Chrome's filter scales like
-      native" (yes or no), "synchronization costs Chrome more than native at k = 1" (yes or no). Those ten
-      were named before any data existed: RQ2 at N = 8 for the four values of k in both browsers (8), and
-      RQ1 for the filter at N = 8 in both browsers (2). They are the
-      <span data-term="primary-contrast">primary contrasts</span>; everything else is
-      <span data-term="exploratory">exploratory</span>, reported with its interval and no yes-or-no.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why name them in advance?</b> Because with 162 configurations you can always find
-      something that looks like a difference, by luck alone. Looking at everything and then picking the striking ones to report as findings would report the luck. Naming the ten before the campaign
-      (the <span data-term="analysis-plan-pre-registration">analysis plan</span>,
-      <a href="../adr/0037-analysis-plan.md">ADR 0037</a>) means the data could not choose its own test.</p></aside>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a stricter bar for them?</b> A 95 % interval is wrong about 5 % of the time: one
-      time in twenty, the true value is outside it. Ask ten questions that way and the chance that at least
-      one of the ten answers is a fluke climbs to about 40 %. That is too high for the answers the paper
-      stands on. So the ten get a bar that keeps the <i>whole set</i> at 95 %: each gets a 99.5 % interval
-      (<span data-term="bonferroni">Bonferroni</span>: 5 % shared ten ways), and the yes-or-no decisions use
-      a slightly smarter rule, <span data-term="holm">Holm</span>'s, that gives the same guarantee without
-      being needlessly strict on the clearest cases. In words: the smallest surprise has to clear the highest
-      bar, the next one a slightly lower bar, and so on down.</p></aside>
-    <p>The ten, and what the bar decided (the effect is the ratio being tested; 1 means "same as native"):</p>
+    <p>Most of the study describes: a speedup and its interval. Ten comparisons are its <b>answers</b>, and each gets a yes or a no: "Chrome's filter scales as native does", "synchronization costs Chrome more than native at k = 1". The ten were named before any data existed: RQ2 at N = 8 for the four values of k in both browsers (8), and RQ1 for the filter at N = 8 in both browsers (2). They are the <span data-term="primary-contrast">primary contrasts</span>. Everything else is <span data-term="exploratory">exploratory</span>: reported with its interval and no decision.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why name them in advance?</b> With 162 configurations you always find something that looks like a difference, by chance alone. To look at everything and then report the striking ones as findings is to report the chance. Naming the ten before the campaign (the <span data-term="analysis-plan-pre-registration">analysis plan</span>, <a href="../adr/0037-analysis-plan.md">ADR 0037</a>) means that the data cannot choose its own test.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a stricter bar for them?</b> A 95% interval misses the true value about one time in twenty. Ask ten questions that way, and the chance that at least one answer is wrong rises to about 40%. So the ten get a bar that keeps the <i>whole set</i> at 95%: each gets a 99.5% interval (<span data-term="bonferroni">Bonferroni</span>: the 5% divided by ten), and the decisions use <span data-term="holm">Holm</span>'s rule, which gives the same guarantee and is less strict on the clearest cases. The smallest p-value must pass the highest bar, the next one a slightly lower bar, and so on.</p></aside>
+    <p>The ten, and what the bar decided. The effect is the ratio under test; 1 means "the same as native":</p>
     <div id="ten"></div>
     <p class="src" data-src="campaign-v3-contrasts"></p>
-    <p>Eight of the ten cleared the bar. The two that did not, Chrome's filter and Firefox at k = 1, are the
-      next section.</p>
+    <p>Eight of the ten pass the bar. The next section is about the two that do not: Chrome's filter and Firefox at k = 1.</p>
 
     <h2 id="notproof">Not rejecting is not proof</h2>
-    <p>Firefox's synchronization cost at k = 1 came out at 0.99 times native's, with an interval from about
-      0.94 to 1.06. The bar was not cleared: the study cannot say that Firefox differs from native there. It is tempting
-      to read that as "Firefox equals native". It does not say that. It says "the difference, if any, is
-      somewhere between 6 % cheaper and 6 % more expensive, and the measurement cannot tell which". The same holds for
-      Chrome's filter speedup, 0.99 times native's with an interval from about 0.95 to 1.03.</p>
-    <p>You weigh two parcels on a kitchen scale that reads to the nearest
-      50 g, and both read 1 kg. You have not shown they weigh the same; you have shown they differ by less
-      than the scale can see. The interval is the scale's resolution. With more runs, the scale gets finer.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why say it this carefully?</b> Because "no detectable difference" and "the same" lead
-      to different conclusions. The paper says the first, bounded by the interval: the Firefox filter and
-      Firefox's k = 1 cell are "within the interval of native", never "equal to native". Any reader who
-      wants a tighter bound knows exactly what it would take: more runs.</p></aside>
+    <p>Firefox's synchronization cost at k = 1 is 0.99 times the native one, with an interval from about 0.94 to 1.06. It does not pass the bar: the study cannot say that Firefox differs from native there. That is not "Firefox equals native". It is "the difference, if there is one, lies between 6% less and 6% more, and the measurement cannot tell which". The same holds for Chrome's filter speedup: 0.99 times the native one, with an interval from about 0.95 to 1.03.</p>
+    <p>Compare a kitchen scale that reads to the nearest 50 g. Two parcels that both read 1 kg are not shown to weigh the same; they are shown to differ by less than the scale resolves. The interval is the resolution of the measurement, and more runs make it finer.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why state it this carefully?</b> "No detectable difference" and "the same" lead to different conclusions. The paper says the first, bounded by the interval: Chrome's filter and Firefox at k = 1 are "within the interval of native", never "equal to native". A reader who wants a tighter bound knows what it takes: more runs.</p></aside>
 
     <h2 id="speedup">In depth: speedup and efficiency</h2>
-    <p>The rest of this page gives each statistic of <code>analysis/</code> in the order the data flows through them. Every section below is one arrow of this chain:</p>
+    <p>The sections from here on give each statistic of <code>analysis/</code> with its formula and its code, in the order in which the data flows through them:</p>
     <div class="flow">10 measured iterations   <b>--median--></b>            1 value per run              (<a href="#speedup">1</a>)
 30 run values            <b>--geometric mean--></b>    T per configuration          (<a href="#geomean">2</a>)
                                                    --> speedup, efficiency, ratios  (<a href="#speedup">1</a>, <a href="#rq2metric">4</a>, <a href="#karp">7</a>)
@@ -194,14 +126,9 @@
 10 primary p-values      <b>--Holm--></b>              10 decisions                 (<a href="#holm">5</a>)
 the same 10, by ranks    <b>--Mann-Whitney--></b>      the decisions re-checked     (<a href="#robust">6</a>)</div>
 
-    <p><span data-term="strong-scaling">Strong scaling</span>: the same 8192 x 8192 image for every N.
-      <span data-term="speedup-relative">Speedup</span> is how many times faster N threads are than 1 thread
-      <b>of the same environment</b>; <span data-term="efficiency">efficiency</span> is that speedup divided
-      by N, so 1 means every thread pulled its full weight (<a href="../adr/0003-strong-scaling.md">ADR 0003</a>;
-      the words are introduced on <a href="ratios.html#speedup">Ratios, speedup and intervals</a>). T is
-      the geometric mean of the 30 run values, each the median of its 10 measured iterations.</p>
+    <p><span data-term="strong-scaling">Strong scaling</span>: the same 8192 x 8192 image for every N (<a href="../adr/0003-strong-scaling.md">ADR 0003</a>). <span data-term="speedup-relative">Speedup</span> and <span data-term="efficiency">efficiency</span> are computed inside each environment, from T, the geometric mean of the 30 run values.</p>
     <div class="formula">S(N) = T(1) / T(N)          E(N) = S(N) / N        (E = 1 is perfect)</div>
-    <p>Pick a cell and watch the two numbers computed from the published times:</p>
+    <p>Pick a configuration to see the two numbers computed from the published times:</p>
     <div class="card">
       <div class="ctl"><span><span class="lab">Environment</span><span id="c-env"></span></span>
         <span><span class="lab">Workload</span><span id="c-w"></span></span></div>
@@ -212,19 +139,14 @@ the same 10, by ranks    <b>--Mann-Whitney--></b>      the decisions re-checked 
       <p class="muted" id="c-note" style="font-size:var(--fs-sm)"></p>
     </div>
     <p class="src" data-src="campaign-v3-scaling"></p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is speedup never read alone?</b> A speedup hides a slow start: a browser that
-      is slow at N = 1 has more room to gain and can look as if it scales better than native while being
-      slower at every N. So every speedup is read next to the absolute time ratio browser / native at the
-      same N (<a href="../adr/0039-absolute-times-and-clock-check.md">ADR 0039</a>), shown on
-      <a href="rq1.html#ratio">Browser over native</a>.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is a speedup never read alone?</b> A speedup hides a slow start: a browser that is slow at N = 1 has more room to gain, and can seem to scale better than native while it is slower at every N. So every speedup is read next to the time ratio browser / native at the same N (<a href="../adr/0039-absolute-times-and-clock-check.md">ADR 0039</a>), which is in <a href="rq1.html#ratio">Browser over native</a>.</p></aside>
     <details class="deeper"><summary>In depth: The code: speedup with its bootstrap interval</summary>
       <div data-code="analysis/scaling/table.py|def speedup_of(|5" data-title="Speedup with its bootstrap interval"></div>
       <div data-code="analysis/stats/summary.py|RUN_SUMMARY = |2" data-title="The two summaries the plan fixed (D1, D2)"></div>
     </details>
 
     <h2 id="geomean">In depth: the geometric mean</h2>
-    <p>Why the geometric mean and not the arithmetic one, in words and with the sliders, is on
-      <a href="reading.html#average">An average that respects ratios</a>. The formula:</p>
+    <p>The formula:</p>
     <div class="formula">GM(x1..xn) = (x1 · x2 · ... · xn)^(1/n) = exp( mean( ln x1, ..., ln xn ) )</div>
     <details class="deeper"><summary>In depth: the three properties the plan relied on</summary>
       <ul>
@@ -238,39 +160,24 @@ the same 10, by ranks    <b>--Mann-Whitney--></b>      the decisions re-checked 
     </details>
 
     <h2 id="bootstrap">In depth: bootstrap intervals</h2>
-    <p>The idea, and the live widget where you can draw resamples from the real runs, is on
-      <a href="reading.html#sure">How sure: the interval</a>. Here is what the analysis does exactly:
-      <span data-term="bootstrap-percentile">percentile bootstrap</span>, 10 000 resamples, seed 0x5EED
-      (24301), 95 % interval from the 2.5th and 97.5th percentiles of the resampled statistics
-      (Efron and Tibshirani 1993). No normality assumption.</p>
+    <p>The analysis uses the <span data-term="bootstrap-percentile">percentile bootstrap</span>: 10 000 resamples, seed 0x5EED (24301), and a 95% interval from the 2.5th and 97.5th percentiles of the resampled statistics (Efron and Tibshirani 1993).</p>
     <div class="formula">for b in 1..10000:
     draw 30 runs with replacement from the 30 (each group on its own)
     statistic_b = the statistic on that draw (a geometric mean, a ratio of them, ...)
 interval = [ percentile 2.5 of statistic_1..10000 , percentile 97.5 ]</div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why resample each group on its own?</b> A speedup compares the N = 1 runs with the
-      N = 8 runs; a RQ2 contrast compares four groups. The runs of different configurations are different
-      processes, started at different times: there is no pairing between the 3rd run of one and the 3rd run
-      of the other. So each group is resampled independently, and each bootstrap value is the statistic of
-      the resampled groups (GM(resampled N = 1) / GM(resampled N = 8), say).</p></aside>
-    <p>A <span data-term="p-value-bootstrap">bootstrap p-value</span> comes from the same 10 000 values:
-      twice the share of them on the far side of "no effect" (1 for a ratio, 0 on the log scale), and never
-      below 1/10 000, which is the resolution 10 000 resamples can give.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why resample each group on its own?</b> A speedup compares the N = 1 runs with the N = 8 runs; an RQ2 contrast compares four groups. The runs of different configurations are different processes, started at different times: nothing pairs the 3rd run of one with the 3rd run of another. So each group is resampled independently, and each bootstrap value is the statistic of the resampled groups, for example GM(resampled N = 1) / GM(resampled N = 8).</p></aside>
+    <p>A <span data-term="p-value-bootstrap">bootstrap p-value</span> comes from the same 10 000 values: twice the share of them beyond "no effect" (1 for a ratio, 0 on the log scale). It is never below 1/10 000, the resolution of 10 000 resamples.</p>
     <details class="deeper"><summary>In depth: The code: one resample, and the percentile interval</summary>
       <div data-code="analysis/stats/bootstrap.py|def resample(|2" data-title="One resample: as many draws as the group has"></div>
       <div data-code="analysis/stats/bootstrap.py|def percentile_interval(|4" data-title="The percentile interval"></div>
     </details>
 
     <h2 id="rq2metric">In depth: the RQ2 metric</h2>
-    <p>How much does synchronization cost in one environment? Compare the atomic histogram with its
-      lock-free control on the <b>same input</b>: r = ln T(atomic) - ln T(local). But r also holds things
-      that are not synchronization, such as the dependency chain that slows the local control at k = 1. Those
-      are the same in every environment at the same k, so compare r <b>between</b> environments
-      (<a href="../adr/0026-rq2-metric-and-contention-sweep.md">ADR 0026</a>; with made-up numbers first on
-      <a href="questions.html#example">RQ2 with made-up numbers</a>):</p>
+    <p>In one environment the cost of synchronization is r = ln T(atomic) - ln T(local), on the <b>same input</b>. But r also holds things that are not synchronization, such as the dependency chain that slows the local histogram at k = 1. Those are the same in every environment at the same k, so r is compared <b>between</b> environments (<a href="../adr/0026-rq2-metric-and-contention-sweep.md">ADR 0026</a>; <a href="questions.html#example">RQ2 with made-up numbers</a> shows the arithmetic):</p>
     <div class="formula">Δr = r(browser) - r(native)
 exp(Δr) = [T_atomic / T_local in the browser] / [T_atomic / T_local natively]
         1 = synchronization costs as much as natively; above 1 = more; below 1 = less</div>
-    <p>The four published times of a cell, and the metric worked from them next to the published value:</p>
+    <p>The four published times of a configuration, and the metric computed from them next to the published value:</p>
     <div class="card">
       <div class="ctl"><span><span class="lab">Browser</span><span id="r-env"></span></span>
         <span><span class="lab">k</span><span id="r-k"></span></span>
@@ -279,59 +186,34 @@ exp(Δr) = [T_atomic / T_local in the browser] / [T_atomic / T_local natively]
     </div>
     <p class="src" data-src="campaign-v3-scaling, campaign-v3-contrasts"></p>
     <details class="deeper"><summary>In depth: the interaction on logs, and the RQ1 contrast</summary>
-      <p>Its interval resamples four groups of runs (browser atomic, browser local, native atomic, native
-        local), each on its own. The RQ1 contrast is built the same way, with T(1) and T(N) in place of atomic
-        and local: the browser's speedup over native's, an <span data-term="interaction">interaction</span>
-        of two ratios.</p>
+      <p>Its interval resamples four groups of runs (browser atomic, browser local, native atomic, native local), each on its own. The RQ1 contrast has the same form, with T(1) and T(N) in place of atomic and local: the speedup of the browser over the native speedup, an <span data-term="interaction">interaction</span> of two ratios.</p>
       <div data-code="analysis/inference/interaction.py|def interaction(|10" data-title="The interaction, on logs"></div>
     </details>
 
     <h2 id="holm">In depth: Holm and the primary contrasts</h2>
-    <p>Why ten comparisons were named in advance and get a stricter bar is on
-      <a href="reading.html#decisions">Ten decisions, a stricter bar</a>. The ten
-      <span data-term="primary-contrast">primary contrasts</span> (plan decision D8): RQ2 at N = 8 for
-      k = 1, 4, 16, 256 in both browsers (8), and RQ1 for the filter at N = 8 in both browsers (2).
-      Everything else is <span data-term="exploratory">exploratory</span>: 95 % intervals, no decision.</p>
+    <p>The ten <span data-term="primary-contrast">primary contrasts</span> are plan decision D8. Exploratory comparisons get 95% intervals and no decision.</p>
     <ul>
-      <li>Their intervals are <span data-term="bonferroni">Bonferroni</span> 99.5 % intervals
-        (1 - 0.05 / 10), so the ten hold together with 95 % confidence
-        (<span data-term="family-wise-error">family-wise error</span>).</li>
-      <li>The decisions use <span data-term="holm">Holm</span>'s step-down correction: sort the p-values,
-        multiply the smallest by 10, the next by 9, and so on, keep a running maximum, and reject when the
-        result is at most 0.05. It controls the same family error as Bonferroni and is never less powerful
-        (Holm 1979).</li>
+      <li>The intervals of the ten are <span data-term="bonferroni">Bonferroni</span> intervals of 99.5% (1 - 0.05 / 10), so the ten hold together at 95% (<span data-term="family-wise-error">family-wise error</span>).</li>
+      <li>The decisions use <span data-term="holm">Holm</span>'s step-down correction: sort the p-values, multiply the smallest by 10, the next by 9, and so on, keep a running maximum, and reject when the result is at most 0.05. It controls the same family-wise error as Bonferroni and is never less powerful (Holm 1979).</li>
     </ul>
     <div class="formula">sort p(1) ≤ p(2) ≤ ... ≤ p(10)
 adjusted(i) = max over j ≤ i of  min(1, (10 - j + 1) · p(j))
 reject contrast i  if  adjusted(i) ≤ 0.05</div>
-    <p>The ten primary contrasts, and Holm recomputed here in your browser from the raw p-values, next to the
-      published adjusted values:</p>
+    <p>The ten primary contrasts, with Holm recomputed in your browser from the raw p-values, next to the published adjusted values:</p>
     <div id="holm-table"></div>
     <p class="src" data-src="campaign-v3-contrasts"></p>
-    <p>Not rejecting is not proof of equality (<a href="reading.html#notproof">Not rejecting is not
-      proof</a>): Chrome's filter speedup ratio is 0.99, and its 99.5 % interval says any difference is
-      between about -5 % and +3 %.</p>
+    <p>For a contrast that is not rejected, the interval bounds the difference: Chrome's filter speedup ratio is 0.99, and its 99.5% interval puts any difference between about -5% and +3%.</p>
     <details class="deeper"><summary>In depth: The code: Holm 1979</summary>
       <div data-code="analysis/stats/holm.py|def holm_adjusted(|11" data-title="Holm 1979"></div>
     </details>
 
     <h2 id="robust">In depth: Mann-Whitney and Cliff's delta</h2>
-    <p>The bootstrap makes no normality assumption, but it is one method. As a robustness check, the plan
-      repeats the 10 decisions with the course's default test for timing data: the
-      <span data-term="mann-whitney-u">Mann-Whitney U</span> rank test, with
-      <span data-term="cliff-s-delta">Cliff's delta</span> as its <span data-term="effect-size">effect
-      size</span>.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a second test at all?</b> If two methods built on different assumptions reach
-      the same ten decisions, the decisions do not hang on either method's assumptions. Mann-Whitney looks only
-      at ranks (which of two runs was faster), never at how much, so it cannot be fooled by a few extreme
-      values; the bootstrap uses the values themselves. Agreement between them is the point.</p></aside>
-    <p>Each run gives one ratio (log T1/TN for RQ1, log T atomic / T local for RQ2, the two cells paired by
-      repetition index); the browser's 30 ratios are compared with native's, and the 10 p-values are
-      Holm-adjusted.</p>
+    <p>The bootstrap is one method. As a robustness check, the plan repeats the 10 decisions with the course's default test for timing data: the <span data-term="mann-whitney-u">Mann-Whitney U</span> rank test, with <span data-term="cliff-s-delta">Cliff's delta</span> as its <span data-term="effect-size">effect size</span>.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a second test?</b> If two methods with different assumptions reach the same ten decisions, the decisions do not depend on the assumptions of either. Mann-Whitney uses only ranks (which of two runs is faster), never by how much, so a few extreme values cannot move it; the bootstrap uses the values themselves.</p></aside>
+    <p>Each run gives one ratio: log T1/TN for RQ1, log T atomic / T local for RQ2, with the two configurations paired by repetition index. The 30 ratios of the browser are compared with the 30 native ones, and the 10 p-values are Holm-adjusted.</p>
     <div class="formula">Cliff's δ = ( #{pairs where browser &gt; native} - #{pairs where browser &lt; native} ) / (30 · 30)
           +1 or -1 = complete separation; 0 = complete overlap</div>
-    <p>The pairing by repetition index is arbitrary, so it is redrawn 1000 times at random; "same decision"
-      is the share of those re-pairings that reach the bootstrap's decision:</p>
+    <p>The pairing by repetition index is arbitrary, so it is drawn again 1000 times at random. "Same decision" is the share of those pairings that reach the decision of the bootstrap:</p>
     <div id="robust-table"></div>
     <p class="src" data-src="campaign-v3-robustness"></p>
     <details class="deeper"><summary>In depth: The code: Cliff's delta</summary>
@@ -339,27 +221,19 @@ reject contrast i  if  adjusted(i) ≤ 0.05</div>
     </details>
 
     <h2 id="karp">In depth: Karp-Flatt</h2>
-    <p>Efficiency below 1 says that scaling is sub-linear, not why. Amdahl's law would blame a serial part:
-      a fraction of the work that only one thread can do. The <span data-term="karp-flatt">Karp-Flatt</span>
-      serial fraction (Karp and Flatt 1990) turns that around and asks which serial fraction <i>would</i>
-      explain the measured speedup:</p>
+    <p>An efficiency below 1 says that scaling is sub-linear, not why. Amdahl's law attributes it to a serial part: a fraction of the work that only one thread can do. The <span data-term="karp-flatt">Karp-Flatt</span> serial fraction (Karp and Flatt 1990) asks the reverse: which serial fraction <i>would</i> explain the measured speedup?</p>
     <div class="formula">e = (1/S - 1/N) / (1 - 1/N)</div>
-    <p>A constant e across N reads as a serial part; an e that grows with N reads as an overhead that grows
-      with the threads. For the filter (pick N):</p>
+    <p>A constant e across N reads as a serial part; an e that grows with N reads as an overhead that grows with the threads. For the filter (pick N):</p>
     <div class="card">
       <div class="ctl"><span><span class="lab">N</span><span id="k-n"></span></span></div>
       <ol class="eqs" id="k-steps"></ol>
     </div>
     <p class="src" data-src="campaign-v3-karp-flatt"></p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why compute it, if the filter has no serial part?</b> Because it is the standard
-      first suspect, and the number shows it is the wrong one: the filter's timed region has no serial part,
-      and in weak scaling T(N) does not stay flat either. So e here is a cost of running in parallel (shared
-      memory bandwidth natively, a fixed per-iteration overhead in the browsers, neither measured directly),
-      not a serial fraction of the code. See <a href="rq1.html#forkjoin">Fork-join in the results</a>.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why compute it, if the filter has no serial part?</b> A serial part is the standard first suspect, and the number shows that it is the wrong one: the timed region of the filter has no serial part, and in weak scaling T(N) does not stay flat either. So e here is a cost of running in parallel (shared memory bandwidth natively, a fixed overhead per iteration in the browsers, neither measured directly), not a serial fraction of the code (<a href="rq1.html#forkjoin">Fork-join in the results</a>).</p></aside>
     <details class="deeper"><summary>In depth: The code: the serial fraction</summary>
       <div data-code="analysis/scaling/karp_flatt.py|def serial_fraction(speedup|4" data-title="The serial fraction"></div>
     </details>
-    <p class="takeaway"><strong>In summary.</strong> One value per run (the median of its 10 measured iterations), one time per configuration (the geometric mean of 30 runs), a percentile bootstrap interval over runs (10 000 resamples, fixed seed), Bonferroni intervals and Holm decisions for the ten primary contrasts, and Mann-Whitney as a second opinion. The analysis plan fixed all of it before the campaign (ADR 0037). Not rejecting means "could not tell", never "the same".</p>
+    <p class="takeaway"><strong>In summary.</strong> One value per run (the median of its 10 measured iterations), one time per configuration (the geometric mean of 30 runs), a percentile bootstrap interval over runs (10 000 resamples, fixed seed), Bonferroni intervals and Holm decisions for the ten primary contrasts, and Mann-Whitney as a second test. The analysis plan fixed all of it before the campaign (ADR 0037). Not rejecting means "could not tell", never "the same".</p>
 
     <footer class="pager" id="pager"></footer>
   </article>

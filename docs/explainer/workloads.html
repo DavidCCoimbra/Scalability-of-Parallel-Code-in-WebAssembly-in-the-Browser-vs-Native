@@ -43,19 +43,14 @@
 
     <p class="lead">The study measures two kernels on a large grey image. A 3x3 Gaussian filter, where each thread works on its own rows and never waits: it answers RQ1. A histogram counted two ways, with shared atomic counters and with per-task local counters: the pair answers RQ2. The input parameter k sets how many counters the pixels are spread over, and so how much the threads contend.</p>
 
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why these two jobs and not something bigger?</b> Each is a few dozen lines, so anyone can read
-      the whole measured loop and see there is nothing hidden in it. One has no coordination; the other has exactly one
-      kind. Both produce a result that can be hashed and compared, so every environment is checked to compute the
-      same thing. A real application would mix many effects that could not be pulled apart.</p></aside>
-    <p>Every workload implements one small interface. Only <code>run</code> is timed; <code>prepare</code> resets
-      state before the clock starts, and <code>checksum</code> hashes the result after it stops.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why these two kernels and not something larger?</b> Each is a few dozen lines, so you can read the whole measured loop and see that nothing is hidden in it. One has no coordination; the other has exactly one kind. Both produce a result that can be hashed and compared, so every environment is checked to compute the same thing. A real application would mix many effects that could not be separated.</p></aside>
+    <p>Every workload implements one small interface. Only <code>run</code> is timed: <code>prepare</code> resets state before the timed region, and <code>checksum</code> hashes the result after it.</p>
     <details class="deeper"><summary>In depth: the interface in Rust</summary>
       <div data-code="bench/src/workloads/workload.rs|pub trait Workload {|10" data-title="The interface of every workload"></div>
     </details>
 
     <h2 id="filter">The Gaussian filter</h2>
-    <p>A blur makes an image softer. Each output pixel becomes the average of itself and its eight neighbours, with
-      the centre weighing most:</p>
+    <p>A blur softens an image. Each output pixel is the weighted average of itself and its eight neighbours, with the centre weighing most:</p>
     <figure class="figure">
       <svg viewBox="0 0 420 120" role="img" aria-label="A 3 by 3 window of pixels with weights 1 2 1, 2 4 2, 1 2 1 becomes one output pixel">
         <g font-size="14" text-anchor="middle" font-family="ui-monospace, monospace">
@@ -79,24 +74,17 @@
       </svg>
       <figcaption>The 3 x 3 window and its weights. They sum to 16, so dividing is cheap.</figcaption>
     </figure>
-    <p>The image is 8192 x 8192 pixels, 67 million of them. Row 100 of the output only needs rows 99 to 101 of the
-      input, and nobody writes the input. So each thread takes a group of rows, blurs them into its own part of the
-      output, and never needs to wait for another thread. This is as parallel as a job can get, which is why it
-      answers RQ1: whatever slows it down in the browser is the runtime, not coordination.</p>
+    <p>The image is 8192 x 8192 pixels, 67 million of them. Row 100 of the output needs only rows 99 to 101 of the input, and no thread writes the input. So each thread takes a group of rows, filters them into its own part of the output, and never waits for another thread. No workload is more parallel than this, which is why it answers RQ1: whatever slows it down in the browser is the environment, not coordination.</p>
     <details class="deeper"><summary>In depth: the timed loop, the kernel and SIMD</summary>
-      <p>Rayon splits the output into one-row chunks and groups them into tasks; the rows of a task are blurred in
-        place by one thread.</p>
+      <p>Rayon splits the output into one-row chunks and groups them into tasks; one thread filters the rows of a task in place.</p>
       <div data-code="bench/src/workloads/gaussian.rs|impl Workload for GaussianBlur|16" data-title="The timed loop: one task per group of rows"></div>
-      <p>The kernel is the integer binomial 1-2-1, summing to 16, so dividing is a shift. The weights are checked at
-        compile time, and the largest sum fits 16 bits, which lets <span data-term="simd">SIMD</span> work on eight pixels
-        per 128-bit register on both sides (<span data-term="sse2">SSE2</span> natively,
-        <span data-term="simd128">simd128</span> in WASM).</p>
+      <p>The kernel is the integer binomial 1-2-1, with weights that sum to 16, so the division is a shift. The weights are checked at compile time, and the largest sum fits in 16 bits, which lets <span data-term="simd">SIMD</span> process eight pixels per 128-bit register on both sides (<span data-term="sse2">SSE2</span> natively, <span data-term="simd128">simd128</span> in WASM).</p>
       <div data-code="bench/src/workloads/gaussian/kernel.rs|pub(super) const KERNEL:|1" data-title="The kernel"></div>
       <p class="src" data-files="bench/src/workloads/gaussian.rs, bench/src/workloads/gaussian/kernel.rs, docs/adr/0012-gaussian-integer-kernel.md"></p>
     </details>
 
     <h2 id="histogram">The histogram, two ways</h2>
-    <p>A histogram counts how many pixels have each shade of grey. There are 256 shades, so the result is 256 numbers:</p>
+    <p>A histogram counts how many pixels have each grey level. There are 256 grey levels, so the result is 256 numbers:</p>
     <figure class="figure">
       <svg viewBox="0 0 420 110" role="img" aria-label="Bars of different heights, one per grey level, from black to white">
         <g class="bar">
@@ -109,52 +97,32 @@
         <text x="330" y="108" font-size="11" fill="var(--muted)" text-anchor="end">white</text>
         <line x1="25" y1="100" x2="340" y2="100" stroke="var(--edge)"/>
       </svg>
-      <figcaption>Each bar: how many of the 67 million pixels have that shade.</figcaption>
+      <figcaption>Each bar is the number of pixels, of 67 million, with that grey level.</figcaption>
     </figure>
-    <p>With eight threads, each thread looks at its own share of the pixels. The question is where it counts:</p>
+    <p>With eight threads, each thread reads its own share of the pixels. The two variants differ in where they count:</p>
     <div class="variants">
-      <div class="card"><h3><code>hist-atomic</code>: shared</h3><p>One table of 256 counters shared by all threads. For
-        every pixel, the thread adds 1 to the counter of that shade with an <span data-term="atomic-operation">atomic add</span>,
-        so that two threads adding at the same moment never lose a count. This is the coordination being measured.</p></div>
-      <div class="card"><h3><code>hist-local</code>: the control</h3><p>Each task counts into its own plain table. At the
-        end the tables are merged in pairs. Nothing is shared while counting, so no atomic adds at all.</p></div>
+      <div class="card"><h3><code>hist-atomic</code>: shared</h3><p>One table of 256 counters that all threads share. For every pixel, a thread adds 1 to the counter of that grey level with an <span data-term="atomic-operation">atomic add</span>, so that two threads that add at the same moment never lose a count. This is the synchronization the study measures.</p></div>
+      <div class="card"><h3><code>hist-local</code>: the control</h3><p>Each task counts into its own plain table, and the tables are merged in pairs at the end. Nothing is shared while counting, so there is no atomic add.</p></div>
     </div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the shared version need "atomic" adds?</b> A plain add is three steps: read the count,
-      add one, write it back. If two threads do those three steps at the same moment on the same counter, both read
-      the same old value and one count is lost; the histogram would be wrong. An atomic add does the three steps as
-      one indivisible step. What that costs, and why it costs more in Chrome, is
-      <a href="atomics.html">Atomic operations</a>.</p></aside>
-    <p>Both versions give exactly the same 256 counts, and a test checks it. They differ only in where the counting
-      happens. The 256 shared counters are kept apart in memory so that two of them never sit on the same
-      <span data-term="cache-line">cache line</span>; why that matters is <a href="memory.html#falsesharing">padding</a>.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the shared version need atomic adds?</b> A plain add is three steps: read the count, add one, write it back. If two threads do them at the same moment on the same counter, both read the same old value and one count is lost. An atomic add does the three steps as one indivisible step. <a href="atomics.html">Atomic operations</a> explains what that costs.</p></aside>
+    <p>Both variants give the same 256 counts, and a test checks it. They differ only in where the counting happens. The 256 shared counters are padded so that no two sit on the same <span data-term="cache-line">cache line</span> (<a href="memory.html#falsesharing">False sharing and padding</a>).</p>
     <details class="deeper"><summary>In depth: the two loops, the add, and the two extra variants</summary>
       <div data-code="bench/src/workloads/histogram/atomic.rs|impl Workload for AtomicHistogram|16" data-title="hist-atomic: every pixel adds to a shared counter"></div>
       <div data-code="bench/src/workloads/histogram/counter_table.rs|pub fn increment|5" data-title="The add itself: fetch_add on an AtomicU64"></div>
       <div data-code="bench/src/workloads/histogram/local.rs|fn local_counts|9" data-title="hist-local: fold into a fresh histogram per split, reduce by merging"></div>
-      <p>Two more variants appear only in the exploratory campaign (<a href="extras.html#private">Private and packed atomics</a>):</p>
+      <p>Two more variants appear only in the extras campaign (<a href="extras.html#private">Private and packed atomics</a>):</p>
       <ul>
-        <li><b><code>hist-atomic-private</code></b>: one padded atomic table per thread, merged at the end. The same
-          atomic instruction as <code>hist-atomic</code>, but no core ever touches another's counters: the cost of the
-          instruction alone, with no sharing.</li>
-        <li><b><code>hist-atomic-packed</code></b>: counters of 8 bytes, eight to a cache line, with no padding: what
-          <span data-term="false-sharing">false sharing</span> adds.</li>
+        <li><b><code>hist-atomic-private</code></b>: one padded atomic table per thread, merged at the end. It runs the same atomic instruction as <code>hist-atomic</code>, but no core touches another's counters: the cost of the instruction with nothing shared.</li>
+        <li><b><code>hist-atomic-packed</code></b>: counters of 8 bytes, eight per cache line, without padding: what <span data-term="false-sharing">false sharing</span> adds.</li>
       </ul>
-      <p>Both timed loops end with their result stored: the merged histogram, or the counters read back. Allocation and
-        the reset of the counters happen in <code>prepare</code>, outside the clock, because WASM's default allocator
-        takes a global lock, which would add a second kind of synchronization to the measurement (ADR 0014).</p>
+      <p>Both timed loops end with their result stored: the merged histogram, or the counters read back. Allocation and the reset of the counters happen in <code>prepare</code>, outside the timed region, because the default WASM allocator takes a global lock, which would add a second kind of synchronization to the measurement (ADR 0014).</p>
       <p class="src" data-files="bench/src/workloads/histogram/atomic.rs, bench/src/workloads/histogram/local.rs, bench/src/workloads/histogram/extras/private.rs, bench/src/workloads/histogram/extras/packed.rs, docs/adr/0013-histogram-privatized-control.md, docs/adr/0014-atomic-histogram-prepare-relaxed.md"></p>
     </details>
 
     <h2 id="k">k: the contention dial</h2>
-    <p>If the image only had one shade, all eight threads would add to the <b>same</b> counter, all the time: the worst
-      possible fight. If it had 256 shades evenly spread, the adds would spread over 256 counters and two threads would
-      rarely want the same one at the same moment. The study makes images with exactly <span data-term="k">k</span>
-      distinct shades, with k = 1, 4, 16 or 256, and times the shared histogram on each. k is a dial: 1 is all the
-      fighting concentrated on one counter, 256 is the fighting spread thin.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not just one input?</b> Because "how much synchronization costs" has no single answer: it
-      depends on how many threads want the same thing at once. With one input the study could only say "in this case". With four settings of the dial you can see the shape, and, as it turned out, Chrome behaves differently at the two
-      ends of it.</p></aside>
-    <p>Pick k and watch which of the 256 counters are in use, with the measured speedup at 8 threads next to it:</p>
+    <p>If the image had one grey level, all eight threads would add to the <b>same</b> counter all the time: the most contention possible. With 256 grey levels evenly spread, the adds spread over 256 counters, and two threads rarely want the same one at the same moment. The study generates images with exactly <span data-term="k">k</span> distinct grey levels, k = 1, 4, 16 or 256, and times the histograms on each. k = 1 concentrates the contention on one counter; k = 256 spreads it thin.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why more than one input?</b> "How much synchronization costs" has no single answer: it depends on how many threads want the same thing at once. With one input the study could only say "in this case". With four values of k you see the shape, and Chrome behaves differently at its two ends.</p></aside>
+    <p>Pick k to see which of the 256 counters are in use, with the measured speedup at 8 threads next to it:</p>
     <div class="card">
       <div id="k-pick"></div>
       <div id="strip"></div>
@@ -162,36 +130,22 @@
       <div id="k-table"></div>
     </div>
     <p class="src" data-src="campaign-v3-scaling"></p>
-    <p>Read the table like this: a speedup below 1 means eight threads are <i>slower</i> than one. Natively, at k = 1,
-      eight threads on one shared counter take more than twice as long as one thread, because every add has to wait
-      for the counter to come back from whichever core wrote it last (<a href="memory.html#contention">Contention</a>).
-      The private control scales almost perfectly at every k. How the browsers differ is
-      <a href="rq2.html">RQ2: synchronization</a>.</p>
+    <p>A speedup below 1 means that eight threads are <i>slower</i> than one. At k = 1, every add waits for the counter's line to come back from the core that wrote it last (<a href="memory.html#contention">Contention</a>). The local histogram scales almost ideally at every k. <a href="rq2.html">RQ2: synchronization</a> compares the environments.</p>
     <details class="deeper"><summary>In depth: how the k shades are chosen</summary>
-      <p>Shade i of k is i x 256 / k, so the shades are spread over the range and, with padding, over k different cache
-        lines. The same random draws pick the shade of each pixel for every k, so only the contention changes between
-        inputs, not the pattern of accesses.</p>
+      <p>Grey level i of k is i x 256 / k, so the levels are spread over the range and, with the padding, over k different cache lines. The same random draws choose the level of each pixel for every k, so only the contention changes between inputs, not the pattern of accesses.</p>
       <div data-code="bench/src/input/palette.rs|pub fn values|9" data-title="The k grey levels: i x 256 / k"></div>
     </details>
 
     <h2 id="inputs">Inputs and checksums</h2>
-    <p>The images are not read from files; they are generated by a fixed recipe from a fixed starting number (a
-      <span data-term="splitmix64">seed</span>), so every environment gets exactly the same bytes. The filter reads an
-      image where every pixel is random (<code>noise</code>); the histogram reads an image with k shades (<code>few</code>).</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why generate instead of loading a photo?</b> A file could differ between machines, or be read
-      slightly differently by a browser. A recipe with a seed gives the same 67 million bytes everywhere, and a
-      fingerprint of them is recorded with every run to prove it.</p></aside>
+    <p>The images are not read from files. A generator produces them from a fixed <span data-term="splitmix64">seed</span>, so every environment gets the same bytes. The filter reads an image of uniform random pixels (<code>noise</code>); the histograms read an image with k grey levels (<code>few</code>).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why generate the image instead of loading a photo?</b> A file could differ between machines, or a browser could read it slightly differently. A generator with a seed gives the same 67 million bytes everywhere, and every run records a fingerprint of them to prove it.</p></aside>
     <p>Two hashes protect the comparison:</p>
     <ul>
       <li>the <b><span data-term="input-fingerprint">input fingerprint</span></b>, a hash of the generated image: the same
         input everywhere;</li>
-      <li>the <b><span data-term="checksum">checksum</span></b>, a hash of the result (the blurred image, or the 256
-        counts): computed after every iteration and required to be equal across iterations, thread counts and
-        environments. If any two differ, the analysis refuses to run.</li>
+      <li>the <b><span data-term="checksum">checksum</span></b>, a hash of the result (the filtered image, or the 256 counts): computed after every iteration and required to be equal across iterations, thread counts and environments. If any two differ, the analysis refuses to run.</li>
     </ul>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why hash the result at all?</b> Two reasons. A compiler that notices a result is never used may
-      skip the work; hashing the result forces it to be computed. And a timing that comes with a wrong result is not a
-      timing of the same job: a bug in one environment would make it look faster.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why hash the result?</b> A compiler that sees that a result is never used may skip the work; hashing the result forces it to be computed. And a timing that comes with a wrong result is not a timing of the same work: a bug in one environment would make it look faster.</p></aside>
     <p>In the main campaign of 5310 runs no checksum differed (<a href="campaigns.html#quality">The data check</a>).</p>
     <details class="deeper"><summary>In depth: the generator and the hash</summary>
       <p>A <span data-term="splitmix64">SplitMix64</span> generator seeded with <code>0x5EED</code>; both hashes are
@@ -201,10 +155,7 @@
       <p class="src" data-files="bench/src/input/generators.rs, bench/src/input/split_mix64.rs, bench/src/workloads/checksum.rs, docs/adr/0011-deterministic-grayscale-inputs.md, data/tables/campaign-v3/campaign-v3-quality.md"></p>
     </details>
 
-    <p class="takeaway"><strong>In summary.</strong> The filter has no coordination and measures the runtime alone. The
-      histogram is counted twice, with a shared tally and with private tallies, and the gap between them is the cost
-      of sharing. k says how hard the threads fight over the shared tally. Every result is hashed, so a wrong answer
-      can never pass as a fast one.</p>
+    <p class="takeaway"><strong>In summary.</strong> The filter has no coordination and measures the environment alone. The histogram is counted twice, with shared atomic counters and with local counters, and the gap between the two is the cost of sharing. k sets how much the threads contend for the shared counters. Every result is hashed, so a wrong answer cannot pass as a fast one.</p>
 
     <footer class="pager" id="pager"></footer>
   </article>
