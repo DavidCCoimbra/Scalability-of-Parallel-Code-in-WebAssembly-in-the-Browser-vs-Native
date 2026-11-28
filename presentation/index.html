@@ -271,7 +271,7 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
       </div>
     </div>
   </div>
-  <aside class="notes">Why it matters: heavy work is moving to the web client, and WebAssembly threads are how it uses all the cores: Web Workers over one shared memory. [next] What we know is mostly single-threaded: Jangda and others found WASM 45 to 55 percent slower than native with one thread. The closest multithreaded study, Kyriakou and Tselikas, reports WASM in Chromium at 93.5 percent of the equivalent Node.js implementation single-threaded and 67.9 percent multithreaded. This study adds native as the baseline, two engines, a sweep of the threads and synchronization as a controlled factor. [next] So two questions. RQ1: do speedup and efficiency evolve with the thread count as they do natively? [next] RQ2: how much does synchronization between threads change that gap?</aside>
+  <aside class="notes">Why it matters: heavy work is moving to the web client, and WebAssembly threads are how it uses all the cores: Web Workers over one shared memory. [next] What we know is mostly single-threaded: Jangda and others found WASM 45 to 55 percent slower than native with one thread. The closest multithreaded study, Kyriakou and Tselikas, reports WASM in Chromium at 93.5 percent of the equivalent Node.js implementation single-threaded and 67.9 percent multithreaded. [next] So two questions. RQ1: do speedup and efficiency evolve with the thread count as they do natively? [next] RQ2: how much does synchronization between threads change that gap?</aside>
 </section>
 
 <!-- 3 -->
@@ -395,7 +395,7 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
     </div>
   </div>
   <p data-step="3" class="key f" style="margin-top:16px">The evidence supports one reading: Firefox scales better because its loop is slower and asks less of the shared memory, not because a browser runs threads better. Firefox is the slowest at every N.</p>
-  <aside class="notes">Why, from exploratory evidence. One: counting the loop alone, both engines execute about a third more instructions per pixel than native code for the same WASM. [next] Two: why nobody reaches 8. From one to eight threads the instructions per pixel stay the same while cycles and cache misses rise, as for a loop bound by memory. Across builds with no SIMD, 128-bit SIMD and AVX2, the faster one thread reads memory, the less eight threads gain, and Firefox sits where its throughput puts it. Chrome does not: it has the native efficiency with less throughput, which fits its slower fork-join and was not measured. [next] Three: the fork-join, handing the work to the threads and collecting it. This walks down the image sizes: at 8192 squared one empty fork-join is at most a few percent of a region; at 512 squared the efficiency is 0.24 in the browsers against 0.43 natively. [next] So Firefox scales better because its loop is slower, not because it runs threads better. Keys: up and down change the image side.</aside>
+  <aside class="notes">Why, from exploratory evidence. One: counting the loop alone, both engines execute about a third more instructions per pixel than native code . [next] Two: why nobody reaches 8. From one to eight threads the instructions per pixel stay the same while cycles and cache misses rise, as for a loop bound by memory. Across builds with no SIMD, 128-bit SIMD and AVX2, the faster one thread reads memory, the less eight threads gain, and Firefox sits where its throughput puts it. Chrome does not: it has the native efficiency with less throughput, which fits its slower fork-join. [next] Three: the fork-join, handing the work to the threads and collecting it. At 8192 squared an empty fork-join is at most a few percent of a region; at 512 squared the efficiency is 0.24 in the browsers against 0.43 natively. [next] So Firefox scales better because its loop is slower, not because it runs threads better. Keys: up and down change the image side.</aside>
 </section>
 
 <!-- 7 -->
@@ -416,7 +416,7 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
       </ul>
     </div>
   </div>
-  <aside class="notes">RQ2. The effect is a ratio of ratios: how much slower the atomic histogram is than the local control in the browser, over the same thing natively. One means synchronization costs what it costs natively. [next] First, shared atomics scale nowhere: with k up to 16, eight threads are slower than one in all three environments, speedups 0.36 to 0.70. [next] Chrome pays 2.26 times the native cost at k equal to 1, 1.77 at 4, 1.43 at 16, and flips to 0.42 at 256, where its atomic histogram is twice as fast as native. [next] Firefox's ratio is never above native's: 1.01 at k 1, no difference detected, and lower after that; its atomic times are the native ones, its control is slower. [next] And Chrome's penalty is there with one thread already: a cost of the operation itself. All ten decisions hold under the robustness checks.</aside>
+  <aside class="notes">RQ2. The effect is a ratio of ratios: how much slower the atomic histogram is than the local control in the browser, over the same thing natively. One means synchronization costs what it costs natively. [next] First, shared atomics scale nowhere: with k up to 16, eight threads are slower than one in all three environments. [next] Chrome pays 2.26 times the native cost at k equal to 1, 1.77 at 4, 1.43 at 16, and flips to 0.42 at 256, where its atomic histogram is twice as fast as native. [next] Firefox's ratio is never above native's: 1.01 at k 1, no difference detected, and lower after that; its atomic times are the native ones. [next] And Chrome's penalty is there with one thread already: a cost of the operation itself.</aside>
 </section>
 
 <!-- 8 -->
@@ -820,9 +820,9 @@ function memoryChart(target) {
     else if (shape[point.build] === "square") add(root, "rect", { x: cx - 11, y: cy - 11, width: 22, height: 22, fill: color });
     else add(root, "path", { d: `M${cx},${cy - 15} L${cx + 15},${cy} L${cx},${cy + 15} L${cx - 15},${cy} Z`, fill: color });
   });
-  add(root, "text", { x: x(760) + 22, y: y(0.982) - 14, class: "lbl" }, "scalar: 0.97 to 0.98");
+  add(root, "text", { x: x(760) + 22, y: y(0.982) - 14, class: "lbl" }, "no SIMD: 0.97 to 0.98");
   add(root, "text", { x: x(2178) - 44, y: y(0.917) - 22, class: "lbl", style: `fill:${COLOR.firefox}` }, "Firefox 0.92");
-  add(root, "text", { x: x(2969) - 250, y: y(0.869) + 44, class: "lbl" }, "baseline: 0.87");
+  add(root, "text", { x: x(2969) - 250, y: y(0.869) + 44, class: "lbl" }, "128-bit: 0.87");
   add(root, "text", { x: x(4337) - 150, y: y(0.721) + 8, class: "lbl" }, "AVX2 0.72");
   target.appendChild(root);
 }
@@ -1336,6 +1336,8 @@ function toggleOverview(force) {
 
 build();
 Object.values(DEMOS).forEach((demo) => demo.init());
+// Printing shows every slide at once, so in static mode each demo draws its default state up front.
+if (isStatic) Object.values(DEMOS).forEach((demo) => demo.enter(0, true));
 const slots = document.getElementById("slots");
 slides.forEach((slide) => {
   const slot = document.createElement("span");

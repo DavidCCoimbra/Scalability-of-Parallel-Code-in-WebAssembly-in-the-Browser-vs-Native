@@ -30,6 +30,7 @@ Open `index.html` in a browser and press `F` for fullscreen. The deck is drawn o
 `index.html?static` shows every step at once with the animations off and each demo in its
 default state. To export a PDF, open it
 with `?static` and print with no margins: each slide is one 1920x1080 page.
+Checked with headless Chrome: `--print-to-pdf` on `index.html?static` gives 18 pages, one slide each.
 `index.html#7` opens slide 7. The deck honours `prefers-reduced-motion`.
 
 ## How to drive each demo
@@ -85,6 +86,7 @@ in `DATA` and `DEMO`; nothing is a picture of a figure. Tables are under `data/t
 | Slide | Number | Source |
 |---|---|---|
 | 1 | Block speeds 1.00, 1.17, 1.36 | `campaign-v3/campaign-v3-contrasts.csv`, `ABS`, filter, N = 1 |
+| 2 | 93.5 % and 67.9 % of the equivalent Node.js implementation | Kyriakou and Tselikas, as cited in `paper/final/paper.tex` |
 | 4 | Warm-up 5 to 71, 10 iterations, 30 runs, N values, 3 s delay, seeded order | `harness/campaigns/campaign-v3.json` |
 | 4 | 177 configurations, 5310 runs, none failed or excluded, no checksum conflict, clock factor | `campaign-v3/campaign-v3-quality.md`, `campaign-v3-contrasts.json` |
 | 4 | 10 primary contrasts, 10 000 resamples, Holm at 0.05, 99.5 % intervals | `campaign-v3/campaign-v3-contrasts.json`, ADR 0037 |
@@ -107,7 +109,7 @@ in `DATA` and `DEMO`; nothing is a picture of a figure. Tables are under `data/t
 | 8 | Probe rows | the result table of `data/probes/atomic-increment/README.md` |
 | 8 | Retries per add under the table | `perf-v3/perf-v3-retries.csv` |
 | 8 | Effect 2.17 and 1.04 | ADR 0089 |
-| 9 | The five pitfalls | ADR 0045, ADR 0048, ADR 0071, ADR 0085, ADR 0069 and ADR 0086 |
+| 9 | The four pitfalls; 32 % | ADR 0045, ADR 0048, ADR 0071, ADR 0069 and ADR 0086 |
 | 10 | Limits and open questions | ADR 0080, ADR 0091 |
 | 12 | 21 840 exploratory runs | sum of the runs of ADR 0089 and ADR 0091 to 0094 |
 | B1 | Private, packed and padded atomics, sorts | `extras-v3/extras-v3-scaling.csv`, ADR 0093 |
