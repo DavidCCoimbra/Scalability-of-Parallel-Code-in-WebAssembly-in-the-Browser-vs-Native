@@ -22,7 +22,7 @@ author.
 | Nov 2026 | Claude | Running the measuring session of `measured/v3` on the PC: starting each campaign of `scripts/session.sh`, waiting for it and opening the pull request with its data |
 | Nov 2026 | Claude | Drafting decision records in `docs/adr/` from the author's decisions and the measured data |
 | Nov 2026 | Claude | Reviewing every pull request (`claude[bot]`, `.claude/agents/methodology-reviewer.md`) and the paper against the grading criteria (`.claude/agents/paper-reviewer.md`) |
-| Nov 2026 | Claude | Writing the first full draft of the paper (`paper/final/paper.tex`) and of the extended report (`paper/extended/`) from the measured tables and the decision records, with every number checked against its table by a separate review; the author reviewed and edited both |
+| Nov 2026 | Claude | Writing the first full draft of the paper (`paper/final/paper.tex`) and of the extended report (`paper/extended/`) from the measured tables and the decision records, with every number checked against its table by a separate AI review |
 | Nov 2026 | Claude | Writing the presentation slides (`presentation/`) and the documentation (`docs/explainer/`), with the script that generates the documentation's numbers (`scripts/explainer_data.py`) |
 
 Decisions about the topic, research questions and experimental design are the
