@@ -20,6 +20,7 @@ jobs:
       rust: ${{ steps.filter.outputs.rust }}
       browser: ${{ steps.filter.outputs.browser }}
       tables: ${{ steps.filter.outputs.tables }}
+      paper: ${{ steps.filter.outputs.paper }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -38,6 +39,9 @@ jobs:
               - 'make/**'
               - 'Makefile'
               - 'scripts/tables_diff.py'
+              - '.github/workflows/ci.yml'
+            paper:
+              - 'paper/**'
               - '.github/workflows/ci.yml'
 
   rust:
@@ -117,6 +121,31 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - name: Regenerated tables equal the committed ones
         run: make tables-check
+
+  paper:
+    needs: changes
+    if: needs.changes.outputs.paper == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: paper/final
+    steps:
+      - uses: actions/checkout@v4
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: tectonic
+      # tectonic exits 0 with a missing reference or citation, so the log is read too.
+      - name: The paper compiles with every reference and citation defined
+        run: |
+          mkdir -p "$RUNNER_TEMP/paper"
+          tectonic -X compile paper.tex --keep-logs --keep-intermediates --outdir "$RUNNER_TEMP/paper"
+          ! grep -n -E "(Reference|Citation) .* undefined" "$RUNNER_TEMP/paper/paper.log"
+      - name: The extended report compiles with every reference and citation defined
+        working-directory: paper/extended
+        run: |
+          mkdir -p "$RUNNER_TEMP/extended"
+          tectonic -X compile extended.tex --keep-logs --keep-intermediates --outdir "$RUNNER_TEMP/extended"
+          ! grep -n -E "(Reference|Citation) .* undefined" "$RUNNER_TEMP/extended/extended.log"
 
   python:
     runs-on: ubuntu-latest

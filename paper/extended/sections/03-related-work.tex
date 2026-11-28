@@ -11,8 +11,8 @@ stores, and more branches, from register pressure and safety checks. Yan et
 al.~\cite{yan2021} showed that the compiler, its optimization flags, the
 input size and the browser all change WASM results, sometimes in opposite
 directions. Szewczyk et al.~\cite{szewczyk2022} measured the bounds checks
-of linear memory outside browsers: under 20\% in runtimes that use virtual
-memory, up to 650\% in others. All four are single-threaded. We take their
+of linear memory outside browsers: fast runtimes run within 20\% of native
+with their default mechanism, and bounds checking can cost up to 650\%. All four are single-threaded. We take their
 lesson for the design (pin the compiler, the flags, the input and the
 browser version; report absolute ratios) and add threads. Our one-thread
 ratios, 1.17 for Chrome and 1.36 for Firefox on the filter, are smaller than
@@ -31,7 +31,7 @@ Tselikas~\cite{kyriakou2022} measured Rust compiled to WASM in Chromium at
 one workload without synchronization, 1 against 24 threads, means only. We
 add native code as the baseline in both engines, a sweep over thread counts,
 synchronization as a controlled factor, inferential statistics and a tested
-cause.
+explanation.
 
 \paragraph{Atomics and contention.} Schweizer et al.~\cite{schweizer2015}
 measured atomic operations on several architectures and showed that on x86

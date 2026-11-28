@@ -1,8 +1,9 @@
 \section{Introduction}
 
 Heavy work increasingly runs on the web client: image and video processing,
-documents, visualization, machine learning. WebAssembly with threads makes it
-possible to parallelize that work in the browser~\cite{haas2017}, but it is
+documents, visualization, machine learning. WebAssembly~\cite{haas2017}
+with threads~\cite{watt2019} makes it possible to parallelize that work in
+the browser, but it is
 not known whether it scales like the same code natively, or whether thread
 synchronization widens the gap. A developer who ports a parallel Rust or C++
 program to the web needs to know two things: whether adding threads pays as
