@@ -131,9 +131,13 @@ jobs:
         working-directory: paper/final
     steps:
       - uses: actions/checkout@v4
-      - uses: taiki-e/install-action@v2
-        with:
-          tool: tectonic
+      # The release binary: building tectonic from source needs system libraries the runner lacks.
+      - name: Install tectonic
+        env:
+          TECTONIC_VERSION: 0.16.9
+        run: |
+          curl --proto '=https' --tlsv1.2 -fsSL "https://github.com/tectonic-typesetting/tectonic/releases/download/tectonic%40${TECTONIC_VERSION}/tectonic-${TECTONIC_VERSION}-x86_64-unknown-linux-musl.tar.gz" | tar -xz -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
       # tectonic exits 0 with a missing reference or citation, so the log is read too.
       - name: The paper compiles with every reference and citation defined
         run: |
