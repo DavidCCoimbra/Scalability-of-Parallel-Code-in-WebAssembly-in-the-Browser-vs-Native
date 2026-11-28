@@ -60,17 +60,11 @@
     <p class="lead">Fetching a number from main memory takes about a hundred times longer than adding two numbers. Caches hide that gap, and they work in lines of 64 bytes that only one core at a time may write. This page explains caches, cache lines, what happens when two cores write the same line (contention), and why the study pads its counters.</p>
 
     <h2 id="far">RAM is far away</h2>
-    <p>The chip's main memory (<b>RAM</b>) is big, gigabytes, but it sits outside the core, at the end of a long
-      wire. Asking it for a number and getting the answer back takes roughly a hundred steps of the core's clock.
-      For a core that could have done a hundred additions in that time, that is an eternity.</p>
-    <p>The cook's counter is small and right in front of them. The pantry
-      is big and down the hall. If every pinch of salt meant a walk to the pantry, nothing would ever get cooked.</p>
+    <p>Main memory (<b>RAM</b>) is large, gigabytes, but it sits outside the core. Asking it for a number and getting the answer takes about a hundred steps of the core's clock. A core could do a hundred additions in that time.</p>
+    <p>Think of a cook. The counter is small and right in front of the cook; the pantry is big and down the hall. If every pinch of salt meant a walk to the pantry, nothing would get cooked.</p>
 
     <h2 id="caches">Caches: small, near, fast</h2>
-    <p>So each core has a few small, very fast memories of its own next to it, called <b>caches</b>. When the core
-      needs a number, it looks in the nearest cache first (L1, tiny and almost instant), then a bigger one (L2),
-      then one shared by all the cores (L3, bigger and slower), and only then goes to RAM. Whatever it brings
-      back, it keeps in the caches, in case it is needed again soon. Most of the time it is.</p>
+    <p>So each core has a few small, fast memories next to it, called <b>caches</b>. When the core needs a number, it looks in the nearest cache first (L1, small and almost instant), then in a bigger one (L2), then in one that all the cores share (L3, bigger and slower), and only then in RAM. It keeps what it brings back in the caches, because it is likely to need it again soon.</p>
     <figure class="figure"><svg viewBox="0 0 520 150" role="img" aria-label="Each core has L1 and L2 caches, all share L3, and RAM is farther"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
       <g font-size="11">
       <rect class="cool" x="20" y="15" width="90" height="36" rx="6"/><text x="65" y="37" text-anchor="middle" font-weight="600">core</text>
@@ -85,26 +79,15 @@
       <rect class="box" x="345" y="15" width="155" height="131" rx="8"/><text x="422" y="60" text-anchor="middle" font-weight="600">RAM</text><text x="422" y="80" text-anchor="middle" class="muted">gigabytes</text><text x="422" y="98" text-anchor="middle" class="muted">about 100 ns away</text>
       </g>
     </svg><figcaption>Near, small and fast on the left; far, big and slow on the right. The core always tries the left first.</figcaption></figure>
-    <p>The L1 cache is the cook's counter: a dozen things, within reach. L2
-      is the shelf behind them. L3 is the walk-in fridge the whole kitchen shares. RAM is the pantry down the hall.
-      A good cook brings what they need to the counter once and keeps it there.</p>
+    <p>L1 is the cook's counter: a dozen things within reach. L2 is the shelf behind. L3 is the walk-in fridge the whole kitchen shares. RAM is the pantry down the hall.</p>
 
     <h2 id="lines">Data moves in lines of 64 bytes</h2>
-    <p>Caches do not move one byte at a time. They move fixed boxes of <b>64 bytes</b>, called <b>cache
-      lines</b>. Ask for one byte and the whole line it sits in comes along, because fetching 64 bytes costs
-      about the same as fetching 1, and the neighbours are probably wanted next.</p>
-    <p>Nobody walks to the pantry for one egg. You bring the carton. The
-      carton is the cache line.</p>
-    <p>This has a consequence that matters for the study: two different numbers that happen to live in the same
-      64 bytes <b>travel together</b>, whether you want them to or not. Eight small counters, 8 bytes each, fit in one
-      line. <a href="memory.html#falsesharing">Contention and padding</a> shows why that is a problem and how the
-      project avoids it.</p>
+    <p>Caches do not move one byte at a time. They move fixed blocks of <b>64 bytes</b>, called <b>cache lines</b>. Ask for one byte and the whole line comes, because fetching 64 bytes costs about the same as fetching 1, and the neighbours are probably wanted next.</p>
+    <p>Nobody walks to the pantry for one egg: you bring the carton. The carton is the cache line.</p>
+    <p>One consequence matters for the study: two different numbers that sit in the same 64 bytes <b>travel together</b>. Eight counters of 8 bytes each fit in one line. <a href="#falsesharing">False sharing and padding</a> shows why that is a problem and how the study avoids it.</p>
 
     <h2 id="sharing">Two cores, one line</h2>
-    <p>Each core has its own caches, so the same line can be in several caches at once. That is fine while
-      everyone only <b>reads</b> it. The moment one core wants to <b>write</b> it, the rule is: only one core may
-      hold a line for writing, and every other copy is thrown away. The writer has to fetch the line to itself
-      first, and the next core that wants to write has to fetch it back.</p>
+    <p>Each core has its own caches, so the same line can be in several caches at once. That is fine while every core only <b>reads</b> it. To <b>write</b> a line, a core must be the only one that holds it: every other copy is thrown away. The writer fetches the line first, and the next core that wants to write fetches it back.</p>
     <figure class="figure"><svg viewBox="0 0 520 120" role="img" aria-label="A line held by core A must travel to core B before B can write it">
       <g font-size="11">
       <rect class="cool" x="30" y="20" width="120" height="80" rx="8"/><text x="90" y="42" text-anchor="middle" font-weight="600">core A</text>
@@ -114,18 +97,9 @@
       <rect class="box" x="390" y="55" width="80" height="30" rx="5" stroke-dasharray="4 3"/><text x="430" y="74" text-anchor="middle" class="muted">wants to write</text>
       </g>
     </svg><figcaption>Core B cannot write until the line arrives. If A wants it back next, it travels again.</figcaption></figure>
-    <p>One shared notebook. Anyone may read it. To write in it you must hold
-      it, and only one person can hold it. If eight people each want to add a line, the notebook goes round the
-      table, and each person waits for it. That waiting is <b>contention</b>.</p>
-    <p>The trip takes about as long as a fetch from RAM, roughly 100 steps of the clock. An addition that could
-      have taken 1 step now takes 100, because the line was last written by someone else. This single fact
-      explains why the study's shared-counter histogram gets <i>slower</i> with more threads
-      (<a href="rq2.html">RQ2</a>), and why the project counts exactly how many of these trips each add costs
-      (<a href="rq2.html#readfirst">RQ2: synchronization</a>).</p>
-    <p>An atomic add (<a href="atomics.html#what">what that is</a>) reads the counter, adds one and writes it back as
-      one indivisible step, so it always needs the counter's line for writing. If another core wrote that line last,
-      the line must first travel over. On an 8-core chip that trip is of the order of a hundred clock ticks, a
-      hundred times what the add itself costs.</p>
+    <p>Think of one shared notebook. Anyone may read it. To write in it you must hold it, and only one person can hold it. If eight people each want to add a line, the notebook goes round the table and each person waits for it. That waiting is <b>contention</b>.</p>
+    <p>The transfer takes about as long as a fetch from RAM, roughly 100 steps of the clock. An addition that could take 1 step takes 100, because another core wrote the line last. This is why a histogram with shared counters can get slower with more threads, which <a href="rq2.html">RQ2</a> measures.</p>
+    <p>An atomic add (<a href="atomics.html#what">What an atomic add is</a>) reads the counter, adds one and writes it back as one indivisible step, so it always needs the counter's line for writing. If another core wrote that line last, the line travels first.</p>
     <details class="deeper"><summary>In depth: coherence, RFO, L1 to L3</summary>
       <p>Every core has its own <span data-term="l1d-l3">L1 and L2</span>; the cores share a larger L3. A coherence
         protocol keeps the copies consistent: shared state for readers, exclusive or modified for the one writer,
@@ -138,67 +112,34 @@
     </details>
 
     <h2 id="contention">Contention</h2>
-    <p><span data-term="contention">Contention</span> is several cores wanting the same line for writing at the same
-      time. The histogram turns it up and down with its input: an image with <i>k</i> distinct grey levels sends every
-      add to one of <i>k</i> counters (<a href="workloads.html#k">k: the contention dial</a>). Pick <i>k</i> and watch
-      where the eight cores' adds go at one instant:</p>
+    <p><span data-term="contention">Contention</span> is several cores wanting the same line for writing at the same time. The histogram sets how much of it there is through its input: an image with <i>k</i> distinct grey levels sends every add to one of <i>k</i> counters (<a href="workloads.html#k">k: the contention dial</a>). Pick <i>k</i> and see where the adds of eight cores go at one instant:</p>
     <div class="card">
       <div class="controls" id="ct-controls"></div>
       <svg id="ct-svg" viewBox="0 0 640 230" role="img" aria-label="Eight cores adding to k counter lines"></svg>
       <p class="muted" id="ct-note" style="font-size:var(--fs-sm)"></p>
     </div>
-    <p>What it costs, in measured numbers. The speedup of the shared histogram at 8 threads (below 1 means 8
-      threads are <i>slower</i> than 1), next to the control that never shares a counter:</p>
-    <div id="ct-bars"></div>
-    <p class="src" data-src="campaign-v3-scaling"></p>
-    <p>At <i>k</i> = 1 every add moves the one hot line, and 8 threads take more than twice as long as one, in all three environments. At <i>k</i> = 256 two cores rarely want the same line at the same moment, but with 8 threads
-      most adds still find their line last written by another core, so natively and in Firefox the speedup stays
-      near 1: no gain from 8 threads, but no loss either. Chrome is the exception, and that is the subject of
-      <a href="rq2.html#code">RQ2: synchronization</a>.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is this not a flaw of the histogram, to be fixed?</b> It is the thing being measured.
-      Sharing one counter across threads is the simplest possible synchronization, and its cost is pure cache-line
-      traffic. RQ2 asks whether that cost is the same in the browser as natively. A histogram that avoided the
-      sharing (the private control) is also measured, and that is the version a real program should use.</p></aside>
+    <p>At <i>k</i> = 1 every add moves the one line. At <i>k</i> = 256 two cores rarely want the same line at the same moment, but with 8 threads most adds still find that another core wrote their line last. <a href="rq2.html#metric">RQ2: synchronization</a> has the measured speedups of the shared histogram, next to the control that never shares a counter.</p>
+    <p>Chrome behaves differently from native code and Firefox here; <a href="rq2.html#code">The machine code of one add</a> explains why.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why is this not a flaw of the histogram to fix?</b> It is what the study measures. Sharing one counter between threads is the simplest synchronization there is, and its cost is cache-line traffic. RQ2 asks whether that cost is the same in the browser as natively. The histogram that avoids the sharing, the local histogram, is measured too, and it is the version a real program should use.</p></aside>
 
     <h2 id="falsesharing">False sharing and padding</h2>
-    <p>There is a second way to fight over a line without wanting the same counter. A counter is 8 bytes and a line
-      is 64, so eight counters fit in one line. Two threads adding to two <i>different</i> counters that happen to
-      share a line still take turns holding the line. This is <span data-term="false-sharing">false sharing</span>:
-      contention with no shared variable at all.</p>
-    <p>Two people editing different words of the same line of a shared document,
-      where the rule is that only one person may hold a line at a time. They never touch each other's words, and
-      they still wait for each other.</p>
-    <p>The study removes it by giving every counter its own block: each counter is followed by enough padding that
-      the next one starts 128 bytes later. Switch the layout to see the difference:</p>
+    <p>There is a second way to contend for a line, without wanting the same counter. A counter is 8 bytes and a line is 64, so eight counters fit in one line. Two threads that add to two <i>different</i> counters in the same line still take turns holding the line. This is <span data-term="false-sharing">false sharing</span>: contention with no shared variable.</p>
+    <p>It is like two people editing different words on the same line of a shared document, when only one person may hold a line at a time. They never touch each other's words, and they still wait for each other.</p>
+    <p>The study removes it by giving every counter its own block: each counter is followed by padding, so that the next one starts 128 bytes later. Switch the layout to see the difference:</p>
     <div class="card">
       <div class="controls" id="ly-controls"></div>
       <svg id="ly-svg" viewBox="0 0 640 120" role="img" aria-label="Counter layout in memory"></svg>
       <p class="muted" id="ly-note" style="font-size:var(--fs-sm)"></p>
     </div>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why pad at all? Would it not be fairer to measure the natural layout?</b> Without padding, the
-      shared histogram would measure two things mixed together: the true cost of sharing a counter, and the accidental
-      cost of neighbours sharing a line. The study wants the first one alone. The second is measured separately, as
-      the <b>packed</b> extra below, so nothing is hidden.</p></aside>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why 128 bytes and not 64?</b> Intel CPUs often fetch lines in pairs (the
-      <span data-term="adjacent-line-prefetcher">adjacent-line prefetcher</span>), so two counters 64 bytes apart can
-      still interfere. 128 keeps them in different pairs. A pilot on an earlier build tried both spacings natively and
-      found them within about 1 % of each other at 8 threads, inside the noise between two campaigns; 128 was kept as
-      the safer choice (ADR 0049). That pilot justifies the design only; it is not a result. The price is
-      256 x 128 bytes = 32 KiB of counters instead of 2 KiB.</p></aside>
-    <p>The <b>packed</b> extra keeps the same code with 8-byte counters, eight per line. At <i>k</i> = 256,
-      8 threads:</p>
-    <div id="pk-table"></div>
-    <p class="src" data-src="extras-v3-scaling"></p>
-    <p>False sharing costs native and Firefox a fifth to a quarter more time, and Chrome three to four times:
-      Chrome's advantage under spread contention exists only when the counters are padded.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why pad? Would the natural layout not be fairer?</b> Without padding, the shared histogram would measure two things mixed together: the cost of sharing a counter, and the accidental cost of neighbours sharing a line. The study wants the first alone. The second is measured on its own, as the <b>packed</b> histogram of the extras campaign, so nothing is hidden.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why 128 bytes and not 64?</b> Intel CPUs often fetch lines in pairs (the <span data-term="adjacent-line-prefetcher">adjacent-line prefetcher</span>), so two counters 64 bytes apart can still interfere; 128 keeps them in different pairs. A pilot on an earlier build tried both spacings natively and found them within about 1% of each other at 8 threads, and 128 was kept as the safer choice (ADR 0049). That pilot justifies the design; it is not a result. The price is 256 x 128 bytes = 32 KiB of counters instead of 2 KiB.</p></aside>
+    <p>The <b>packed</b> histogram keeps the same code with 8-byte counters, eight per line. <a href="extras.html#private">Private and packed atomics</a> has its times next to the padded ones.</p>
+    <p>In short, false sharing costs every environment time, and Chrome most: its advantage under spread contention exists only with padded counters.</p>
     <details class="deeper"><summary>In depth: the type, and two checks that the padding is real</summary>
       <div data-code="bench/src/workloads/histogram/padded_counter.rs|// 128 bytes because Intel|20" data-title="PaddedCounter: one counter per 128 bytes" data-highlight="repr\(align"></div>
       <p>A unit test measures the distance between two neighbouring counters:</p>
       <div data-code="bench/src/workloads/histogram/padded_counter.rs|fn counter_occupies_its_own_cache_line|4" data-title="The layout test"></div>
-      <p>And inside WASM memory, where Rust's layout could in principle be lost, <code>perf c2c</code> during one
-        <i>k</i> = 16, N = 8 run per browser on <code>measured/v3</code> found 16 contended lines 0x800 bytes apart
-        (16 x 128 = 2048 = 0x800), each touched only at offset 0, in Chrome and in Firefox
-        (<a href="rq2.html#c2c">The padding holds</a>).</p>
+      <p>Inside WASM memory, where Rust's layout could in principle be lost, <code>perf c2c</code> found each contended counter alone on its line, in Chrome and in Firefox (<a href="rq2.html#c2c">The padding holds</a>).</p>
       <p class="src" data-files="data/raw/perf-v3/c2c/README.md, docs/adr/0008-padded-shared-atomics.md, docs/adr/0049-padding-and-atomic-code.md"></p>
     </details>
 
@@ -267,16 +208,6 @@ window.page = function (UI) {
   }
   drawCt();
 
-  $("#ct-bars").appendChild(UI.bars([1, 4, 16, 256].map(function (k) {
-    return { label: "k = " + k, values: ENVS.map(function (e) {
-      var r = UI.row("campaign-v3-scaling", { environment: e[0], workload: "hist-atomic", k: k, threads: 8 });
-      return { name: e[1], label: e[1], value: r && r.speedup, cls: e[0] };
-    }) };
-  }).concat([{ label: "private control, k = 256", values: ENVS.map(function (e) {
-    var r = UI.row("campaign-v3-scaling", { environment: e[0], workload: "hist-local", k: 256, threads: 8 });
-    return { name: e[1], label: e[1], value: r && r.speedup, cls: e[0] };
-  }) }]), { max: 8.5, digits: 2 }));
-
   // --- layout picture ------------------------------------------------------------------------
   var lay = "padded";
   UI.segmented(group($("#ly-controls"), "layout"), [{ label: "padded (128 bytes)", value: "padded" }, { label: "packed (8 bytes)", value: "packed" }], function (v) { lay = v; drawLy(); }, "padded");
@@ -295,17 +226,6 @@ window.page = function (UI) {
   }
   drawLy();
 
-  var pk = ENVS.map(function (e) {
-    var a = UI.row("extras-v3-scaling", { environment: e[0], workload: "hist-atomic", k: 256, threads: 8 });
-    var b = UI.row("extras-v3-scaling", { environment: e[0], workload: "hist-atomic-packed", k: 256, threads: 8 });
-    return { env: e[1], padded: a && a.center_ns / 1e6, packed: b && b.center_ns / 1e6 };
-  });
-  $("#pk-table").appendChild(UI.table(pk, [
-    { label: "Environment", key: "env" },
-    { label: "Padded (ms per iteration)", num: true, value: function (r) { return fmt(r.padded, 1); } },
-    { label: "Packed (ms per iteration)", num: true, value: function (r) { return fmt(r.packed, 1); } },
-    { label: "Packed / padded", num: true, value: function (r) { return fmt(r.packed / r.padded, 2); } }
-  ]));
   })();
 };
 </script>

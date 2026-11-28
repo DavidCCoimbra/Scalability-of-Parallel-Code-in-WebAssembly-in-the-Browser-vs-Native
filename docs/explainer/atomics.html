@@ -51,9 +51,7 @@
     <p class="lead">An atomic add makes sure no count is lost when several threads add to the same counter. A CPU offers two ways to do it: one locked instruction, or a read followed by a compare-and-swap that retries. This page explains both, shows which one each compiler emits for the same line of Rust, and explains why the memory ordering argument makes no difference on these targets.</p>
 
     <h2 id="what">What an atomic add is</h2>
-    <p>A plain <code>count = count + 1</code> is three steps for the CPU: read the current value from memory, add one,
-      write the result back. With one thread that is fine. With two threads on the same counter, the steps can
-      interleave:</p>
+    <p>A plain <code>count = count + 1</code> is three steps for the CPU: read the value from memory, add one, write the result back. With one thread that works. With two threads on the same counter, the steps can interleave:</p>
     <div class="scroll-x"><table class="t lost">
       <thead><tr><th>Step</th><th>Thread A</th><th>Thread B</th><th>Counter in memory</th></tr></thead>
       <tbody>
@@ -63,13 +61,8 @@
         <tr><td>4</td><td></td><td>writes 41 + 1</td><td class="bad">42, not 43</td></tr>
       </tbody>
     </table></div>
-    <p>Two adds happened, the counter went up by one: a count was lost, and the histogram is wrong. An
-      <span data-term="atomic-operation">atomic</span> add makes the three steps one indivisible step, so no other
-      thread can slip in between the read and the write, and nothing is ever lost, even with 8 threads on one counter.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the study use atomics and not a lock?</b> A lock would be a second mechanism on top
-      of the add (take the lock, add, release), with its own costs to untangle. An atomic add is the smallest unit of
-      synchronization a CPU offers: one instruction. Whatever the browser does differently with it is as close to the
-      hardware as a measurement can get.</p></aside>
+    <p>Two adds ran and the counter went up by one: a count is lost, and the histogram is wrong. An <span data-term="atomic-operation">atomic</span> add makes the three steps one indivisible step. No other thread can get between the read and the write, so nothing is lost, even with 8 threads on one counter.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the study use atomics and not a lock?</b> A lock is a second mechanism on top of the add (take the lock, add, release), with its own costs to separate. An atomic add is the smallest unit of synchronization a CPU offers: one instruction. Whatever a browser does differently with it is as close to the hardware as a measurement gets.</p></aside>
     <details class="deeper"><summary>In depth: the Rust, and the nearest JS</summary>
       <div data-code="bench/src/workloads/histogram/counter_table.rs|// The ordering changes nothing on our targets|9" data-title="One shared counter, incremented atomically" data-highlight="fetch_add"></div>
       <div class="pair">
@@ -78,86 +71,49 @@
 // in every worker, for every pixel:
 Atomics.add(counters, value, 1n);</pre></figure>
       </div>
-      <p><code>increment</code> takes <code>&amp;self</code>, not <code>&amp;mut self</code>: an atomic may be changed
-        through a shared reference, which is why all threads can hold <code>&amp;self.counters</code> at once. The
-        counters are reset in <code>prepare</code>, outside the timed region, with a plain write (<code>get_mut</code>
-        proves no other thread can see them).</p>
+      <p><code>increment</code> takes <code>&amp;self</code>, not <code>&amp;mut self</code>: an atomic can be changed through a shared reference, which is why all threads can hold <code>&amp;self.counters</code> at once. <code>prepare</code> resets the counters outside the timed region with a plain write (<code>get_mut</code> proves that no other thread can see them).</p>
     </details>
 
     <h2 id="strategies">Two ways to add: lock, or try and retry</h2>
-    <p>A CPU has two ways to make an add atomic, and the difference matters when two cores want the same counter:</p>
+    <p>A CPU has two ways to make an add atomic. The difference matters when two cores want the same counter:</p>
     <ul>
-      <li><b>Lock the block and add.</b> One instruction (<code>lock add</code> on x86) takes the counter's cache line,
-        adds, and lets it go. It cannot fail: whoever holds the line adds, the others wait their turn.</li>
-      <li><b>Try, check, retry.</b> Read the counter with a plain read, compute the new value, then run a
-        <b>compare-and-swap</b>: "write my new value, but only if memory still holds the value I read". If another
-        core changed the counter in between, the swap fails and the loop starts again with a fresh read.</li>
+      <li><b>Lock the line and add.</b> One instruction (<code>lock add</code> on x86) takes the counter's cache line, adds, and releases it. It cannot fail: the core that holds the line adds, and the others wait their turn.</li>
+      <li><b>Try, check, retry.</b> Read the counter with a plain read, compute the new value, then run a <b>compare-and-swap</b>: "write my new value, but only if memory still holds the value I read". If another core changed the counter in between, the swap fails and the loop starts again with a new read.</li>
     </ul>
-    <p>Lock-and-add is taking the one shared pen and writing your tick before
-      handing it on. Try-and-retry is writing your tick on a sticky note from memory, then checking the sheet: if
-      nobody wrote since you looked, you stick it on; if someone did, you tear it up and start over.</p>
-    <p>Step through two cores adding to the same counter with try-and-retry, and then the same two adds with
-      lock-and-add:</p>
+    <p>Lock-and-add is taking the one shared pen and writing your mark before you hand it on. Try-and-retry is writing your mark on a note from memory and then checking the sheet: if nobody wrote since you looked, you stick the note on; if someone did, you start over.</p>
+    <p>Step through two cores that add to the same counter with try-and-retry, then the same two adds with lock-and-add:</p>
     <div class="card" id="cas-host"></div>
     <p>Under contention, try-and-retry costs twice: a plain read that pulls the line over, and attempts that fail
       and go round again. The study counts both on its real runs:
       <a href="rq2.html#retries">Retries, counted</a> and <a href="rq2.html#readfirst">Line transfers, counted</a>.</p>
 
     <h2 id="code">What each engine emits</h2>
-    <p>Which strategy a runtime uses is not chosen by the Rust source; it is chosen by whatever turns the code into
-      machine instructions. The native compiler and Firefox's engine pick lock-and-add; Chrome's engine picks
-      try-and-retry. The study found this by capturing the machine code each engine runs on the measured build: V8 can write its compiled code to a file, and Firefox's was read out of the browser's own memory at the addresses where the CPU spent its time (<code>data/probes/engine-code/</code>). Per pixel, with the operands simplified:</p>
+    <p>The Rust source does not choose the strategy; the compiler that produces the machine instructions does. LLVM, natively, and Firefox's engine emit lock-and-add. The optimizing compiler of Chrome's engine emits try-and-retry. The study captured the machine code each engine runs on the measured build: V8 writes its compiled code to a file, and Firefox's was read from the browser's memory at the addresses where the CPU spent its time (<code>data/probes/engine-code/</code>). Per pixel, with the operands simplified:</p>
     <div class="controls" id="asm-controls"></div>
     <figure class="code asm"><header><span id="asm-title"></span><span class="muted">mnemonics from data/probes/engine-code, operands simplified</span></header><pre class="plain" id="asm-pre"></pre></figure>
     <p id="asm-note"></p>
     <p class="src" data-files="data/probes/engine-code/README.md, docs/adr/0088-what-explains-the-results.md, docs/adr/0049-padding-and-atomic-code.md"></p>
-    <p class="def"><b>How to read it.</b> Each line is one machine instruction. <code>mov</code> copies a value,
-      <code>add</code> adds, <code>shl</code> multiplies by a power of two, and anything starting with <code>lock</code>
-      is done atomically on memory. The words in brackets are memory locations; the ones starting with % are the
-      core's own scratch registers.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does V8 choose the retry loop?</b> The WebAssembly instruction is "atomic add and return
-      the old value". When the old value is not used, as here, there are two correct ways to compile it, and V8's
-      compiler happens to take the general one that works for any read-modify-write. It is a choice of the engine,
-      not a bug, and not something the study's code can change. That makes it a finding of RQ2 rather than a flaw
-      of the setup.</p></aside>
+    <p class="def"><b>How to read it.</b> Each line is one machine instruction. <code>mov</code> copies a value, <code>add</code> adds, <code>shl</code> multiplies by a power of two, and an instruction that starts with <code>lock</code> is atomic on memory. The words in brackets are memory locations; the ones that start with % are the core's registers.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does V8 choose the retry loop?</b> The WebAssembly instruction is "atomic add, and return the old value". When the old value is not used, as here, there are two correct ways to compile it, and V8's optimizing compiler takes the general one that works for any read-modify-write. It is a choice of the engine, not a bug, and the study's code cannot change it. That makes it a finding of RQ2, not a flaw of the setup.</p></aside>
 
     <h2 id="order">Memory order, for the record</h2>
-    <p>Anyone who knows atomics will ask about <i>memory ordering</i> before anything else, so it has to be said
-      plainly: it is not the reason for the Chrome result. Every Rust atomic takes an ordering (how strictly other
-      memory accesses are kept in sequence around it), and one could suspect the browsers pay for a stricter one.
-      They do not, on this hardware:</p>
+    <p>If you know atomics, you will ask about <i>memory ordering</i> first. It is not the reason for the Chrome result. Every Rust atomic takes an ordering (how strictly other memory accesses are kept in sequence around it), and you could suspect that the browsers pay for a stricter one. On this hardware they do not:</p>
     <details class="deeper"><summary>In depth: why ordering changes nothing on these targets</summary>
-      <p>The histogram asks for <code>Relaxed</code>, the weakest <span data-term="memory-ordering-relaxed-seqcst">ordering</span>:
-        it only needs each counter updated atomically, and the counters are read only after the parallel call has
-        joined (ADR 0014). <code>SeqCst</code> is the strongest, and the only one JS and WASM offer. The choice changes
-        nothing here:</p>
+      <p>The histogram asks for <code>Relaxed</code>, the weakest <span data-term="memory-ordering-relaxed-seqcst">ordering</span>: it needs only that each counter is updated atomically, and the counters are read after the parallel call has joined (ADR 0014). <code>SeqCst</code> is the strongest, and the only one JavaScript and WASM offer. The choice changes nothing here:</p>
       <ul>
         <li><b>WASM</b> atomics are always sequentially consistent, whatever Rust asked for.</li>
-        <li><b>On x86</b>, any <span data-term="locked-read-modify-write">locked read-modify-write</span> is a full
-          barrier natively too, and atomics cost about the same whatever their semantics, being bound by cache-line
-          transfers (Schweizer et al. 2015, cited in the paper).</li>
+        <li><b>On x86</b>, any <span data-term="locked-read-modify-write">locked read-modify-write</span> is a full barrier natively too, and atomics cost about the same whatever their semantics, because cache-line transfers bound them (Schweizer et al. 2015).</li>
       </ul>
-      <p>So the native code and the browsers pay for the same ordering. If Chrome's atomics cost more, the reason has
-        to be in the instructions each engine emits, which is what the section above shows.</p>
+      <p>So native code and the browsers pay for the same ordering. If Chrome's atomics cost more, the reason is in the instructions each engine emits, which the section above shows.</p>
     </details>
 
     <h2 id="forwarding">Store forwarding at k = 1</h2>
-    <p>One more effect hides at <i>k</i> = 1, and it has nothing to do with atomics: even the <b>private</b>
-      histogram, with one thread and no sharing at all, is several times slower at <i>k</i> = 1 than at
-      <i>k</i> = 256. When every pixel adds to the same counter, each add must wait for the previous add's result
-      before it can start; the core cannot overlap them. At <i>k</i> = 256 consecutive pixels usually hit different
-      counters and the core runs many adds at once.</p>
-    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does it matter for the study?</b> Because it means "k = 1 is slow" is partly not about
-      synchronization. If RQ2 compared k = 1 against k = 256, that effect would pollute the answer. So RQ2 never
-      compares inputs; it compares shared against private at the <b>same</b> k, where this effect is present in
-      both and cancels (<a href="reading.html#rq2metric">the RQ2 metric</a>).</p></aside>
+    <p>One more effect appears at <i>k</i> = 1, and it has nothing to do with atomics: the <b>local</b> histogram, with one thread and nothing shared, is several times slower at <i>k</i> = 1 than at <i>k</i> = 256. When every pixel adds to the same counter, each add waits for the result of the one before it, and the core cannot overlap them. At <i>k</i> = 256 consecutive pixels usually hit different counters, and the core runs many adds at once.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does it matter for the study?</b> "k = 1 is slow" is partly not about synchronization. If RQ2 compared k = 1 with k = 256, that effect would be mixed into the answer. So RQ2 never compares inputs: it compares the atomic histogram with the local one at the <b>same</b> k, where the effect is in both and cancels (<a href="reading.html#rq2metric">In depth: the RQ2 metric</a>).</p></aside>
     <p>The measured times, the two instruction streams and the probe that compares them are on
       <a href="rq1.html#k1-forwarding">RQ1: scaling</a>.</p>
 
-    <p class="takeaway"><strong>In summary.</strong> An atomic add exists so that no count is lost when threads share
-      a counter. A CPU can do it in one locked step, or by trying and retrying. Native and Firefox do the first;
-      Chrome does the second, which costs an extra read and, under contention, retries that the study counted.
-      Memory ordering is not the reason.</p>
+    <p class="takeaway"><strong>In summary.</strong> An atomic add makes sure that no count is lost when threads share a counter. A CPU can do it in one locked step, or by trying and retrying. LLVM and Firefox emit the first; Chrome's optimizing compiler emits the second, which costs an extra read and, under contention, retries. Memory ordering is not the reason.</p>
 
     <footer class="pager" id="pager"></footer>
   </article>

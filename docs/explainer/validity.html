@@ -44,50 +44,24 @@
     <p class="lead">A careful study can still be wrong in four ways, which researchers call threats to validity: something else caused the effect, the measure does not capture the question, the result holds only here, or the numbers do not support the conclusion. This page explains each with an example. The study's own answers are in <a href="threats.html">Threats to validity</a>.</p>
 
     <h2 id="internal">Something else caused it</h2>
-    <p>You changed one thing and saw a difference. But was it the thing you changed? If anything else changed
-      at the same time, the difference might be its doing. This is <b>internal validity</b>: is the cause really
-      the cause.</p>
-    <p>A café changes its coffee recipe and sales go up. The same week, a
-      new barista started and it stopped raining. Was it the recipe?</p>
-    <p>In this study: if Chrome ran on different cores than native, or with turbo on, or after the machine had
-      warmed up, a difference between them might be the cores, the clock or the warmth, not the browser. That is
-      why everything runs on the same 8 cores, at a fixed clock, in a shuffled order
-      (<a href="measuring.html#fair">A fair comparison</a>). The study also found cases where it was being
-      fooled this way and fixed them: Chrome was quietly using cores it was not supposed to
-      (<a href="machine.html#mask">The machine and environment control</a>).</p>
+    <p>You change one thing and see a difference. Was it the thing you changed? If anything else changed at the same time, the difference may come from that. This is <b>internal validity</b>: whether the cause is the cause.</p>
+    <p>A café changes its coffee recipe and sales go up. The same week a new barista started and the rain stopped. Was it the recipe?</p>
+    <p>In this study: if Chrome ran on other cores than native, or with turbo on, or after the machine had warmed up, a difference between them could be the cores, the clock or the heat, not the browser. That is why everything runs on the same 8 cores, at a fixed clock, in a shuffled order (<a href="measuring.html#fair">A fair comparison</a>). The study also found a case of exactly this and fixed it: Chrome was using cores outside its mask (<a href="machine.html#mask">A browser that left the mask</a>).</p>
 
     <h2 id="construct">The wrong thing was measured</h2>
-    <p>You wanted to know X, so you measured Y, because Y was easy to measure. Is Y really X? This is
-      <b>construct validity</b>: does the number stand for the idea.</p>
-    <p>You want to know if a restaurant is good, so you count its online
-      likes. Likes measure popularity and marketing; they may or may not measure the food.</p>
-    <p>In this study: "does the browser scale like native" is measured by comparing speedup curves. A speedup can
-      flatter a slow starter (a browser that is slow at 1 thread has more room to gain), so the study always
-      shows the raw time ratio next to it (<a href="ratios.html#speedup">Speedup and efficiency</a>). And "the
-      cost of synchronization" is measured as a ratio of ratios precisely so that the browser's general slowness
-      does not pose as a synchronization cost (<a href="ratios.html#ratioofratios">A ratio of ratios</a>).</p>
+    <p>You want to know X, and you measure Y because Y is easy to measure. Does Y stand for X? This is <b>construct validity</b>: whether the number stands for the idea.</p>
+    <p>You want to know whether a restaurant is good, so you count its online likes. Likes measure popularity and marketing; they may or may not measure the food.</p>
+    <p>In this study: "does the browser scale like native" is measured by comparing speedup curves. A speedup flatters a slow start (an environment that is slow at 1 thread has more room to gain), so the study shows the time ratio next to it (<a href="ratios.html#speedup">Speedup and efficiency</a>). And "the cost of synchronization" is a ratio of ratios, so that the browser's general slowness does not count as a synchronization cost (<a href="ratios.html#ratioofratios">A ratio of ratios</a>).</p>
 
     <h2 id="external">It only holds here</h2>
-    <p>The result is real, on this machine, with this program, these versions. Would it hold on another? This is
-      <b>external validity</b>: how far the result travels.</p>
-    <p>A survey of one city's commuters says most people cycle. True there.
-      Say nothing about the next city over, where it rains all year.</p>
-    <p>In this study: one PC, one chip, two browser versions, two workloads, one image size. Everything was done
-      to make the comparison exact on this machine, and exactly that makes it a single case. The study says so,
-      lists what was tried elsewhere (other sizes, other builds, the slow cores), and does not claim more
-      (<a href="threats.html#external">External</a>).</p>
+    <p>The result is real on this machine, with this program and these versions. Does it hold on another? This is <b>external validity</b>: how far the result carries.</p>
+    <p>A survey of one city's commuters says that most people cycle. That is true there. It says nothing about the next city, where it rains all year.</p>
+    <p>In this study: one PC, one chip, two browser versions, two workloads, one image size. Everything that makes the comparison exact on this machine also makes it a single case. The study says so, lists what it tried beyond that (other sizes, other builds, the E-cores), and claims no more (<a href="threats.html#external">External</a>).</p>
 
     <h2 id="conclusion">The numbers do not support it</h2>
-    <p>Everything was fair and the right thing was measured, but the difference is small and the measurements
-      are few. Could it be chance? This is <b>conclusion validity</b>: do the numbers actually back the claim.</p>
-    <p>Three customers preferred the new recipe, two the old. "Customers
-      prefer the new recipe" is not a conclusion; it is five people.</p>
-    <p>In this study: every reported number comes from 30 runs with a range around it, and a difference is only
-      claimed when the ranges do not overlap. Ten comparisons were named in advance as the ones that answer the
-      questions, and they get a stricter bar, because asking many questions at once makes it easier for one of
-      them to look different by luck (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>). And
-      "no difference found" is reported as exactly that, never as "they are the same"
-      (<a href="reading.html#notproof">Not rejecting is not proof</a>).</p>
+    <p>The comparison is fair and the right thing is measured, but the difference is small and the measurements are few. Could it be chance? This is <b>conclusion validity</b>: whether the numbers support the claim.</p>
+    <p>Three customers prefer the new recipe and two the old. "Customers prefer the new recipe" is not a conclusion; it is five people.</p>
+    <p>In this study: every reported number comes from 30 runs and has a range around it, and a difference is claimed only when the ranges do not overlap. Ten comparisons were named in advance as the ones that answer the questions, and they get a stricter bar, because many questions at once make it easier for one to look different by chance (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>). And "no difference found" is reported as that, never as "they are the same" (<a href="reading.html#notproof">Not rejecting is not proof</a>).</p>
 
     <figure class="figure"><svg viewBox="0 0 520 120" role="img" aria-label="Four questions to ask of a result, in order"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
       <g font-size="11">
@@ -99,14 +73,11 @@
       <path class="arrow" d="M387 60 H 398"/>
       <rect class="box" x="400" y="25" width="115" height="70" rx="8"/><text x="457" y="50" text-anchor="middle" font-weight="600">conclusion</text><text x="457" y="68" text-anchor="middle" class="muted">enough evidence?</text>
       </g>
-    </svg><figcaption>Ask them in this order; a "no" early on makes the later ones moot.</figcaption></figure>
+    </svg><figcaption>Ask the four questions in this order: a "no" to an early one makes the later ones pointless.</figcaption></figure>
 
     <h2 id="remember">What to remember</h2>
-    <p class="takeaway"><strong>In summary.</strong> Four questions: was it the cause, was it the right thing,
-      does it hold beyond here, do the numbers back it. A careful study answers all four out loud, including
-      the ones where the answer is "only partly".</p>
-    <p>Used by: <a href="threats.html">Threats to validity</a>, <a href="machine.html#mask">The machine and environment control</a>, <a href="machine.html">The machine and environment control</a>. Back to the study:
-      <a href="questions.html">Research questions and design</a>.</p>
+    <p class="takeaway"><strong>In summary.</strong> Four questions: was it the cause, was it the right thing, does it hold beyond here, do the numbers support it. A careful study answers all four, including the ones where the answer is "only partly".</p>
+    <p>Next: <a href="rust.html">Rust for JavaScript developers</a>, or go to the study: <a href="questions.html">Research questions and design</a>. This page is used by <a href="threats.html">Threats to validity</a> and <a href="machine.html">The machine and environment control</a>.</p>
 
     <footer class="pager" id="pager"></footer>
   </article>
