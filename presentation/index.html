@@ -64,7 +64,7 @@ table.data th:first-child, table.data td:first-child { text-align: left; }
 table.data tr.hot td { background: #fbe9e8; }
 table.data.compact th, table.data.compact td { padding: 5px 14px; font-size: 25px; }
 table.data tr.sep td { border-top: 2px solid var(--ink); }
-table.data.roomy th, table.data.roomy td { font-size: 30px; line-height: 1.3; padding: 20px 16px; vertical-align: top; }
+table.data.roomy th, table.data.roomy td { font-size: 28px; line-height: 1.28; padding: 14px 16px; vertical-align: top; }
 
 /* Step reveals: an element with data-step appears when the slide reaches that step. */
 [data-step] { opacity: 0; transform: translateY(10px); transition: opacity .35s ease, transform .35s ease; }
@@ -132,7 +132,7 @@ kbd { font: 600 20px var(--mono); border: 2px solid var(--graphite); padding: 0 
 
 /* Anatomy of a run */
 .runline { display: flex; align-items: stretch; }
-.runline .ph { border: 2px solid var(--ink); border-right: none; padding: 10px 12px; font-size: 24px; line-height: 1.15; background: var(--panel); opacity: .28; transition: opacity .25s; }
+.runline .ph { border: 2px solid var(--ink); border-right: none; padding: 8px 10px; font-size: 24px; line-height: 1.15; white-space: nowrap; background: var(--panel); opacity: .28; transition: opacity .25s; }
 .runline .ph:last-child { border-right: 2px solid var(--ink); }
 .runline .ph.on { opacity: 1; }
 .runline .ph span { color: var(--graphite); }
@@ -238,7 +238,7 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
   <h1>Scalability of parallel code<br>in WebAssembly in the browser<br>vs. native</h1>
   <p style="margin-top:34px">David Coimbra, fc68024</p>
   <div id="lanes" aria-hidden="true"></div>
-  <p class="tiny" style="position:absolute;left:110px;bottom:108px">Eight lanes, one per core measured. A block moves at the speed its environment ran the same image filter with one thread, as time over native:
+  <p class="tiny" style="position:absolute;left:110px;right:110px;bottom:108px">Eight lanes, one per core measured. A block moves at the speed its environment ran the same image filter with one thread, as time over native:
     <span class="native"><b>native 1.00</b></span>, <span class="chrome"><b>Chrome 1.17</b></span>, <span class="firefox"><b>Firefox 1.36</b></span>.</p>
   <aside class="notes">Good morning. One question: if I take the same parallel Rust code and run it natively and as WebAssembly with threads in Chrome and Firefox, does it scale the same way? The blocks move at each environment's measured one-thread speed.</aside>
 </section>
@@ -251,7 +251,7 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
       <ul class="plain">
         <li>Image and video processing, documents, visualization and machine learning now run on the web client.</li>
         <li>WebAssembly with threads lets that work use every core: shared memory, Web Workers, atomics.</li>
-        <li data-step="1">Earlier measurements are mostly <b>single-threaded</b>. The closest multithreaded study reports WASM in Chromium at 93.5 % single-threaded and 67.9 % multithreaded of the equivalent Node.js implementation. Missing: a sweep of the threads against native, in two engines, with synchronization controlled.</li>
+        <li data-step="1">Earlier measurements are mostly <b>single-threaded</b>. The closest multithreaded study: WASM in Chromium at 93.5 % single-threaded and 67.9 % multithreaded of the equivalent Node.js implementation.</li>
       </ul>
       <div class="wasm" aria-label="A browser tab with a coordinating worker and eight worker threads over one shared memory">
         <div class="row"><span class="t">main thread<br><i>cannot block</i></span><span class="t">coordinating worker</span><span class="w"></span><span class="w"></span><span class="w"></span><span class="w"></span><span class="w"></span><span class="w"></span><span class="w"></span><span class="w"></span></div>
@@ -271,7 +271,7 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
       </div>
     </div>
   </div>
-  <aside class="notes">Why it matters: heavy work is moving to the web client, and WebAssembly threads are how it uses all the cores: Web Workers over one shared memory. [next] What we know is mostly single-threaded: Jangda and others found WASM 45 to 55 percent slower than native with one thread. The closest multithreaded study, Kyriakou and Tselikas, reports WASM in Chromium at 93.5 percent of the equivalent Node.js implementation single-threaded and 67.9 percent multithreaded. [next] So two questions. RQ1: do speedup and efficiency evolve with the thread count as they do natively? [next] RQ2: how much does synchronization between threads change that gap?</aside>
+  <aside class="notes">Why it matters: heavy work is moving to the web client, and WebAssembly threads are how it uses all the cores: Web Workers over one shared memory. [next] What we know is mostly single-threaded: Jangda and others found WASM 45 to 55 percent slower than native with one thread. The closest multithreaded study, Kyriakou and Tselikas, reports WASM in Chromium at 93.5 percent of the equivalent Node.js implementation single-threaded and 67.9 percent multithreaded. This study adds native as the baseline, two engines, a sweep of the threads and synchronization as a controlled factor. [next] So two questions. RQ1: do speedup and efficiency evolve with the thread count as they do natively? [next] RQ2: how much does synchronization between threads change that gap?</aside>
 </section>
 
 <!-- 3 -->
@@ -318,10 +318,10 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
         <div class="ph">launch</div>
         <div class="ph">wait 3 s<br><span>browsers</span></div>
         <div class="ph">thread<br>pool</div>
-        <div class="ph">time an empty<br>parallel region</div>
-        <div class="ph wide">15 warm-up iterations<div class="bars warm"></div></div>
-        <div class="ph wide">10 measured iterations<div class="bars meas"></div></div>
-        <div class="ph value">their median<br><b id="run-value"></b></div>
+        <div class="ph">time an<br>empty region</div>
+        <div class="ph wide">15 warm-up<br>iterations<div class="bars warm"></div></div>
+        <div class="ph wide">10 measured<br>iterations<div class="bars meas"></div></div>
+        <div class="ph value">their<br>median<br><b id="run-value"></b></div>
       </div>
       <p class="tiny" style="margin-top:8px">One real run (Chrome, filter, 8 threads): the median of its 10 measured iterations is its single value. The warm-up length is fixed per workload from pilot data.</p>
     </div>
@@ -332,11 +332,11 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
     </div>
   </div>
   <div data-step="1" style="margin-top:20px">
-    <div class="gridhead"><span><b class="num" id="grid-count">0</b> of 5310 runs, in the order they ran</span><span class="tiny">one cell = one run: 59 configurations across, 30 repetitions down, the three environments interleaved by a seeded shuffle</span></div>
+    <div class="gridhead"><span><b class="num" id="grid-count">0</b> of 5310 runs, in the order they ran</span><span class="tiny">one cell = one run: 59 configurations across, 30 repetitions down</span></div>
     <div class="gridnames"><b class="native">native, 1770 runs</b><b class="chrome">Chrome, 1770 runs</b><b class="firefox">Firefox, 1770 runs</b></div>
     <canvas id="grid" width="3342" height="360"></canvas>
   </div>
-  <div class="planrow" data-step="2">
+  <div class="planrow" data-step="2" style="margin-top:12px">
     <p><b>10 tests fixed before any run</b>, at 8 threads: 2 for RQ1, 8 for RQ2</p>
     <p><b>Geometric means</b> of run values, bootstrap intervals over runs</p>
     <p><b>Holm correction</b> for the 10 tests at 0.05, shown as 99.5 % intervals</p>
@@ -356,13 +356,13 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
   </div>
   <div class="cols" style="gap:40px;grid-template-columns:minmax(0,1.12fr) minmax(0,1fr)">
     <div>
-      <div class="legend" style="margin-bottom:2px"><span><i class="sw-n"></i>native</span><span><i class="sw-c"></i>Chrome</span><span><i class="sw-f"></i>Firefox</span><span class="tiny">dashed: ideal; black bars: 95 % intervals</span></div>
+      <div class="legend" style="margin-bottom:2px"><span><i class="sw-n"></i>native</span><span><i class="sw-c"></i>Chrome</span><span><i class="sw-f"></i>Firefox</span><span class="tiny">dashed: ideal</span></div>
       <div id="sc-charts"></div>
     </div>
     <div>
       <h3 id="sc-title"></h3>
       <table class="data compact tight" id="sc-table"></table>
-      <p class="tiny" id="sc-note" style="margin:8px 0 14px"></p>
+      <p class="tiny" id="sc-note" style="margin:8px 0 10px"></p>
       <div data-step="1">
         <h3>The test fixed in advance: filter, 8 threads</h3>
         <div id="ch-rq1"></div>
@@ -462,7 +462,7 @@ body.static .arena8 .chip, body.static .fjrow .track i, body.static .runline .ph
     <tr data-step="2"><td><b class="firefox">Firefox updated itself</b></td><td style="text-align:left">the pinned 158.0 became 160.0 in the middle of a campaign</td><td style="text-align:left">an enterprise policy that disables updates, a version check before each campaign, the runs repeated</td></tr>
     <tr data-step="3"><td><b>Our own asymmetries</b></td><td style="text-align:left">a bounds check and a timed final step in one histogram variant only; later, different task splitting</td><td style="text-align:left">fixed, then every campaign measured again on one tagged build; builds are never mixed</td></tr>
   </table>
-  <p data-step="3" class="key" style="margin-top:34px">Each one was found by a check that every run carries: validation of the run's context, checksums, recorded versions, CPU time taken by other processes.</p>
+  <p data-step="3" class="key" style="margin-top:24px">Each one was found by a check that every run carries: its context validated, checksums, recorded versions, CPU time taken by other processes.</p>
   <aside class="notes">Making the measurement trustworthy was half the work: a browser is not a benchmark-friendly process. Chrome's browser process moved itself out of my CPU mask through the session bus, so I withhold the bus and check every run for escaped processes. [next] Firefox was still starting up during short iterations, so browser runs wait three seconds. [next] The pinned Firefox updated itself during a campaign; validation caught every run, and only an enterprise policy stops it. [next] And a review found asymmetries of our own between the histogram variants: fixed, and everything measured again on one build.</aside>
 </section>
 
@@ -787,7 +787,7 @@ function intervalChart(target, rows, options) {
 
 function barChart(target, values, options) {
   const { width, height, max, unit, digits, log } = options;
-  const root = svg(width, height), left = 130, right = 130, barHeight = (height - 20) / 3 - 16;
+  const root = svg(width, height), left = 120, right = 190, barHeight = (height - 20) / 3 - 16;
   ENVS.forEach((env, index) => {
     const y = 10 + index * (barHeight + 16);
     const share = log ? Math.log(values[env] / log) / Math.log(max / log) : values[env] / max;
@@ -799,7 +799,7 @@ function barChart(target, values, options) {
 }
 
 function memoryChart(target) {
-  const width = 540, height = 400, left = 78, bottom = 62, top = 16, right = 20;
+  const width = 540, height = 430, left = 78, bottom = 62, top = 46, right = 20;
   const root = svg(width, height);
   const x = (mbs) => left + (mbs / 4800) * (width - left - right);
   const y = (eff) => top + (1 - (eff - 0.65) / 0.4) * (height - top - bottom);
@@ -810,6 +810,7 @@ function memoryChart(target) {
   [0, 2000, 4000].forEach((tick) => add(root, "text", { x: x(tick), y: height - bottom + 30, class: "lbl", "text-anchor": "middle" }, tick));
   add(root, "path", { d: `M${left},${top} V${height - bottom} H${width - right}`, class: "axis" });
   add(root, "text", { x: (left + width) / 2, y: height - 4, class: "lbl", "text-anchor": "middle" }, "MB/s read by one thread");
+  add(root, "text", { x: 0, y: 24, class: "lbl" }, "efficiency with 8 threads");
   const ordered = [...DATA.memory].sort((a, b) => a.mbs - b.mbs);
   add(root, "path", { d: "M" + ordered.map((point) => `${x(point.mbs)},${y(point.eff)}`).join(" L"), fill: "none", stroke: "var(--graphite)", "stroke-width": 2, "stroke-dasharray": "6 6" });
   const shape = { scalar: "circle", baseline: "square", AVX2: "diamond" };
@@ -859,7 +860,7 @@ function build() {
   intervalChart(document.getElementById("ch-rq1"), DATA.rq1.map((row) => ({
     env: row.env, label: NAME[row.env], effect: row.effect, low: row.low, high: row.high, rejected: row.rejected,
     text: row.effect.toFixed(3),
-  })), { width: 700, rowHeight: 62, min: 0.96, max: 1.09, log: false, ticks: [0.98, 1, 1.02, 1.04, 1.06, 1.08], labelWidth: 150, axis: "speedup in the browser / speedup natively" });
+  })), { width: 700, rowHeight: 50, min: 0.96, max: 1.09, log: false, ticks: [0.98, 1, 1.02, 1.04, 1.06, 1.08], labelWidth: 150, axis: "speedup in the browser / speedup natively" });
 
   const rq2Rows = [];
   ["chrome", "firefox"].forEach((env) => DATA.rq2.k.forEach((k, index) => {
@@ -868,7 +869,7 @@ function build() {
   }));
   intervalChart(document.getElementById("ch-rq2"), rq2Rows, { width: 980, rowHeight: 68, min: 0.35, max: 2.8, log: true, ticks: [0.4, 0.5, 0.7, 1, 1.5, 2, 2.5], labelWidth: 270, axis: "effect, log scale: 1 = synchronization costs what it costs natively" });
 
-  barChart(document.getElementById("ch-instr"), DATA.instructionsPerPixel, { width: 540, height: 250, max: 6, unit: " instr/px", digits: 2 });
+  barChart(document.getElementById("ch-instr"), DATA.instructionsPerPixel, { width: 540, height: 250, max: 6, unit: " per pixel", digits: 2 });
   memoryChart(document.getElementById("ch-mem"));
 
   const robust = document.getElementById("tbl-robust");
@@ -1053,7 +1054,7 @@ const scaleDemo = (() => {
     const series = DEMO.scaling[WORKLOADS[state.workload][0]];
     const nativeMs = series.native[state.n].ms;
     document.getElementById("sc-title").textContent = `Measured at N = ${threadsNow}: ${WORKLOADS[state.workload][2]}`;
-    document.getElementById("sc-note").textContent = "Geometric means of 30 runs; time / native at the same N. " + (atomic
+    document.getElementById("sc-note").textContent = "Geometric means of 30 runs, 95 % intervals (black bars on the charts). " + (atomic
       ? "Shared atomic counters: more threads are slower than one."
       : "What WASM costs is a factor in time that does not grow with N, not scalability.");
     document.getElementById("sc-table").innerHTML = "<tr><th></th><th>Time, ms</th><th>Speedup [95 % CI]</th><th>Efficiency</th><th>Time / native</th></tr>".replace(/ /g, "\u00a0") +
@@ -1098,11 +1099,11 @@ const forkJoinDemo = (() => {
     const side = cutoff.sides[state.side];
     document.getElementById("fj-rows").innerHTML = ENVS.map((env) => {
       const cell = cutoff.cells.filter[env][state.side], forkJoin = cutoff.forkJoinUs[env], ratio = forkJoin / cell.t8us;
-      const yardstick = ratio < 1 ? `${fixed(ratio * 100, ratio < 0.1 ? 1 : 0)} % of T8` : `${fixed(ratio, 2)} times T8`;
+      const yardstick = ratio < 1 ? `${fixed(ratio * 100, ratio < 0.1 ? 1 : 0)} % of T8` : `${fixed(ratio, 2)} x T8`;
       return `<div class="fjrow"><b class="${env}">${NAME[env]}</b><span class="track"><i style="width:${cell.e * 100}%;background:${COLOR[env]}"></i></span><b class="num">${fixed(cell.e, 2)}</b>` +
-        `<span class="sub">T8 = ${cell.t8us >= 1000 ? fixed(cell.t8us / 1000, 2) + " ms" : fixed(cell.t8us, 0) + " µs"}; an empty fork-join (${fixed(forkJoin, forkJoin < 20 ? 1 : 0)} µs) is ${yardstick}</span></div>`;
+        `<span class="sub">T8 = ${cell.t8us >= 1000 ? fixed(cell.t8us / 1000, 2) + " ms" : fixed(cell.t8us, 0) + " µs"}, fork-join ${fixed(forkJoin, forkJoin < 20 ? 1 : 0)} µs: ${yardstick}</span></div>`;
     }).join("");
-    document.getElementById("fj-cap").textContent = `Bar: efficiency with 8 threads on a ${side} x ${side} image. T8: the time of one parallel region. Fork-join: handing the work to the threads and collecting it.`;
+    document.getElementById("fj-cap").textContent = `Bar: efficiency with 8 threads, ${side} x ${side} image. T8: time of one parallel region. Fork-join: handing the work to the threads and collecting it (empty region, measured apart).`;
   }
   // Untouched, it walks from the campaign's size down to the smallest one, where the efficiency is gone.
   async function walk(mine) {
