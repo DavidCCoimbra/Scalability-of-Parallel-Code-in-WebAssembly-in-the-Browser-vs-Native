@@ -1,0 +1,535 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exploratory campaigns - WASM threads vs native</title>
+<meta name="description" content="Five follow-up questions to the main results: is it the instruction or the sharing, does padding matter, does it hold with more work, without SIMD, with slow cores added.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .chart { width: 100%; height: auto; display: block; }
+  .chart text { font-family: var(--sans); fill: var(--muted); font-size: 11px; }
+  .chart .axis { stroke: var(--edge); }
+  .chart .ideal { stroke: var(--faint); stroke-dasharray: 4 4; fill: none; }
+  .controls-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 10px 0; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+  .fig text { font-family: var(--sans); font-size: 12px; fill: var(--body); }
+  .fig .box { fill: var(--panel); stroke: var(--edge); }
+  .fig .hot { fill: var(--chrome-soft); stroke: var(--chrome); }
+  .fig .cool { fill: var(--native-soft); stroke: var(--native); }
+  .fig .arrow { stroke: var(--muted); fill: none; marker-end: url(#ah); }
+
+  .controls .lbl { font-size: var(--fs-xs); color: var(--muted); margin-right: 6px; }
+  #fj-svg { width: 100%; height: auto; display: block; }
+  #fj-svg text { font-family: var(--sans); font-size: 11px; fill: var(--ink); }
+  #fj-svg .muted { fill: var(--muted); }
+  .fj-work { fill: var(--accent); opacity: 0.75; }
+  .fj-fork { fill: var(--copy); }
+  .fj-axis { stroke: var(--edge); }
+  .fj-end { stroke: var(--ink); stroke-dasharray: 4 3; }
+</style>
+</head>
+<body data-page="extras">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Exploratory campaigns</h1>
+    <p class="lead">The main campaign answers RQ1 and RQ2 with ten comparisons fixed in advance. The exploratory campaigns ask the follow-up questions on the same build and protocol, 30 runs per configuration: where Chrome's atomic cost comes from, whether the RQ1 picture holds when the work grows, when SIMD is removed and when E-cores are added, and how much work a parallel region needs before threads pay.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why "exploratory", and what does it change in how you read the numbers?</b> The ten primary comparisons were named before any data and tested with a bar raised for ten tests. These were not. Look at enough numbers and some look surprising by chance, so a result on this page describes and explains; it does not decide. The intervals are plain 95% intervals with no correction (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>).</p></aside>
+
+    <h2 id="questions">The questions</h2>
+    <ol>
+      <li><b>Is Chrome's extra cost contention for a shared counter, or the atomic instruction itself?</b> Give each thread its own counters, so that nothing is shared, and see what remains.</li>
+      <li><b>Does the padding between counters matter?</b> Remove it, so counters share cache lines, and see what
+        changes.</li>
+      <li><b>Does the browser keep up when the work grows with the threads?</b> Give each thread the same amount of image, where the main campaign fixes the image (weak scaling).</li>
+      <li><b>Is the browser gap caused by the SIMD instructions?</b> Build the filter without SIMD on both sides, and
+        natively with wider SIMD, and compare the gaps.</li>
+      <li><b>What happens with E-cores added?</b> Let the environments use E-cores too, up to 20 threads.</li>
+          <li><b>How much work does a parallel region need before threads pay?</b> Shrink the image until the fixed cost of starting the threads shows.</li>
+      <li><b>How small can a task inside a region be?</b> Fix the task size by hand and sweep it.</li>
+    </ol>
+
+    <h2 id="private">Private and packed atomics</h2>
+    <p><b>Questions 1 and 2.</b> The extras campaign (5400 runs, k = 1 and 256, N as in the main campaign) adds two variants of the atomic histogram next to the shared and the local ones:</p>
+    <ul>
+      <li><b>private</b>: every thread gets its own padded table of atomic counters, merged at the end. The same atomic instruction runs for every pixel, but no two threads touch the same counter. If Chrome still pays more here, the instruction itself is the cost.</li>
+      <li><b>packed</b>: the shared table without padding, eight 8-byte counters per 64-byte cache line, so different counters share a line (<span data-term="false-sharing">false sharing</span>). If Chrome's advantage at k = 256 disappears here, it depends on the padding.</li>
+    </ul>
+    <div data-code="bench/src/workloads/histogram/extras/private.rs|let own =|3" data-title="Private atomics: each worker adds to its own table"></div>
+    <p><b>Answer 1: it is partly the instruction.</b> Private atomics, with nothing shared, scale as the local histogram does, but still cost Chrome 1.83 to 1.85 times native at k = 1 and 1.08 to 1.09 at k = 256, at every N, N = 1 included. Firefox matches native. So of Chrome's 2.06 at k = 1 with sharing in this campaign, about 1.85 is already there with nothing shared. This campaign has times only, so it cannot say what that excess is. It has the shape that the native probe found for the compare-and-swap sequence (slow at k = 1, close to the locked add at k = 256), and the probe is what shows the cause (<a href="rq2.html#probe">A probe that changes only the add</a>).</p>
+    <p><b>Answer 2: yes, it depends on the padding.</b> Packed counters at k = 256 slow the atomic histogram by 1.18 times natively, 1.25 in Firefox and <b>3.45 in Chrome</b>. Chrome's advantage under spread contention needs every counter on its own line.</p>
+    <div class="controls-row"><span class="muted">k:</span><span id="w-k"></span></div>
+    <div id="w-table"></div>
+    <p class="src" data-src="extras-v3-scaling"></p>
+    <div class="controls-row"><span class="muted">Chrome / native time against N:</span><span id="w-variant"></span></div>
+    <div class="card"><div id="w-private"></div></div>
+    <p class="src" data-src="extras-v3-scaling"></p>
+    <details class="deeper"><summary>In depth: the reproduction check and the sort</summary>
+      <p>The configurations that this campaign shares with the main one reproduce it: time ratios of 0.96 to 1.08, geometric mean 1.00. The widest are the shared counters at k = 1, the configurations whose runs fall on several time levels. That is the control for comparing the two campaigns. The campaign also has a parallel sort as a third kind of workload: it scales similarly in all three environments (stable 7.8, unstable 6.2 to 6.4 at N = 8), in the "sort" tab of the table.</p>
+    </details>
+
+    <h2 id="weak">Weak scaling</h2>
+    <p><b>Question 3.</b> Every run so far uses the same 8192 x 8192 image for every N (strong scaling). <span data-term="weak-scaling">Weak scaling</span> grows the image with the threads, 8192 × 1024·N pixels, so each thread always has the same amount of work. Ideally the time stays the same for every N, and the weak efficiency T<sub>1</sub>/T<sub>N</sub> stays at 1 (1080 runs).</p>
+    <div class="controls-row"><span class="muted">Workload:</span><span id="w-weak-wl"></span></div>
+    <div class="card"><div id="w-weak"></div></div>
+    <p class="src" data-src="weak-v3-scaling"></p>
+    <p><b>Answer 3: yes.</b> The filter's weak efficiency at N = 8 is 0.86, 0.85 and 0.92 (native, Chrome, Firefox), and the local histogram's is 0.99 to 1.00, within 2 points of strong scaling. The time ratio browser / native stays flat in Chrome (1.16 to 1.20) and falls from 1.36 to 1.28 in Firefox: the browser factor does not grow with N here either.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why ask the question twice?</b> Strong scaling can hide a problem: with a fixed image, the share of each thread shrinks as N grows, and the shrinking work could mask a cost per thread. Weak scaling keeps the share fixed. The same answer in both supports the answer to RQ1.</p></aside>
+
+    <h2 id="simd">SIMD builds</h2>
+    <p><b>Question 4.</b> The filter processes several pixels per instruction with 128-bit <span data-term="simd">SIMD</span> on both sides (SSE2 natively, simd128 in WASM). If the SIMD code of the browser were worse than the native one, that alone could explain the gap. Two more builds change only this (720 runs): <b>scalar</b> (no SIMD on either side) and native <b>AVX2</b> (256-bit, native only, which breaks the same-flags rule on purpose to see the effect of faster code).</p>
+    <div class="controls-row"><span class="muted">Show:</span><span id="w-simd-what"></span></div>
+    <div class="card"><div id="w-simd"></div></div>
+    <p class="src" data-src="simd-v3-variants"></p>
+    <p><b>Answer 4: no, SIMD is not the cause.</b> Without SIMD the filter at N = 1 is 3.9 to 4.9 times slower, and the browser gap is <i>larger</i>, not smaller (Chrome 1.48 to 1.50, Firefox 1.59 to 1.60, flat across N). The gap has another source: the engines run about a third more instructions per pixel (<a href="explains.html#q3">question 3</a>).</p>
+    <details class="deeper"><summary>In depth: the faster the code, the worse it scales</summary>
+      <ul>
+        <li>The efficiency at N = 8 rises to 0.97 to 0.98 without SIMD and falls to 0.72 with AVX2. Across the three builds and the three environments, the faster one thread goes through memory, the less eight threads gain (<a href="explains.html#q1">question 1</a> has the chart).</li>
+        <li>The excess time T<sub>8</sub> - T<sub>1</sub>/8 grows natively with the speed of the code (207, 424 and 748 µs for scalar, baseline and AVX2), as it does when cores share memory bandwidth. In the browsers it changes little (Chrome 569 and 515, Firefox 317 and 349 µs), which is consistent with a fixed overhead per iteration, of which the fork-join is about a fifth.</li>
+      </ul>
+    </details>
+
+    <h2 id="hybrid">P-cores plus E-cores</h2>
+    <p><b>Question 5.</b> Besides the 8 P-cores that every other campaign uses, the i9-14900KF has 16 slower <span data-term="e-core">E-cores</span>. This campaign (900 runs) gives the environments the 8 P-cores plus 12 E-cores, with N up to 20, to see whether work stealing handles cores of unequal speed in every environment.</p>
+    <div class="controls-row"><span class="muted">Workload:</span><span id="w-hyb-wl"></span></div>
+    <div class="card"><div id="w-hybrid"></div></div>
+    <p class="src" data-src="hybrid-v3-scaling, campaign-v3-scaling"></p>
+    <p><b>Answer 5: it works in all three.</b> The E-cores gain the filter 10 to 18% in every environment over the P-only N = 8 of the main campaign (time at N = 8 there over time at N = 20 here), with browser / native at 1.15 to 1.36. Work stealing balances unequal cores in all three environments.</p>
+    <details class="deeper"><summary>In depth: speedups above N on the local histogram</summary>
+      <p>The local histogram at k = 1 reaches speedups above N (Chrome 29.5 at N = 20). That is not <span data-term="superlinear">super-linear</span> parallelism: the one-thread baseline is a store-forwarding chain on one counter (<a href="atomics.html#forwarding">Store forwarding at k = 1</a>), and ADR 0061 traces the excess to that loop running faster per core on an E-core than on a P-core. The evidence is a single-core probe on the earlier build (<code>data/earlier/probes/ecore-workloads.txt</code>), not repeated on <code>measured/v3</code>, so it is given as the likely reason, without numbers. The configurations with E-cores also vary more between the two builds than any other (up to 8%, where every P-core configuration is within 1%): which threads the kernel puts on which kind of core is not controlled and not recorded per thread (ADR 0094).</p>
+    </details>
+
+    <h2 id="cutoff">How much work a region needs: the cutoff campaign</h2>
+    <p><b>Question 6.</b> The answer to RQ1 holds "with enough work per parallel region". This campaign measures how much is enough in each environment.</p>
+
+    <p>The filter and the local histogram (k = 256) ran on images from 512 x 512 to 8192 x 8192 pixels, at N = 1 to 8 (4080 runs). The smallest images take a few microseconds, less than the browser clock resolves, so each timed sample repeats the work several times (<i>passes</i>) and divides by the count (ADR 0064). For each size, the chart shows the efficiency at 8 threads:</p>
+    <div class="controls-row"><span class="muted">Workload:</span><span id="w-wl"></span><span class="muted">Show:</span><span id="w-what"></span></div>
+    <div class="card"><div id="w-cut"></div></div>
+    <p class="src" data-src="cutoff-table"></p>
+    <p>The speedup never falls below 1: at these sizes threads never make the work slower. But the <span data-term="efficiency">efficiency</span> falls fast as the work shrinks, and faster in the browsers, because their fixed cost of starting and joining the threads (<a href="rq1.html#forkjoin">fork-join</a>) is larger.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why efficiency 0.5 as the limit?</b> Some limit is needed to turn a curve into one number, and at efficiency 0.5 (8 threads doing the work of 4) the overhead takes as much as it leaves. The study reads where each curve crosses it, and reports the work per call at that point:</p></aside>
+    <div id="w-est"></div>
+    <p class="src" data-src="cutoff-estimates"></p>
+    <p>For the filter that is 125 µs of one-thread work natively, 396 in Chrome and 459 in Firefox: <b>the browsers need 3 to 4 times the native work</b> to keep an efficiency of 0.5. With the 325 and 362 µs of the local histogram, that gives the "0.3 to 0.5 ms" of the advice. In Firefox it is about the cost of 8 fork-joins (8 × 60 µs); natively it is 1.4 times that (8 × 10.8 µs). The fork-join of the browsers here is the median of this campaign; Firefox's 20 µs clock makes it coarse.</p>
+    <h3 id="forkjoin-share">The fork-join next to the work</h3>
+    <p>Whether the fork-join matters depends on how much work lies between the fork and the join. Pick an environment, an image size and a thread count to see the fixed cost next to the work of the filter:</p>
+    <div class="card">
+      <div class="controls" id="fj-controls"></div>
+      <svg id="fj-svg" viewBox="0 0 640 260" role="img" aria-label="One parallel region: fork-join cost and work per thread"></svg>
+      <div class="stats" id="fj-stats"></div>
+      <p class="note muted" id="fj-note" style="font-size:var(--fs-sm)"></p>
+    </div>
+    <p class="src" data-src="campaign-v3-scaling, cutoff-table"></p>
+    <p>On the 8192 x 8192 image one pass takes milliseconds, so even Chrome's 110 µs is a few percent. On a 512 x 512 image, with 256 times less work, the same fork-join is a large part of the region, and Chrome's speedup at 8 threads falls well below the native one.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the main campaign use such a large image?</b> So that "do browser threads scale?" is answered for the work, not for the fork-join. A small image would measure mostly the fork-join and say "the browser scales badly", when the fact is "the fork-join of the browser is expensive". Both facts are reported: the scaling in <a href="rq1.html">RQ1: scaling</a>, the cost of small regions here.</p></aside>
+
+    <h2 id="rule">The 100:1 rule</h2>
+    <p>A rule of thumb of the course: a parallel region should do at least 100 times the work that its fork-join costs, so that the overhead stays under 1%. It is a second, stricter limit than efficiency 0.5. With the fork-join that this campaign measured (300 runs per environment), applied to the full 8192 x 8192 image at N = 8:</p>
+    <div id="w-rule"></div>
+    <p class="src" data-src="cutoff-model, cutoff-table"></p>
+    <p>Only native keeps the fork-join under 1% of the time at 8192² (0.33%; Firefox 1.4%, Chrome 2.7%). To reach 1%, the browsers need <b>6 to 10 times more work per region than native</b> (last column), because their fork-join costs that many times more.</p>
+    <p class="def"><b>Two limits, two numbers.</b> "3 to 4 times the work" and "6 to 10 times the work" measure the same thing, the more expensive fork-join of the browsers, against two limits. Efficiency 0.5 is a loose one (lose half); the 100:1 rule is a strict one (lose 1%). The handicap of the browser is larger against the strict limit because its fork-join is a larger share of a smaller budget. Both say: in the browser, make the regions larger.</p>
+
+    <h2 id="grain">How small a task may be: the grain sweep</h2>
+    <p><b>Question 7.</b></p>
+
+    <p>Inside one region, Rayon cuts the work into tasks that idle threads take (<a href="threads.html#grain">Grain size</a>). With tasks too small, the cost of handling each task dominates; with tasks too large, there are too few to keep every thread busy. Between the two the curve has a flat bottom: a U. The grain sweep (5400 runs, N = 8) fixes the task size by hand and measures the time; <i>adaptive</i> is Rayon's own split.</p>
+    <div class="controls-row"><span class="muted">Workload:</span><span id="w-gwl"></span><span class="muted">Image:</span><span id="w-gside"></span></div>
+    <div class="card"><div id="w-grain"></div><div id="w-grain-note" class="muted" style="font-size:var(--fs-sm)"></div></div>
+    <p class="src" data-src="grain-points, grain-best"></p>
+    <ul>
+      <li>At 8192² the best task is 4 rows for the filter and 64 to 128 KB for the local histogram, <b>in all three environments</b>. The bottom of the U is in the same place.</li>
+      <li>Too fine: histogram tasks of 1 KB cost 2.1 to 3.0 times the best. Too coarse: one task per thread, with nothing left for an idle thread to take, costs 1.01 times the best natively and 1.11 to 1.16 in the browsers.</li>
+      <li>Rayon's adaptive split is within 3% of the best at 8192², and 3 to 18% slower at 1024², where regions are small. Hence the advice: let Rayon choose.</li> <li>The atomic histogram hardly depends on the grain: at k = 256 its time stays within 0.3% of the best natively, 0.6% in Chrome and 1.3% in Firefox over every grain from 1 KB to 8192 KB. Contention for the counters sets its time, not how the image is cut.</li>
+    </ul>
+    <details class="deeper"><summary>In depth: the best grains, and the 100:1 rule applied per task</summary>
+      <p>The 100:1 rule falls in or near the flat region of best grains when it is applied to the <b>cost per task</b> (0.46 to 1.0 µs for the histogram, last columns), not to the fork-join of the region. A grain that is too fine pays the overhead per task, so inside a region that is the cost to set the rule against.</p>
+      <div id="w-best"></div>
+      <p class="src" data-src="grain-best"></p>
+    </details>
+
+    <h2 id="advice">What this means for a developer</h2>
+    <div class="grid two">
+      <div class="card"><h3>Make parallel regions coarse</h3><p>With 8 threads in the browser, start a parallel region only when it holds roughly <b>0.3 to 0.5 ms</b> of one-thread work. Below that, starting and joining the threads takes more than half of what they could give. Natively about <b>0.12 to 0.19 ms</b> is enough.</p></div>
+      <div class="card"><h3>Let Rayon pick the task size</h3><p>Inside a region, the best task size is the same in all three environments, and Rayon's own choice is within 3% of it. Tuning it by hand for the browser gains almost nothing.</p></div>
+      <div class="card"><h3>Avoid or spread synchronization</h3><p>Shared atomic counters that every thread adds to cost Chrome up to 2.3 times what they cost natively (<a href="rq2.html">RQ2</a>). Give each thread its own counters and merge at the end, or spread the sharing over many padded counters.</p></div>
+      <div class="card"><h3>Measure in the browser</h3><p>One source does not give one instruction stream: the engine compiles your atomics in its own way, and that is part of the cost (<a href="rq2.html#code">The machine code of one add</a>).</p></div>
+    </div>
+    <p>The next sections show where each number above comes from: the size of a whole parallel region (the cutoff campaign), a rule of thumb of the course, and the size of each task inside a region (the grain sweep).</p>
+    <p class="takeaway"><strong>In summary.</strong> With nothing shared, Chrome's atomic add already costs more than the native one at k = 1, and its advantage at k = 256 needs the padding. The answer to RQ1 holds when the work grows with the threads, without SIMD and with E-cores added. Threads pay in the browser as they do natively, but a parallel region needs about three to four times the native work to keep an efficiency of 0.5. Inside a region, Rayon's own split is within 3% of the best fixed task size at 8192 x 8192.</p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  (function () {
+  // lineChart(series, opts): inline SVG lines with optional CI bands.
+  // series: [{name, cls, points: [{x, y, lo, hi}]}]; opts: {xs, ymin, ymax, log, ideal, ylabel, xlabel, height, ref}
+  function lineChart(series, opts) {
+    opts = opts || {};
+    var W = 640, H = opts.height || 300, L = 48, R = 14, T = 14, B = 38;
+    var xs = opts.xs, all = [];
+    series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.lo != null ? p.lo : p.y, p.hi != null ? p.hi : p.y); }); });
+    var ymin = opts.ymin != null ? opts.ymin : Math.min.apply(null, all);
+    var ymax = opts.ymax != null ? opts.ymax : Math.max.apply(null, all);
+    var log = !!opts.log;
+    function fy(v) {
+      var a = log ? Math.log(ymin) : ymin, b = log ? Math.log(ymax) : ymax, t = log ? Math.log(v) : v;
+      return T + (H - T - B) * (1 - (t - a) / (b - a));
+    }
+    var xmin = xs[0], xmax = xs[xs.length - 1];
+    function fx(v) { return L + (W - L - R) * (v - xmin) / (xmax - xmin || 1); }
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (opts.label || "chart") + '">';
+    var ticks = opts.yticks || (function () {
+      var out = [], n = 5; for (var i = 0; i <= n; i++) { var v = log ? Math.exp(Math.log(ymin) + (Math.log(ymax) - Math.log(ymin)) * i / n) : ymin + (ymax - ymin) * i / n; out.push(v); } return out;
+    })();
+    ticks.forEach(function (v) {
+      svg += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(v) + '" y2="' + fy(v) + '" stroke-opacity="0.6"/>';
+      svg += '<text x="' + (L - 6) + '" y="' + (fy(v) + 4) + '" text-anchor="end">' + (v === 0 ? "0" : UI.fmt(v, v >= 10 ? 0 : v >= 1 ? 1 : 2)) + '</text>';
+    });
+    xs.forEach(function (v) { svg += '<text x="' + fx(v) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + (opts.xfmt ? opts.xfmt(v) : v) + '</text>'; });
+    if (opts.xlabel) svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + opts.xlabel + '</text>';
+    if (opts.ylabel) svg += '<text x="12" y="' + ((T + H - B) / 2) + '" text-anchor="middle" transform="rotate(-90 12 ' + ((T + H - B) / 2) + ')">' + opts.ylabel + '</text>';
+    if (opts.ideal) svg += '<path class="ideal" d="M' + fx(xmin) + ' ' + fy(Math.max(ymin, xmin)) + ' L' + fx(Math.min(xmax, ymax)) + ' ' + fy(Math.min(xmax, ymax)) + '"/>';
+    if (opts.ref != null) svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(opts.ref) + '" y2="' + fy(opts.ref) + '" stroke="var(--faint)" stroke-dasharray="4 4"/>';
+    series.forEach(function (s) {
+      var pts = s.points.filter(function (p) { return p.y != null; });
+      if (!pts.length) return;
+      var band = pts.filter(function (p) { return p.lo != null; });
+      if (band.length) {
+        var d = band.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.hi); }).join(" ") + " " +
+          band.slice().reverse().map(function (p) { return "L" + fx(p.x) + " " + fy(p.lo); }).join(" ") + " Z";
+        svg += '<path d="' + d + '" fill="var(--' + s.cls + ')" fill-opacity="0.15" stroke="none"/>';
+      }
+      svg += '<path d="' + pts.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.y); }).join(" ") + '" fill="none" stroke="var(--' + s.cls + ')" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="6 4"' : '') + '/>';
+      pts.forEach(function (p) {
+        svg += '<circle cx="' + fx(p.x) + '" cy="' + fy(p.y) + '" r="3.2" fill="var(--' + s.cls + ')"><title>' + s.name + ', ' + (opts.xfmt ? opts.xfmt(p.x) : p.x) + ': ' + UI.fmt(p.y, 3) + (p.lo != null ? ' [' + UI.fmt(p.lo, 3) + ', ' + UI.fmt(p.hi, 3) + ']' : '') + '</title></circle>';
+      });
+    });
+    var wrap = UI.el("div");
+    wrap.innerHTML = svg + "</svg>";
+    var legend = UI.el("div", { class: "legend-row" });
+    series.forEach(function (s) { legend.appendChild(UI.el("span", { class: "chip " + s.cls, text: s.name })); });
+    if (opts.ideal) legend.appendChild(UI.el("span", { class: "chip", text: "dashed: ideal" }));
+    wrap.appendChild(legend);
+    return wrap;
+  }
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+  var $ = UI.$, el = UI.el;
+  function S(env, wl, k, n) { return UI.row("extras-v3-scaling", { environment: env, workload: wl, k: k, threads: n }); }
+  var VARIANTS = [["hist-local", "local"], ["hist-atomic-private", "private"], ["hist-atomic", "shared"], ["hist-atomic-packed", "packed"]];
+
+  UI.segmented($("#w-k"), [{ value: 1, label: "k = 1" }, { value: 256, label: "k = 256" }, { value: "", label: "sort" }], function (k) {
+    var host = $("#w-table"); host.innerHTML = "";
+    var list = k === "" ? [["sort", "sort (stable)"], ["sort-unstable", "sort (unstable)"]] : VARIANTS;
+    host.appendChild(UI.table(list, [
+      { label: "N = 8", value: function (v) { return v[1]; } },
+      { label: "Native S", num: true, value: function (v) { var r = S("native", v[0], k, 8); return UI.fmt(r.speedup, 2); } },
+      { label: "Chrome S", num: true, value: function (v) { var r = S("chrome", v[0], k, 8); return UI.fmt(r.speedup, 2); } },
+      { label: "Chrome T / native", num: true, value: function (v) { return UI.fmt(S("chrome", v[0], k, 8).center_ns / S("native", v[0], k, 8).center_ns, 2); } },
+      { label: "Firefox S", num: true, value: function (v) { var r = S("firefox", v[0], k, 8); return UI.fmt(r.speedup, 2); } },
+      { label: "Firefox T / native", num: true, value: function (v) { return UI.fmt(S("firefox", v[0], k, 8).center_ns / S("native", v[0], k, 8).center_ns, 2); } }
+    ]));
+  });
+
+  UI.segmented($("#w-variant"), [{ value: 1, label: "k = 1" }, { value: 256, label: "k = 256" }], function (k) {
+    var host = $("#w-private"); host.innerHTML = "";
+    var cls = { "hist-local": "native", "hist-atomic-private": "chrome", "hist-atomic": "firefox", "hist-atomic-packed": "copy" };
+    var series = VARIANTS.map(function (v) {
+      return { name: v[1], cls: cls[v[0]], dash: v[0] === "hist-local", points: THREADS.map(function (n) {
+        var c = S("chrome", v[0], k, n), nat = S("native", v[0], k, n);
+        return { x: n, y: c && nat ? c.center_ns / nat.center_ns : null };
+      }) };
+    });
+    var all = []; series.forEach(function (s) { s.points.forEach(function (p) { if (p.y) all.push(p.y); }); }); all.push(1);
+    host.appendChild(lineChart(series, { xs: THREADS, ymin: Math.min.apply(null, all) * 0.9, ymax: Math.max.apply(null, all) * 1.1, log: true, ref: 1, xlabel: "threads N", ylabel: "Chrome / native", label: "Chrome over native time by histogram variant, k = " + k }));
+  });
+
+  UI.segmented($("#w-weak-wl"), [{ value: "filter", label: "Filter" }, { value: "hist-local", label: "Local k = 1" }], function (wl) {
+    var host = $("#w-weak"); host.innerHTML = "";
+    var series = ENVS.map(function (e) {
+      return { name: e[1], cls: e[0], points: THREADS.map(function (n) {
+        var r = UI.row("weak-v3-scaling", { environment: e[0], workload: wl, threads: n });
+        return r ? { x: n, y: r.weak_efficiency, lo: r.weak_efficiency_low, hi: r.weak_efficiency_high } : { x: n, y: null };
+      }) };
+    });
+    host.appendChild(lineChart(series, { xs: THREADS, ymin: 0.7, ymax: 1.05, yticks: [0.7, 0.8, 0.9, 1], ref: 1, xlabel: "threads N", ylabel: "weak efficiency T1/TN", label: "Weak efficiency against N" }));
+  });
+
+  var BUILDS = [["scalar", "scalar"], ["baseline", "SIMD 128 (baseline)"], ["avx2", "AVX2 (native only)"]];
+  function V(b, env, n) { return UI.row("simd-v3-variants", { build: b, environment: env, threads: n }); }
+  UI.segmented($("#w-simd-what"), [{ value: "over_native", label: "browser / native" }, { value: "efficiency", label: "efficiency" }, { value: "excess", label: "excess time T8 - T1/8" }], function (what) {
+    var host = $("#w-simd"); host.innerHTML = "";
+    if (what === "efficiency") {
+      var series = [];
+      BUILDS.forEach(function (b, i) {
+        ENVS.forEach(function (e) {
+          if (!V(b[0], e[0], 1)) return;
+          series.push({ name: e[1] + ", " + b[1], cls: e[0], dash: b[0] === "scalar", points: THREADS.map(function (n) { var r = V(b[0], e[0], n); return { x: n, y: r && r.efficiency }; }) });
+        });
+      });
+      host.appendChild(lineChart(series, { xs: THREADS, ymin: 0.7, ymax: 1.02, yticks: [0.7, 0.8, 0.9, 1], xlabel: "threads N", ylabel: "efficiency", label: "Filter efficiency by build" }));
+      host.appendChild(el("p", { class: "muted", style: "font-size:var(--fs-sm)", text: "Dashed: scalar build. The lowest native line is AVX2." }));
+    } else if (what === "over_native") {
+      host.appendChild(lineChart(["chrome", "firefox"].reduce(function (acc, env) {
+        return acc.concat([["baseline", "SIMD"], ["scalar", "scalar"]].map(function (b) {
+          return { name: envName(env) + ", " + b[1], cls: env, dash: b[0] === "scalar", points: THREADS.map(function (n) { var r = V(b[0], env, n); return { x: n, y: r && r.over_native }; }) };
+        }));
+      }, []), { xs: THREADS, ymin: 1, ymax: 1.7, yticks: [1, 1.2, 1.4, 1.6], xlabel: "threads N", ylabel: "time / native", label: "Browser over native time by build" }));
+      host.appendChild(el("p", { class: "muted", style: "font-size:var(--fs-sm)", text: "Dashed: scalar build, where the browser gap is larger." }));
+    } else {
+      host.appendChild(UI.bars(BUILDS.map(function (b) {
+        return { label: b[1], values: ENVS.filter(function (e) { return V(b[0], e[0], 8); }).map(function (e) { return { name: e[1], label: e[1], value: V(b[0], e[0], 8).excess_ns / 1000, cls: e[0] }; }) };
+      }), { digits: 0, unit: " µs" }));
+    }
+  });
+
+  var HN = [1, 8, 12, 16, 20];
+  UI.segmented($("#w-hyb-wl"), [{ value: "filter", label: "Filter" }, { value: "hist-local", label: "Local k = 1" }], function (wl) {
+    var host = $("#w-hybrid"); host.innerHTML = "";
+    var series = ENVS.map(function (e) {
+      return { name: e[1], cls: e[0], points: HN.map(function (n) {
+        var r = UI.row("hybrid-v3-scaling", { environment: e[0], workload: wl, threads: n });
+        return r ? { x: n, y: r.speedup, lo: r.speedup_low, hi: r.speedup_high } : { x: n, y: null };
+      }) };
+    });
+    var max = wl === "filter" ? 10 : 32;
+    host.appendChild(lineChart(series, { xs: HN, ymin: 0, ymax: max, xlabel: "threads N (above 8: E-cores added)", ylabel: "speedup", label: "Speedup with E-cores" }));
+    if (wl === "filter") {
+      host.appendChild(UI.table(ENVS, [
+        { label: "Filter", value: function (e) { return e[1]; } },
+        { label: "Main campaign N = 8, ms", num: true, value: function (e) { return UI.fmt(UI.row("campaign-v3-scaling", { environment: e[0], workload: "filter", threads: 8 }).center_ns / 1e6, 2); } },
+        { label: "P + E, N = 20, ms", num: true, value: function (e) { return UI.fmt(UI.row("hybrid-v3-scaling", { environment: e[0], workload: "filter", threads: 20 }).center_ns / 1e6, 2); } },
+        { label: "Gain", num: true, value: function (e) { return UI.fmt(UI.row("campaign-v3-scaling", { environment: e[0], workload: "filter", threads: 8 }).center_ns / UI.row("hybrid-v3-scaling", { environment: e[0], workload: "filter", threads: 20 }).center_ns, 3) + "×"; } }
+      ]));
+    }
+  });
+
+  })();
+  (function () {
+  // lineChart(series, opts): inline SVG lines with optional CI bands.
+  // series: [{name, cls, points: [{x, y, lo, hi}]}]; opts: {xs, ymin, ymax, log, ideal, ylabel, xlabel, height, ref}
+  function lineChart(series, opts) {
+    opts = opts || {};
+    var W = 640, H = opts.height || 300, L = 48, R = 14, T = 14, B = 38;
+    var xs = opts.xs, all = [];
+    series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.lo != null ? p.lo : p.y, p.hi != null ? p.hi : p.y); }); });
+    var ymin = opts.ymin != null ? opts.ymin : Math.min.apply(null, all);
+    var ymax = opts.ymax != null ? opts.ymax : Math.max.apply(null, all);
+    var log = !!opts.log;
+    function fy(v) {
+      var a = log ? Math.log(ymin) : ymin, b = log ? Math.log(ymax) : ymax, t = log ? Math.log(v) : v;
+      return T + (H - T - B) * (1 - (t - a) / (b - a));
+    }
+    var xmin = xs[0], xmax = xs[xs.length - 1];
+    function fx(v) { return L + (W - L - R) * (v - xmin) / (xmax - xmin || 1); }
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (opts.label || "chart") + '">';
+    var ticks = opts.yticks || (function () {
+      var out = [], n = 5; for (var i = 0; i <= n; i++) { var v = log ? Math.exp(Math.log(ymin) + (Math.log(ymax) - Math.log(ymin)) * i / n) : ymin + (ymax - ymin) * i / n; out.push(v); } return out;
+    })();
+    ticks.forEach(function (v) {
+      svg += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(v) + '" y2="' + fy(v) + '" stroke-opacity="0.6"/>';
+      svg += '<text x="' + (L - 6) + '" y="' + (fy(v) + 4) + '" text-anchor="end">' + (v === 0 ? "0" : UI.fmt(v, v >= 10 ? 0 : v >= 1 ? 1 : 2)) + '</text>';
+    });
+    xs.forEach(function (v) { svg += '<text x="' + fx(v) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + (opts.xfmt ? opts.xfmt(v) : v) + '</text>'; });
+    if (opts.xlabel) svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + opts.xlabel + '</text>';
+    if (opts.ylabel) svg += '<text x="12" y="' + ((T + H - B) / 2) + '" text-anchor="middle" transform="rotate(-90 12 ' + ((T + H - B) / 2) + ')">' + opts.ylabel + '</text>';
+    if (opts.ideal) svg += '<path class="ideal" d="M' + fx(xmin) + ' ' + fy(Math.max(ymin, xmin)) + ' L' + fx(Math.min(xmax, ymax)) + ' ' + fy(Math.min(xmax, ymax)) + '"/>';
+    if (opts.ref != null) svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(opts.ref) + '" y2="' + fy(opts.ref) + '" stroke="var(--faint)" stroke-dasharray="4 4"/>';
+    series.forEach(function (s) {
+      var pts = s.points.filter(function (p) { return p.y != null; });
+      if (!pts.length) return;
+      var band = pts.filter(function (p) { return p.lo != null; });
+      if (band.length) {
+        var d = band.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.hi); }).join(" ") + " " +
+          band.slice().reverse().map(function (p) { return "L" + fx(p.x) + " " + fy(p.lo); }).join(" ") + " Z";
+        svg += '<path d="' + d + '" fill="var(--' + s.cls + ')" fill-opacity="0.15" stroke="none"/>';
+      }
+      svg += '<path d="' + pts.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.y); }).join(" ") + '" fill="none" stroke="var(--' + s.cls + ')" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="6 4"' : '') + '/>';
+      pts.forEach(function (p) {
+        svg += '<circle cx="' + fx(p.x) + '" cy="' + fy(p.y) + '" r="3.2" fill="var(--' + s.cls + ')"><title>' + s.name + ', ' + (opts.xfmt ? opts.xfmt(p.x) : p.x) + ': ' + UI.fmt(p.y, 3) + (p.lo != null ? ' [' + UI.fmt(p.lo, 3) + ', ' + UI.fmt(p.hi, 3) + ']' : '') + '</title></circle>';
+      });
+    });
+    var wrap = UI.el("div");
+    wrap.innerHTML = svg + "</svg>";
+    var legend = UI.el("div", { class: "legend-row" });
+    series.forEach(function (s) { legend.appendChild(UI.el("span", { class: "chip " + s.cls, text: s.name })); });
+    if (opts.ideal) legend.appendChild(UI.el("span", { class: "chip", text: "dashed: ideal" }));
+    wrap.appendChild(legend);
+    return wrap;
+  }
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+  var $ = UI.$, el = UI.el;
+  var SIDES = [512, 1024, 2048, 4096, 8192];
+  function W(wl) { return wl === "filter" ? { workload: "filter" } : { workload: "hist-local", k: 256 }; }
+  function cut(env, wl, side) { var w = W(wl); w.environment = env; w.side = side; w.threads = 8; return UI.row("cutoff-table", w); }
+  var curWl = "filter", curWhat = "efficiency";
+  function drawCut() {
+    var host = $("#w-cut"); host.innerHTML = "";
+    var xs = SIDES.map(function (s, i) { return i; });
+    var series = ENVS.map(function (e) {
+      return { name: e[1], cls: e[0], points: SIDES.map(function (s, i) {
+        var r = cut(e[0], curWl, s);
+        return r ? { x: i, y: curWhat === "efficiency" ? r.efficiency : r.speedup, lo: curWhat === "speedup" ? r.speedup_low : null, hi: curWhat === "speedup" ? r.speedup_high : null } : { x: i, y: null };
+      }) };
+    });
+    host.appendChild(lineChart(series, { xs: xs, xfmt: function (i) { return SIDES[i] + "²"; }, ymin: 0, ymax: curWhat === "efficiency" ? 1.1 : 8.5, yticks: curWhat === "efficiency" ? [0, 0.25, 0.5, 0.75, 1] : [0, 2, 4, 6, 8], ref: curWhat === "efficiency" ? 0.5 : 4, xlabel: "image side (pixels)", ylabel: curWhat + " at N = 8", label: "Cutoff: " + curWhat + " against image size" }));
+    host.appendChild(el("p", { class: "muted", style: "font-size:var(--fs-sm)", text: curWhat === "efficiency" ? "Dashed line: efficiency 0.5, half the threads' worth kept." : "Dashed line: speedup 4, half the threads' worth kept." }));
+  }
+  UI.segmented($("#w-wl"), [{ value: "filter", label: "Filter" }, { value: "local", label: "Local k = 256" }], function (v) { curWl = v; drawCut(); });
+  UI.segmented($("#w-what"), [{ value: "efficiency", label: "efficiency" }, { value: "speedup", label: "speedup" }], function (v) { curWhat = v; drawCut(); });
+
+  $("#w-est").appendChild(UI.table(UI.rows("cutoff-estimates", { threads: 8, criterion: "worth-it" }), [
+    { label: "Workload", value: function (r) { return r.workload === "filter" ? "filter" : "local k = 256"; } },
+    { label: "Environment", value: function (r) { return envName(r.environment); } },
+    { label: "Image side at efficiency 0.5", num: true, value: function (r) { return r.side + " [" + r.side_low + ", " + r.side_high + "]"; } },
+    { label: "Single-thread work there, µs", num: true, value: function (r) { return UI.fmt(r.work_us, 0); } }
+  ]));
+
+  $("#w-rule").appendChild(UI.table(ENVS, [
+    { label: "Filter, 8192², N = 8", value: function (e) { return e[1]; } },
+    { label: "Fork-join, µs", num: true, value: function (e) { return UI.fmt(UI.row("cutoff-model", { environment: e[0], workload: "filter" }).fork_join_us, 1); } },
+    { label: "Time at N = 8, µs", num: true, value: function (e) { return UI.fmt(cut(e[0], "filter", 8192).tn_ns / 1000, 0); } },
+    { label: "Fork-join share", num: true, value: function (e) { return UI.fmt(100 * UI.row("cutoff-model", { environment: e[0], workload: "filter" }).fork_join_us / (cut(e[0], "filter", 8192).tn_ns / 1000), 2) + "%"; } },
+    { label: "Work for 1% (100:1), µs", num: true, value: function (e) { return UI.fmt(UI.row("cutoff-model", { environment: e[0], workload: "filter" }).work_1pct_us, 0); } }
+  ]));
+
+  var gWl = "filter", gSide = 8192;
+  function drawGrain() {
+    var host = $("#w-grain"); host.innerHTML = "";
+    var w = gWl === "filter" ? "filter" : "hist-local";
+    var pts = UI.rows("grain-points", { workload: w, side: gSide });
+    var grains = []; pts.forEach(function (p) { if (p.grain !== "adaptive" && grains.indexOf(p.grain) < 0) grains.push(p.grain); });
+    grains.sort(function (a, b) { return a - b; });
+    var xs = grains.map(function (g) { return Math.log2(g); });
+    var series = ENVS.map(function (e) {
+      return { name: e[1], cls: e[0], points: grains.map(function (g) {
+        var p = pts.filter(function (q) { return q.environment === e[0] && q.grain === g; })[0];
+        return p ? { x: Math.log2(g), y: p.relative_to_best } : { x: Math.log2(g), y: null };
+      }) };
+    });
+    var all = [1]; series.forEach(function (s) { s.points.forEach(function (p) { if (p.y) all.push(p.y); }); });
+    var unit = gWl === "filter" ? " rows" : " KB";
+    host.appendChild(lineChart(series, { xs: xs, xfmt: function (x) { return String(Math.round(Math.pow(2, x))); }, ymin: 0.95, ymax: Math.max.apply(null, all) * 1.05, log: true, ref: 1, xlabel: "task size (" + unit.trim() + " per task, log scale)", ylabel: "time / best", label: "Grain U-curve" }));
+    var notes = ENVS.map(function (e) {
+      var b = UI.row("grain-best", { environment: e[0], workload: w, side: gSide });
+      return b ? e[1] + ": best " + b.best_grain + unit + ", adaptive " + UI.fmt(b.adaptive_over_best, 3) + "× the best" : "";
+    });
+    $("#w-grain-note").textContent = notes.join(". ") + ".";
+  }
+  UI.segmented($("#w-gwl"), [{ value: "filter", label: "Filter" }, { value: "local", label: "Local k = 256" }], function (v) { gWl = v; drawGrain(); });
+  UI.segmented($("#w-gside"), [{ value: 8192, label: "8192²" }, { value: 1024, label: "1024²" }], function (v) { gSide = v; drawGrain(); });
+
+  $("#w-best").appendChild(UI.table(UI.rows("grain-best", { side: 8192 }), [
+    { label: "8192², N = 8", value: function (r) { return (r.workload === "filter" ? "filter" : "local k = 256") + ", " + envName(r.environment); } },
+    { label: "Best grain", num: true, value: function (r) { return r.best_grain + " " + r.grain_unit; } },
+    { label: "Flat region", num: true, value: function (r) { return r.flat_from + " to " + r.flat_to; } },
+    { label: "Adaptive / best", num: true, value: function (r) { return UI.fmt(r.adaptive_over_best, 3); } },
+    { label: "Cost per task, ns", num: true, value: function (r) { return UI.fmt(r.task_cost_ns, 0); } },
+    { label: "100:1 on task cost", num: true, value: function (r) { return UI.fmt(r.grain_100task, 1) + " " + r.grain_unit; } }
+  ]));
+
+  })();
+  (function () {
+  var el = UI.el, $ = UI.$, D = UI.D, fmt = UI.fmt;
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var FJ = D.forkJoin || [];
+  function fj(env, n, probe) {
+    var r = FJ.filter(function (x) { return x.environment === env && x.threads === n && x.probe === (probe || "broadcast"); })[0];
+    return r ? r.median_us : null;
+  }
+
+  // --- fork-join widget --------------------------------------------------------------------
+  var state = { env: "chrome", size: "large", n: 8 };
+  var SIZES = { small: { label: "512² small", ns: [1, 2, 4, 8] }, large: { label: "8192² large", ns: [1, 2, 4, 6, 7, 8] } };
+  function times(env, size, n) {
+    if (size === "large") {
+      var a = UI.row("campaign-v3-scaling", { environment: env, workload: "filter", threads: 1 });
+      var b = UI.row("campaign-v3-scaling", { environment: env, workload: "filter", threads: n });
+      return a && b ? { t1: a.center_ns / 1000, tn: b.center_ns / 1000, speedup: b.speedup } : null;
+    }
+    var c = UI.row("cutoff-table", { environment: env, workload: "filter", side: 512, threads: n });
+    return c ? { t1: c.t1_ns / 1000, tn: c.tn_ns / 1000, speedup: c.speedup } : null;
+  }
+  var ctl = $("#fj-controls"), nHost = el("span");
+  function group(label, host) { var g = el("span"); g.appendChild(el("span", { class: "lbl", text: label })); g.appendChild(host); ctl.appendChild(g); return host; }
+  var envHost = group("environment", el("span")), sizeHost = group("image", el("span")); group("threads N", nHost);
+  UI.segmented(envHost, ENVS.map(function (e) { return { label: e[1], value: e[0] }; }), function (v) { state.env = v; draw(); }, state.env);
+  UI.segmented(sizeHost, [{ label: SIZES.small.label, value: "small" }, { label: SIZES.large.label, value: "large" }], function (v) {
+    state.size = v; if (SIZES[v].ns.indexOf(state.n) < 0) state.n = 8; buildN(); draw();
+  }, state.size);
+  function buildN() {
+    nHost.innerHTML = "";
+    UI.segmented(nHost, SIZES[state.size].ns.map(function (n) { return { label: String(n), value: n }; }), function (v) { state.n = v; draw(); }, state.n);
+  }
+  buildN();
+
+  function draw() {
+    var svg = $("#fj-svg"), t = times(state.env, state.size, state.n), f = fj(state.env, state.n, "broadcast") || 0;
+    if (!t) { svg.innerHTML = ""; return; }
+    var n = state.n, ideal = t.t1 / n, W = 640, left = 70, right = 20, top = 22, lane = Math.min(24, 180 / n);
+    var scale = (W - left - right) / Math.max(t.tn, ideal + f);
+    var s = '<line class="fj-axis" x1="' + left + '" y1="' + (top - 6) + '" x2="' + left + '" y2="' + (top + n * lane + 4) + '"/>';
+    for (var i = 0; i < n; i++) {
+      var y = top + i * lane;
+      s += '<text class="muted" x="' + (left - 8) + '" y="' + (y + lane * 0.65) + '" text-anchor="end">thread ' + (i + 1) + '</text>';
+      s += '<rect class="fj-fork" x="' + left + '" y="' + (y + 2) + '" width="' + Math.max(1, f * scale) + '" height="' + (lane - 5) + '" rx="2"><title>fork-join ' + fmt(f) + ' µs</title></rect>';
+      s += '<rect class="fj-work" x="' + (left + f * scale) + '" y="' + (y + 2) + '" width="' + Math.max(1, ideal * scale) + '" height="' + (lane - 5) + '" rx="2"><title>T1 / N = ' + fmt(ideal) + ' µs</title></rect>';
+    }
+    var xEnd = left + t.tn * scale, yb = top + n * lane;
+    s += '<line class="fj-end" x1="' + xEnd + '" y1="' + (top - 8) + '" x2="' + xEnd + '" y2="' + (yb + 6) + '"/>';
+    s += '<text x="' + Math.min(xEnd, W - 180) + '" y="' + (yb + 22) + '">measured T_N = ' + fmt(t.tn) + ' µs</text>';
+    s += '<rect class="fj-fork" x="' + left + '" y="' + (yb + 34) + '" width="12" height="10"/><text class="muted" x="' + (left + 18) + '" y="' + (yb + 43) + '">empty fork-join (calibration)</text>';
+    s += '<rect class="fj-work" x="' + (left + 210) + '" y="' + (yb + 34) + '" width="12" height="10"/><text class="muted" x="' + (left + 228) + '" y="' + (yb + 43) + '">ideal share of the work, T1 / N</text>';
+    svg.setAttribute("viewBox", "0 0 " + W + " " + (yb + 56));
+    svg.innerHTML = s;
+    var st = $("#fj-stats"); st.innerHTML = "";
+    [[fmt(t.t1) + " µs", "T1, one thread"], [fmt(t.tn) + " µs", "T_N measured, N = " + n], [fmt(t.speedup, 2), "speedup T1 / T_N"], [fmt(f) + " µs", "one empty fork-join at N = " + n], [n > 1 ? fmt(100 * f / t.tn, 1) + " %" : "–", "fork-join / T_N"]].forEach(function (x) {
+      st.appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: x[0] }), el("div", { class: "k", text: x[1] })]));
+    });
+    $("#fj-note").textContent = "The dashed line is the measured iteration time. The gap between the end of the bars and the line is everything that is neither ideal work nor an empty fork-join: imbalance, memory bandwidth, the browser's own overhead per iteration. " +
+      (state.size === "small" ? "On 512² the fork-join is a large part of a ~" + fmt(t.tn) + " µs region." : "On 8192² the fork-join is a small part of a ~" + fmt(t.tn / 1000, 1) + " ms region.");
+  }
+  draw();
+  })();
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

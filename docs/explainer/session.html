@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The session of a build - WASM threads vs native</title>
+<meta name="description" content="The measuring session of measured/v3 from the first check to the last campaign: the per-core check, the build made twice, the gate that failed on one cell, the rules fixed before the data and the campaigns.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .fig text { font-family: var(--sans); font-size: 12px; fill: var(--body); }
+  .fig .box { fill: var(--panel); stroke: var(--edge); }
+  .fig .hot { fill: var(--chrome-soft); stroke: var(--chrome); }
+  .fig .cool { fill: var(--native-soft); stroke: var(--native); }
+  .fig .good { fill: color-mix(in srgb, var(--good) 14%, var(--panel)); stroke: var(--good); }
+  .fig .arrow { stroke: var(--muted); fill: none; marker-end: url(#ah); }
+  .fig .num { font-weight: 700; fill: var(--ink); }
+</style>
+</head>
+<body data-page="session">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>The session of a build</h1>
+    <p class="lead">Everything the study reports was measured in one session on one machine and one build. This guide walks through that session in order: check every core, build twice and compare, run a gate, fix the rules, then measure. It also records what went wrong, including a gate that failed on one cell twice, and how each problem was handled by a rule written before the data.</p>
+
+    <h2 id="twice">Why the study was measured twice</h2>
+    <p>The study was first measured on a copy of the program called <code>measured/v2</code>. Its results were
+      valid. But writing them up left a list of things that could only be <i>declared</i>, not answered: the speedup
+      had no plain sequential code to compare with, the two histograms did not split their work the same way, a few
+      slow runs had no established cause, nobody knew for sure which of a browser's two compilers was being
+      measured.</p>
+    <p>A new copy, <code>measured/v3</code>, adds what answers them: plain sequential versions of the workloads, the same task-splitting code for both histograms, and more recorded per run. <i>Every</i> campaign was run again on it, and the study reports v3 only. The asymmetries in the measured code had been fixed earlier, from the first build to the second (<a href="environments.html#v2">The build history</a>); v3 is a replication of v2, not a correction of its results.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not keep the v2 numbers and add the new ones next to them?</b> Because two copies of a
+      program are two different programs to a CPU. Moving a function by a few bytes can change a timing by a percent
+      or two, for reasons that have nothing to do with what is being studied. A table that mixed runs of two builds
+      would show differences that are only the build. So the rule is: one build per comparison, never mixed
+      (ADR 0062), and the older data is kept apart at the tag <code>data/v2</code>.</p></aside>
+    <p>There is one more thing to be honest about. The v2 results were already known when v3 was measured. That
+      makes v3 a <b><span data-term="replication">replication</span> with known results</b>, not a blind experiment. To keep the known numbers from steering
+      any choice, every rule on this page was written down before any v3 run existed (ADR 0084).</p>
+
+    <h2 id="steps">The steps, in order</h2>
+    <figure class="figure"><svg class="fig" viewBox="0 0 720 210" role="img" aria-label="The eight steps of the session, from host state to results">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker></defs>
+      <rect class="box" x="6" y="14" width="160" height="62" rx="8"/><text class="num" x="18" y="36">1</text><text x="34" y="36" font-weight="600">Host state</text><text x="18" y="56">the PC as found,</text><text x="18" y="70">written to a file</text>
+      <path class="arrow" d="M168 45 h 14"/>
+      <rect class="box" x="186" y="14" width="160" height="62" rx="8"/><text class="num" x="198" y="36">2</text><text x="214" y="36" font-weight="600">Environment</text><text x="198" y="56">set up and checked;</text><text x="198" y="70">tests, quick run</text>
+      <path class="arrow" d="M348 45 h 14"/>
+      <rect class="cool" x="366" y="14" width="160" height="62" rx="8"/><text class="num" x="378" y="36">3</text><text x="394" y="36" font-weight="600">Per-core check</text><text x="378" y="56">each P-core alone,</text><text x="378" y="70">10 runs each</text>
+      <path class="arrow" d="M528 45 h 14"/>
+      <rect class="cool" x="546" y="14" width="168" height="62" rx="8"/><text class="num" x="558" y="36">4</text><text x="574" y="36" font-weight="600">Build, twice</text><text x="558" y="56">equal digests, then</text><text x="558" y="70">the tag measured/v3</text>
+      <path class="arrow" d="M630 78 v 22 h -540 v 22"/>
+      <rect class="hot" x="6" y="126" width="160" height="62" rx="8"/><text class="num" x="18" y="148">5</text><text x="34" y="148" font-weight="600">Gate</text><text x="18" y="168">a rehearsal: 135 runs,</text><text x="18" y="182">four criteria</text>
+      <path class="arrow" d="M168 157 h 14"/>
+      <rect class="good" x="186" y="126" width="160" height="62" rx="8"/><text class="num" x="198" y="148">6</text><text x="214" y="148" font-weight="600">Main campaign</text><text x="198" y="168">5310 runs, about 14 h,</text><text x="198" y="182">then the others</text>
+      <path class="arrow" d="M348 157 h 14"/>
+      <rect class="box" x="366" y="126" width="160" height="62" rx="8"/><text class="num" x="378" y="148">7</text><text x="394" y="148" font-weight="600">Engine code</text><text x="378" y="168">what each engine runs,</text><text x="378" y="182">captured once</text>
+      <path class="arrow" d="M528 157 h 14"/>
+      <rect class="box" x="546" y="126" width="168" height="62" rx="8"/><text class="num" x="558" y="148">8</text><text x="574" y="148" font-weight="600">Results</text><text x="558" y="168">every table and figure,</text><text x="558" y="182">then tables-check</text>
+    </svg><figcaption>Each step writes a log and a done mark, a failed step stops the session, and the next call continues from it. Only step 6 produces results.</figcaption></figure>
+    <p>The steps are run by one command per stage, <code>make session STAGE=preflight|build|gate|main|extras</code>,
+      and each stage keeps a progress log in <code>data/sessions/v3/</code>. Here is the real one of the main
+      campaign, including the step that failed for a boring reason and how it was handled:</p>
+    <div data-code="data/sessions/v3/main/progress.log|start  01-campaign|7" data-title="The progress log of the main stage"></div>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why keep a log line about a failed step?</b> A session that "just worked" is not more
+      trustworthy than one with a recorded hiccup; it is less, because you cannot tell whether nothing happened or
+      nothing was written down. Here the results step failed because a folder did not exist yet. The note says so,
+      says what was run by hand instead, and on which commit. Anyone can check that the tables are the output of
+      that command.</p></aside>
+
+    <h2 id="cores">The per-core check</h2>
+    <p>The measuring PC has a known flaw: one of its eight fast cores (<span data-term="p-core">P-cores</span>) is
+      degraded. That had been known for weeks as "it fails at high frequencies", which is why
+      <span data-term="turbo-boost">turbo</span> is off. Before building anything, the session tested every core on
+      its own.</p>
+    <p><b>On the PC as found</b> (turbo on, the usual desktop settings), a test program pinned to that core crashed
+      in 17 of 18 tries, and in 0 of 28 tries on the other cores. <b>On the prepared PC</b> (turbo off, the settings
+      every measurement uses) the same test passed 30 of 30 times on that core. Then the filter itself was timed on
+      one core at a time:</p>
+    <div class="card"><div id="w-cores"></div></div>
+    <p class="muted" style="font-size:var(--fs-sm)">Computed by <code>scripts/explainer_data.py</code> from the 80
+      runs in <code>data/checks/core-check/runs/</code>: the median over a CPU's 10 runs of each run's median
+      iteration. A check, never a result.</p>
+    <p>CPU 12 is the degraded core. On the prepared PC it is as fast as the others, and all 80 runs gave the right
+      <span data-term="checksum">checksum</span>.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why keep a flawed core in the measurement at all?</b> The rule was fixed before the check
+      ran: a core leaves only if it gives a wrong answer or crashes <i>at the measuring conditions</i>; a slower
+      core would be reported with its number, not removed. Removing a core changes the largest thread count from 8
+      to 7 and with it the ten comparisons the study committed to. And deciding to remove it <i>after</i> seeing
+      times would be choosing the design by the data. The check found neither a wrong answer nor a crash, so the
+      core stays (ADR 0085).</p></aside>
+    <p>The check changed three other things:</p>
+    <ul>
+      <li><b>The build is made on the prepared PC.</b> A failing core can compute wrongly <i>without</i> crashing,
+        and the compiler is a program like any other. Hence the next section.</li>
+      <li><b>An old explanation lost its support.</b> In v2, five filter runs with one thread were 21% slower than
+        the rest, and the degraded core was the suspect. Pinned to that core the filter is not slow. In v3 the slow
+        runs did not come back at all: no native filter run with one thread is more than 5% above the median.</li>
+      <li><b>A planned filter was dropped.</b> The plan was to keep only runs whose core read near 3.2 GHz after
+        the run. The check showed that the reading is taken while the core is already going idle and says anything
+        between 1.2 and 3.2 GHz on a core that had just run at full speed. A filter built on it would have thrown
+        away good runs at random, so it was dropped before it was ever used.</li>
+    </ul>
+    <p class="src" data-files="docs/adr/0085-per-core-check.md, data/checks/core-check/README.md, data/checks/core-check/turbo-on-segfaults.txt"></p>
+
+    <h2 id="build">Built twice</h2>
+    <p>The program that is measured is built once and then frozen: every one of the 27,150 runs of v3 uses the same
+      files. So those files had better be right. The build stage compiles everything from scratch <i>twice</i> and
+      compares the two results byte for byte, through their <span data-term="digest">digests</span>. Only if they
+      agree is the commit given the tag <code>measured/v3</code>.</p>
+    <div data-code="data/sessions/v3/build/digests.txt|two builds from scratch|5" data-title="The digests of the measured build"></div>
+    <p>Every campaign then records the digests of the files it actually ran, in its <code>campaign.json</code>, so a
+      table can be traced to these exact bytes.</p>
+    <details class="deeper"><summary>In depth: what changed in the measured code between v2 and v3</summary>
+      <p>Four changes, none an optimization (ADR 0086). (1) Every shared-counter histogram builds its tasks through
+        the same grain control as the local one; the counting loops were compared by hand in the machine code and are
+        identical to v2's (natively <code>movzbl; shl $7; lock incq</code> eight times per turn). (2) Two sequential
+        workloads, <code>filter-seq</code> and <code>hist-seq</code>, with no Rayon call. (3) The memory size before
+        the measured phase is written to the CSV, which showed that the 64 MiB of the output image are first touched
+        in the warm-up. (4) Two unused options were removed.</p>
+      <p>One lesson is worth keeping: the first draft of the sequential filter called a helper of the parallel
+        filter, and that <i>changed the machine code of the parallel filter</i>, because a function with two callers
+        is no longer inlined. Adding a workload can change another one. The sequential filter got its own copy, and
+        <code>scripts/codegen_diff.sh</code> confirmed the parallel one was back to the bytes of v2
+        (<a href="changing.html">Change the measured path safely</a>).</p>
+    </details>
+    <p class="src" data-files="docs/adr/0086-v3-build.md, scripts/build_twice.sh, scripts/codegen_diff.sh"></p>
+
+    <h2 id="gate">The gate, and the cell that failed it</h2>
+    <p>A campaign takes 14 hours. Finding out afterwards that a warm-up was too short would waste a night. So before
+      the main campaign comes a <span data-term="gate">gate</span>: a small rehearsal of 135 runs at the real image
+      size, on the cells whose code changed, checked on four criteria.</p>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>Criterion</th><th>First gate</th><th>Second gate</th></tr></thead>
+      <tbody>
+        <tr><td>Runs done, failed, excluded</td><td>135, 0, 0</td><td>135, 0, 0</td></tr>
+        <tr><td>Same output in all three environments and both thread counts</td><td>yes</td><td>yes</td></tr>
+        <tr><td>Every timed sample at least 100 times the clock's resolution</td><td>yes</td><td>yes</td></tr>
+        <tr><td>First three measured iterations within 5% of the last three</td><td><b>44 of 45 cells</b></td><td><b>44 of 45 cells</b></td></tr>
+      </tbody></table></div>
+    <p>One cell failed, and the plan had said in advance what to do: run the whole gate once more with another
+      order. The same cell failed again. This is the check's own output, and the line that matters in its table:</p>
+    <div data-code="data/checks/gate-v3-check.txt|^gate: firefox hist-local|2" data-title="What the gate check printed"></div>
+    <div data-code="data/checks/gate-v3-check.txt|^firefox,hist-local,few,1,8,|1" data-title="The cell: first three iterations, last three, their ratio"></div>
+    <p>So the session stopped, as designed, and the cell was looked at. In every one of its runs, one or two of the
+      first three measured iterations take 21 to 22 ms and the others 19.7 ms. The 71 warm-up iterations before
+      them show nothing of the kind. And it is not new: the v2 campaign has the same behaviour in the same cell,
+      which nobody had seen because 30 runs dilute it under the limit.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why go on with a failed gate, and why is that not cheating?</b> Three options were on the
+      table. Hunt for the cause first: hours of work that would not change the effect. Change the measurement (drop
+      the first iterations, measure longer): that would alter the analysis after seeing data, which is exactly what
+      the plan forbids. Or measure with the parameters as they are and <i>declare</i> the cell. The effect on the
+      number that is actually analysed decides it: a run's value is the <span data-term="median">median</span> of
+      its ten iterations, and one or two slow ones out of ten do not move a median. Measured: 0.1%. So the campaign
+      went ahead, and the gate is recorded as <b>failed on one criterion in one cell, twice</b>. It was not turned
+      into a pass (ADR 0087).</p></aside>
+    <p>The cell is Firefox, local histogram, k = 1, 8 threads: the control of one of the ten primary contrasts. The
+      tier campaign later showed these slow early iterations come with Firefox's optimizing compiler (27 of 30 runs)
+      and are almost absent with its baseline compiler (1 of 30). What they are is still not known.</p>
+    <p class="src" data-files="docs/adr/0087-gate-of-the-v3-build.md, data/checks/gate-v3-check.txt, data/checks/gate2-v3-check.txt, analysis/gate.py"></p>
+
+    <h2 id="rules">Rules fixed before the data</h2>
+    <p>The dangerous moment in any study is the one where you can see the numbers and still have a choice to make.
+      The session removed those moments by writing the choices down first:</p>
+    <div style="overflow-x:auto"><table>
+      <thead><tr><th>The choice</th><th>The rule, written before any v3 run</th><th>What happened</th></tr></thead>
+      <tbody>
+        <tr><td>Report v3 or keep v2?</td><td>v3 if, by a fixed date, the main campaign has every planned run, no checksum conflict, and at least 10 runs left per primary cell. These read <i>counts of runs</i>, never a time or a result.</td><td>5310 of 5310 runs, 0 conflicts, 0 excluded: v3 is reported (ADR 0095)</td></tr>
+        <tr><td>Keep the degraded core?</td><td>Out only on a wrong checksum or a crash at the measuring conditions.</td><td>Neither: it stays</td></tr>
+        <tr><td>What if the gate fails?</td><td>Run it once more, whole. The same cell twice stops the session until a decision is recorded.</td><td>It did; ADR 0087 was written before the campaign</td></tr>
+        <tr><td>Which comparisons count?</td><td>The same ten as before, with the same exclusions and corrections (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>).</td><td>Unchanged</td></tr>
+        <tr><td>Mix v2 and v3?</td><td>Never, in any table, figure or comparison.</td><td>The v2 data left the repository (tag <code>data/v2</code>)</td></tr>
+      </tbody></table></div>
+    <p>And the answer came out the same. All ten primary contrasts are rejected or not rejected on v3 exactly as on
+      v2, with effects of the same sign.</p>
+
+    <h2 id="campaigns">Then the campaigns</h2>
+    <p>With the gate recorded, the main campaign ran through the night, and the exploratory ones after it, ordered
+      so that whatever had to be dropped for lack of time would be dropped from the end. Nothing had to be.</p>
+    <div id="w-campaigns"></div>
+    <p class="src" data-files="harness/campaigns/README.md, data/README.md, docs/adr/0084-v3-design.md"></p>
+    <p>Across all of them: no failed run, no missing run, no run excluded, no checksum conflict.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>The assistant stayed on, under a rule.</b> In v2, the AI coding assistant on the PC was
+      stopped during a campaign, so that nothing else used the machine. That also froze every terminal for 14
+      hours. For v3 it was kept running under one rule: while a campaign runs, no command is started on the PC, by
+      the assistant or by hand. A rule cannot be checked, but what each run records can: the machine's load before
+      it and the CPU time other processes took on the measured cores. Those are the same in the v3 campaign as in
+      the v2 one (a 95th percentile of 0.036 s of foreign CPU time against 0.037 s). That is evidence of the same
+      quiet, not proof that nothing ran, and the record says so (ADR 0087).</p></aside>
+    <details class="deeper"><summary>In depth: analysis on a restored PC</summary>
+      <p>After the last campaign the PC was restored (turbo on). The first attempt to write the hybrid tables then
+        stopped with a <code>TypeError</code> raised inside Python's own <code>statistics</code> module, on data the
+        same command reads without error: a wrong computation, not a crash, on the degraded core. Since then,
+        analysis on that PC outside a prepared session runs pinned away from CPUs 12 and 13, and CI regenerates
+        every v3 table on another machine and compares it with the committed one (ADR 0094,
+        <a href="reproduce.html">Reproduce the tables and figures</a>).</p>
+    </details>
+    <p class="takeaway"><strong>In summary.</strong> Most of a trustworthy measurement happens before the
+      measurement: check the machine, freeze the program, rehearse, and write down what you will do in each case.
+      Then, when something does go wrong, you follow the rule instead of the numbers, and you write down what
+      happened.</p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var $ = UI.$, el = UI.el, fmt = UI.fmt;
+  // The per-core check: the native filter at one thread, pinned to one P-core at a time.
+  var CORES = UI.D.coreCheck || [];
+  var max = Math.max.apply(null, CORES.map(function (c) { return c.median_ms; }));
+  $("#w-cores").appendChild(UI.bars([{ label: "Native filter, one thread, ms", values: CORES.map(function (c) {
+    return { name: "CPU " + c.cpu, label: "CPU " + c.cpu + (c.cpu === 12 ? " (the degraded core)" : ""), value: c.median_ms, cls: c.cpu === 12 ? "chrome" : "native" };
+  }) }], { digits: 2, max: max * 1.45 }));
+  $("#w-cores").appendChild(UI.table(CORES, [
+    { label: "CPU", key: "cpu", num: true }, { label: "Runs", key: "runs", num: true },
+    { label: "Median, ms", num: true, value: function (c) { return fmt(c.median_ms, 2); } },
+    { label: "Against all 80 runs", num: true, value: function (c) { return fmt(c.over_all_runs, 3); } }
+  ]));
+
+  // The campaigns of measured/v3, in the order they ran.
+  var CAMPAIGNS = [
+    ["campaign", 5310, "primary", "RQ1 and RQ2: the ten contrasts, plus the sequential references", "rq1.html"],
+    ["tier", 2100, "exploratory", "Each browser with one compiler only: which one is measured, and where Chrome's atomic cost comes from", "why.html#tier"],
+    ["perf", 720, "exploratory", "Hardware counters per atomic add", "why.html#retries"],
+    ["perf-loop1, perf-loop8", 360, "exploratory", "Counters of the loop alone, by the difference of two pass counts", "explains.html#q3"],
+    ["simd-scalar, simd-avx2", 720, "exploratory", "The filter without SIMD and with AVX2", "extras.html#simd"],
+    ["cutoff (seven)", 4080, "exploratory", "From which image size parallelism pays", "granularity.html#cutoff"],
+    ["grain-threads", 1080, "exploratory", "Fixed task sizes at 6, 7 and 8 threads", "explains.html#q4"],
+    ["grain-1024, grain-8192", 5400, "exploratory", "The task-size sweep (U-curve)", "granularity.html#grain"],
+    ["weak", 1080, "exploratory", "The image grows with the thread count", "extras.html#weak"],
+    ["extras", 5400, "exploratory", "Private and packed atomics, sorts", "extras.html#private"],
+    ["hybrid", 900, "exploratory", "P-cores plus E-cores, up to 20 threads", "extras.html#hybrid"]
+  ];
+  var total = CAMPAIGNS.reduce(function (a, c) { return a + c[1]; }, 0);
+  var table = UI.table(CAMPAIGNS.concat([["all", total, "", "", ""]]), [
+    { label: "Campaign", value: function (c) { return c[0]; } },
+    { label: "Runs", num: true, value: function (c) { return UI.int(c[1]); } },
+    { label: "Kind", value: function (c) { return c[2]; } },
+    { label: "What it asks", value: function (c) { return c[3]; } }
+  ]);
+  $("#w-campaigns").appendChild(table);
+
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

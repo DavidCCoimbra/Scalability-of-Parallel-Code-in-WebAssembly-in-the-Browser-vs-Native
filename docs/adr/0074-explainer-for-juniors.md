@@ -49,4 +49,4 @@ someone from the field, and it explains the reason behind every decision.
 
 ## Status
 
-Accepted. The explainer is not part of this repository.
+Accepted; the two-layer design is superseded by ADR 0096. Juniors first stays, as a rule of writing. The explainer is part of this repository since ADR 0096.

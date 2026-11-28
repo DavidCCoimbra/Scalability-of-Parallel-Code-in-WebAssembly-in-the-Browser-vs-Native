@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Threads and cores - WASM threads vs native</title>
+<meta name="description" content="What a program, a process, a thread and a core are, in plain words, and what the clock, turbo and SMT do to how fast a core runs.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .figure svg text { font-family: inherit; fill: var(--ink); }
+  .figure svg .box { fill: var(--panel); stroke: var(--edge); stroke-width: 1.5; }
+  .figure svg .hot { fill: var(--chrome-soft); stroke: var(--chrome); stroke-width: 1.5; }
+  .figure svg .cool { fill: var(--native-soft); stroke: var(--native); stroke-width: 1.5; }
+  .figure svg .ok { fill: color-mix(in srgb, var(--good) 15%, var(--panel)); stroke: var(--good); stroke-width: 1.5; }
+  .figure svg .muted { fill: var(--muted); }
+  .figure svg .line { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+  .figure svg .arrow { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#ah); }
+  .figure svg .acc { fill: var(--accent); }
+</style>
+</head>
+<body data-page="machines">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Threads and cores</h1>
+
+    <p class="lead">Four words come before everything else in this documentation: program, process, thread and core. This page explains them, and three settings of a CPU that change how fast a core runs: turbo, the governor and SMT.</p>
+
+    <h2 id="program">A program and a process</h2>
+    <p>A <b>program</b> is a file of instructions on disk. It does nothing by itself. When you start it, the computer makes a <b>process</b>: a running copy of the program with its own private <b>memory</b>, the space where it keeps its numbers, images and text while it runs.</p>
+    <p>Think of a recipe and a kitchen. The recipe is the program. A kitchen with that recipe on the wall, ingredients on the counter and a cook at work is a process. Start the same program twice and you get two kitchens, each with its own counter: what one cook chops, the other cannot see.</p>
+    <figure class="figure"><svg viewBox="0 0 520 130" role="img" aria-label="A program file becomes a process with its own memory"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
+      <rect class="box" x="20" y="35" width="120" height="60" rx="8"/><text x="80" y="60" text-anchor="middle" font-size="13" font-weight="600">program</text><text x="80" y="80" text-anchor="middle" font-size="11" class="muted">a file on disk</text>
+      <path class="arrow" d="M150 65 H 215"/><text x="182" y="55" text-anchor="middle" font-size="11" class="muted">start</text>
+      <rect class="box" x="230" y="15" width="270" height="100" rx="8"/><text x="365" y="38" text-anchor="middle" font-size="13" font-weight="600">process</text>
+      <rect class="cool" x="250" y="50" width="230" height="50" rx="6"/><text x="365" y="72" text-anchor="middle" font-size="12">its own memory</text><text x="365" y="90" text-anchor="middle" font-size="11" class="muted">numbers, images, text it is working on</text>
+    </svg><figcaption>Start a program and you get a process: the instructions, plus a private space to work in.</figcaption></figure>
+    <p>The study cares because every measurement is of <b>one whole process</b>, started fresh. A process that has run for a while has warm memory and half-done work in it; a fresh one has nothing. <a href="protocol.html#unit">The run protocol</a> explains why that matters.</p>
+
+    <h2 id="threads">Threads: several hands, one memory</h2>
+    <p>Inside one process, more than one <b>thread</b> can do work. A thread is one line of work: it reads an instruction, does it, reads the next. Every thread of a process sees the <b>same memory</b>. That is the point of threads, and their danger.</p>
+    <p>In the kitchen: one counter, several cooks. Whatever one cook puts on the counter, the others can use at once. But two cooks who reach for the same bowl at the same moment spill it, unless they agree on who goes first.</p>
+    <p>So threads give you two things:</p>
+    <ul>
+      <li><b>Speed</b>, when the work splits into pieces that do not touch each other. Eight cooks, eight separate
+        dishes, no waiting.</li>
+      <li><b>Trouble</b>, when they touch the same thing. Then they take turns, and taking turns costs time. The study measures that cost in <a href="rq2.html">RQ2</a>.</li>
+    </ul>
+    <p class="def"><b>Shared memory.</b> Memory that several threads can read and write. In a browser it needs special permission; <a href="environments.html#wasm">Environments and builds</a> says how the project gets it.</p>
+
+    <h2 id="cores">Cores: how many hands can work at once</h2>
+    <p>A thread is a line of work; a <b>core</b> is the part of the chip that does the work. One core does one thing at a time. A chip with 8 cores runs 8 threads at once. Start 16 threads on it and they take turns on the 8 cores: all 16 seem to run, but each gets half the time.</p>
+    <p>Cooks are threads and stoves are cores. Eight stoves and eight cooks: all cook at once. Eight stoves and sixteen cooks: every cook waits for a stove half the evening.</p>
+    <figure class="figure"><svg viewBox="0 0 520 120" role="img" aria-label="Eight cores, eight threads, one each">
+      <g font-size="11">
+      <rect class="cool" x="20" y="20" width="50" height="34" rx="6"/><text x="45" y="42" text-anchor="middle">core 1</text>
+      <rect class="cool" x="80" y="20" width="50" height="34" rx="6"/><text x="105" y="42" text-anchor="middle">core 2</text>
+      <rect class="cool" x="140" y="20" width="50" height="34" rx="6"/><text x="165" y="42" text-anchor="middle">core 3</text>
+      <rect class="cool" x="200" y="20" width="50" height="34" rx="6"/><text x="225" y="42" text-anchor="middle">core 4</text>
+      <rect class="cool" x="260" y="20" width="50" height="34" rx="6"/><text x="285" y="42" text-anchor="middle">core 5</text>
+      <rect class="cool" x="320" y="20" width="50" height="34" rx="6"/><text x="345" y="42" text-anchor="middle">core 6</text>
+      <rect class="cool" x="380" y="20" width="50" height="34" rx="6"/><text x="405" y="42" text-anchor="middle">core 7</text>
+      <rect class="cool" x="440" y="20" width="50" height="34" rx="6"/><text x="465" y="42" text-anchor="middle">core 8</text>
+      <rect class="box" x="20" y="72" width="50" height="30" rx="6"/><text x="45" y="92" text-anchor="middle">thread</text>
+      <rect class="box" x="80" y="72" width="50" height="30" rx="6"/><text x="105" y="92" text-anchor="middle">thread</text>
+      <rect class="box" x="140" y="72" width="50" height="30" rx="6"/><text x="165" y="92" text-anchor="middle">thread</text>
+      <rect class="box" x="200" y="72" width="50" height="30" rx="6"/><text x="225" y="92" text-anchor="middle">thread</text>
+      <rect class="box" x="260" y="72" width="50" height="30" rx="6"/><text x="285" y="92" text-anchor="middle">thread</text>
+      <rect class="box" x="320" y="72" width="50" height="30" rx="6"/><text x="345" y="92" text-anchor="middle">thread</text>
+      <rect class="box" x="380" y="72" width="50" height="30" rx="6"/><text x="405" y="92" text-anchor="middle">thread</text>
+      <rect class="box" x="440" y="72" width="50" height="30" rx="6"/><text x="465" y="92" text-anchor="middle">thread</text>
+      </g>
+    </svg><figcaption>The study's machine has 8 fast cores set aside for the measurement, and never runs more threads on them than that.</figcaption></figure>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the study stop at 8 threads?</b> Its machine has 8 fast cores for the measurement. With 9 threads, one of them waits for a core, and the time goes up for a reason that has nothing to do with the browser or the code. <a href="machine.html#pcores">The machine and environment control</a> shows how those 8 cores are kept free.</p></aside>
+    <p>Many chips mix <b>fast cores</b> and <b>slow cores</b> (Intel calls them P-cores and E-cores). A thread that lands on a slow core takes longer through no fault of its own. The study measures on the P-cores, and uses the E-cores only in one exploratory campaign (<a href="extras.html#hybrid">P-cores plus E-cores</a>).</p>
+
+    <h2 id="clock">The clock, turbo and SMT</h2>
+    <p>How fast a core works depends on its <b>clock</b>: the number of steps it takes per second (3.2 billion per second is 3.2 GHz). Three things change that speed:</p>
+    <ul>
+      <li><b>Turbo.</b> A core runs above its base clock while the chip is cool and slows down when it heats up. The same work, done twice, takes different times.</li>
+      <li><b>The governor.</b> The operating system lowers the clock to save power when it thinks nothing important is running.</li>
+      <li><b>SMT</b> (hyper-threading). One core presents itself as two, so two threads share it. Both run, and each gets less of the core.</li>
+    </ul>
+    <p>In the kitchen: turbo is a cook who sprints at the start of the shift and slows as the kitchen heats up, the governor is a manager who dims the stoves when the restaurant looks empty, and SMT is two cooks on one stove.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why turn all three off?</b> The study compares how much faster 8 threads are than 1. If the clock changed with the number of threads or with the temperature, part of that difference would come from the clock and not from the code, and nothing could tell the two apart. With turbo off, the governor fixed and SMT off, every core runs at the same speed all the time, and 8 threads get 8 cores. <a href="machine.html#clock">The machine and environment control</a> shows the settings.</p></aside>
+
+    <h2 id="remember">What to remember</h2>
+    <p class="takeaway"><strong>In summary.</strong> A process is one running program with its own memory. Its threads share that memory, which makes them fast when they work apart and slow when they touch the same thing. A core runs one thread at a time. The study gives its 8 threads 8 cores that always run at the same speed, so that a time changes only when the code does.</p>
+    <p>Next: <a href="memory.html">Memory and caches</a>. This page is used by <a href="threads.html">Thread pools and fork-join</a>, <a href="machine.html">The machine and environment control</a> and <a href="protocol.html">The run protocol</a>.</p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // nothing page-specific
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

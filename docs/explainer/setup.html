@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Installation and first run - WASM threads vs native</title>
+<meta name="description" content="Two machines and their jobs, install and build, run one native configuration, read one CSV row field by field, run the tests, and where to go next.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  pre.cmd { background: var(--panel-2); border: 1px solid var(--edge); border-radius: 8px; padding: 10px 12px; overflow-x: auto; font-size: var(--fs-sm); }
+  .two { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+  .two .card h3 { margin: 0 0 4px; font-size: 1rem; }
+  .two .card p, .two .card li { font-size: var(--fs-sm); }
+  .fields td:first-child { white-space: nowrap; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: var(--fs-sm); }
+</style>
+</head>
+<body data-page="setup">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Installation and first run</h1>
+
+    <p class="lead">This guide takes about an hour. You install the toolchain, build the native runner and the WebAssembly package, run one workload, read one row of its output, and run the tests. Every command works on a Mac or on Linux. Nothing you run here is a result of the study: results come only from the measuring PC.</p>
+
+    <h2 id="machines">Two machines, two jobs</h2>
+    <p>The project uses two computers, each for one job.</p>
+    <div class="two">
+      <div class="card"><h3>The Mac: where code is written</h3>
+        <ul><li>Build, run the tests, read and change the code</li><li>Run the native program to see what it prints</li><li>Its times are never a result</li></ul></div>
+      <div class="card"><h3>The Linux PC: where numbers are made</h3>
+        <ul><li>Its CPU is prepared: P-cores set aside, clock fixed, nothing else running</li><li>The pinned browsers are installed there</li><li>Every number of the paper comes from it</li></ul></div>
+    </div>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why can a time from the Mac never be a result?</b> The Mac has a different chip, its clock speeds up and down by itself, and other programs share it. A number from it compares the Mac with the PC, not Chrome with native. <a href="measuring.html#fair">A fair comparison</a> explains the rule; <a href="machine.html">The machine and environment control</a> shows what the PC does about each point.</p></aside>
+
+    <h2 id="install">Install and build</h2>
+    <p>You need three things: Rust (the compiler of the workloads), Python 3 (the harness and the analysis use only its standard library), and <code>uv</code> (it runs the type checker and the plotting library without making them project dependencies). Then, from the repository folder:</p>
+    <pre class="cmd">make toolchain wasm-bindgen   # Rust's nightly compiler of one fixed date, and the WASM packager
+make build                    # the native program and the WASM package</pre>
+    <p><code>make</code> runs named recipes. The recipes are in <code>Makefile</code> and <code>make/*.mk</code>, and <code>make help</code> lists them. <code>make build</code> has two steps:</p>
+    <div data-code="make/build.mk|build: build-native build-wasm|8" data-title="The build recipe"></div>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a nightly compiler of one fixed date?</b> WebAssembly with threads needs a compiler feature that only Rust's nightly builds have. A fixed date means that you and the measuring PC compile with the same compiler, so a difference between two builds is never "a different compiler".</p></aside>
+    <p>The build gives you <code>bench/target/release/native</code>, the native program, and <code>bench/www/pkg/</code>, the WASM module with the small JavaScript file the browser loads. On the PC, <code>make setup</code> also downloads the two pinned browsers, and <code>make deps sudoers chrome-apparmor</code> prepares the system once (<a href="commands.html#make">Commands</a> has the full list).</p>
+
+    <h2 id="firstrun">Run one thing</h2>
+    <p>The native program takes its whole configuration as flags and prints one line per timed iteration. A small image keeps the run to about a second:</p>
+    <pre class="cmd">bench/target/release/native --workload hist-atomic --input few --k 4 --threads 8 \
+  --width 1024 --height 1024 --warmup 2 --iters 5</pre>
+    <p>Read the flags as a sentence: <i>the histogram with shared counters, on an image with few grey levels (4 of them), with 8 threads, 1024 by 1024 pixels, 2 warm-up iterations and then 5 measured ones.</i> Each part has its page: <a href="workloads.html">Workloads</a>, <a href="workloads.html#k">k</a>, <a href="protocol.html#warmup">warm-up</a>.</p>
+    <p>In the browser the same options go in the page's address, and the page posts the result to a small local server. That needs the pinned browsers; <a href="protocol.html#browser">A browser run</a> shows it. To try the whole pipeline on any machine without preparing it, run <code>make quick-rq1</code>: a small copy of the main campaign that takes about two minutes. Its numbers are never results.</p>
+
+    <h2 id="firstrow">Read one row</h2>
+    <p>The program prints a CSV table (values separated by commas), one row per iteration. This is the header and one row of the main campaign, a native run of the filter with 8 threads:</p>
+    <div data-code="data/raw/campaign-v3/campaign-v3-0047-native-filter-noise-n8-r11.csv|^env,workload|1" data-title="The header"></div>
+    <div data-code="data/raw/campaign-v3/campaign-v3-0047-native-filter-noise-n8-r11.csv|^native,filter,noise,,8192,8192,24301,8,measured,0,|1" data-title="The first timed round"></div>
+    <p>The fields that matter today:</p>
+    <div class="scroll-x"><table class="t fields">
+      <thead><tr><th>Field</th><th>In this row</th><th>What it means</th></tr></thead>
+      <tbody>
+        <tr><td>env, workload, input</td><td>native, filter, noise</td><td>Where it ran, which dish, which picture. A browser run says chrome or firefox here.</td></tr>
+        <tr><td>k</td><td>(empty)</td><td>How many shades of grey the histogram's picture has. The filter does not use it.</td></tr>
+        <tr><td>width, height</td><td>8192, 8192</td><td>The picture's size in pixels: 67 million of them.</td></tr>
+        <tr><td>threads</td><td>8</td><td>N, how many threads did the work.</td></tr>
+        <tr><td>phase, iter</td><td>measured, 0</td><td>Which part of the run this row is, and which round. The first rows of a run are <code>calibration-*</code> (timing the cost of handing out work) and <code>warmup</code> (untimed rounds); only <code>measured</code> rows count.</td></tr>
+        <tr><td>ns</td><td>3274887</td><td>The time of this round in nanoseconds: 3.27 ms to blur the whole picture with 8 threads.</td></tr>
+        <tr><td>checksum</td><td>0x0c94a2fe…</td><td>A fingerprint of the output picture. It must be identical for every thread count and every environment; if it is not, the result was wrong and nothing else matters.</td></tr>
+      </tbody>
+    </table></div>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a checksum on every row?</b> A parallel program that gives a different answer with 8 threads than with 1 has a bug, and timing a bug is pointless. And a compiler that sees nobody reads the output may skip the work; a printed checksum forces it to be computed. <a href="workloads.html#inputs">Inputs and checksums</a> has the details.</p></aside>
+    <p>The other fields record the conditions of the run (memory used, where the buffers sat in memory, the fingerprint of the input), so that an odd number can be explained later. <a href="data.html#onerow">Data files, CSV schema and tables</a> describes every field.</p>
+
+    <h2 id="firsttest">Run the tests</h2>
+    <pre class="cmd">make test     # Rust tests, Python tests, then the lint</pre>
+    <p>The tests check in code what the checksum checks in a run: every workload against a one-thread version, at every thread count from 1 to 8. One of them:</p>
+    <div data-code="bench/src/workloads/histogram/atomic.rs|fn matches_sequential_histogram_for_every_thread_count|13" data-title="One of the thread-count tests"></div>
+    <p><code>make lint</code> checks formatting, Rust's warnings, the structure of the decision records, that the data file of this documentation is up to date, and Python's types. On a Mac two of its checks fail on Linux-only code. The same checks pass in CI, which runs on Linux, so there is nothing to fix.</p>
+
+    <h2 id="next">Where to go next</h2>
+    <ul>
+      <li>New to threads, caches or medians? Start with <a href="machines.html">Threads and cores</a> and the other Concepts pages.</li>
+      <li>You know those? Read <a href="questions.html">Research questions and design</a>, then <a href="workloads.html">Workloads</a> with <code>bench/src/workloads/</code> open next to it.</li>
+      <li>You want to change something? Read the <a href="code.html">Repository tour</a>, then <a href="workload.html">Add a workload</a> or <a href="changing.html">Change the measured path safely</a>, and <a href="workflow.html">Contribute: branches, PRs and ADRs</a>.</li>
+      <li>Something failed? See <a href="debugging.html">Debug a run</a>.</li>
+    </ul>
+    <p class="takeaway"><strong>In summary.</strong> You build and test on any machine; only the PC measures. A run is one program start that prints one row per iteration, and the checksum on each row is the first thing to check.</p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // nothing page-specific
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

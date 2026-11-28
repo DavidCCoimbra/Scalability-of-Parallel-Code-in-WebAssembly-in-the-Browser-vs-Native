@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atomic operations - WASM threads vs native</title>
+<meta name="description" content="What an atomic add is and why a plain add loses counts; two ways a CPU can do it (lock the block and add, or try and retry); what each engine emits for the same WebAssembly instruction; memory order and store forwarding, for the record.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .code pre.plain { padding: 10px 12px; white-space: pre; }
+  .pair { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 10px; }
+  .controls .lbl { font-size: var(--fs-xs); color: var(--muted); margin-right: 6px; }
+  .asm .k { color: var(--accent); font-weight: 600; }
+  .asm .c { color: var(--faint); }
+  #cas-svg { width: 100%; height: auto; display: block; }
+  #cas-svg text { font-family: var(--sans); font-size: 12px; fill: var(--ink); }
+  #cas-svg .muted { fill: var(--muted); }
+  .cas-core { fill: var(--panel-2); stroke: var(--edge); }
+  .cas-core.on { stroke: var(--accent); stroke-width: 2; }
+  .cas-mem { fill: var(--panel); stroke: var(--edge); }
+  .cas-mem.owned-a { stroke: var(--native); stroke-width: 2.5; }
+  .cas-mem.owned-b { stroke: var(--chrome); stroke-width: 2.5; }
+  .lost td { font-family: ui-monospace, monospace; font-size: var(--fs-sm); }
+  .lost .bad { color: var(--bad); font-weight: 600; }
+</style>
+</head>
+<body data-page="atomics">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Atomic operations</h1>
+
+    <p class="lead">An atomic add makes sure no count is lost when several threads add to the same counter. A CPU offers two ways to do it: one locked instruction, or a read followed by a compare-and-swap that retries. This page explains both, shows which one each compiler emits for the same line of Rust, and explains why the memory ordering argument makes no difference on these targets.</p>
+
+    <h2 id="what">What an atomic add is</h2>
+    <p>A plain <code>count = count + 1</code> is three steps for the CPU: read the value from memory, add one, write the result back. With one thread that works. With two threads on the same counter, the steps can interleave:</p>
+    <div class="scroll-x"><table class="t lost">
+      <thead><tr><th>Step</th><th>Thread A</th><th>Thread B</th><th>Counter in memory</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>reads 41</td><td></td><td>41</td></tr>
+        <tr><td>2</td><td></td><td>reads 41</td><td>41</td></tr>
+        <tr><td>3</td><td>writes 41 + 1</td><td></td><td>42</td></tr>
+        <tr><td>4</td><td></td><td>writes 41 + 1</td><td class="bad">42, not 43</td></tr>
+      </tbody>
+    </table></div>
+    <p>Two adds ran and the counter went up by one: a count is lost, and the histogram is wrong. An <span data-term="atomic-operation">atomic</span> add makes the three steps one indivisible step. No other thread can get between the read and the write, so nothing is lost, even with 8 threads on one counter.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the study use atomics and not a lock?</b> A lock is a second mechanism on top of the add (take the lock, add, release), with its own costs to separate. An atomic add is the smallest unit of synchronization a CPU offers: one instruction. Whatever a browser does differently with it is as close to the hardware as a measurement gets.</p></aside>
+    <details class="deeper"><summary>In depth: the Rust, and the nearest JS</summary>
+      <div data-code="bench/src/workloads/histogram/counter_table.rs|// The ordering changes nothing on our targets|9" data-title="One shared counter, incremented atomically" data-highlight="fetch_add"></div>
+      <div class="pair">
+        <div data-code="bench/src/workloads/histogram/atomic.rs|fn run(|9" data-title="The timed loop of the atomic histogram"></div>
+        <figure class="code"><header><span>Nearest JS</span></header><pre class="plain">const counters = new BigUint64Array(new SharedArrayBuffer(256 * 8));
+// in every worker, for every pixel:
+Atomics.add(counters, value, 1n);</pre></figure>
+      </div>
+      <p><code>increment</code> takes <code>&amp;self</code>, not <code>&amp;mut self</code>: an atomic can be changed through a shared reference, which is why all threads can hold <code>&amp;self.counters</code> at once. <code>prepare</code> resets the counters outside the timed region with a plain write (<code>get_mut</code> proves that no other thread can see them).</p>
+    </details>
+
+    <h2 id="strategies">Two ways to add: lock, or try and retry</h2>
+    <p>A CPU has two ways to make an add atomic. The difference matters when two cores want the same counter:</p>
+    <ul>
+      <li><b>Lock the line and add.</b> One instruction (<code>lock add</code> on x86) takes the counter's cache line, adds, and releases it. It cannot fail: the core that holds the line adds, and the others wait their turn.</li>
+      <li><b>Try, check, retry.</b> Read the counter with a plain read, compute the new value, then run a <b>compare-and-swap</b>: "write my new value, but only if memory still holds the value I read". If another core changed the counter in between, the swap fails and the loop starts again with a new read.</li>
+    </ul>
+    <p>Lock-and-add is taking the one shared pen and writing your mark before you hand it on. Try-and-retry is writing your mark on a note from memory and then checking the sheet: if nobody wrote since you looked, you stick the note on; if someone did, you start over.</p>
+    <p>Step through two cores that add to the same counter with try-and-retry, then the same two adds with lock-and-add:</p>
+    <div class="card" id="cas-host"></div>
+    <p>Under contention, try-and-retry costs twice: a plain read that pulls the line over, and attempts that fail
+      and go round again. The study counts both on its real runs:
+      <a href="rq2.html#retries">Retries, counted</a> and <a href="rq2.html#readfirst">Line transfers, counted</a>.</p>
+
+    <h2 id="code">What each engine emits</h2>
+    <p>The Rust source does not choose the strategy; the compiler that produces the machine instructions does. LLVM, natively, and Firefox's engine emit lock-and-add. The optimizing compiler of Chrome's engine emits try-and-retry. The study captured the machine code each engine runs on the measured build: V8 writes its compiled code to a file, and Firefox's was read from the browser's memory at the addresses where the CPU spent its time (<code>data/probes/engine-code/</code>). Per pixel, with the operands simplified:</p>
+    <div class="controls" id="asm-controls"></div>
+    <figure class="code asm"><header><span id="asm-title"></span><span class="muted">mnemonics from data/probes/engine-code, operands simplified</span></header><pre class="plain" id="asm-pre"></pre></figure>
+    <p id="asm-note"></p>
+    <p class="src" data-files="data/probes/engine-code/README.md, docs/adr/0088-what-explains-the-results.md, docs/adr/0049-padding-and-atomic-code.md"></p>
+    <p class="def"><b>How to read it.</b> Each line is one machine instruction. <code>mov</code> copies a value, <code>add</code> adds, <code>shl</code> multiplies by a power of two, and an instruction that starts with <code>lock</code> is atomic on memory. The words in brackets are memory locations; the ones that start with % are the core's registers.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does V8 choose the retry loop?</b> The WebAssembly instruction is "atomic add, and return the old value". When the old value is not used, as here, there are two correct ways to compile it, and V8's optimizing compiler takes the general one that works for any read-modify-write. It is a choice of the engine, not a bug, and the study's code cannot change it. That makes it a finding of RQ2, not a flaw of the study.</p></aside>
+
+    <h2 id="order">Memory order, for the record</h2>
+    <p>If you know atomics, you will ask about <i>memory ordering</i> first. It is not the reason for the Chrome result. Every Rust atomic takes an ordering (how strictly other memory accesses are kept in sequence around it), and you could suspect that the browsers pay for a stricter one. On this hardware they do not:</p>
+    <details class="deeper"><summary>In depth: why ordering changes nothing on these targets</summary>
+      <p>The histogram asks for <code>Relaxed</code>, the weakest <span data-term="memory-ordering-relaxed-seqcst">ordering</span>: it needs only that each counter is updated atomically, and the counters are read after the parallel call has joined (ADR 0014). <code>SeqCst</code> is the strongest, and the only one JavaScript and WASM offer. The choice changes nothing here:</p>
+      <ul>
+        <li><b>WASM</b> atomics are always sequentially consistent, whatever Rust asked for.</li>
+        <li><b>On x86</b>, any <span data-term="locked-read-modify-write">locked read-modify-write</span> is a full barrier natively too, and atomics cost about the same whatever their semantics, because cache-line transfers bound them (Schweizer et al. 2015).</li>
+      </ul>
+      <p>So native code and the browsers pay for the same ordering. If Chrome's atomics cost more, the reason is in the instructions each engine emits, which the section above shows.</p>
+    </details>
+
+    <h2 id="forwarding">Store forwarding at k = 1</h2>
+    <p>One more effect appears at <i>k</i> = 1, and it has nothing to do with atomics: the <b>local</b> histogram, with one thread and nothing shared, is several times slower at <i>k</i> = 1 than at <i>k</i> = 256. When every pixel adds to the same counter, each add waits for the result of the one before it, and the core cannot overlap them. At <i>k</i> = 256 consecutive pixels usually hit different counters, and the core runs many adds at once.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does it matter for the study?</b> "k = 1 is slow" is partly not about synchronization. If RQ2 compared k = 1 with k = 256, that effect would be mixed into the answer. So RQ2 never compares inputs: it compares the atomic histogram with the local one at the <b>same</b> k, where the effect is in both and cancels (<a href="reading.html#rq2metric">In depth: the RQ2 metric</a>).</p></aside>
+    <p>The measured times, the two instruction streams and the probe that compares them are on
+      <a href="rq1.html#k1-forwarding">RQ1: scaling</a>.</p>
+
+    <p class="takeaway"><strong>In summary.</strong> An atomic add makes sure that no count is lost when threads share a counter. A CPU can do it in one locked step, or by trying and retrying. LLVM and Firefox emit the first; Chrome's optimizing compiler emits the second, which costs an extra read and, under contention, retries. Memory ordering is not the reason.</p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var el = UI.el, $ = UI.$, fmt = UI.fmt;
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  function group(host, label) { var g = el("span"); g.appendChild(el("span", { class: "lbl", text: label })); var h = el("span"); g.appendChild(h); host.appendChild(g); return h; }
+
+  // --- CAS stepper -----------------------------------------------------------------------------
+  // Two cores, one counter starting at 41. Each step: [title, core A says, core B says, memory value, line owner "a"|"b"|"", explanation]
+  var STEPS = [
+    ["Both read", "plain read → 41", "plain read → 41", 41, "", "Both cores read the counter with a plain read. The line is now shared: both hold a copy of 41, and both compute 42."],
+    ["A swaps", "compare-and-swap: memory is 41, as I read; write 42 ✓", "(holding 42, about to try)", 42, "a", "Core A takes the line for writing and checks: memory still holds 41, so it writes 42. B's copy is thrown away."],
+    ["B fails", "", "compare-and-swap: memory is 42, not 41 ✗", 42, "b", "Core B takes the line (it moves again) and checks: memory holds 42, not the 41 it read. Nothing is written. Back to the start."],
+    ["B retries", "", "plain read → 42; compute 43; compare-and-swap ✓", 43, "b", "Second attempt: B reads 42, computes 43, and this time the swap succeeds. One add took two locked attempts and an extra read."],
+    ["With lock and add", "lock add → 42", "lock add → 43", 43, "", "The same two adds with lock-and-add: each core takes the line once and adds. The add cannot fail. Two adds, two locked instructions, no retry, no extra read."]
+  ];
+  UI.stepper($("#cas-host"), STEPS.map(function (s) {
+    return { title: s[0], render: function (stage) {
+      var svg = '<svg id="cas-svg" viewBox="0 0 640 150" role="img" aria-label="Two cores and one counter">' +
+        '<rect class="cas-core' + (s[1] ? " on" : "") + '" x="10" y="10" width="290" height="44" rx="6"/><text x="20" y="28" font-weight="600">Core A</text><text class="muted" x="20" y="46">' + (s[1] || "idle") + '</text>' +
+        '<rect class="cas-core' + (s[2] ? " on" : "") + '" x="340" y="10" width="290" height="44" rx="6"/><text x="350" y="28" font-weight="600">Core B</text><text class="muted" x="350" y="46">' + (s[2] || "idle") + '</text>' +
+        '<rect class="cas-mem' + (s[4] ? " owned-" + s[4] : "") + '" x="230" y="90" width="180" height="44" rx="6"/><text x="320" y="110" text-anchor="middle">counter = ' + s[3] + '</text>' +
+        '<text class="muted" x="320" y="127" text-anchor="middle">' + (s[4] ? "line held by core " + s[4].toUpperCase() : "line shared or idle") + '</text></svg>';
+      stage.appendChild(el("div", { html: svg }));
+      stage.appendChild(el("p", { text: s[5] }));
+    } };
+  }));
+
+  // --- assembly per engine -------------------------------------------------------------------
+  var ASM = {
+    native: { title: "Native: LLVM", lines: [
+      ["movzbl", "(pixel), %eax", "the pixel value"],
+      ["shl", "$7, %rax", "x 128: the padded counter's offset"],
+      ["lock incq", "(table,%rax)", "one locked add, done"]],
+      note: "One locked instruction per pixel. The CPU takes the line, adds, and releases it; it never fails." },
+    firefox: { title: "Firefox: SpiderMonkey", lines: [
+      ["movzbl", "(pixel), %eax", "the pixel value"],
+      ["shl", "$7, %eax", "x 128"],
+      ["add", "base, %eax", "address in WASM memory"],
+      ["test", "$7, %eax", "alignment check (well predicted)"],
+      ["mov", "$1, %ecx", "the value to add"],
+      ["lock add", "%rcx, (counter)", "one locked add"],
+      ["", "", "unrolled by 8, one interrupt check per 8 pixels"]],
+      note: "The same single locked add as native, plus an alignment test that the branch predictor always gets right. Firefox behaves like native in every RQ2 cell." },
+    chrome: { title: "Chrome: V8", lines: [
+      ["retry:", "", ""],
+      ["mov", "(counter), %rax", "plain read: pulls the line first"],
+      ["add", "$1 (the new value)", "computed in a second register"],
+      ["lock cmpxchg", "new, (counter)", "write only if memory still holds %rax"],
+      ["jne", "retry", "another core changed it: start again"]],
+      note: "V8 lowers i64.atomic.rmw.add whose result is unused to a compare-and-swap loop, not to lock add or lock xadd. Without contention that is one extra read per pixel; with contention the read can be stale by the time the cmpxchg runs, and the add retries." }
+  };
+  function showAsm(env) {
+    var a = ASM[env], pre = $("#asm-pre");
+    $("#asm-title").textContent = a.title;
+    pre.innerHTML = "";
+    a.lines.forEach(function (l) {
+      var row = el("div");
+      row.appendChild(el("span", { class: "k", text: (l[0] + "             ").slice(0, 14) }));
+      row.appendChild(document.createTextNode((l[1] + "                              ").slice(0, 30)));
+      if (l[2]) row.appendChild(el("span", { class: "c", text: "; " + l[2] }));
+      pre.appendChild(row);
+    });
+    $("#asm-note").textContent = a.note;
+  }
+  UI.segmented(group($("#asm-controls"), "engine"), ENVS.map(function (e) { return { label: e[1], value: e[0] }; }), showAsm, "chrome");
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

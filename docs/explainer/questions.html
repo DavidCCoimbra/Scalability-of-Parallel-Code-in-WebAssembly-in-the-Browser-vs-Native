@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research questions and design - WASM threads vs native</title>
+<meta name="description" content="Why it matters whether browser threads scale like native threads, the two research questions in plain words, a worked RQ2 example with made-up numbers, the design table and what related work measured.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .worked { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); }
+  .worked .card h3 { margin: 0 0 4px; font-size: 1rem; }
+  .worked .card p { font-size: var(--fs-sm); margin: 3px 0; }
+  .worked .big { font-size: 1.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .wordgrid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); }
+  .wordgrid .card h3 { margin: 0 0 4px; font-size: 1rem; }
+  .wordgrid .card p { font-size: var(--fs-sm); margin: 3px 0; }
+  .calc { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); margin-top: 12px; }
+  .cell { fill: var(--panel-2); stroke: var(--edge); }
+  .cell.on { fill: var(--accent-soft); stroke: var(--accent); }
+</style>
+</head>
+<body data-page="questions">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Research questions and design</h1>
+
+    <p class="lead">The study checks, with one source and under the same conditions, whether parallel code gains from threads in a browser as it does natively, and whether that changes when the threads share data. This page gives the two research questions, the design that isolates them, the vocabulary every file name and table column is made of, and what earlier studies measured.</p>
+
+    <h2 id="why">Why this matters</h2>
+    <p>More heavy work runs inside the browser every year: photo and video editing, document viewers, small machine-learning models. <a href="compilers.html#wasm">WebAssembly</a> (WASM) lets the browser run compiled code almost as fast as a native program on one <a href="machines.html#cores">core</a>. With <span data-term="sharedarraybuffer">shared memory</span>, the same code can also use every core with <a href="machines.html#threads">threads</a>.</p>
+    <p>If you move a parallel library to the browser, you need to know two things:</p>
+    <ul>
+      <li>Do 8 threads still give close to 8 times the speed, or does the browser add costs that grow with the threads?</li>
+      <li>Does code whose threads coordinate (shared counters, locks, atomic operations) behave differently in the browser than natively?</li>
+    </ul>
+    <p>Earlier studies measured WASM against native on one thread, or measured threads without a native baseline and without coordination as a factor (<a href="#related">What others measured</a>).</p>
+
+    <h2 id="rqs">RQ1 and RQ2</h2>
+    <div class="card">
+      <p><b>RQ1.</b> How do the <span data-term="speedup-relative">speedup</span> and
+        <span data-term="efficiency">efficiency</span> of the same parallel code evolve with the number of threads,
+        natively and as WASM in the browser?</p>
+      <p style="margin-bottom:0"><b>RQ2.</b> To what extent does synchronization between threads affect the gap between
+        WASM and native found in RQ1?</p>
+    </div>
+    <p>Two terms carry the questions:</p>
+    <p class="def"><b>Speedup.</b> How many times faster the program is with N threads than with one, in the same environment. If one thread takes 80 ms and eight threads take 10 ms, the speedup is 8. Divided by N it gives the efficiency: 8 / 8 = 1, the ideal. <a href="ratios.html#speedup">Ratios, speedup and intervals</a> has more.</p>
+    <p class="def"><b>Synchronization.</b> Anything that makes threads coordinate instead of working alone. Here it
+      is one thing: many threads adding to the same shared counters, each add made
+      <span data-term="atomic-operation">atomic</p> so that no count is lost.</span>
+    <p>Each question has its own workload and its own measure:</p>
+    <ul>
+      <li><b>RQ1</b> uses the <a href="workloads.html#filter">Gaussian filter</a>, whose threads never coordinate. Its speedup curve is computed inside each environment (native against native, Chrome against Chrome). If the browser only makes every thread equally slower, the curves have the same shape.</li>
+      <li><b>RQ2</b> uses the <a href="workloads.html#histogram">histogram</a> twice: with shared atomic counters, and with counters that are never shared (the control). How much slower the shared version is in a browser is compared with how much slower it is natively.</li>
+    </ul>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why compare the two histograms, and not only time the atomic one?</b> The browser makes <i>everything</i> a little slower, atomics or not. If the study timed only the atomic histogram, a slow browser would look like a browser with slow synchronization. Dividing by the local histogram first removes the general slowness, and what remains is the cost of sharing. The next section does it with numbers.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why fix the questions and tests before the data?</b> With 162 configurations, something always looks "significant" if you look long enough. An analysis plan fixed the metric, the tests and the 10 comparisons that answer the questions before the campaign ran, so the data cannot choose its own questions (<span data-term="analysis-plan-pre-registration">pre-registration</span>, ADR 0037).</p></aside>
+    <p class="src" data-files="docs/adr/0037-analysis-plan.md, docs/adr/0026-rq2-metric-and-contention-sweep.md, docs/adr/0037-analysis-plan.md"></p>
+
+    <h2 id="example">RQ2 with made-up numbers</h2>
+    <p>The numbers below are invented to show the arithmetic; the measured ones are in <a href="rq2.html#metric">RQ2: synchronization</a>. Say the local histogram takes 1 s natively and the atomic one takes 2 s. Sharing costs 2 times natively.</p>
+    <div class="worked">
+      <div class="card"><h3>Native</h3><p>no sharing: <b>1 s</b></p><p>shared atomics: <b>2 s</b></p><p>sharing costs <span class="big">2×</span></p></div>
+      <div class="card"><h3>Browser A</h3><p>no sharing: <b>2 s</b></p><p>shared atomics: <b>4 s</b></p><p>sharing costs <span class="big">2×</span></p></div>
+      <div class="card"><h3>Browser B</h3><p>no sharing: <b>2 s</b></p><p>shared atomics: <b>8 s</b></p><p>sharing costs <span class="big">4×</span></p></div>
+    </div>
+    <p>Both browsers are twice as slow as native at everything, which is a matter for RQ1, not RQ2. In browser A sharing costs 2 times, as it does natively: its RQ2 value is 2 / 2 = <b>1</b>, no extra penalty. In browser B sharing costs 4 times: 4 / 2 = <b>2</b>, synchronization costs it twice what it costs natively. A value below 1 means that sharing costs less in that browser than natively, which is what Chrome shows at k = 256.</p>
+    <details class="deeper"><summary>In depth: the metric as the analysis plan writes it</summary>
+      <p>Per environment, r = log(T<sub>atomic</sub>) − log(T<sub>local</sub>) at the same N and k. The RQ2 effect is
+        exp(Δr) with Δr = r(browser) − r(native): the atomic/local time ratio in the browser over the same ratio natively.
+        The logs make the ratios symmetric (2× and 0.5× are the same distance from 1) and let the bootstrap resample the
+        four groups of 30 runs independently. The 10 primary contrasts are the four k at N = 8 for each browser (RQ2) and
+        the filter's speedup ratio at N = 8 for each browser (RQ1), with Holm's correction over the ten
+        (<a href="reading.html#rq2metric">The RQ2 metric</a>, <a href="reading.html#holm">Holm</a>).</p>
+    </details>
+
+    <h2 id="design">The design in one table</h2>
+    <p>A fair comparison changes one thing at a time. The table lists what the study varies on purpose and what it holds fixed, so that only the environment differs. Each row links to the page that explains it.</p>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>Factor</th><th>Values</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><th colspan="3">Varied</th></tr>
+        <tr><td>Environment</td><td><span class="chip native">native</span> <span class="chip chrome">chrome</span> <span class="chip firefox">firefox</span></td><td>The thing compared: a normal Linux program, Chrome's engine (V8), Firefox's engine (SpiderMonkey). <a href="environments.html">Environments and builds</a></td></tr>
+        <tr><td>Workload</td><td>filter, <code>hist-atomic</code>, <code>hist-local</code></td><td>No coordination (RQ1); shared atomics against their no-sharing control (RQ2). <a href="workloads.html">Workloads</a></td></tr>
+        <tr><td><span data-term="k">k</span>, distinct grey levels</td><td>1, 4, 16, 256</td><td>How many counters the adds spread over: all on one, or over 256. <a href="workloads.html#k">k: the contention dial</a></td></tr>
+        <tr><td>Threads N</td><td>1, 2, 4, 6, 7, 8</td><td>Up to one per fast core; 6 and 7 show whether a curve bends before the last core is used; the decisive comparisons are at 8 (ADR 0044)</td></tr>
+        <tr><th colspan="3">Held fixed</th></tr>
+        <tr><td>Source, compiler, flags</td><td>One Rust crate, <code>nightly-2026-10-03</code>, <code>lto=fat</code>, 128-bit SIMD on both sides</td><td>So that the code is the same and only the environment differs. <a href="environments.html#same">Same source, same flags</a></td></tr>
+        <tr><td>Input</td><td>8192 x 8192 grey image, fixed seed</td><td>The same bytes everywhere; a checksum proves the same result. <a href="workloads.html#inputs">Inputs and checksums</a></td></tr>
+        <tr><td>Machine</td><td>8 P-cores, turbo and SMT off, governor performance, the rest of the system on the E-cores</td><td>So that the same run gives the same time twice. <a href="machine.html">The machine and environment control</a></td></tr>
+        <tr><td>Browsers</td><td>Chrome for Testing 155.0.8059.84, Firefox 158.0, headless, fresh profile</td><td>Pinned, so the engine cannot change halfway through the study</td></tr>
+        <tr><th colspan="3">Protocol</th></tr>
+        <tr><td>Run</td><td>One fresh process or browser launch; warm-up, then 10 measured iterations</td><td>The run is the unit of analysis, not the iteration. <a href="protocol.html#unit">The run is the unit</a></td></tr>
+        <tr><td>Repetitions</td><td>30 runs per configuration, in one seeded random order</td><td>Anything that drifts over the day spreads over every environment instead of hurting one. <a href="protocol.html#order">Random interleaved order</a></td></tr>
+      </tbody>
+    </table></div>
+    <div id="design-stats" class="stats"></div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+
+    <h2 id="cells">Vocabulary: environment, workload, N, k</h2>
+    <p>The study has about fifteen terms of its own. They name the cells of the experiment, the measurements and the builds; the general ones (thread, cache, median) are in the Concepts pages.</p>
+
+    <p>Four choices name a cell of the experiment. Every run belongs to exactly one cell:</p>
+    <figure class="figure">
+      <svg viewBox="0 0 560 120" role="img" aria-label="A run id built from environment, workload, k and N">
+        <g font-family="ui-monospace, monospace" font-size="15">
+          <rect class="cell" x="10" y="30" width="150" height="34" rx="6"/><text x="85" y="52" text-anchor="middle">campaign-v3-4610</text>
+          <rect class="cell on" x="166" y="30" width="78" height="34" rx="6"/><text x="205" y="52" text-anchor="middle">native</text>
+          <rect class="cell on" x="250" y="30" width="118" height="34" rx="6"/><text x="309" y="52" text-anchor="middle">hist-atomic</text>
+          <rect class="cell on" x="374" y="30" width="44" height="34" rx="6"/><text x="396" y="52" text-anchor="middle">k1</text>
+          <rect class="cell on" x="424" y="30" width="44" height="34" rx="6"/><text x="446" y="52" text-anchor="middle">n8</text>
+          <rect class="cell" x="474" y="30" width="44" height="34" rx="6"/><text x="496" y="52" text-anchor="middle">r0</text>
+        </g>
+        <g font-size="11" fill="var(--muted)" text-anchor="middle">
+          <text x="85" y="84">campaign, position in the order</text><text x="205" y="84">environment</text><text x="309" y="84">workload</text>
+          <text x="396" y="84">k</text><text x="446" y="84">N</text><text x="496" y="84">repetition</text>
+        </g>
+      </svg>
+      <figcaption>A run id of the main campaign. The four highlighted parts name its cell.</figcaption>
+    </figure>
+    <div class="wordgrid">
+      <div class="card"><h3>Environment</h3><p>Where the code runs: <span class="chip native">native</span> (a normal Linux
+        program), <span class="chip chrome">chrome</span> or <span class="chip firefox">firefox</span> (the same code as
+        WebAssembly inside that browser). The three names are the values of the <code>env</code> column in the data.
+        <a href="environments.html">Environments and builds</a>.</p></div>
+      <div class="card"><h3>Workload</h3><p>What is timed: <code>filter</code>, <code>hist-atomic</code> (the histogram with shared atomic counters) or <code>hist-local</code> (per-task local counters, the control). The exploratory campaigns add <code>hist-atomic-private</code>, <code>hist-atomic-packed</code> and two sorts, and the main campaign adds the sequential references <code>filter-seq</code> and <code>hist-seq</code>. <a href="workloads.html">Workloads</a>.</p></div>
+      <div class="card"><h3>N</h3><p>How many worker threads the run uses: 1, 2, 4, 6, 7 or 8 in the main campaign, never more than the 8 P-cores. The deciding comparisons are at N = 8; 6 and 7 show whether a curve bends before the last core is used (ADR 0044).</p></div>
+      <div class="card"><h3><span data-term="k">k</span></h3><p>How many distinct grey levels the histogram's input has: 1, 4, 16 or 256. It sets how much the threads contend for the shared counters. The filter has no k; its input is <code>noise</code>. <a href="workloads.html#k">k: the contention dial</a>.</p></div>
+    </div>
+
+    <h2 id="runs">Vocabulary: run, iteration, configuration, campaign</h2>
+    <div class="wordgrid">
+      <div class="card"><h3><span data-term="run">Run</span></h3><p>One fresh start of the program, or of the browser, that times the workload and writes one CSV file. The run is the unit of analysis: 30 runs give 30 values, not 300. <a href="protocol.html#unit">The run is the unit</a>.</p></div>
+      <div class="card"><h3><span data-term="iteration">Iteration</span></h3><p>One timed pass over the whole image inside a run. A run does <span data-term="warm-up-w">warm-up</span> iterations that are not counted, then 10 measured ones. The run's value is the median of the 10.</p></div>
+      <div class="card"><h3>Configuration</h3><p>One cell (environment, workload, k, N) with its 30 runs. The main campaign has 162 configurations (and 15 more for the sequential references); "the filter in Chrome at N = 8" is one of them.</p></div>
+      <div class="card"><h3><span data-term="campaign">Campaign</span></h3><p>Every run of a whole experiment, run in one
+        seeded random order and kept in one folder, <code>data/raw/&lt;name&gt;/</code>. The main one,
+        <code>campaign-v3</code>, has 5310 runs. <a href="campaigns.html">Run a campaign</a>.</p></div>
+      <div class="card"><h3>Primary and exploratory</h3><p>The 10 comparisons that answer RQ1 and RQ2 are <b>primary</b>: they were fixed before the data and get a stricter bar. Every other campaign (the engine arms, the counters, weak scaling, SIMD, E-cores, cutoff, grain) is <b>exploratory</b>: reported with ordinary intervals, and labelled as such.</p></div>
+      <div class="card"><h3>Pilot</h3><p>A small early campaign used to pick a setting (how many warm-up iterations, the
+        image size, the start delay), on an earlier build. Pilot numbers justify a decision; they are never reported
+        as results.</p></div>
+    </div>
+
+    <h2 id="builds">Vocabulary: build, tag, variant</h2>
+    <div class="wordgrid">
+      <div class="card"><h3>Build</h3><p>The exact compiled program: one native binary and one WASM module from one version of the source. Two builds can differ in one machine instruction, which can change a timing, so runs of different builds are never mixed in one comparison.</p></div>
+      <div class="card"><h3>Tag</h3><p>A name for the exact version of the code a campaign ran: <code>measured/v3</code> is the one every reported number comes from. Every run records the digests of the build, so you can trace a run to its code. <a href="environments.html#builds">Builds and tags</a>.</p></div>
+      <div class="card"><h3>Variant</h3><p>A build made with other compiler flags for an exploratory question: <code>scalar</code> (no SIMD) and <code>avx2</code> (wider native SIMD). The default build is <code>baseline</code>.</p></div>
+    </div>
+
+    <h2 id="numbers">Vocabulary: the numbers</h2>
+    <p>From the 30 values of a configuration the study reports:</p>
+    <ul>
+      <li><b>T<sub>N</sub></b>: the time with N threads, the <span data-term="geometric-mean">geometric mean</span> of the 30 run values (<a href="reading.html#average">An average that respects ratios</a> says why).</li>
+      <li><b><span data-term="speedup-relative">Speedup</span></b> S<sub>N</sub> = T<sub>1</sub> / T<sub>N</sub>: how many times faster N threads are than one, each environment against itself. 8 is the ideal with 8 threads; below 1 means 8 threads are slower than one.</li>
+      <li><b><span data-term="efficiency">Efficiency</span></b> = S<sub>N</sub> / N: the share of the ideal. 1 is the ideal; 0.5 means the threads are half idle on average.</li>
+      <li><b><span data-term="confidence-interval-ci">Interval</span></b>: the range the value would likely fall in if the 30 runs were taken again, computed with the <span data-term="bootstrap-percentile">bootstrap</span> (<a href="measuring.html#sure">How sure the result is</a>).</li>
+      <li><b>Time ratio browser / native</b>: the same question in seconds, because a speedup alone can hide a slow start (<a href="ratios.html#speedup">Speedup and efficiency</a>).</li>
+    </ul>
+    <p>Pick an environment to see the filter's numbers, read from the campaign:</p>
+    <div class="card">
+      <div id="env-pick"></div>
+      <div class="calc" id="calc"></div>
+      <p class="muted" id="calc-say" style="margin-bottom:0"></p>
+    </div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+    <p><a href="reading.html">Analysis plan and statistics</a> explains each of these, first in words and then with its formula.</p>
+
+    <h2 id="related">What others measured</h2>
+    <p>The table gives each source, what it measured and how this study differs. In short: others measured WASM on one thread, or threads without a native baseline, or atomics outside a browser. None put the same code, three environments, a thread sweep and synchronization as a factor in one controlled experiment.</p>
+    <details class="deeper" open><summary>In depth: The nine sources, one by one</summary>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>Source</th><th>What it measured</th><th>How this study differs</th></tr></thead>
+      <tbody>
+        <tr><td>Haas et al. 2017 (PLDI)</td><td>The design of WebAssembly and its first implementations, single-threaded</td><td>Threads did not exist yet; cited for what WASM is</td></tr>
+        <tr><td>Jangda et al. 2019 (USENIX ATC)</td><td>SPEC CPU as WASM in Chrome and Firefox: 45 to 55% slower than native on average</td><td>Single-threaded; this study adds threads, synchronization, and reads the generated code</td></tr>
+        <tr><td>Yan et al. 2021 (IMC)</td><td>How compiler, flags, input and browser change WASM results</td><td>The reason this study pins all four and uses the same flags on both sides</td></tr>
+        <tr><td>Szewczyk et al. 2022 (IISWC)</td><td><span data-term="bounds-checking">Bounds checking</span> of linear memory: under 20% in fast runtimes, up to 650% in others</td><td>Standalone runtimes, no threads; it explains part of the constant per-thread factor</td></tr>
+        <tr><td>Watt et al. 2019 (OOPSLA)</td><td>The WASM memory model: atomics are sequentially consistent</td><td>No measurements; it rules out memory order as the cause (<a href="atomics.html#order">why</a>)</td></tr>
+        <tr><td>Sánchez-Artigas and Bohoyo-Bengoetxea 2025 (CCGrid)</td><td>WASM multithreading outside the browser, with allocator and atomics overheads</td><td>This study measures inside two browsers, against native, with synchronization as a factor</td></tr>
+        <tr><td>Schweizer et al. 2015 (PACT)</td><td>Atomics on x86 cost about the same whatever their semantics, bound by cache-line transfers</td><td>The mechanism behind the RQ2 design and its <a href="rq2.html#readfirst">counters</a></td></tr>
+        <tr><td>Kyriakou and Tselikas 2022 (Electronics)</td><td>The closest study: Rust as WASM in Chromium at 93.5% of a native Node.js addon single-threaded, 67.9% multithreaded</td><td>One workload without synchronization, 1 against 24 threads, means only; this study adds a thread sweep, a second engine, synchronization and intervals</td></tr>
+        <tr><td>Georges et al. 2007 (OOPSLA); Hoefler and Belli 2015 (SC)</td><td>How to measure managed runtimes and parallel systems rigorously</td><td>They shaped the run as the unit, the bootstrap intervals and the Holm correction</td></tr>
+      </tbody>
+    </table></div>
+    </details>
+    <p class="src" data-files="paper/bib/referencias.bib, paper/final/paper.tex"></p>
+    <p class="takeaway"><strong>In summary.</strong> RQ1 asks whether the same code gains from threads in the browser as it does natively; RQ2 asks whether sharing counters between threads changes that. Code, input, machine and order are held the same, and the analysis plan fixed the ten deciding comparisons before the campaign. A run is one program start and one value; environment, workload, k and N name its cell; 30 runs make a configuration; a campaign is all of them in one shuffled order on one tagged build.</p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  (function () {
+  var el = UI.el, $ = UI.$;
+  var rows = UI.rows("campaign-v3-scaling");
+  var envs = {}, configs = {}, runs = 0;
+  rows.forEach(function (r) {
+    envs[r.environment] = true;
+    configs[r.environment + r.workload + r.k + "/" + r.threads] = true;
+    runs += r.runs;
+  });
+  [[UI.int(runs), "runs in the main campaign"], [String(Object.keys(configs).length), "configurations"],
+   [String(Object.keys(envs).length), "environments"], ["30", "runs per configuration"]].forEach(function (s) {
+    $("#design-stats").appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: s[0] }), el("div", { class: "k", text: s[1] })]));
+  });
+  })();
+  (function () {
+  var el = UI.el, $ = UI.$;
+  var NAMES = { native: "Native", chrome: "Chrome", firefox: "Firefox" };
+  function show(env) {
+    var one = UI.row("campaign-v3-scaling", { environment: env, workload: "filter", threads: 1 });
+    var eight = UI.row("campaign-v3-scaling", { environment: env, workload: "filter", threads: 8 });
+    var box = $("#calc");
+    box.innerHTML = "";
+    if (!one || !eight) { box.textContent = "no data"; return; }
+    [[UI.fmt(one.center_ns / 1e6, 2) + " ms", "T1, one thread"],
+     [UI.fmt(eight.center_ns / 1e6, 2) + " ms", "T8, eight threads"],
+     [UI.fmt(eight.speedup, 2), "speedup S8 = T1 / T8"],
+     [UI.fmt(eight.efficiency, 2), "efficiency S8 / 8"]].forEach(function (s) {
+      box.appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: s[0] }), el("div", { class: "k", text: s[1] })]));
+    });
+    $("#calc-say").textContent = NAMES[env] + ": the filter with 8 threads runs " + UI.fmt(eight.speedup, 2) +
+      " times faster than with one (95% interval " + UI.fmt(eight.speedup_low, 2) + " to " + UI.fmt(eight.speedup_high, 2) +
+      "), so each thread works at " + Math.round(eight.efficiency * 100) + "% of perfect.";
+  }
+  UI.segmented($("#env-pick"), [{ label: "Native", value: "native" }, { label: "Chrome", value: "chrome" }, { label: "Firefox", value: "firefox" }], show);
+  })();
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

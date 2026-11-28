@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Environments and builds - WASM threads vs native</title>
+<meta name="description" content="One Rust source compiled once for Linux and once for WebAssembly; what native, Chrome and Firefox each do with it; the five pieces WASM threads need; and how a build is tagged so runs are never mixed.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .envs { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+  .envs .card h3 { margin: 0 0 4px; font-size: 1rem; }
+  .envs .card p { font-size: var(--fs-sm); margin: 3px 0; }
+  .needs { counter-reset: need; list-style: none; padding-left: 0; }
+  .needs li { counter-increment: need; margin: 8px 0; padding-left: 34px; position: relative; }
+  .needs li::before { content: counter(need); position: absolute; left: 0; top: 0; width: 24px; height: 24px; border-radius: 50%;
+    background: var(--accent-soft); color: var(--accent); font-weight: 700; font-size: var(--fs-xs); display: grid; place-items: center; }
+  .box { fill: var(--panel); stroke: var(--edge); }
+  .box.src { fill: var(--accent-soft); stroke: var(--accent); }
+  .box.nat { fill: var(--native-soft); stroke: var(--native); }
+  .box.chr { fill: var(--chrome-soft); stroke: var(--chrome); }
+  .box.ffx { fill: var(--firefox-soft); stroke: var(--firefox); }
+  .arrow { stroke: var(--muted); fill: none; marker-end: url(#ah); }
+</style>
+</head>
+<body data-page="environments">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Environments and builds</h1>
+
+    <p class="lead">The comparison is fair only if the code is the same. One Rust crate is compiled by one compiler with one release profile into a native Linux program and a WebAssembly module, and Chrome and Firefox each compile that module with their own engine. This page describes the three environments, what WebAssembly threads need, what still differs below the shared source, and how a build is identified.</p>
+
+    <figure class="figure">
+      <svg viewBox="0 0 640 170" role="img" aria-label="One Rust source compiled to a native binary and to a WASM file; the WASM file goes into Chrome and Firefox, each with its own engine">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker></defs>
+        <g font-size="12" text-anchor="middle">
+          <rect class="box src" x="10" y="60" width="110" height="50" rx="8"/><text x="65" y="82">Rust source</text><text x="65" y="98" fill="var(--muted)">bench/</text>
+          <rect class="box" x="170" y="60" width="110" height="50" rx="8"/><text x="225" y="82">one compiler</text><text x="225" y="98" fill="var(--muted)">same options</text>
+          <path class="arrow" d="M120 85 H168"/>
+          <rect class="box nat" x="340" y="10" width="130" height="44" rx="8"/><text x="405" y="29">Linux program</text><text x="405" y="45" fill="var(--muted)">x86-64 machine code</text>
+          <rect class="box" x="340" y="98" width="130" height="44" rx="8"/><text x="405" y="117">WebAssembly file</text><text x="405" y="133" fill="var(--muted)">not machine code yet</text>
+          <path class="arrow" d="M280 78 C310 78, 310 32, 338 32"/>
+          <path class="arrow" d="M280 92 C310 92, 310 120, 338 120"/>
+          <rect class="box chr" x="520" y="70" width="110" height="36" rx="8"/><text x="575" y="92">Chrome: V8</text>
+          <rect class="box ffx" x="520" y="124" width="110" height="36" rx="8"/><text x="575" y="146">Firefox: SpiderMonkey</text>
+          <path class="arrow" d="M470 115 C495 115, 495 88, 518 88"/>
+          <path class="arrow" d="M470 125 C495 125, 495 142, 518 142"/>
+          <text x="405" y="70" fill="var(--native)" font-weight="600">native</text>
+        </g>
+      </svg>
+      <figcaption>Natively the machine code is produced once, before any run. In a browser the engine produces it when the page loads, and each engine does it in its own way.</figcaption>
+    </figure>
+
+    <h2 id="same">Same source, same flags</h2>
+    <p>Three things are the same in every environment. Each would spoil the comparison if it were not:</p>
+    <ul>
+      <li><b>The source.</b> One folder, <code>bench/</code>. Only the entry point differs: a <code>main</code> for the Linux program, and a small library that the browser page calls.</li>
+      <li><b>The compiler.</b> One version of the Rust compiler, pinned by date. Two versions can produce different machine code from the same source, and that difference would be taken for a difference between environments.</li>
+      <li><b>The options.</b> The same release profile for both outputs, with the same width of <span data-term="simd">SIMD</span> (instructions that process several pixels at once): 128 bits on both sides.</li>
+    </ul>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why not let the native build use everything the CPU has?</b> The PC's CPU has 256-bit SIMD (<span data-term="avx2">AVX2</span>), which processes twice as many pixels per instruction, but WebAssembly offers only 128 bits. With 256 bits natively and 128 in the browser, part of the gap would be the width of the instructions, not the environment. The study keeps both at 128 bits and measures the wider native build only as an exploratory campaign (<a href="extras.html#simd">SIMD builds</a>). A check in CI confirms that the filter's inner loop uses SIMD in both outputs (ADR 0017).</p></aside>
+    <details class="deeper"><summary>In depth: the exact toolchain, profile and targets</summary>
+      <div class="scroll-x"><table class="t">
+        <thead><tr><th></th><th><span class="chip native">native</span></th><th><span class="chip chrome">chrome</span> and <span class="chip firefox">firefox</span></th></tr></thead>
+        <tbody>
+          <tr><td>Source</td><td colspan="2"><code>bench/</code>, one crate; only the entry point differs (a binary, or a <code>#[wasm_bindgen]</code> library)</td></tr>
+          <tr><td>Toolchain</td><td colspan="2"><code>nightly-2026-10-03</code>, Rayon 1.12.0</td></tr>
+          <tr><td>Profile</td><td colspan="2"><code>lto = "fat"</code>, <code>codegen-units = 1</code>, <code>panic = "abort"</code></td></tr>
+          <tr><td>Target</td><td><code>x86_64-unknown-linux-gnu</code></td><td><code>wasm32-unknown-unknown</code></td></tr>
+          <tr><td>SIMD</td><td>x86-64 baseline, <span data-term="sse2">SSE2</span>, 128-bit; no <code>target-cpu=native</code></td><td><span data-term="simd128">simd128</span>, 128-bit</td></tr>
+          <tr><td>Threads</td><td>Rayon on OS threads</td><td>Rayon on Web Workers, through <span data-term="wasm-bindgen-rayon">wasm-bindgen-rayon</span> 1.3.0</td></tr>
+          <tr><td>Machine code from</td><td><span data-term="llvm">LLVM</span>, at build time</td><td>LLVM to WASM, then the browser's engine at load time</td></tr>
+        </tbody>
+      </table></div>
+      <div data-code="bench/rust-toolchain.toml|[toolchain]|5" data-title="The pinned compiler, the same for both targets"></div>
+      <p class="src" data-files="bench/Cargo.toml, bench/rust-toolchain.toml, docs/adr/0004-simd-128-both-sides.md, docs/adr/0009-pinned-nightly-toolchain.md, scripts/check_simd.py"></p>
+    </details>
+
+    <h2 id="native">Native</h2>
+    <p>"Native" means a normal Linux program: the compiler produced its machine code in advance, and the operating system runs it directly on the CPU. It reads its configuration from the command line (workload, threads, image size), starts its N threads, runs the warm-up and the measured iterations, and prints one line per iteration. The harness captures that output and writes the CSV.</p>
+    <p>Its clock is the operating system's high-resolution clock, which counts in nanoseconds.</p>
+    <details class="deeper"><summary>In depth: the entry point and the scope it runs in</summary>
+      <p>The binary is <code>bench/target/release/native</code>. It builds a global Rayon pool of N threads, runs the
+        configuration and prints CSV. The harness starts it inside a <span data-term="systemd-scope-slice">systemd scope</span>
+        with a <span data-term="taskset">taskset</span> mask of the 8 P-cores. The clock is
+        <code>std::time::Instant</code>.</p>
+      <div data-code="bench/src/bin/native/main.rs|fn run()|9" data-title="The native entry point"></div>
+    </details>
+
+    <h2 id="browsers">Chrome and Firefox</h2>
+    <p>In a browser the same code arrives as a WebAssembly module inside a web page. A fresh copy of the browser opens the page, started for this run only, with no history, no extensions and no window. The engine compiles the WebAssembly to machine code, the page runs the workload, and then posts its results to a small local server that writes the CSV.</p>
+    <div class="envs">
+      <div class="card"><h3><span class="chrome-ink">Chrome</span></h3><p><span data-term="chrome-for-testing">Chrome for Testing</span> 155.0.8059.84, a build that Google publishes for test automation, downloaded once and checked against a recorded digest. Its engine is <span data-term="v8">V8</span>. A pilot found it within about 1.3% of ordinary Chrome (ADR 0050).</p></div>
+      <div class="card"><h3><span class="firefox-ink">Firefox</span></h3><p>Firefox 158.0, downloaded from Mozilla's archive. Its engine is <span data-term="spidermonkey">SpiderMonkey</span>. A policy switches automatic updates off, after a pinned copy once updated itself (<a href="#update">A pinned Firefox that updated itself</a>).</p></div>
+    </div>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a fresh browser for every run, with no window and no extensions?</b> A browser in daily use carries state: extensions, cached pages, background tabs, update checks. Any of them can take CPU time during a measurement, differently from one run to the next. A fresh temporary profile has none of that, headless mode removes the cost of drawing, and both browsers get the same quiet settings. A pilot measured headless against a visible window: within 0.3% (ADR 0046).</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why no automation framework (Puppeteer, Playwright)?</b> Those tools drive the browser through a control channel, with their own threads and timers inside the browser, which would be part of the measurement. Here the browser gets only a URL with the configuration in it, and the page reports back by itself (ADR 0006).</p></aside>
+    <p>The page's clock is <code>performance.now()</code>. Browsers round it on purpose, to make timing attacks harder: to 5 µs in Chrome and 20 µs in Firefox here. Every measured iteration lasts at least 100 times that, so the rounding cannot change a result (ADR 0039, ADR 0041).</p>
+    <details class="deeper"><summary>In depth: pins, flags and the version check</summary>
+      <p>Both versions are pinned in <code>harness/browsers.json</code>, the Chrome archive with its SHA-256. The launcher gives each browser a <span data-term="fresh-profile">fresh, temporary profile</span> and runs it <span data-term="headless">headless</span>, with settings that turn off background work (updates, telemetry, safe-browsing downloads) in both. Every run records the browser's exact version, and a campaign refuses to start with a version that is not the pinned one (ADR 0071).</p>
+      <div data-code="harness/browsers.json|^{|9" data-title="The pinned versions"></div>
+      <p class="src" data-files="harness/launcher/commands.py, harness/browsers.py, docs/adr/0021-browser-versions.md, docs/adr/0022-browser-launcher.md, docs/adr/0029-quiet-browsers-and-start-delay.md"></p>
+    </details>
+
+    <h2 id="update">A pinned Firefox that updated itself</h2>
+    <p>The numbers in this section come from pilots and from the earlier build, <code>measured/v2</code>. They justify the fix; they are not results of the study.</p>
+
+    <p>The study pins Firefox 158.0, and the fresh profile turns automatic updates off. On 2026-11-10, between two exploratory campaigns of the earlier build, the installed Firefox <b>updated itself in place to 160.0</b> all the same. Only the enterprise policy <code>DisableAppUpdate</code> prevents it (ADR 0071).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> Two campaigns meant to compare the same Firefox would have compared two different ones, with whatever changed in the engine between them mixed into the result.</p></aside>
+    <ul>
+      <li><b>Caught:</b> strict validation checks the browser version of every run, and rejected all 2640 affected exploratory runs of that build.</li>
+      <li><b>Fix:</b> the installer writes the policy and reinstalls a moved install, and a campaign refuses to start
+        when a browser is not the pinned version.</li>
+      <li><b>Now:</b> on <code>measured/v3</code> the policy and the version check were in place from the first run. Every Firefox run of every campaign is 158.0 and interleaved with the others, and no run was rejected for its version.</li>
+    </ul>
+    <div data-code="harness/browsers.py|# Firefox from archive.mozilla.org updates itself|4" data-title="The policy that keeps Firefox pinned"></div>
+
+    <h2 id="wasm">What WASM threads need</h2>
+    <p>A native program gets threads from the operating system. A web page does not: its only way to run two things at once is a <span data-term="web-worker">Web Worker</span>, a second script with its own memory. For Rayon's threads to work in a browser, several workers must run the same WebAssembly module on <b>one shared memory</b>. That takes five things:</p>
+    <ol class="needs">
+      <li><b>A compiler set to produce thread-capable code.</b> By default WebAssembly code has no atomic instructions. The build turns them on.</li>
+      <li><b>A standard library built the same way.</b> The prebuilt Rust standard library for WebAssembly has no atomics, so it is rebuilt from source with them. Only a nightly compiler can do that, which is why the pinned compiler is a nightly.</li>
+      <li><b>Permission for shared memory.</b> A browser allows a <span data-term="sharedarraybuffer">SharedArrayBuffer</span> only on a page that declares, with two HTTP headers, that it loads no content from other sites. The local results server sends both.</li>
+      <li><b>A pool of workers.</b> A small library, <span data-term="wasm-bindgen-rayon">wasm-bindgen-rayon</span>, starts
+        N workers that share the module's memory and become Rayon's threads.</li>
+      <li><b>A worker that coordinates.</b> The main thread of a page may not block, but a parallel region means waiting for every thread to finish. So one extra worker calls the Rust code and waits, and the main thread waits only for its message.</li>
+    </ol>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does this matter for the results?</b> A browser run has more threads than N: the N workers of the pool, the coordinating worker, and the browser's own threads. At N = 8 they share the 8 cores. That is one of the threats in <a href="threats.html#internal">Threats to validity</a>, and the reason every run measures the cost of starting and joining a parallel region (<a href="protocol.html#calibration">Fork-join calibration</a>).</p></aside>
+    <details class="deeper"><summary>In depth: the flags, the headers and the worker</summary>
+      <p>Target features <code>+atomics,+bulk-memory,+mutable-globals,+simd128</code> and a shared, imported memory of at
+        most 4 GiB; <code>-Z build-std</code> for the standard library; <code>Cross-Origin-Opener-Policy: same-origin</code>
+        and <code>Cross-Origin-Embedder-Policy: require-corp</code> from the server; <code>startThreadPool(N)</code> from
+        wasm-bindgen-rayon; and a dedicated worker because <code>Atomics.wait</code> is forbidden on the main thread.</p>
+      <div data-code="bench/.cargo/config.toml|[target.wasm32-unknown-unknown]|24" data-title="1 and 2: the WASM flags and the build-std alias"></div>
+      <div data-code="harness/server.py|RESPONSE_HEADERS = {|6" data-title="3: the headers that enable SharedArrayBuffer"></div>
+      <div data-code="bench/www/worker.js|async function measure|13" data-title="4 and 5: the coordinating worker starts the pool, then runs"></div>
+      <p class="src" data-files="bench/.cargo/config.toml, bench/build-wasm.sh, bench/src/wasm.rs, bench/www/main.js, bench/www/worker.js, harness/server.py"></p>
+    </details>
+
+    <h2 id="builds">Builds and tags</h2>
+    <p>A build is the exact compiled output: one Linux program and one WebAssembly module from one version of the source. Change one line of the measured code and the machine code may come out different, sometimes in a way that changes a timing. So runs of two builds are never compared as if they were one.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why so strict?</b> Suppose you measure native on Monday, improve the code a little on Tuesday, and measure Chrome on Wednesday. Chrome runs better code, and the comparison is unfair without anyone noticing. So every run records the build it came from, and a campaign is always one build. A git tag names the build of every reported number: <code>measured/v3</code>.</p></aside>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>Build of the reported results</th><th></th></tr></thead>
+      <tbody>
+        <tr><td>Tag</td><td><code>measured/v3</code></td></tr>
+        <tr><td>Commit</td><td><code>ac65af6a447c96164011c2784857a9c2dc443c53</code></td></tr>
+        <tr><td>Native binary SHA-256</td><td><code>525707dedef95487ddc4efca3a8bbab48668201b3d90773f55e03c5108494bf3</code></td></tr>
+        <tr><td>WASM SHA-256</td><td><code>387871291106220da7f1d5ee5205b9b3fa7425a80eda2c81c614e0b276c2ca43</code></td></tr>
+        <tr><td>Browsers</td><td>Chrome for Testing 155.0.8059.84, Firefox 158.0</td></tr>
+      </tbody>
+    </table></div>
+    <p class="src" data-files="data/raw/campaign-v3/campaign.json, data/sessions/v3/build/digests.txt, docs/adr/0062-bench-refactor-codegen-neutral.md, docs/adr/0086-v3-build.md"></p>
+    <details class="deeper"><summary>In depth: codegen-neutral refactors and the earlier build</summary>
+      <ul>
+        <li>Every run records the git commit and the SHA-256 of the native binary and of the <code>.wasm</code> file.</li>
+        <li>A refactor of the measured path is checked with <code>scripts/codegen_diff.sh</code>; if any hot function's
+          code changes, it is a new build, with its own tag (ADR 0062).</li>
+        <li>Two builds came before it; <a href="#v2">The build history</a> tells what changed between them. The data of <code>measured/v2</code> is at the tag <code>data/v2</code>.</li>
+      </ul>
+    </details>
+    <p>The same WebAssembly instruction does not give the same machine code in both browsers, and that is a finding, not a flaw. For one atomic add, SpiderMonkey emits one locked instruction and V8's optimizing compiler emits a loop that can retry (<a href="atomics.html#code">What each engine emits</a>). This is the same code with one thread in the three environments, in milliseconds per iteration:</p>
+    <div id="t1-table"></div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+
+    <p class="takeaway"><strong>In summary.</strong> One source, one compiler, one release profile, two outputs. Native runs machine code produced in advance; each browser produces its own from the same WebAssembly module, and that step is part of what is measured. Every run names its build, and builds are never mixed.</p>
+
+    <h2 id="v2">The build history</h2>
+
+    <p>After the first campaigns, a review of the measured code against the textbook, the cited papers and the lectures found two asymmetries that the study had caused itself. The second build, <code>measured/v2</code>, fixed them (ADR 0069):</p>
+    <ul>
+      <li><b>A bounds check on one side of RQ2 only.</b> The shared-counter histograms indexed a table whose length the compiler did not know, so every pixel paid a bounds check (a compare and a branch) that the local histogram did not. The atomic over local ratio therefore included code that only the atomic side ran, and that the engines could compile differently from LLVM.</li>
+      <li><b>Final work timed in some variants only.</b> The merge of the local histogram was inside the timed region; the merge of the private tables and the read-back of the shared counters were outside it.</li>
+    </ul>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why this would have gone unnoticed.</b> RQ2 is a ratio of ratios, and it cancels only what is the same on both sides. A check that ran on one side, or a merge timed on one side, would have been read as a cost of synchronization in every engine.</p></aside>
+    <p>The fix: counter tables of a fixed size (no check per pixel; LLVM then unrolls the loop by 8), and every histogram's timed run ends with its final histogram. The checksums did not change.</p>
+    <div data-code="bench/src/workloads/histogram/atomic.rs|fn run(|10" data-title="Reading the counters back is now timed, like the local merge"></div>
+    <p>Every campaign was then run again on the corrected build. The reported build is the third, <code>measured/v3</code>: a replication of v2 with known results, which adds the sequential references and the same task-splitting code for both histograms (<a href="session.html#twice">Why the study was measured twice</a>). <b>Every number in this documentation comes from <code>measured/v3</code></b>; the campaigns of the earlier builds are not reported as results.</p>
+    <details class="deeper"><summary>In depth: why builds are never mixed</summary>
+      <p>Builds are never mixed in one comparison because a change in code layout alone, with the same instructions,
+        can change timing by a few percent (Mytkowicz et al. 2009). A refactor of the measured path is accepted only
+        when a codegen diff shows the hot functions unchanged; otherwise it is a new build with a new tag, and earlier
+        campaigns stay valid only for their own build (ADR 0062, <a href="changing.html#hotpath">Change the measured code</a>).</p>
+    </details>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var $ = UI.$;
+  var CASES = [["filter", "", "Filter"], ["hist-local", 256, "hist-local, k = 256"], ["hist-atomic", 1, "hist-atomic, k = 1"], ["hist-atomic", 256, "hist-atomic, k = 256"]];
+  function t1(env, c) {
+    var where = { environment: env, workload: c[0], threads: 1 };
+    if (c[1] !== "") where.k = c[1];
+    return UI.row("campaign-v3-scaling", where);
+  }
+  var rows = CASES.map(function (c) {
+    var n = t1("native", c), ch = t1("chrome", c), ff = t1("firefox", c);
+    function ms(r) { return r ? UI.fmt(r.center_ns / 1e6, 1) + " ms" : null; }
+    function ratio(r) { return r && n ? UI.fmt(r.center_ns / n.center_ns, 2) + "×" : null; }
+    return { name: c[2], native: ms(n), chrome: ms(ch), firefox: ms(ff), cr: ratio(ch), fr: ratio(ff) };
+  });
+  $("#t1-table").appendChild(UI.table(rows, [
+    { label: "T1, one thread", key: "name" }, { label: "Native", key: "native", num: true },
+    { label: "Chrome", key: "chrome", num: true }, { label: "Firefox", key: "firefox", num: true },
+    { label: "Chrome / native", key: "cr", num: true }, { label: "Firefox / native", key: "fr", num: true }]));
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

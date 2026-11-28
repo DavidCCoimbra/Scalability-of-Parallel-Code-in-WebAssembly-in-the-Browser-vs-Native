@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reproduce the tables and figures - WASM threads vs native</title>
+<meta name="description" content="The chain from the raw runs of measured/v3 to the tables, figures and numbers of the paper, a check of the paper's main numbers against the tables they come from, and how this documentation gets its numbers.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .t td { vertical-align: top; }
+  .t td.ok { color: var(--native); font-weight: 600; }
+  .t td.check { white-space: nowrap; }
+</style>
+</head>
+<body data-page="reproduce">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Reproduce the tables and figures</h1>
+
+    <p class="lead">No number of the paper is typed from memory. Each one is in a table that a command wrote from the raw runs, and each command is a make target. This guide shows you the chain from <code>data/raw/*-v3</code> to <code>data/tables/*-v3</code> and <code>paper/figures/</code>, how to run it and check it, and a table that recomputes the main numbers from the committed data every time you open the page.</p>
+
+    <h2 id="chain">The chain</h2>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why must every number be reproducible from a command?</b> Nobody can check a number that was typed from a terminal: not a reviewer, and not the author a month later. With the chain below, "where does 0.42 come from?" has one answer: a file and the command that wrote it. <a href="#numbers">The table at the end of this page</a> recomputes the main numbers from those files every time you open it.</p></aside>
+    <div class="card">
+      <div id="chain-svg" class="diagram"></div>
+      <div id="chain-panel" class="panel" aria-live="polite"><p class="muted">Select a box above.</p></div>
+    </div>
+    <p>For the main campaign, the steps are the lines of <code>make results</code>:</p>
+    <div data-code="make/results.mk|results: ## Every table|11" data-title="make results"></div>
+    <ol>
+      <li><b>Check.</b> <code>analysis.datacheck</code> writes the quality report and stops the chain if
+        a run is missing, failed or disagrees on its checksum (<a href="campaigns.html#quality">The data
+        check</a>).</li>
+      <li><b>Join.</b> <code>harness.collect</code> joins every run into one table, for exploring; the statistics read the raw folder themselves.</li>
+      <li><b>Scale.</b> <code>analysis.v0</code>: one value per run (the median of its 10 measured
+        iterations), the geometric mean over the 30 runs, speedup and efficiency with bootstrap
+        intervals.</li>
+      <li><b>Infer.</b> <code>analysis.results</code>: the contrasts of the analysis plan, with <code>--strict</code> and the 0.25 s foreign CPU threshold for the exclusions of the plan, and Holm over the 10 primary contrasts.</li>
+      <li><b>Cross-check.</b> <code>analysis.robustness</code> (Mann-Whitney and Cliff's δ) and
+        <code>analysis.karp_flatt</code>.</li>
+      <li><b>Draw.</b> <code>analysis.figures</code> and <code>analysis.distributions</code> into
+        <code>paper/figures/</code>.</li>
+      <li><b>Write.</b> <code>paper/final/paper.tex</code> includes the figures and quotes the tables.</li> <li><b>Guard.</b> <code>make tables-check</code> does all of the above again and fails if a table differs from the committed one. CI runs it on another machine whenever the analysis, the harness or the data change.</li>
+    </ol>
+    <p>The other campaigns follow the same pattern in <code>extras-results</code> (extras, weak, SIMD, hybrid), <code>cutoff-results</code>, <code>grain-results</code>, <code>perf-results</code> and <code>v3-results</code> (the sequential references, the engine arms, the grain by threads and the counters of the loop). To run all of it from a clean checkout with the raw data:</p>
+    <pre class="code" style="padding:10px 12px;overflow-x:auto">git checkout main
+make all-results           # every table and figure of every campaign
+make tables-check          # the same, then fail if a committed table differs
+make explainer             # this documentation's data.js</pre>
+    <p class="def"><b>Why do the tables have a sidecar?</b> Each <code>-scaling.json</code> and <code>-contrasts.json</code> records the settings (summary, centre, bootstrap seed and resamples) and the commit that wrote it, in a fixed key order. Regenerating a table from the same data changes only the commit and the time stamp, so a diff shows at once whether a number moved.</p>
+    <p class="src" data-files="make/results.mk, analysis/README.md"></p>
+
+    <h2 id="numbers">Every paper number, its file</h2>
+    <p>These are the main numbers of the study as the paper and this documentation state them, next to the value of the table. The "Table gives" column is computed in your browser from <code>assets/data.js</code>, which is generated from the tables, so a mismatch here means that the text and the data disagree.</p>
+    <div id="number-check"></div>
+    <p>Numbers that are not in the table above are in the same files. The run counts of the paper come from the specs (<a href="campaigns.html#list">Every campaign of the study</a>), the description of the machine from <code>data/raw/campaign-v3/sysinfo/</code>, the machine code of the atomic add from <code>data/probes/engine-code/</code>, the probe times from <code>data/probes/atomic-increment/</code>, and the pilot numbers that justify a design decision from the pilot campaigns and their ADRs.</p>
+
+    <h2 id="explainer">The numbers of this documentation</h2>
+    <p>Every table and chart of this documentation is drawn from <code>assets/data.js</code>, which one script writes. Where a sentence quotes a number, it is a copy: the table or chart next to it has the value from the file, and the table above recomputes the main ones.</p>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>Part of data.js</th><th>Read from</th></tr></thead>
+      <tbody>
+        <tr><td><code>tables</code></td><td>Every CSV in <code>data/tables/*-v3/</code> (one key per file, one object per row), except the per-run perf table</td></tr>
+        <tr><td><code>sources</code></td><td>The path of each of those CSVs: the "source:" links under every chart</td></tr>
+        <tr><td><code>forkJoin</code></td><td>The <code>calibration-warm</code> rows of every run in <code>data/raw/campaign-v3</code>: per environment, N and probe, the median of the run medians and the mean of all calls</td></tr>
+        <tr><td><code>coreCheck</code>, <code>atomicIncrement</code></td><td>The per-core check (<code>data/checks/core-check/runs</code>) and the atomic increment probe (<code>data/probes/atomic-increment/passes.csv</code>): checks, never results</td></tr> <tr><td><code>runMedians</code></td><td>The per-run medians of three configurations, for the bootstrap widget</td></tr> <tr><td><code>code</code></td><td>Every excerpt a page asks for with <code>data-code=&quot;file|first line|lines&quot;</code>, read from the repository</td></tr>
+      </tbody>
+    </table></div>
+    <div data-code="scripts/explainer_data.py|def render|12" data-title="What goes into data.js"></div>
+    <pre class="code" style="padding:10px 12px;overflow-x:auto">make explainer                                 # python3 -m scripts.explainer_data
+python3 -m scripts.explainer_data --check      # exit 1 if data.js is out of date</pre>
+    <p>An excerpt is found by the text of its first line, not by its line number, so it follows the code when lines move. If that text is gone, the script stops and does not show the wrong lines. Run it again after any change to the tables or to code that a page shows.</p>
+    <p class="src" data-files="scripts/explainer_data.py, docs/explainer/README.md"></p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var el = UI.el, $ = UI.$, fmt = UI.fmt, D = UI.D;
+  var BOXES = [
+    { key: "raw", t: "data/raw", s: "*-v3 runs", d: "The runs as they were written: one CSV of times and one JSON of context per run, plus the campaign journal. Never edited.", page: "data.html#raw" },
+    { key: "check", t: "datacheck", s: "quality.md", d: "The quality report: missing, failed and conflicting runs, strict validation, foreign CPU, clock, order drift. Blocks the chain if the data cannot be analysed.", page: "campaigns.html#quality" },
+    { key: "stats", t: "analysis", s: "v0, results, ...", d: "One value per run, speedups with bootstrap intervals, the plan's contrasts with Holm, the robustness check, Karp-Flatt, cutoff, grain, counters.", page: "reading.html#speedup" },
+    { key: "tables", t: "data/tables", s: "*-v3 CSV", d: "One table per question, with a JSON sidecar that records the settings and the commit.", page: "data.html#tables" },
+    { key: "figures", t: "figures", s: "paper/figures", d: "PDF figures drawn by matplotlib from the same raw runs.", page: "data.html#figures" },
+    { key: "paper", t: "paper.tex", s: "quotes, includes", d: "The paper includes the figures and quotes the tables; the main numbers are checked below.", page: "reproduce.html#numbers" }
+  ];
+  var W = 760, bw = 104, gap = (W - 20 - bw * BOXES.length) / (BOXES.length - 1);
+  var svg = '<svg viewBox="0 0 ' + W + ' 86" role="img" aria-label="From raw runs to the paper">';
+  BOXES.forEach(function (b, i) {
+    var x = 10 + i * (bw + gap);
+    if (i) svg += '<path class="arrow" d="M' + (x - gap) + ' 40 h ' + (gap - 2) + '"/>';
+    svg += '<rect class="box" data-key="' + b.key + '" x="' + x + '" y="14" width="' + bw + '" height="52" rx="8"/>' +
+      '<text x="' + (x + bw / 2) + '" y="38" text-anchor="middle" font-size="13" font-weight="600">' + b.t + '</text>' +
+      '<text x="' + (x + bw / 2) + '" y="55" text-anchor="middle" font-size="10" style="fill:var(--muted)">' + b.s + '</text>';
+  });
+  $("#chain-svg").innerHTML = svg + "</svg>";
+  var details = {};
+  BOXES.forEach(function (b) {
+    details[b.key] = function (panel) {
+      panel.appendChild(el("h3", { style: "margin-top:0", text: b.t }));
+      panel.appendChild(el("p", { text: b.d }));
+      panel.appendChild(el("p", {}, [el("a", { href: b.page, text: "Read more →" })]));
+    };
+  });
+  UI.clickable($("#chain-svg"), $("#chain-panel"), details).pick("stats");
+
+  var ENVS = ["native", "chrome", "firefox"];
+  function sc(table, w) { var r = UI.row(table, w); return r || {}; }
+  function ctr(env, workload, k) { return sc("campaign-v3-contrasts", { question: workload === "filter" ? "RQ1" : "RQ2", environment: env, workload: workload, threads: 8, k: k == null ? "" : k }); }
+  function scale(env, workload, k, n, table) { return sc(table || "campaign-v3-scaling", { environment: env, workload: workload, threads: n, k: k == null ? "" : k }); }
+  function list(f, d) { return ENVS.map(function (e) { return fmt(f(e), d); }).join(" / "); }
+  function range(values, d) { var lo = Math.min.apply(null, values), hi = Math.max.apply(null, values); return fmt(lo, d) === fmt(hi, d) ? fmt(lo, d) : fmt(lo, d) + " to " + fmt(hi, d); }
+  function fj(env, stat) { var r = (D.forkJoin || []).filter(function (x) { return x.environment === env && x.threads === 8 && x.probe === "broadcast"; })[0]; return r ? r[stat] : null; }
+  var rob = UI.rows("campaign-v3-robustness"), rej = rob.filter(function (r) { return r.rejected === "yes"; });
+  var primaries = UI.rows("campaign-v3-contrasts").filter(function (r) { return r.primary === "yes"; });
+  function halfWidth(q) {
+    return Math.max.apply(null, primaries.filter(function (r) { return r.question === q; }).map(function (r) {
+      return Math.max(r.primary_high / r.effect - 1, 1 - r.primary_low / r.effect) * 100;
+    }));
+  }
+  var NUMS = [
+    { what: "Filter speedup at N = 8 (native / Chrome / Firefox)", paper: "6.96 / 6.92 / 7.34", src: "campaign-v3-scaling",
+      data: function () { return list(function (e) { return scale(e, "filter", null, 8).speedup; }, 2); } },
+    { what: "Filter efficiency at N = 8", paper: "0.87 / 0.87 / 0.92", src: "campaign-v3-scaling",
+      data: function () { return list(function (e) { return scale(e, "filter", null, 8).efficiency; }, 2); } },
+    { what: "RQ1: Chrome's filter speedup over native's, 99.5 % CI", paper: "1.00 [0.99, 1.00]", src: "campaign-v3-contrasts",
+      data: function () { var r = ctr("chrome", "filter"); return fmt(r.effect, 2) + " [" + fmt(r.primary_low, 2) + ", " + fmt(r.primary_high, 2) + "]"; } },
+    { what: "RQ1: Firefox's filter speedup over native's", paper: "about 1.05, rejected", src: "campaign-v3-contrasts",
+      data: function () { var r = ctr("firefox", "filter"); return fmt(r.effect, 2) + ", " + (r.rejected === "yes" ? "rejected" : "not rejected"); } },
+    { what: "RQ2: Chrome's atomic/local ratio over native's, k = 1, 4, 16", paper: "1.4 to 2.3", src: "campaign-v3-contrasts",
+      data: function () { return range([1, 4, 16].map(function (k) { return ctr("chrome", "hist-atomic", k).effect; }), 1); } },
+    { what: "RQ2: the same for Chrome at k = 256", paper: "0.42", src: "campaign-v3-contrasts",
+      data: function () { return fmt(ctr("chrome", "hist-atomic", 256).effect, 2); } },
+    { what: "RQ2: Firefox at k = 1", paper: "no detectable difference", src: "campaign-v3-contrasts",
+      data: function () { var r = ctr("firefox", "hist-atomic", 1); return fmt(r.effect, 2) + " [" + fmt(r.primary_low, 2) + ", " + fmt(r.primary_high, 2) + "], " + (r.rejected === "yes" ? "rejected" : "not rejected"); } },
+    { what: "Atomic histogram speedup at k = 256, N = 8", paper: "0.92 / 1.96 / 0.97", src: "campaign-v3-scaling",
+      data: function () { return list(function (e) { return scale(e, "hist-atomic", 256, 8).speedup; }, 2); } },
+    { what: "Atomic over local time at k = 1, N = 1 (Chrome, native)", paper: "4.6, 2.5", src: "campaign-v3-scaling",
+      data: function () { return ["chrome", "native"].map(function (e) { return fmt(scale(e, "hist-atomic", 1, 1).center_ns / scale(e, "hist-local", 1, 1).center_ns, 1); }).join(", "); } },
+    { what: "Half-width of the primary 99.5 % intervals (RQ1, RQ2)", paper: "±2 %, ±7 %", src: "campaign-v3-contrasts",
+      data: function () { return "±" + fmt(halfWidth("RQ1"), 1) + " %, ±" + fmt(halfWidth("RQ2"), 1) + " %"; } },
+    { what: "Mann-Whitney: smallest |δ| of the rejected contrasts; how many with |δ| = 1", paper: "0.74; six", src: "campaign-v3-robustness",
+      data: function () { return fmt(Math.min.apply(null, rej.map(function (r) { return Math.abs(r.cliffs_delta); })), 2) + "; " + rej.filter(function (r) { return Math.abs(r.cliffs_delta) === 1; }).length; } },
+    { what: "Warm fork-join, empty broadcast at N = 8, median (µs)", paper: "7.9 / 110 / 60", src: "",
+      data: function () { return list(function (e) { return fj(e, "median_us"); }, 1); } },
+    { what: "The same, mean of all calls (µs)", paper: "46 / 164 / 91", src: "",
+      data: function () { return list(function (e) { return fj(e, "mean_us"); }, 0); } },
+    { what: "Karp-Flatt serial fraction of the filter at N = 8", paper: "0.021 / 0.022 / 0.013", src: "campaign-v3-karp-flatt",
+      data: function () { return list(function (e) { return scale(e, "filter", null, 8, "campaign-v3-karp-flatt").serial_fraction; }, 3); } },
+    { what: "Weak scaling efficiency of the filter at N = 8", paper: "0.86 / 0.85 / 0.92", src: "weak-v3-scaling",
+      data: function () { return list(function (e) { return scale(e, "filter", null, 8, "weak-v3-scaling").weak_efficiency; }, 2); } },
+    { what: "Private atomics at k = 1: Chrome time over native's, every N", paper: "1.83 to 1.85", src: "extras-v3-scaling",
+      data: function () { return range([1, 2, 4, 6, 7, 8].map(function (n) { return scale("chrome", "hist-atomic-private", 1, n, "extras-v3-scaling").center_ns / scale("native", "hist-atomic-private", 1, n, "extras-v3-scaling").center_ns; }), 2); } },
+    { what: "Packed over padded atomics at k = 256, N = 8", paper: "1.18 / 3.45 / 1.25", src: "extras-v3-scaling",
+      data: function () { return list(function (e) { return scale(e, "hist-atomic-packed", 256, 8, "extras-v3-scaling").center_ns / scale(e, "hist-atomic", 256, 8, "extras-v3-scaling").center_ns; }, 2); } },
+    { what: "Scalar build: Chrome's filter time over native's, every N", paper: "1.48 to 1.50", src: "simd-v3-variants",
+      data: function () { return range(UI.rows("simd-v3-variants", { build: "scalar", environment: "chrome" }).map(function (r) { return r.over_native; }), 2); } },
+    { what: "E-cores: hybrid N = 20 against P-only N = 8, filter (gain)", paper: "10 to 18 %", src: "hybrid-v3-scaling, campaign-v3-scaling",
+      data: function () { return range(ENVS.map(function (e) {
+        // The sentence is "N up to 20": the gain at N = 20, not at the best N (Chrome peaks at 16).
+        var n20 = UI.row("hybrid-v3-scaling", { environment: e, workload: "filter", threads: 20 }).center_ns;
+        return (scale(e, "filter", null, 8).center_ns / n20 - 1) * 100; }), 0) + " %"; } },
+    { what: "Filter work for efficiency 0.5 at N = 8 (µs)", paper: "125 / 396 / 459", src: "cutoff-estimates",
+      data: function () { return list(function (e) { return sc("cutoff-estimates", { environment: e, workload: "filter", threads: 8, criterion: "worth-it" }).work_us; }, 0); } },
+    { what: "Best grain at 8192² (filter rows; local histogram KB)", paper: "4 rows; 64 to 128 KB", src: "grain-best",
+      data: function () {
+        var g = UI.rows("grain-best", { side: 8192 });
+        return range(g.filter(function (r) { return r.workload === "filter"; }).map(function (r) { return r.best_grain; }), 0) + " rows; " +
+          range(g.filter(function (r) { return r.workload === "hist-local"; }).map(function (r) { return r.best_grain; }), 0) + " KB"; } },
+    { what: "Rayon's adaptive split against the best grain at 8192²", paper: "within 3 %", src: "grain-best",
+      data: function () { return "at most " + fmt((Math.max.apply(null, UI.rows("grain-best", { side: 8192 }).map(function (r) { return r.adaptive_over_best; })) - 1) * 100, 1) + " % slower"; } },
+    { what: "V8's retries: extra locked loads per add, k = 1, N = 8", paper: "0.24 [0.23, 0.26]", src: "perf-v3-retries",
+      data: function () { var r = sc("perf-v3-retries", { environment: "chrome", k: 1 }); return fmt(r.excess_lock_loads, 2) + " [" + fmt(r.low, 2) + ", " + fmt(r.high, 2) + "]"; } },
+    { what: "Chrome's read HITMs per add at N = 8, k = 1 and 256", paper: "0.30, 0.71", src: "perf-v3-counters",
+      data: function () { return [1, 256].map(function (k) { return fmt(sc("perf-v3-counters", { environment: "chrome", k: k, threads: 8, counter: "read_hitm" }).mean, 2); }).join(", "); } }
+  ];
+  $("#number-check").appendChild(UI.table(NUMS, [
+    { label: "Number", key: "what" },
+    { label: "Stated", key: "paper" },
+    { label: "Table gives", value: function (r) { try { return r.data(); } catch (e) { return "?"; } } },
+    { label: "File", value: function (r) {
+      if (!r.src) return UI.repoLink("data/raw/campaign-v3");
+      var span = el("span");
+      r.src.split(", ").forEach(function (n, i) { if (i) span.appendChild(document.createTextNode(", ")); span.appendChild(UI.repoLink((D.sources || {})[n] || n)); });
+      return span; } }
+  ]));
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

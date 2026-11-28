@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rust for JavaScript developers - WASM threads vs native</title>
+<meta name="description" content="The three ideas of Rust that make the parallel code safe, each with a two-line example, then every construct the repository uses next to its nearest JavaScript or TypeScript twin, read from the real files.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .code pre.plain { padding: 10px 12px; white-space: pre; }
+  .pair { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); align-items: start; }
+  .pair > * { min-width: 0; }
+  .item { margin: 26px 0 8px; }
+  .item h3 { margin-bottom: 4px; }
+  .whyline { font-size: var(--fs-sm); color: var(--muted); }
+  .ideas { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin: 12px 0; }
+  .ideas .card h3 { margin: 0 0 6px; font-size: 1rem; }
+  .ideas .card p { font-size: var(--fs-sm); margin: 4px 0; }
+  .ideas .card pre { margin: 6px 0 0; padding: 8px 10px; font-size: var(--fs-xs); background: var(--panel-2); border-radius: 8px; white-space: pre; overflow-x: auto; }
+  .ok { color: var(--good); font-weight: 600; }
+  .no { color: var(--bad); font-weight: 600; }
+</style>
+</head>
+<body data-page="rust">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Rust for JavaScript developers</h1>
+
+    <p class="lead">The measured code is Rust. If you write JavaScript, most of it reads as familiar: functions, loops, structs with fields, arrays, closures. Three ideas are new: every value has one owner, many readers or one writer, and a compiler that refuses a program in which two threads could write the same memory. This page gives those ideas with small examples and then the Rust features the codebase uses.</p>
+
+    <h2 id="three">Three ideas</h2>
+
+    <p>These three ideas are enough to read <code>bench/src/</code> and to see why the filter and the local histogram run on 8 threads with no lock. The rest of the page is detail.</p>
+
+    <p>Think of a library book. One person has borrowed it (the owner). Many people can read a photocopy at the same time, but nobody writes in the book while photocopies are out, and only one person at a time holds the pen. The Rust compiler is the librarian: it rejects a program that breaks those rules.</p>
+
+    <div class="ideas">
+      <div class="card"><h3>1. Every value has one owner</h3>
+        <p>A value belongs to one variable. Give it to another, and the first can no longer use it. No two places own the same value, so nothing is freed twice or changed from elsewhere.</p>
+<pre>let a = Histogram::default();
+let b = a;       // a moves into b
+// a.merge(..)   // error: moved</pre></div>
+      <div class="card"><h3>2. Many readers or one writer, never both</h3>
+        <p>You can lend a value to be read (<code>&amp;</code>) to as many places as you like, or lend it to be changed (<code>&amp;mut</code>) to exactly one place, never both at the same time.</p>
+<pre>let r1 = &amp;image;     // read
+let r2 = &amp;image;     // read, fine
+let w = &amp;mut image;  // error: r1, r2 live</pre></div>
+      <div class="card"><h3>3. The compiler refuses racy code</h3>
+        <p>The compiler checks those two rules when it builds the program, not when the program runs. Give each thread its own <code>&amp;mut</code> row, and no thread can touch the row of another; try to share one <code>&amp;mut</code>, and the build fails. A <span data-term="data-race">data race</span> cannot reach the benchmark.</p>
+<pre>rows.par_chunks_mut(1)   // own rows
+  .for_each(|r| blur(r)); <span class="ok">compiles</span>
+spawn(|| total += 1);     <span class="no">refused</span></pre></div>
+    </div>
+
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the study care?</b> RQ2 compares a histogram that shares counters with one that does not. If the local histogram shared something after all, or the filter had a race that sometimes produced a wrong pixel, every ratio in the paper would measure a bug. With Rust, "nothing is shared" is a property that the compiler proved, and the checksum of every iteration confirms it at run time (<a href="workloads.html#inputs">Inputs and checksums</a>).</p></aside>
+
+    <p>The rest of this page is a reference. Read it with <code>bench/src/</code> open. Every excerpt is read from the file when <code>data.js</code> is generated, and the link in its header opens the file. The "Nearest TS" panels use TypeScript, and explain in one line any TypeScript term that may be new.</p>
+
+    <h2 id="basics">Types, ownership, borrowing</h2>
+
+    <div class="item"><h3>struct and impl: data, and the functions that work on it</h3>
+    <div class="pair">
+      <div data-code="bench/src/input/gray_image.rs|pub struct GrayImage {|6"></div>
+      <figure class="code"><header><span>Nearest TS</span></header><pre class="plain">class GrayImage {
+  #width: number; #height: number;
+  #pitch: number; #pixels: Uint8Array;   // private fields
+}</pre></figure>
+    </div>
+    <p>A <code>struct</code> is an object type: named fields, no methods. The methods come separately, in an
+      <code>impl</code> block. Fields without <code>pub</code> are private to the file, like <code>#field</code>
+      in a JS class. <code>Vec&lt;u8&gt;</code> is a growable array of bytes, here used like a
+      <code>Uint8Array</code>. <code>&amp;self</code> in a method is a read-only <code>this</code>.</p>
+    <p class="whyline">Why: every domain concept is a named type, never a loose tuple (the project's style rule). A pixel buffer with a width and a pitch cannot be confused with any other array of bytes.</p></div>
+
+    <div class="item"><h3>enum and match: a closed set of cases</h3>
+    <div class="pair">
+      <div data-code="bench/src/experiment/input_kind.rs|pub enum InputKind {|4"></div>
+      <figure class="code"><header><span>Nearest TS</span></header><pre class="plain">type InputKind =
+  | { kind: "noise" }
+  | { kind: "few"; k: number; palette: Palette };</pre></figure>
+    </div>
+    <div data-code="bench/src/experiment/input_kind.rs|pub fn k(self)|6" data-title="match: a switch the compiler checks is exhaustive"></div>
+    <p>An <code>enum</code> lists the only values a thing can be, and each case can carry its own data. In
+      TypeScript the same idea is a union type (a value that is one of several shapes, told apart by a tag).
+      <code>match</code> is a <code>switch</code> over the cases that refuses to compile if you forget one.</p>
+    <p class="whyline">Why: environment, workload and input are closed sets with fixed names in the CSV. A typo in a name is a build error, not a mislabelled row in the data.</p></div>
+
+    <div class="item"><h3>Option, Result and the question mark</h3>
+    <div class="pair">
+      <div data-code="bench/src/wasm.rs|pub fn run(query|9"></div>
+      <figure class="code"><header><span>Nearest TS</span></header><pre class="plain">function run(query: string): string {   // throws on error
+  const config = RunConfig.fromQuery(query); // a throw propagates
+  return toCsv(runInPool(config, platform));
+}</pre></figure>
+    </div>
+    <p><code>Option&lt;T&gt;</code> is "a T, or nothing": <code>T | undefined</code>. <code>Result&lt;T, E&gt;</code>
+      is "a T, or an error E", but the error is an ordinary return value you can see in the type, not an
+      exception that may or may not be thrown. The <code>?</code> after a call means "if this failed, return
+      the failure from my function now", which is what letting an exception bubble up does, written out.
+      When <code>run</code> returns an error, the WASM bridge turns it into a thrown JS exception that the
+      page's worker catches.</p>
+    <p class="whyline">Why: a bad configuration must become a recorded error file, never a silent wrong measurement (ADR 0027).</p></div>
+
+    <div class="item"><h3>Ownership and borrowing in the code: &amp;, &amp;mut and moves</h3>
+    <div class="pair">
+      <div data-code="bench/src/workloads/histogram/mod.rs|pub fn merge(mut self, other: Self)|7"></div>
+      <figure class="code"><header><span>Nearest TS</span></header><pre class="plain">function blurRow(source: Readonly&lt;GrayImage&gt;,
+                 y: number, row: Uint8Array) { /* ... */ }
+function merge(a: Histogram, b: Histogram): Histogram {
+  /* add b into a, return a */
+}</pre></figure>
+    </div>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>Rust</th><th>Meaning</th><th>Closest JS idea</th></tr></thead>
+      <tbody>
+        <tr><td><code>&amp;T</code></td><td>borrow, read-only; many may exist at once</td><td>a <code>Readonly&lt;T&gt;</code> reference (TypeScript's "you may look but not change")</td></tr>
+        <tr><td><code>&amp;mut T</code></td><td>borrow, read-write; only one may exist, and no <code>&amp;T</code> at the same time</td><td>the only reference to it</td></tr>
+        <tr><td><code>T</code> by value</td><td>ownership moves in; the caller can no longer use it</td><td>"I take this, don't touch it again"</td></tr>
+      </tbody>
+    </table></div>
+    <p>These are ideas 1 and 2 above, as they appear in the code. <code>merge(mut self, other)</code> takes
+      both histograms by value, so it owns them, adds one into the other and returns the result with no copy.
+      Because only one <code>&amp;mut</code> to each output row can exist, two threads can never write the
+      same row: the parallel filter is proved free of <span data-term="data-race">data races</span> before it
+      runs.</p>
+    <p class="whyline">Why: it is what lets Rayon run the closures on 8 threads without locks in the filter and the local histogram.</p></div>
+
+    <div class="item"><h3>Slices: a window onto someone else's bytes</h3>
+    <div data-code="bench/src/workloads/gaussian.rs|pub fn blur_interior(top|14" data-title="Views into rows, no copy"></div>
+    <p><code>&amp;[u8]</code> is a view (a start and a length) into bytes owned by someone else, like
+      <code>Uint8Array.subarray</code>; nothing is copied. <code>a..b</code> is the range from <code>a</code>
+      up to but not including <code>b</code>. Every index into a slice is
+      <span data-term="bounds-checking">bounds-checked</span>, but when the compiler can see that all the
+      slices have the same length it drops the checks and turns the loop into
+      <span data-term="simd">SIMD</span> instructions.</p>
+    <p class="whyline">Why: the filter reads three input rows and writes one output row without copying, and its inner loop must use SIMD on both sides (ADR 0017).</p></div>
+
+    <div class="item"><h3>Closures, iterator chains and sized integers</h3>
+    <div class="pair">
+      <div data-code="bench/src/workloads/fnv1a.rs|pub fn write(self, bytes|5" data-title="FNV-1a, the checksum of every iteration"></div>
+      <figure class="code"><header><span>Nearest TS</span></header><pre class="plain">function write(hash: bigint, bytes: Uint8Array) {
+  return bytes.reduce(
+    (h, byte) => BigInt.asUintN(64, (h ^ BigInt(byte)) * PRIME),
+    hash);
+}</pre></figure>
+    </div>
+    <p><code>|hash, &amp;byte| ...</code> is an arrow function, <code>(hash, byte) =&gt; ...</code>. The
+      iterator method <code>fold(init, f)</code> is <code>reduce(f, init)</code>. Unlike JS, Rust integers
+      have a size: <code>u8</code> (a pixel, 0 to 255), <code>u16</code> (the filter's sums),
+      <code>u64</code> (the counters), <code>usize</code> (an index). Going past the top is a bug by default;
+      <code>wrapping_mul</code> says "wrap around on purpose", like <code>BigInt.asUintN(64, ...)</code>.</p>
+    <p class="whyline">Why: the <span data-term="fnv-1a">FNV-1a</span> checksum proves every environment computed the same output, and the <span data-term="splitmix64">SplitMix64</span> input generator must give the same pixels bit for bit everywhere.</p></div>
+
+    <h2 id="traits">Traits and generics</h2>
+
+    <div class="item"><h3>trait: what every workload must be able to do</h3>
+    <div class="pair">
+      <div data-code="bench/src/workloads/workload.rs|pub trait Workload {|10"></div>
+      <figure class="code"><header><span>Nearest TS</span></header><pre class="plain">interface Workload {
+  prepare(): void;        // Rust gives it a default body
+  run(): void;
+  checksum(): Checksum;
+}
+class AtomicHistogram implements Workload { /* ... */ }</pre></figure>
+    </div>
+    <p>A trait is an interface (a list of methods a type promises to have), which may also carry default
+      bodies: <code>prepare</code> does nothing unless a workload overrides it. <code>impl Workload for
+      AtomicHistogram</code> is <code>implements</code>, written outside the struct.</p>
+    <p class="whyline">Why: the timed loop runs any workload without knowing which, so "only <code>run</code> is timed" is guaranteed in one place (ADR 0015).</p></div>
+
+    <details class="deeper"><summary>In depth: trait objects, generics, derive, cfg and compile-time asserts</summary>
+    <div class="item"><h3>Trait objects: Box&lt;dyn Trait&gt;</h3>
+    <div data-code="bench/src/experiment/workload_kind.rs|pub fn build_with(self, image: GrayImage, grain: Grain)|12" data-title="A factory that picks the workload"></div>
+    <p><code>Box&lt;dyn Workload&gt;</code> is "some object on the heap that implements <code>Workload</code>",
+      which is what every TS object reference already is; Rust needs the <code>Box</code> because the concrete
+      types have different sizes. <code>+ Send</code> means the value may move to another thread; JS has no
+      equivalent, because JS objects never cross threads.</p></div>
+
+    <div class="item"><h3>Generics and where</h3>
+    <div class="pair">
+      <div data-code="bench/src/measurement/measure.rs|pub fn measure<W, C>(|11"></div>
+      <figure class="code"><header><span>Nearest TS</span></header><pre class="plain">function measure&lt;W extends Workload, C extends Clock&gt;(
+  workload: W, clock: C, plan: MeasurementPlan,
+): Measurement { /* ... */ }</pre></figure>
+    </div>
+    <p>A generic is a function written once for any type that meets a condition. <code>where W: Workload</code>
+      is <code>W extends Workload</code>. <code>?Sized</code> lets <code>W</code> be a <code>dyn Workload</code>.
+      Unlike TS, Rust compiles one copy per concrete type, so the generic costs nothing at run time.</p>
+    <p class="whyline">Why: the same loop runs with the native clock and with <code>performance.now()</code> in the browser; only the clock is injected (ADR 0015).</p></div>
+
+    <div class="item"><h3>derive, cfg and const</h3>
+    <div data-code="bench/src/workloads/checksum.rs|#[derive(Debug, Clone, Copy, PartialEq, Eq)]|2" data-title="derive: the compiler writes equals, clone and toString"></div>
+    <div data-code="bench/src/workloads/gaussian/kernel.rs|const _: () = assert!(kernel_sum() == 1|2" data-title="Asserts that run in the compiler"></div>
+    <p><code>#[derive(...)]</code> generates standard methods; <code>Copy</code> makes the value copy on
+      assignment, like a JS number. <code>#[cfg(...)]</code> removes code at compile time, like a bundler's
+      dead-code elimination on <code>process.env.X</code>, but the removed code is never type-checked or
+      shipped; it selects the native or browser clock. A <code>const _: () = assert!(...)</code> makes the
+      <b>build</b> fail if the check is false: here, that the kernel weights sum to 16 and that the largest
+      weighted sum fits in a <code>u16</code>, so the 16-bit SIMD arithmetic cannot overflow.</p>
+    <p class="whyline">Why: an integer kernel gives exactly the same output on every target (ADR 0012), and one source builds for two targets.</p></div>
+    </details>
+
+    <h2 id="rayon">Rayon in the code</h2>
+
+    <p><span data-term="rayon">Rayon</span> is the library that runs a loop on many threads. You write the loop
+      as you would for one thread, change <code>chunks_mut</code> to <code>par_chunks_mut</code>, and Rayon
+      hands the pieces to a <span data-term="thread-pool">pool</span> of threads and waits for all of them
+      (<a href="threads.html#rayon">Rayon and work stealing</a>).</p>
+
+    <div class="item"><h3>par_chunks_mut and for_each: the filter</h3>
+    <div data-code="bench/src/workloads/gaussian.rs|impl Workload for GaussianBlur {|16" data-highlight="par_chunks_mut|for_each"></div>
+    <figure class="code"><header><span>Nearest JS</span></header><pre class="plain">// split the rows across a pool of workers and await them all
+await Promise.all(workers.map((worker, i) =&gt; worker.blurRows(rowsFor(i))));</pre></figure>
+    <p><code>par_chunks_mut</code> cuts the output into chunks of rows and hands them to the pool;
+      <code>for_each</code> returns after <b>every</b> chunk is done, which is the join. Unlike Web Workers,
+      there is no <code>postMessage</code> and no copy: all threads see the same memory, and the
+      <code>&amp;mut</code> rule guarantees each row is written by exactly one thread. <code>grain.tasks</code>
+      lets the grain sweep fix the task size; the main campaign uses Rayon's adaptive split.</p></div>
+
+    <div class="item"><h3>fold and reduce: the local histogram</h3>
+    <div data-code="bench/src/workloads/histogram/local.rs|fn local_counts|8"></div>
+    <figure class="code"><header><span>Nearest JS</span></header><pre class="plain">const partials = splits.map(s =&gt; s.reduce(record, emptyHistogram()));  // on many threads
+const histogram = partials.reduce(merge, emptyHistogram());</pre></figure>
+    <p><code>fold(Histogram::default, f)</code>: each Rayon task starts with its own fresh, zeroed histogram
+      (<code>Histogram::default</code> is passed as a factory) and counts its chunks into it; nobody else
+      touches it, so no atomics. <code>reduce</code> then merges the partial histograms pairwise. The private
+      copy is per task, not per thread (<span data-term="privatization">privatization</span>, ADR 0013).</p>
+    <p class="whyline">Why: this is the lock-free control of RQ2.</p></div>
+
+    <div class="item"><h3>The thread pool and broadcast</h3>
+    <div class="pair">
+      <div data-code="bench/src/pool.rs|pub fn start_global(threads: usize)|8" data-title="Native: build the global pool"></div>
+      <div data-code="bench/src/calibration/empty_broadcast.rs|fn fork_join(|6" data-title="broadcast: run on every thread, wait for all"></div>
+    </div>
+    <p>A pool is a fixed set of threads that wait for work, like Web Workers created once and reused. It is
+      built <b>before</b> the timed iterations, so its start-up is never measured. <code>broadcast</code> with
+      an empty closure leaves only the cost of handing out work and waiting, which every run measures
+      (<a href="threads.html#forkjoin">Fork-join and its cost</a>).</p>
+    <p class="whyline">Why: N is the independent variable of RQ1, so the pool must have exactly N threads in every environment; <code>pool::check</code> refuses a run otherwise.</p></div>
+
+    <h2 id="atomics">Atomics in the code</h2>
+
+    <div class="item"><h3>AtomicU64 and fetch_add</h3>
+    <div data-code="bench/src/workloads/histogram/counter_table.rs|pub fn increment(|5"></div>
+    <figure class="code"><header><span>Nearest JS</span></header><pre class="plain">Atomics.add(counters /* BigUint64Array on a SharedArrayBuffer */, value, 1n);</pre></figure>
+    <p><code>fetch_add</code> reads, adds and writes as one indivisible step, an
+      <span data-term="atomic-operation">atomic operation</span>. It takes <code>&amp;self</code>, not
+      <code>&amp;mut self</code>: atomics are the one kind of value that may change through a shared
+      reference, which is why all threads can share the table. The <code>Ordering</code> argument makes no
+      difference on these targets; see <a href="atomics.html#order">Memory order</a>.</p></div>
+
+    <details class="deeper"><summary>In depth: static atomics, repr(align) and inline</summary>
+    <div class="item"><h3>Static atomics</h3>
+    <div data-code="bench/src/pool.rs|static POOL_THREADS: AtomicUsize|1"></div>
+    <p>A global. Rust forbids a plain mutable global, because any thread could race on it, so the global is an
+      atomic; in WASM every worker of the pool shares this memory.</p></div>
+
+    <div class="item"><h3>#[repr(align(128))] and #[inline]</h3>
+    <div data-code="bench/src/workloads/histogram/padded_counter.rs|#[derive(Default)]|4"></div>
+    <figure class="code"><header><span>Nearest JS</span></header><pre class="plain">// JS never lets you choose layout; spacing counters by hand comes closest:
+const STRIDE = 128 / 8;   // 16 u64 slots = 128 bytes
+Atomics.add(counters, value * STRIDE, 1n);</pre></figure>
+    <p><code>repr(align(128))</code> starts every counter on a 128-byte boundary and pads it to 128 bytes, one
+      counter per cache line and per prefetch pair (<a href="memory.html#falsesharing">False sharing and padding</a>).
+      <code>#[inline(always)]</code> on <code>increment</code> keeps the locked add inside the per-pixel loop;
+      <code>#[inline(never)]</code> on <code>blur_interior</code> keeps it a separate function with a stable name, so
+      <code>scripts/check_simd.py</code> can find it in both disassemblies.</p></div>
+    </details>
+
+    <h2 id="wasm">From Rust to WASM</h2>
+
+    <div class="item"><h3>wasm_bindgen: exports and imports</h3>
+    <div class="pair">
+      <div data-code="bench/src/wasm.rs|#[wasm_bindgen(js_name = startThreadPool)]|5" data-title="Export: an ES module function"></div>
+      <div data-code="bench/src/wasm/performance_clock.rs|#[wasm_bindgen]|5" data-title="Import: call performance.now from Rust"></div>
+    </div>
+    <p><span data-term="wasm-bindgen">wasm-bindgen</span> is the bridge between Rust and JavaScript.
+      <code>#[wasm_bindgen]</code> on a function makes it an export of the generated <code>pkg/bench.js</code>,
+      with strings and errors converted for you. The <code>extern "C"</code> block is the opposite direction,
+      like a TS <code>declare function</code>: it lets Rust call <code>performance.now</code>.</p>
+    <p class="whyline">Why: the browser page calls the same <code>run</code> path as the native runner, only through this bridge (ADR 0018).</p></div>
+
+    <details class="deeper"><summary>In depth: the build flags and in-file tests</summary>
+    <div class="item"><h3>The build flags</h3>
+    <div data-code="bench/.cargo/config.toml|[target.wasm32-unknown-unknown]|17" data-title="WASM-only flags"></div>
+    <p>Threads need the <span data-term="atomics-bulk-memory-mutable-globals">atomics target features</span>, memory
+      shared between workers and created by JS (<code>--shared-memory --import-memory</code>), and per-worker
+      thread-local storage. The prebuilt standard library for wasm32 has no atomics, so it is rebuilt with these
+      flags (<span data-term="z-build-std">-Z build-std</span>, nightly only, pinned in ADR 0009). Native builds use the
+      default x86-64 baseline. <code>bench/build-wasm.sh</code> then runs the pinned <code>wasm-bindgen</code> to
+      write <code>bench/www/pkg</code>.</p></div>
+
+    <div class="item"><h3>Tests in the same file</h3>
+    <div data-code="bench/src/workloads/histogram/padded_counter.rs|#[cfg(test)]|10"></div>
+    <p><code>#[cfg(test)]</code> compiles the module only for <code>cargo test</code>, like in-source tests in
+      Vitest. Most files in <code>bench/src/</code> end with one; <code>make test-rust</code> runs them, and <code>bench/tests/golden_checksums.rs</code> pins the output checksums, so a
+      refactor that changes a result fails CI (ADR 0062).</p></div>
+    </details>
+
+    <details class="deeper"><summary>In depth: Two things you might expect and will not find</summary>
+    <p><b><code>Arc</code></b> (shared ownership across threads): Rayon's closures only <i>borrow</i> data for
+      the length of the parallel call, so nothing needs reference counting. <b><code>rayon::join</code></b>:
+      not called directly; the parallel iterators use it internally to split work in halves.</p>
+    </details>
+
+    <p class="takeaway"><strong>In summary.</strong> One owner per value, and many readers or one writer. The compiler, not a test, guarantees that no two threads write the same memory. What looks unusual in <code>bench/src/</code> is one of those rules applied.</p>
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>

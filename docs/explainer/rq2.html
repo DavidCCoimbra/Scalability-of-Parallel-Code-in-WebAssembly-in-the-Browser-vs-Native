@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RQ2: synchronization - WASM threads vs native</title>
+<meta name="description" content="How much shared atomic counters widen or narrow the gap between the browser and native, worked with the real numbers first, then the four contention levels and the ten tests.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .chart { width: 100%; height: auto; display: block; }
+  .chart text { font-family: var(--sans); fill: var(--muted); font-size: 11px; }
+  .chart .axis { stroke: var(--edge); }
+  .chart .ideal { stroke: var(--faint); stroke-dasharray: 4 4; fill: none; }
+  .controls-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 10px 0; }
+  .legend-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0; }
+  .fig text { font-family: var(--sans); font-size: 12px; fill: var(--body); }
+  .fig .box { fill: var(--panel); stroke: var(--edge); }
+  .fig .hot { fill: var(--chrome-soft); stroke: var(--chrome); }
+  .fig .cool { fill: var(--native-soft); stroke: var(--native); }
+  .fig .arrow { stroke: var(--muted); fill: none; marker-end: url(#ah); }
+
+</style>
+</head>
+<body data-page="rq2">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>RQ2: synchronization</h1>
+    <p class="lead">RQ2 asks whether threads that share data cost a browser more than they cost native code. This page gives the metric, the ten decisions fixed before the campaign, and then what the study found about where Chrome's difference comes from: the machine code of one atomic add, a native probe that changes only that code, and the hardware counters.</p>
+
+    <h2 id="metric">The metric, with the real numbers</h2>
+    <p>The time of the atomic histogram alone cannot compare two environments: the browser is already slower at everything (<a href="rq1.html#ratio">Browser over native</a>). So the study asks in three steps, shown here with the measured times at N = 8 and k = 1 (every pixel adds to <i>one</i> counter):</p>
+    <div id="w-worked"></div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+    <ol>
+      <li><b>Inside native:</b> how many times slower is the atomic histogram than the local one? Atomic time divided by local time, <span id="w-nat-ratio"></span> times.</li>
+      <li><b>Inside Chrome:</b> the same division, <span id="w-chr-ratio"></span> times.</li>
+      <li><b>The Chrome ratio over the native ratio:</b> <span id="w-chr-eff"></span>. That number is the answer for this configuration: <b>1 means that Chrome pays for sharing what native pays; 2 means twice as much.</b></li>
+    </ol>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a ratio of ratios, and not "Chrome's atomic histogram is slower"?</b> It is slower at the local histogram too. Comparing atomic times directly counts the general slowness of the browser as a cost of sharing. Dividing by each environment's own local time first cancels that: what remains is the cost of sharing alone (<a href="ratios.html#ratioofratios">A ratio of ratios</a>, ADR 0026).</p></aside>
+    <p>The charts below apply the same three steps at every N and every k. <span data-term="k">k</span> is the number of counters the pixels are spread over: at k = 1 every thread adds to one counter, at k = 256 the adds are spread out (<a href="memory.html#contention">Contention</a>).</p>
+    <div class="controls-row"><span class="muted">k:</span><span id="w-k"></span></div>
+    <div class="grid two">
+      <div class="card"><h3 style="font-size:1rem">Step 1 and 2: atomic time / local time, per environment</h3><div id="w-ratio"></div></div>
+      <div class="card"><h3 style="font-size:1rem">Step 3: browser ratio / native ratio</h3><div id="w-effect"></div></div>
+    </div>
+    <p class="src" data-src="campaign-v3-scaling, campaign-v3-contrasts"></p>
+    <p>Left: at k = 1 sharing makes the histogram tens of times slower with 8 threads in <i>every</i> environment. That is the hardware, not the browser (<a href="memory.html#contention">Contention</a>). Right: the comparison that RQ2 asks for. Above the dashed line at 1 the browser pays more than native for sharing; below it, less. The band is the 95% interval.</p>
+    <p class="def"><b>Shared atomics do not scale in any environment.</b> At k = 1 to 16 the atomic histogram is slower with 8 threads than with one everywhere (speedups below 1). Contention is the same hardware problem natively and in the browser; RQ2 asks only whether the browser makes it worse.</p>
+    <div id="w-speedups"></div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+    <details class="deeper"><summary>In depth: the metric as the paper writes it</summary>
+      <p>For each environment, k and N: r = log T<sub>atomic</sub> - log T<sub>local</sub>, the cost of sharing on a log scale. Then <span data-term="r-delta-r">Δr</span> = r<sub>browser</sub> - r<sub>native</sub>, and the charts show exp(Δr), the ratio of ratios above. The log form turns the two ratios into a difference, keeps 2x and 0.5x symmetric, and matches the geometric means that summarize the times (<a href="reading.html#rq2metric">The RQ2 metric</a>, ADR 0026). The left chart has a log scale for the same reason.</p>
+    </details>
+
+    <h2 id="primary">The 10 primary contrasts</h2>
+    <p>Before any data, the study named the ten comparisons that decide the answers (<a href="reading.html#decisions">Ten decisions, a stricter bar</a>): the filter's speedup ratio for RQ1, one per browser, and the RQ2 ratio at N = 8, one per browser and per k. These are the ten, with the decision for each:</p>
+    <div id="w-primary-plain"></div>
+    <p class="src" data-src="campaign-v3-contrasts"></p>
+    <p>"Different from native" means that the interval does not contain 1 after the correction for ten tests. Chrome differs at every k: worse at k = 1, 4 and 16, better at 256. Firefox's ratio is never above the native one: no detectable difference at k = 1, and lower from k = 4 on. That is a statement about the ratio, not about every absolute time.</p> <p class="def"><b>The same ten decisions on two builds.</b> The study was first measured on an earlier build, <code>measured/v2</code>, and again on <code>measured/v3</code> with every campaign repeated (<a href="session.html">The session of a build</a>). The ten contrasts are rejected or not rejected as before, with effects of the same sign. v3 is a replication with known results, and it reproduces them.</p>
+    <div class="stats" id="w-primary-stats"></div>
+    <details class="deeper"><summary>In depth: the full table, Holm, Cliff's δ and the pairing check</summary>
+      <p>The analysis plan fixed them (ADR 0037): at N = 8, the filter's speedup ratio for RQ1 (2 contrasts) and exp(Δr) for each browser and each k for RQ2 (8 contrasts). They are tested together with bootstrap p-values and <span data-term="holm">Holm</span> at α = 0.05, and shown with 99.5% (<span data-term="bonferroni">Bonferroni</span>) intervals.</p>
+      <div id="w-primary"></div>
+      <p class="src" data-src="campaign-v3-contrasts, campaign-v3-robustness"></p>
+      <p>As a robustness check, Mann-Whitney U with <span data-term="cliff-s-delta">Cliff's δ</span> compares the per-run atomic over local ratios of the browser and of native. It reaches the same Holm decision as the bootstrap for all 10 contrasts. The last column is the share of 1000 random pairings of runs that give the same decision; only Chrome's filter is below 1, at 0.999. The three sensitivity checks of the plan (per-run mean, median centre, no exclusion by foreign CPU time) keep all 10 decisions too (<code>campaign-v3-sensitivity.csv</code>). <a href="reading.html#robust">Mann-Whitney and Cliff's delta</a> describes the method.</p>
+    </details>
+
+    <h2 id="n1">A difference with one thread</h2>
+    <p>With one thread nothing is shared with anyone, so the atomic histogram should cost the same multiple of the local one in every environment. It does not:</p>
+    <div class="card"><div id="w-n1"></div></div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+    <p>At k = 1 the atomic histogram costs Chrome <span id="w-n1-chr"></span> times its local histogram, against <span id="w-n1-nat"></span> times natively, with a single thread. So part of Chrome's extra cost is not contention between threads: it is the atomic operation itself, which V8 compiles to slower machine code. The <a href="extras.html#private">private atomics</a> of the extras campaign agree, with nothing shared at all. The next three sections show the code and the two tests of that cause.</p>
+    <p>The same single thread in milliseconds: Chrome's atomic histogram takes 1.085 times the native time at k = 256 and 1.84 times at k = 1, where each add waits for the previous add to the same counter. The bars above divide by each environment's own local histogram; this table divides Chrome by native.</p>
+    <div id="why-w-n1"></div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+
+    <h2 id="code">The machine code of one add</h2>
+    <p>The same line of Rust, "add one to this shared counter", reaches both browsers as the same WebAssembly instruction. Each engine compiles it to machine code, and the two engines choose differently. <a href="compilers.html">From source to machine code</a> introduces machine code, and <a href="atomics.html#strategies">Two ways to add</a> explains the two sequences step by step.</p>
+    <p>The three environments share the Rust source. Every pixel adds 1 to the counter of its grey level:</p>
+    <div data-code="bench/src/workloads/histogram/counter_table.rs|pub fn increment(|5" data-title="One atomic add per pixel"></div>
+    <p>The study captured the machine code that each engine runs for this loop on the measured build. V8 can write its compiled code to a file. Firefox's was read from the memory of a running Firefox, at the addresses where the CPU spent its time. The listings are in <code>data/probes/engine-code/</code>. Per pixel, with the operands simplified:</p>
+    <div class="grid two">
+      <div class="card"><h3 style="font-size:1rem"><span class="chip native">Native (LLVM)</span> <span class="chip firefox">Firefox (SpiderMonkey)</span></h3>
+<pre style="margin:0;white-space:pre-wrap">lock add  %rcx, (counter)    # Firefox, %rcx = 1
+lock incq (counter)          # native, one locked op</pre>
+        <p class="muted" style="font-size:var(--fs-sm)"><code>lock</code> means that no other core may touch this counter during the add. It is one instruction and it never fails. Firefox processes 8 pixels per loop turn, with a cheap alignment test and one interrupt check per 8 pixels.</p></div>
+      <div class="card"><h3 style="font-size:1rem"><span class="chip chrome">Chrome (V8)</span></h3>
+<pre style="margin:0;white-space:pre-wrap">retry:
+mov  (counter), %rax         # plain read
+add  $1                      # the new value
+lock cmpxchg new, (counter)  # write if unchanged
+jne  retry                   # another core won</pre>
+        <p class="muted" style="font-size:var(--fs-sm)"><code>cmpxchg</code> is "compare and exchange": write the new value only if the counter still holds the value that was read. If it does not, jump back and start again.</p></div>
+    </div>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does Chrome do this?</b> V8's optimizing compiler compiles this atomic add to a compare-and-swap loop, not to a <code>lock add</code>. V8 has a second, simpler compiler (the <span data-term="baseline-compiler">baseline compiler</span>, used while the code warms up), and that one emits a single locked instruction, <code>lock xadd</code>. So this is a choice inside one compiler of one engine: the study's code does not ask for it, and a WASM program cannot change it. It is part of what running in Chrome costs, so it is a result of RQ2, not a flaw of the study.</p></aside>
+    <p>The extra read costs something even with one thread and nothing shared, as <a href="#n1">A difference with one thread</a> shows.</p>
+    <details class="deeper"><summary>In depth: how the code was captured, and the private atomics</summary> <p>V8's code comes from one diagnostic Chrome run per kernel and compiler, with V8 writing its compiled code (<code>scripts/capture_chrome.py</code>, <code>scripts/chrome_code.py</code>). The Firefox 158 release has no such dump, so one long Firefox run per kernel was sampled with <code>perf</code>, and the sampled pages were read from the memory of the process (<code>scripts/capture_firefox.py</code>, <code>scripts/firefox_code.py</code>). Neither is a measured run. V8's optimizing compiler lowers the <code>i64.atomic.rmw.add</code>, whose result is unused, to a load, an add and a <code>lock cmpxchg</code> that jumps back to the load; its baseline compiler lowers it to <code>lock xadd</code> behind an alignment check and a bounds check. The private atomics (one table per thread, nothing shared) cost Chrome 1.83 to 1.85 times native at k = 1 (<a href="extras.html#private">Private and packed atomics</a>): the cost of the instruction without the cost of sharing.</p> <p>The listings as captured, for the first pixel of a loop turn. Natively the whole add is the third line; in Chrome it is the last five:</p> <div data-code="data/probes/engine-code/atomic-loop/native-loop.s|^movzbl (%r8),%r9d|3" data-title="Native (LLVM): one pixel" data-highlight="lock incq"></div> <div data-code="data/probes/engine-code/atomic-loop/chrome-optimizing-loop.s|^movzbl (%rdi,%rsi,1),%r8d|14" data-title="Chrome (V8, optimizing compiler): one pixel" data-highlight="lock cmpxchg|jne    0x471"></div> <div data-code="data/probes/engine-code/atomic-loop/chrome-baseline-loop.s|^jae    0x7a3|2" data-title="Chrome (V8, baseline compiler): the end of a bounds check, then the add" data-highlight="lock xadd"></div> </details>
+
+    <h2 id="probe">A probe that changes only the add</h2> <p>Two listings show a difference. They do not show that the difference is what makes Chrome slow: the two engines differ in many other things. To test a cause, change that one thing and nothing else, and see whether the effect follows.</p> <p>So the study wrote a <span data-term="probe">probe</span>: a small native program that counts the same image into the same table of padded counters, built several times. Each build adds one to a counter with different instructions: the native sequence (<code>lock inc</code>), the sequence of V8's optimizing compiler (read, add, <code>lock cmpxchg</code>, retry), and the sequence of V8's baseline compiler (<code>lock xadd</code>). Nothing else changes: no browser, no WebAssembly, the same compiler for everything around the add.</p> <aside class="callout why"><p class="callout-title">Why</p><p><b>Why write the prediction down first?</b> Before the probe ran, and after the main campaign had shown the effect, the study wrote what the probe should show if the explanation is right: with the compare-and-swap, the native program is slower at k = 1 and faster at k = 256 with eight threads (ADR 0088). A prediction written after a test can always be made to fit. One written before it can fail, which is what gives a pass its value.</p></aside> <div class="controls-row"><span class="muted">Threads:</span><span id="w-probe-n"></span></div> <div id="w-probe"></div> <p class="muted" style="font-size:var(--fs-sm)">The probe rows are the median of 10 passes, from <code>data/probes/atomic-increment/passes.csv</code>; a probe, not a result. The Chrome and native rows are the main campaign.</p> <p class="src" data-src="campaign-v3-scaling"></p> <p>The prediction held. With one thread, the native program with V8's compare-and-swap comes within 3% of Chrome's times: slow at k = 1 (677 against 698 ms), close to native at k = 256. With the native sequence it has the native times at every k. With eight threads at k = 256 it becomes faster than the native sequence, as Chrome does, but it does not reach Chrome's time: 240 ms against 210 ms, 14% apart. So the probe shows the cause of the penalty at k = 1, and reproduces the direction of the advantage at k = 256 without matching its size.</p> <details class="deeper"><summary>In depth: what the probe cannot show</summary> <p>Each probe thread has a fixed slice of the image and a fixed core, where the bench splits the image into Rayon tasks and leaves placement to the kernel, so the probe's eight-thread times at k = 1 are not those of the bench. It is one session, with ten passes per configuration. The probe shows that the sequence is enough to produce the effect on this CPU, which is less than showing that nothing else contributes to Chrome's times (<code>data/probes/atomic-increment/README.md</code>, ADR 0089).</p> </details>
+
+    <h2 id="tier">The other compiler of each engine</h2> <p>A second test stays inside the browser. Both browsers have two compilers: a fast <span data-term="baseline-compiler">baseline</span> one and a slower <span data-term="jit-tier-up">optimizing</span> one. The <code>tier</code> campaign (2100 runs) ran each browser in three <span data-term="engine-arm">arms</span>: default, baseline compiler only, and optimizing compiler only.</p> <div id="w-tier"></div> <p class="src" data-src="tier-v3-arms"></p> <p>Read three things in the table. The default arm and the optimizing arm give the same times, within 2.5% in every configuration: the campaigns of the study measure the optimizing compiler, as intended. Chrome's baseline compiler, which adds with one locked instruction, does not have the k = 1 penalty: its time hardly depends on k, and the RQ2 ratio at k = 1 falls from 2.17 to 1.04. Firefox does not change with k under either compiler.</p> <p>This test changes the whole compiler, so every instruction of the loop changes with the add; alone it shows that the effect follows the compiler. The probe isolates the add. Together they say that the penalty of Chrome's atomic histogram at k = 1 follows the compare-and-swap sequence of V8's optimizing compiler.</p> <p class="src" data-files="docs/adr/0088-what-explains-the-results.md, docs/adr/0089-tier-and-atomic-increment-results.md, harness/campaigns/tier-v3.json"></p>
+
+    <h2 id="retries">Retries, counted</h2>
+    <p>The loop can retry; how often it does is a separate question. A retry happens only when another core changed the counter between the read and the write. With one thread that never happens, and with eight threads on one counter it could happen often. The study counted it.</p>
+    <p>The CPU has counters for events such as "a locked instruction ran" or "a cache line was fetched from another core" (<span data-term="hardware-counters">hardware counters</span>). A separate campaign on the same build (<code>perf-v3</code>) read them with <code>perf stat</code> on the eight P-cores, 30 runs per configuration, at k = 1 and 256 and N = 1 and 8, and divided the counts of each run by its number of atomic adds.</p>
+    <figure class="figure"><svg class="fig" viewBox="0 0 640 150" role="img" aria-label="One locked load per compare-and-swap attempt">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--muted)"/></marker></defs>
+      <text x="10" y="22" font-weight="600">One add, no retry</text>
+      <rect class="box cool" x="10" y="32" width="130" height="34" rx="6"/><text x="75" y="54" text-anchor="middle">read</text>
+      <path class="arrow" d="M142 49 h 24"/>
+      <rect class="box cool" x="170" y="32" width="130" height="34" rx="6"/><text x="235" y="54" text-anchor="middle">lock cmpxchg ✓</text>
+      <text x="320" y="54">= 1 locked load</text>
+      <text x="10" y="96" font-weight="600">One add, one retry</text>
+      <rect class="box cool" x="10" y="106" width="90" height="34" rx="6"/><text x="55" y="128" text-anchor="middle">read</text>
+      <path class="arrow" d="M102 123 h 14"/>
+      <rect class="box hot" x="120" y="106" width="130" height="34" rx="6"/><text x="185" y="128" text-anchor="middle">lock cmpxchg ✗</text>
+      <path class="arrow" d="M252 123 h 14"/>
+      <rect class="box cool" x="270" y="106" width="90" height="34" rx="6"/><text x="315" y="128" text-anchor="middle">read</text>
+      <path class="arrow" d="M362 123 h 14"/>
+      <rect class="box cool" x="380" y="106" width="130" height="34" rx="6"/><text x="445" y="128" text-anchor="middle">lock cmpxchg ✓</text>
+      <text x="520" y="128">= 2 locked loads</text>
+    </svg><figcaption>Every compare-and-swap attempt, failed or not, is one locked load. The locked loads per add are therefore the attempts per add.</figcaption></figure>
+    <p>So the counter to read is <b>locked loads per add</b>. With one thread it is about 1: one attempt per add. What it rises by with eight threads is the retries:</p>
+    <div id="w-retries"></div>
+    <p class="src" data-src="perf-v3-retries"></p>
+    <p>At k = 1 with 8 threads, Chrome does 0.24 more locked loads per add than with 1 thread: <b>about one add in four retries</b>. Firefox and native add 0.001 to 0.002. At k = 256, where the adds are spread over 256 counters and two cores rarely want the same one, Chrome's excess is 0.015.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why compare with N = 1 and with Firefox, and not read Chrome's number alone?</b> Two things could inflate the count. The thread pool does a few locked operations of its own (handing out work, waking threads), and those grow with N. And the browser does locked operations while it starts, inside the counting window. Subtracting Chrome's own N = 1 value removes the second. Firefox, which runs the same WASM module with the same pool and adds only 0.002, bounds the first. What remains is the retries of the loop.</p></aside>
+    <details class="deeper"><summary>In depth: the N = 1 baselines and what the window holds</summary>
+      <p>The N = 1 baselines are 0.999 natively, 1.016 in Chrome and 1.037 in Firefox: the counting window of a browser run also holds the start-up of the browser and the calibration, which do their own locked operations (0.016 and 0.037 per add above native). Retries are read as the excess over N = 1, so this cancels. The pool's own locked operations (work stealing, latches, wake-ups) are bounded by Firefox's excess of 0.002, with the same module and the same Rayon. ADR 0072 describes the method on the earlier build; the table above is the same campaign on <code>measured/v3</code>.</p>
+    </details>
+
+    <h2 id="readfirst">Line transfers, counted</h2>
+    <p>The retry is one cost of Chrome's loop. The loop also starts with a plain read, and that read has its own cost when another core wrote the counter last.</p>
+    <p>Cores do not exchange single values; they exchange <span data-term="cache-line">cache lines</span> of 64 bytes (<a href="memory.html#lines">Data moves in lines of 64 bytes</a>). When a core needs a line that another core has just written, the line must be transferred. The CPU counts those events: a <span data-term="hitm">HITM</span> is a request for a line that is modified in another core's cache. There are two kinds. A <b>read HITM</b>: a plain read wanted a copy. An <span data-term="rfo">RFO</span>, read for ownership: a locked instruction wanted the line in order to write it.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does a line transfer matter?</b> Fetching a line from another core's cache takes on the order of a hundred nanoseconds on a chip like this one (the exact figure depends on the CPU and was not measured here), against about one nanosecond for a value already in the core's own cache. A loop that transfers a line for every add is bound by the transfers, not by the arithmetic.</p></aside>
+    <p>Pick a contention level and a counter:</p>
+    <div class="controls-row"><span class="muted">k:</span><span id="why-w-k"></span><span class="muted">counter:</span><span id="w-ctr"></span></div>
+    <div class="card"><div id="w-bars"></div></div>
+    <div id="w-table"></div>
+    <p class="src" data-src="perf-v3-counters"></p>
+    <p>Natively and in Firefox the line is taken only for writing: read HITMs are at most 0.006 per add. Chrome's plain read fetches it from the other core first: 0.30 read HITMs per add at k = 1 and 0.71 at k = 256. At k = 1 that doubles the line transfers per add, 0.49 in Chrome against 0.24 natively and 0.26 in Firefox, and Chrome takes about twice as long.</p> <p>The counters also explain why the k = 1 configurations are the noisiest of the study. Their runs fall on several time levels, 25 to 32% apart, and the time of a run follows its own count of line transfers (in Chrome, Spearman's ρ = +0.94 between the time of a run and its lines taken for writing). The levels are states of contention that differ from run to run; what sets the state of a run is not known (<a href="explains.html#q9">question 9</a>).</p>
+    <aside class="callout note"><p class="callout-title">Note</p><p><b>A check that the counting is right.</b> The cycles counted per add should match the run times of the main campaign. Chrome at k = 1, N = 8: about 1889 ms per iteration in the main campaign × 8 cores × 3.2 GHz, divided by the 67 million pixels, predicts about 720 cycles per add; the counters, on their own 30 runs, give 681. This configuration varies by more than that from run to run, so the two agree, and the counting windows hold the right intervals. Cycles here measure time on the eight cores, waiting included, not useful work.</p></aside>
+
+    <h2 id="k256">k = 256: reproduced in direction, mechanism open</h2>
+    <p>At k = 256 the result reverses: Chrome's atomic histogram gets faster with threads (speedup 1.96) and the native one does not (0.92), and Chrome's RQ2 ratio is 0.42. The counters show that Chrome transfers <i>more</i> lines than native there, not fewer, and still finishes in about half the time:</p>
+    <div class="stats" id="w-open"></div>
+    <p class="src" data-src="perf-v3-counters"></p>
+    <p>So the gain is not fewer transfers. What is known is that the sequence reproduces the direction, not the exact size. In the probe, the native program with the compare-and-swap takes 240 ms at k = 256 with eight threads, and the locked add takes 415 ms; Chrome takes 210 ms and native 415 ms, so the probe is 14% from Chrome. Pick 8 threads in <a href="#probe">the probe table</a> to see it.</p> <div id="w-k256"></div> <p class="src" data-src="tier-v3-arms"></p> <p>The order is not the order of how fast one add is: the sequences that do <i>more</i> around the locked write finish <i>sooner</i>. One prediction failed here, and it is reported as a failure. Chrome's baseline compiler was expected to lose the advantage over native, and it keeps most of it; Firefox's baseline compiler even gains one that its optimizing compiler does not have.</p> <aside class="callout why"><p class="callout-title">Why</p><p><b>What is the explanation, then?</b> A proposed one, not tested: eight cores that hit 256 lines at random spend their time transferring lines between caches, and a sequence that reads the line first, or does other work between two locked writes, asks for exclusive ownership of a line less often. The study shows that the sequence is enough to make a native program faster at k = 256. It does not show the mechanism inside the CPU, and it does not account for all of Chrome's time. The effect also depends on the padding: with eight counters packed into one line, Chrome's atomic histogram becomes 3.45 times slower (<a href="extras.html#private">packed counters</a>).</p></aside>
+
+    <h2 id="c2c">The padding holds</h2>
+    <p>Each shared counter is padded to 128 bytes, so no two counters share a cache line and the only sharing measured is the one the study intends (<a href="memory.html#falsesharing">False sharing and padding</a>). In the browser the counters live in the memory of the WASM module, laid out by the Rust allocator inside it, so the padding was checked there too.</p>
+    <p><code>perf c2c</code>, a tool that lists the cache lines that several cores contend for, ran during one k = 16, N = 8 run per browser on the earlier build, <code>measured/v2</code>; the counter table and its padding are the same code in <code>measured/v3</code>. It found <b>16 contended lines, 0x800 bytes apart</b> (16 counters × 128 bytes = 2048 = 0x800), every access at offset 0 of its line, in Chrome and in Firefox. Each padded counter is alone on its line in WASM memory: the study measures true sharing, not false sharing.</p>
+    <p class="muted" style="font-size:var(--fs-sm)">The <code>perf c2c</code> reports are with the data of that build, at the tag <code>data/v2</code> (<code>data/raw/perf-v2/c2c/</code>).</p> <p class="src" data-files="docs/adr/0072-perf-counters-v2.md, bench/src/workloads/histogram/padded_counter.rs"></p>
+
+    <h2 id="answer">The answer to RQ2</h2>
+    <div id="w-answer"></div>
+    <p class="src" data-src="campaign-v3-contrasts"></p>
+    <p><b>Synchronization changes the gap, and how depends on the engine.</b> Relative to the local histogram, shared atomics cost Chrome 1.4 to 2.3 times what they cost natively when the contention is concentrated on few counters (k = 1 to 16), and 0.42 times when it is spread over 256 counters, where Chrome's atomic histogram even scales (speedup 1.96, against 0.92 natively and 0.97 in Firefox). Firefox's ratio is never above the native one: no detectable difference at k = 1, lower from k = 4 on.</p> <p>The ratio hides two things, which its two factors below show. Firefox's values under 1 at k = 16 and 256 do not come from cheaper atomics: its atomic times are the native ones, and its <i>local</i> histogram scales more than the native one, which makes the denominator smaller (<a href="explains.html#q8">question 8</a>). And Chrome's penalty at k = 1 follows the instructions that its optimizing compiler emits for the add; at k = 256 the same instructions reproduce the direction of its advantage in a native program, with the mechanism still open (<a href="#probe">the probe</a>).</p> <div id="w-factors"></div> <p class="src" data-src="campaign-v3-rq2-decomposition"></p>
+    <details class="deeper"><summary>In depth: why memory order is not the explanation</summary>
+      <p>WASM atomics are always sequentially consistent, which a reader may suspect as the cause. It is not: on x86 a locked read-modify-write costs about the same whatever its ordering, and <code>Relaxed</code> and <code>SeqCst</code> compile to the same instruction on these targets (<a href="atomics.html#order">Memory order, for the record</a>). The cause is the code that each engine generates around the operation.</p>
+    </details>
+    <p class="takeaway"><strong>In summary.</strong> Sharing between threads is expensive in every environment. Measured as the atomic over local time ratio against the same ratio natively, Chrome pays 1.4 to 2.3 times the native cost on 1 to 16 counters and 0.42 times on 256; Firefox's ratio is never above the native one. At k = 1 the penalty follows the compare-and-swap loop of V8's optimizing compiler: it is gone with V8's baseline compiler, and a native program with that loop comes within 3% of Chrome's one-thread times. At k = 256 the same probe reproduces the direction of Chrome's advantage, 14% from Chrome's time, and the mechanism is proposed, not shown.</p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  (function () {
+  // lineChart(series, opts): inline SVG lines with optional CI bands.
+  // series: [{name, cls, points: [{x, y, lo, hi}]}]; opts: {xs, ymin, ymax, log, ideal, ylabel, xlabel, height, ref}
+  function lineChart(series, opts) {
+    opts = opts || {};
+    var W = 640, H = opts.height || 300, L = 48, R = 14, T = 14, B = 38;
+    var xs = opts.xs, all = [];
+    series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.lo != null ? p.lo : p.y, p.hi != null ? p.hi : p.y); }); });
+    var ymin = opts.ymin != null ? opts.ymin : Math.min.apply(null, all);
+    var ymax = opts.ymax != null ? opts.ymax : Math.max.apply(null, all);
+    var log = !!opts.log;
+    function fy(v) {
+      var a = log ? Math.log(ymin) : ymin, b = log ? Math.log(ymax) : ymax, t = log ? Math.log(v) : v;
+      return T + (H - T - B) * (1 - (t - a) / (b - a));
+    }
+    var xmin = xs[0], xmax = xs[xs.length - 1];
+    function fx(v) { return L + (W - L - R) * (v - xmin) / (xmax - xmin || 1); }
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (opts.label || "chart") + '">';
+    var ticks = opts.yticks || (function () {
+      var out = [], n = 5; for (var i = 0; i <= n; i++) { var v = log ? Math.exp(Math.log(ymin) + (Math.log(ymax) - Math.log(ymin)) * i / n) : ymin + (ymax - ymin) * i / n; out.push(v); } return out;
+    })();
+    ticks.forEach(function (v) {
+      svg += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(v) + '" y2="' + fy(v) + '" stroke-opacity="0.6"/>';
+      svg += '<text x="' + (L - 6) + '" y="' + (fy(v) + 4) + '" text-anchor="end">' + (v === 0 ? "0" : UI.fmt(v, v >= 10 ? 0 : v >= 1 ? 1 : 2)) + '</text>';
+    });
+    xs.forEach(function (v) { svg += '<text x="' + fx(v) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + (opts.xfmt ? opts.xfmt(v) : v) + '</text>'; });
+    if (opts.xlabel) svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + opts.xlabel + '</text>';
+    if (opts.ylabel) svg += '<text x="12" y="' + ((T + H - B) / 2) + '" text-anchor="middle" transform="rotate(-90 12 ' + ((T + H - B) / 2) + ')">' + opts.ylabel + '</text>';
+    if (opts.ideal) svg += '<path class="ideal" d="M' + fx(xmin) + ' ' + fy(Math.max(ymin, xmin)) + ' L' + fx(Math.min(xmax, ymax)) + ' ' + fy(Math.min(xmax, ymax)) + '"/>';
+    if (opts.ref != null) svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(opts.ref) + '" y2="' + fy(opts.ref) + '" stroke="var(--faint)" stroke-dasharray="4 4"/>';
+    series.forEach(function (s) {
+      var pts = s.points.filter(function (p) { return p.y != null; });
+      if (!pts.length) return;
+      var band = pts.filter(function (p) { return p.lo != null; });
+      if (band.length) {
+        var d = band.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.hi); }).join(" ") + " " +
+          band.slice().reverse().map(function (p) { return "L" + fx(p.x) + " " + fy(p.lo); }).join(" ") + " Z";
+        svg += '<path d="' + d + '" fill="var(--' + s.cls + ')" fill-opacity="0.15" stroke="none"/>';
+      }
+      svg += '<path d="' + pts.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.y); }).join(" ") + '" fill="none" stroke="var(--' + s.cls + ')" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="6 4"' : '') + '/>';
+      pts.forEach(function (p) {
+        svg += '<circle cx="' + fx(p.x) + '" cy="' + fy(p.y) + '" r="3.2" fill="var(--' + s.cls + ')"><title>' + s.name + ', ' + (opts.xfmt ? opts.xfmt(p.x) : p.x) + ': ' + UI.fmt(p.y, 3) + (p.lo != null ? ' [' + UI.fmt(p.lo, 3) + ', ' + UI.fmt(p.hi, 3) + ']' : '') + '</title></circle>';
+      });
+    });
+    var wrap = UI.el("div");
+    wrap.innerHTML = svg + "</svg>";
+    var legend = UI.el("div", { class: "legend-row" });
+    series.forEach(function (s) { legend.appendChild(UI.el("span", { class: "chip " + s.cls, text: s.name })); });
+    if (opts.ideal) legend.appendChild(UI.el("span", { class: "chip", text: "dashed: ideal" }));
+    wrap.appendChild(legend);
+    return wrap;
+  }
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+  var $ = UI.$, el = UI.el;
+  var KS = [1, 4, 16, 256];
+  function T(env, wl, k, n) { var r = UI.row("campaign-v3-scaling", { environment: env, workload: wl, k: k, threads: n }); return r ? r.center_ns : null; }
+  function ratio(env, k, n) { var a = T(env, "hist-atomic", k, n), l = T(env, "hist-local", k, n); return a && l ? a / l : null; }
+  function ms(v) { return UI.fmt(v / 1e6, 1) + " ms"; }
+
+  // The worked example: the four real times at N = 8, k = 1.
+  var natR = ratio("native", 1, 8), chrR = ratio("chrome", 1, 8);
+  $("#w-worked").appendChild(UI.table([
+    { what: "Atomic histogram (shared counters)", native: T("native", "hist-atomic", 1, 8), chrome: T("chrome", "hist-atomic", 1, 8) },
+    { what: "Local histogram (nothing shared)", native: T("native", "hist-local", 1, 8), chrome: T("chrome", "hist-local", 1, 8) },
+    { what: "Cost of sharing: atomic / local", native: natR, chrome: chrR, ratio: true }
+  ], [
+    { label: "N = 8, k = 1", key: "what" },
+    { label: "Native", num: true, value: function (r) { return r.ratio ? UI.fmt(r.native, 1) + "×" : ms(r.native); } },
+    { label: "Chrome", num: true, value: function (r) { return r.ratio ? UI.fmt(r.chrome, 1) + "×" : ms(r.chrome); } }
+  ]));
+  $("#w-nat-ratio").textContent = UI.fmt(natR, 1);
+  $("#w-chr-ratio").textContent = UI.fmt(chrR, 1);
+  $("#w-chr-eff").textContent = UI.fmt(chrR, 1) + " / " + UI.fmt(natR, 1) + " = " + UI.fmt(chrR / natR, 2);
+
+  UI.segmented($("#w-k"), KS.map(function (k) { return { value: k, label: "k = " + k }; }), function (k) {
+    var h1 = $("#w-ratio"), h2 = $("#w-effect");
+    h1.innerHTML = ""; h2.innerHTML = "";
+    var all = [];
+    var s1 = ENVS.map(function (e) {
+      return { name: e[1], cls: e[0], points: THREADS.map(function (n) { var v = ratio(e[0], k, n); all.push(v); return { x: n, y: v }; }) };
+    });
+    var lo = Math.min.apply(null, all) * 0.8, hi = Math.max.apply(null, all) * 1.25;
+    h1.appendChild(lineChart(s1, { xs: THREADS, ymin: lo, ymax: hi, log: true, xlabel: "threads N", ylabel: "atomic / local (log scale)", label: "Atomic over local time, k = " + k }));
+    var effs = [];
+    var s2 = ["chrome", "firefox"].map(function (env) {
+      return { name: envName(env), cls: env, points: THREADS.map(function (n) {
+        var r = UI.row("campaign-v3-contrasts", { question: "RQ2", environment: env, k: k, threads: n });
+        if (r) effs.push(r.low, r.high);
+        return r ? { x: n, y: r.effect, lo: r.low, hi: r.high } : { x: n, y: null };
+      }) };
+    });
+    effs.push(1);
+    h2.appendChild(lineChart(s2, { xs: THREADS, ymin: Math.min.apply(null, effs) * 0.9, ymax: Math.max.apply(null, effs) * 1.1, log: true, ref: 1, xlabel: "threads N", ylabel: "browser ratio / native ratio", label: "exp(delta r) against N, k = " + k }));
+  });
+
+  $("#w-speedups").appendChild(UI.table(KS.map(function (k) {
+    var o = { k: k };
+    ENVS.forEach(function (e) { var r = UI.row("campaign-v3-scaling", { environment: e[0], workload: "hist-atomic", k: k, threads: 8 }); o[e[0]] = r ? UI.fmt(r.speedup, 2) : "-"; });
+    return o;
+  }), [
+    { label: "Atomic histogram, speedup at N = 8", value: function (r) { return "k = " + r.k; } },
+    { label: "Native", key: "native", num: true }, { label: "Chrome", key: "chrome", num: true }, { label: "Firefox", key: "firefox", num: true }
+  ]));
+
+  var prim = UI.rows("campaign-v3-contrasts", { primary: "yes" });
+  function verdict(r) {
+    if (r.rejected !== "yes") return "no detectable difference";
+    if (r.question === "RQ1") return r.effect > 1 ? "scales better than native" : "scales worse than native";
+    return r.effect > 1 ? "pays more than native" : "pays less than native";
+  }
+  $("#w-primary-plain").appendChild(UI.table(prim, [
+    { label: "Question", key: "question" },
+    { label: "Browser", value: function (r) { return envName(r.environment); } },
+    { label: "Cell", value: function (r) { return r.workload === "filter" ? "filter speedup, N = 8" : "k = " + r.k + ", N = 8"; } },
+    { label: "Browser / native", num: true, value: function (r) { return UI.fmt(r.effect, 2) + "×"; } },
+    { label: "Decision", value: function (r) { var b = el("b", { text: verdict(r) }); b.style.color = r.rejected === "yes" ? (r.effect > 1 && r.question === "RQ2" ? "var(--bad)" : "var(--good)") : "var(--muted)"; return b; } }
+  ]));
+  $("#w-primary").appendChild(UI.table(prim, [
+    { label: "Question", key: "question" },
+    { label: "Browser", value: function (r) { return envName(r.environment); } },
+    { label: "Cell", value: function (r) { return r.workload === "filter" ? "filter" : "k = " + r.k; } },
+    { label: "Effect", num: true, value: function (r) { return UI.fmt(r.effect, 3); } },
+    { label: "99.5% CI", num: true, value: function (r) { return "[" + UI.fmt(r.primary_low, 3) + ", " + UI.fmt(r.primary_high, 3) + "]"; } },
+    { label: "Holm p", num: true, value: function (r) { return UI.fmt(r.holm_p, 3); } },
+    { label: "Rejected", value: function (r) { var b = el("b", { text: r.rejected }); if (r.rejected === "yes") b.style.color = "var(--accent)"; return b; } },
+    { label: "Cliff's δ", num: true, value: function (r) { var q = UI.row("campaign-v3-robustness", { question: r.question, environment: r.environment, k: r.k, threads: 8 }); return q ? UI.fmt(q.cliffs_delta, 2) : "-"; } },
+    { label: "Same decision", num: true, value: function (r) { var q = UI.row("campaign-v3-robustness", { question: r.question, environment: r.environment, k: r.k, threads: 8 }); return q ? Math.round(100 * q.same_decision_share) + "%" : "-"; } }
+  ]));
+  var rej = prim.filter(function (r) { return r.rejected === "yes"; }).length;
+  [[String(prim.length), "comparisons decided in advance"], [String(rej), "show a real difference"], [String(UI.rows("campaign-v3-robustness").filter(function (q) { return q.agree === "yes"; }).length) + " / " + UI.rows("campaign-v3-robustness").length, "confirmed by a second test"]].forEach(function (s) {
+    $("#w-primary-stats").appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: s[0] }), el("div", { class: "k", text: s[1] })]));
+  });
+
+  $("#w-n1").appendChild(UI.bars(KS.map(function (k) {
+    return { label: "k = " + k, values: ENVS.map(function (e) { return { name: e[1], label: e[1], value: ratio(e[0], k, 1), cls: e[0] }; }) };
+  }), { digits: 2, unit: "×" }));
+  $("#w-n1-chr").textContent = UI.fmt(ratio("chrome", 1, 1), 1);
+  $("#w-n1-nat").textContent = UI.fmt(ratio("native", 1, 1), 1);
+
+  $("#w-answer").appendChild(UI.bars(KS.map(function (k) {
+    return { label: "k = " + k, values: ["chrome", "firefox"].map(function (env) {
+      var r = UI.row("campaign-v3-contrasts", { question: "RQ2", environment: env, k: k, threads: 8 });
+      return { name: envName(env), label: envName(env), value: r && r.effect, cls: env };
+    }) };
+  }), { max: 2.4, digits: 2, unit: "× native's price" }));
+
+  // The two factors of each primary RQ2 ratio (ADR 0078): the atomic and the local time, browser over native.
+  (function () {
+    var rows = [];
+    ["chrome", "firefox"].forEach(function (env) {
+      [1, 4, 16, 256].forEach(function (k) {
+        function q(name) { return UI.row("campaign-v3-rq2-decomposition", { environment: env, k: k, threads: 8, quantity: name }); }
+        rows.push({ env: env, k: k, rq2: q("rq2"), atomic: q("atomic"), local: q("local") });
+      });
+    });
+    $("#w-factors").appendChild(UI.table(rows, [
+      { label: "Browser", value: function (r) { return envName(r.env); } },
+      { label: "k", key: "k", num: true },
+      { label: "Atomic time, browser / native", num: true, value: function (r) { return UI.fmt(r.atomic.ratio, 2); } },
+      { label: "Local time, browser / native", num: true, value: function (r) { return UI.fmt(r.local.ratio, 2); } },
+      { label: "The RQ2 number (first / second)", num: true, value: function (r) { return UI.fmt(r.rq2.ratio, 2); } }
+    ]));
+  })();
+
+  })();
+  (function () {
+  // lineChart(series, opts): inline SVG lines with optional CI bands.
+  // series: [{name, cls, points: [{x, y, lo, hi}]}]; opts: {xs, ymin, ymax, log, ideal, ylabel, xlabel, height, ref}
+  function lineChart(series, opts) {
+    opts = opts || {};
+    var W = 640, H = opts.height || 300, L = 48, R = 14, T = 14, B = 38;
+    var xs = opts.xs, all = [];
+    series.forEach(function (s) { s.points.forEach(function (p) { all.push(p.lo != null ? p.lo : p.y, p.hi != null ? p.hi : p.y); }); });
+    var ymin = opts.ymin != null ? opts.ymin : Math.min.apply(null, all);
+    var ymax = opts.ymax != null ? opts.ymax : Math.max.apply(null, all);
+    var log = !!opts.log;
+    function fy(v) {
+      var a = log ? Math.log(ymin) : ymin, b = log ? Math.log(ymax) : ymax, t = log ? Math.log(v) : v;
+      return T + (H - T - B) * (1 - (t - a) / (b - a));
+    }
+    var xmin = xs[0], xmax = xs[xs.length - 1];
+    function fx(v) { return L + (W - L - R) * (v - xmin) / (xmax - xmin || 1); }
+    var svg = '<svg class="chart" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + (opts.label || "chart") + '">';
+    var ticks = opts.yticks || (function () {
+      var out = [], n = 5; for (var i = 0; i <= n; i++) { var v = log ? Math.exp(Math.log(ymin) + (Math.log(ymax) - Math.log(ymin)) * i / n) : ymin + (ymax - ymin) * i / n; out.push(v); } return out;
+    })();
+    ticks.forEach(function (v) {
+      svg += '<line class="axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(v) + '" y2="' + fy(v) + '" stroke-opacity="0.6"/>';
+      svg += '<text x="' + (L - 6) + '" y="' + (fy(v) + 4) + '" text-anchor="end">' + (v === 0 ? "0" : UI.fmt(v, v >= 10 ? 0 : v >= 1 ? 1 : 2)) + '</text>';
+    });
+    xs.forEach(function (v) { svg += '<text x="' + fx(v) + '" y="' + (H - B + 16) + '" text-anchor="middle">' + (opts.xfmt ? opts.xfmt(v) : v) + '</text>'; });
+    if (opts.xlabel) svg += '<text x="' + ((L + W - R) / 2) + '" y="' + (H - 4) + '" text-anchor="middle">' + opts.xlabel + '</text>';
+    if (opts.ylabel) svg += '<text x="12" y="' + ((T + H - B) / 2) + '" text-anchor="middle" transform="rotate(-90 12 ' + ((T + H - B) / 2) + ')">' + opts.ylabel + '</text>';
+    if (opts.ideal) svg += '<path class="ideal" d="M' + fx(xmin) + ' ' + fy(Math.max(ymin, xmin)) + ' L' + fx(Math.min(xmax, ymax)) + ' ' + fy(Math.min(xmax, ymax)) + '"/>';
+    if (opts.ref != null) svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + fy(opts.ref) + '" y2="' + fy(opts.ref) + '" stroke="var(--faint)" stroke-dasharray="4 4"/>';
+    series.forEach(function (s) {
+      var pts = s.points.filter(function (p) { return p.y != null; });
+      if (!pts.length) return;
+      var band = pts.filter(function (p) { return p.lo != null; });
+      if (band.length) {
+        var d = band.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.hi); }).join(" ") + " " +
+          band.slice().reverse().map(function (p) { return "L" + fx(p.x) + " " + fy(p.lo); }).join(" ") + " Z";
+        svg += '<path d="' + d + '" fill="var(--' + s.cls + ')" fill-opacity="0.15" stroke="none"/>';
+      }
+      svg += '<path d="' + pts.map(function (p, i) { return (i ? "L" : "M") + fx(p.x) + " " + fy(p.y); }).join(" ") + '" fill="none" stroke="var(--' + s.cls + ')" stroke-width="2.2"' + (s.dash ? ' stroke-dasharray="6 4"' : '') + '/>';
+      pts.forEach(function (p) {
+        svg += '<circle cx="' + fx(p.x) + '" cy="' + fy(p.y) + '" r="3.2" fill="var(--' + s.cls + ')"><title>' + s.name + ', ' + (opts.xfmt ? opts.xfmt(p.x) : p.x) + ': ' + UI.fmt(p.y, 3) + (p.lo != null ? ' [' + UI.fmt(p.lo, 3) + ', ' + UI.fmt(p.hi, 3) + ']' : '') + '</title></circle>';
+      });
+    });
+    var wrap = UI.el("div");
+    wrap.innerHTML = svg + "</svg>";
+    var legend = UI.el("div", { class: "legend-row" });
+    series.forEach(function (s) { legend.appendChild(UI.el("span", { class: "chip " + s.cls, text: s.name })); });
+    if (opts.ideal) legend.appendChild(UI.el("span", { class: "chip", text: "dashed: ideal" }));
+    wrap.appendChild(legend);
+    return wrap;
+  }
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+
+  var ENVS = [["native", "Native"], ["chrome", "Chrome"], ["firefox", "Firefox"]];
+  var THREADS = [1, 2, 4, 6, 7, 8];
+  function envName(e) { return e === "native" ? "Native" : e === "chrome" ? "Chrome" : "Firefox"; }
+  var $ = UI.$, el = UI.el;
+  function C(env, k, n, counter) { return UI.row("perf-v3-counters", { environment: env, k: k, threads: n, counter: counter }); }
+
+  $("#why-w-n1").appendChild(UI.table([256, 1].map(function (k) {
+    var c = UI.row("campaign-v3-scaling", { environment: "chrome", workload: "hist-atomic", k: k, threads: 1 });
+    var n = UI.row("campaign-v3-scaling", { environment: "native", workload: "hist-atomic", k: k, threads: 1 });
+    return { k: k, c: c.center_ns / 1e6, n: n.center_ns / 1e6 };
+  }), [
+    { label: "Atomic histogram, N = 1", value: function (r) { return "k = " + r.k; } },
+    { label: "Native, ms", num: true, value: function (r) { return UI.fmt(r.n, 1); } },
+    { label: "Chrome, ms", num: true, value: function (r) { return UI.fmt(r.c, 1); } },
+    { label: "Chrome / native", num: true, value: function (r) { return UI.fmt(r.c / r.n, 3); } }
+  ]));
+
+  $("#w-retries").appendChild(UI.table(UI.rows("perf-v3-retries"), [
+    { label: "Environment", value: function (r) { return envName(r.environment); } },
+    { label: "k", key: "k", num: true },
+    { label: "Locked loads per add, N = 1", num: true, value: function (r) { var b = C(r.environment, r.k, 1, "lock_loads"); return UI.fmt(b.mean, 3); } },
+    { label: "Extra at N = 8 (the retries)", num: true, value: function (r) { return UI.fmt(r.excess_lock_loads, 3); } },
+    { label: "95% CI", num: true, value: function (r) { return "[" + UI.fmt(r.low, 3) + ", " + UI.fmt(r.high, 3) + "]"; } }
+  ]));
+
+  var COUNTERS = [["read_hitm", "read HITM"], ["rfo_hitm", "RFO HITM"], ["lock_loads", "locked loads"], ["cycles", "cycles"]];
+  var curK = 1, curC = "read_hitm";
+  function draw() {
+    var host = $("#w-bars"); host.innerHTML = "";
+    host.appendChild(UI.bars([1, 8].map(function (n) {
+      return { label: "N = " + n, values: ENVS.map(function (e) { var r = C(e[0], curK, n, curC); return { name: e[1], label: e[1], value: r && r.mean, cls: e[0] }; }) };
+    }), { digits: curC === "cycles" ? 0 : 3 }));
+    var t = $("#w-table"); t.innerHTML = "";
+    t.appendChild(UI.table(ENVS.map(function (e) { return e; }), [
+      { label: "k = " + curK + ", N = 8, per add", value: function (e) { return e[1]; } },
+      { label: "read HITM", num: true, value: function (e) { return UI.fmt(C(e[0], curK, 8, "read_hitm").mean, 4); } },
+      { label: "RFO HITM", num: true, value: function (e) { return UI.fmt(C(e[0], curK, 8, "rfo_hitm").mean, 3); } },
+      { label: "line moves (both)", num: true, value: function (e) { return UI.fmt(C(e[0], curK, 8, "read_hitm").mean + C(e[0], curK, 8, "rfo_hitm").mean, 2); } },
+      { label: "locked loads", num: true, value: function (e) { return UI.fmt(C(e[0], curK, 8, "lock_loads").mean, 3); } },
+      { label: "cycles", num: true, value: function (e) { return UI.fmt(C(e[0], curK, 8, "cycles").mean, 0); } }
+    ]));
+  }
+  UI.segmented($("#why-w-k"), [{ value: 1, label: "k = 1" }, { value: 256, label: "k = 256" }], function (k) { curK = k; draw(); });
+  UI.segmented($("#w-ctr"), COUNTERS.map(function (c) { return { value: c[0], label: c[1] }; }), function (c) { curC = c; draw(); });
+
+  [["native", "Native"], ["chrome", "Chrome"]].forEach(function (e) {
+    var t = C(e[0], 256, 8, "read_hitm").mean + C(e[0], 256, 8, "rfo_hitm").mean, cyc = C(e[0], 256, 8, "cycles").mean;
+    $("#w-open").appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: UI.fmt(t, 2) }), el("div", { class: "k", text: e[1] + ": line moves per add, k = 256, N = 8" })]));
+    $("#w-open").appendChild(el("div", { class: "stat" }, [el("div", { class: "v", text: UI.fmt(cyc, 0) }), el("div", { class: "k", text: e[1] + ": cycles per add (time on 8 cores)" })]));
+  });
+
+  // The probe: a native program in which only the instructions of one add change, next to the campaign's times.
+  var PROBE = UI.D.atomicIncrement || [];
+  var SEQS = [["lock-inc", "probe: the native way (lock inc)"], ["compare-and-swap", "probe: V8's optimizing way (read, lock cmpxchg, retry)"], ["lock-xadd-checked", "probe: V8's baseline way (checks, lock xadd)"]];
+  function probe(seq, k, n) { return PROBE.filter(function (x) { return x.sequence === seq && x.k === k && x.threads === n; })[0]; }
+  function camp(env, k, n) { return UI.row("campaign-v3-scaling", { environment: env, workload: "hist-atomic", k: k, threads: n }).center_ns / 1e6; }
+  UI.segmented($("#w-probe-n"), [{ value: 1, label: "1 thread" }, { value: 8, label: "8 threads" }], function (n) {
+    var host = $("#w-probe"); host.innerHTML = "";
+    var rows = [{ name: "Native (main campaign)", cls: "native", at: function (k) { return camp("native", k, n); } }]
+      .concat(SEQS.slice(0, 1).map(function (s) { return { name: s[1], at: function (k) { return probe(s[0], k, n).median_ms; } }; }))
+      .concat([{ name: "Chrome (main campaign)", cls: "chrome", at: function (k) { return camp("chrome", k, n); } }])
+      .concat(SEQS.slice(1).map(function (s) { return { name: s[1], at: function (k) { return probe(s[0], k, n).median_ms; } }; }));
+    host.appendChild(UI.table(rows, [
+      { label: "Atomic histogram, N = " + n, value: function (r) { return r.name; } },
+      { label: "k = 1, ms", num: true, value: function (r) { return UI.fmt(r.at(1), 1); } },
+      { label: "k = 16, ms", num: true, value: function (r) { return UI.fmt(r.at(16), 1); } },
+      { label: "k = 256, ms", num: true, value: function (r) { return UI.fmt(r.at(256), 1); } }
+    ]));
+    if (n === 8) host.appendChild(el("p", { class: "muted", style: "font-size:var(--fs-sm)", text: "With 8 threads at k = 1 and 16 the probe's times are not the bench's: its threads are pinned and have fixed slices. The k = 256 column is the one the prediction was about." }));
+  });
+
+  // The tier campaign: each browser as shipped, with one compiler only.
+  function arm(env, variant, wl, k, n) { return UI.row("tier-v3-arms", { environment: env, workload: wl, k: k, threads: n, variant: variant }); }
+  var ARMS = [["native", "-", "Native"], ["chrome", "default", "Chrome, as shipped"], ["chrome", "optimizing", "Chrome, optimizing compiler only"], ["chrome", "baseline", "Chrome, baseline compiler only"],
+    ["firefox", "default", "Firefox, as shipped"], ["firefox", "optimizing", "Firefox, optimizing compiler only"], ["firefox", "baseline", "Firefox, baseline compiler only"]];
+  function rq2(a) {
+    var nat = arm("native", "-", "hist-atomic", 1, 8).center_ns / arm("native", "-", "hist-local", 1, 8).center_ns;
+    return (arm(a[0], a[1], "hist-atomic", 1, 8).center_ns / arm(a[0], a[1], "hist-local", 1, 8).center_ns) / nat;
+  }
+  $("#w-tier").appendChild(UI.table(ARMS, [
+    { label: "Atomic histogram", value: function (a) { return a[2]; } },
+    { label: "k = 1, N = 1, ms", num: true, value: function (a) { return UI.fmt(arm(a[0], a[1], "hist-atomic", 1, 1).center_ns / 1e6, 1); } },
+    { label: "k = 256, N = 1, ms", num: true, value: function (a) { return UI.fmt(arm(a[0], a[1], "hist-atomic", 256, 1).center_ns / 1e6, 1); } },
+    { label: "RQ2 number at k = 1, N = 8", num: true, value: function (a) { return a[0] === "native" ? "1 (the reference)" : UI.fmt(rq2(a), 2); } }
+  ]));
+
+  // k = 256 with eight threads, fastest first: campaign arms and probe sequences together.
+  var K256 = [
+    ["Chrome, optimizing compiler", arm("chrome", "optimizing", "hist-atomic", 256, 8).center_ns / 1e6, "chrome"],
+    ["Probe: read, lock cmpxchg, retry", probe("compare-and-swap", 256, 8).median_ms, "copy"],
+    ["Chrome, baseline compiler", arm("chrome", "baseline", "hist-atomic", 256, 8).center_ns / 1e6, "chrome"],
+    ["Firefox, baseline compiler", arm("firefox", "baseline", "hist-atomic", 256, 8).center_ns / 1e6, "firefox"],
+    ["Probe: checks, then lock xadd", probe("lock-xadd-checked", 256, 8).median_ms, "copy"],
+    ["Firefox, optimizing compiler", arm("firefox", "optimizing", "hist-atomic", 256, 8).center_ns / 1e6, "firefox"],
+    ["Probe: checks, then lock inc", probe("lock-inc-checked", 256, 8).median_ms, "copy"],
+    ["Native", arm("native", "-", "hist-atomic", 256, 8).center_ns / 1e6, "native"],
+    ["Probe: lock inc", probe("lock-inc", 256, 8).median_ms, "copy"],
+    ["Probe: lock xadd", probe("lock-xadd", 256, 8).median_ms, "copy"]
+  ].sort(function (a, b) { return a[1] - b[1]; });
+  $("#w-k256").appendChild(UI.bars([{ label: "k = 256, N = 8: ms per pass, fastest first", values: K256.map(function (r) { return { name: r[0], label: r[0], value: r[1], cls: r[2] }; }) }], { digits: 0, max: 900 }));
+
+  })();
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

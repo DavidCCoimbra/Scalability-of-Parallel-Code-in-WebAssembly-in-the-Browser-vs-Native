@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Thread pools and fork-join - WASM threads vs native</title>
+<meta name="description" content="How eight threads split one job, what a Web Worker is and how it becomes a WASM thread, what Rayon does, and the fixed price of starting and joining a parallel region, with the measured numbers.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .code pre.plain { padding: 10px 12px; white-space: pre; }
+  .pair { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .controls { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; margin-bottom: 10px; }
+  .controls .lbl { font-size: var(--fs-xs); color: var(--muted); margin-right: 6px; }
+  .lane { fill: var(--accent); opacity: 0.7; }
+  .lane.fork { fill: var(--copy); opacity: 1; }
+  .tick { stroke: var(--edge); }
+</style>
+</head>
+<body data-page="threads">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Thread pools and fork-join</h1>
+
+    <p class="lead">A parallel program hands work to several threads and waits for them to finish. Handing out and collecting takes time, and that time is the same whether the work is large or small. This page explains what a thread is in WebAssembly (a Web Worker on shared memory), how Rayon splits work and steals it, what a fork-join costs, and what the size of a task changes.</p>
+
+    <h2 id="threads">Threads and Web Workers</h2>
+    <p>A <a href="machines.html#threads">thread</a> is one line of work inside a program. The threads of a program share its memory, so they can all read the same image and write their own rows of the output without copying anything. Natively, the program asks the operating system for threads.</p>
+    <p>A web page cannot ask for threads. It has the <span data-term="web-worker">Web Worker</span>: a second script that runs at the same time as the page, in its own memory, and talks to the page through messages, which copy the data. That works for small messages and not for sharing an image of 67 million bytes.</p>
+    <p>Native threads are eight cooks in one kitchen who reach into the same fridge. Plain Web Workers are eight cooks in eight kitchens who pass notes under the door. A WASM thread is a cook in a separate kitchen who shares one fridge with the others.</p>
+    <p>The shared fridge is a <span data-term="sharedarraybuffer">SharedArrayBuffer</span>: one block of memory that several workers see at once. The memory of the WebAssembly module is one of those, so N workers that run the same module on it behave like N threads of one program. The three kinds side by side:</p>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th></th><th>OS thread (native Rayon)</th><th>Web Worker (plain JS)</th><th>WASM thread (this study, in the browser)</th></tr></thead>
+      <tbody>
+        <tr><td>Memory</td><td>the whole program's memory, shared</td><td>its own, nothing shared</td><td>a Web Worker whose WASM memory is one shared SharedArrayBuffer</td></tr>
+        <tr><td>Cost to share data</td><td>none</td><td>copy, or hand over ownership</td><td>none: same memory</td></tr>
+        <tr><td>Waiting for others</td><td>a <span data-term="futex">futex</span> (asking the operating system to sleep until woken)</td><td><code>Atomics.wait</code> (not on the main thread)</td><td><span data-term="atomics-wait-atomics-notify">Atomics.wait</span>, the WASM instruction <code>memory.atomic.wait32</code></td></tr>
+        <tr><td>Created by</td><td><code>ThreadPoolBuilder::build_global</code></td><td><code>new Worker(...)</code></td><td><span data-term="wasm-bindgen-rayon">wasm-bindgen-rayon</span>'s <code>init_thread_pool</code></td></tr>
+      </tbody>
+    </table></div>
+    <p>The thread pool is started once, before any timed work, so that starting it is never part of a measurement:</p>
+    <details class="deeper"><summary>In depth: starting the pool in each environment</summary>
+      <div class="pair">
+        <div data-code="bench/src/pool.rs|pub fn start_global(threads: usize)|8" data-title="Native: an OS-thread pool"></div>
+        <div data-code="bench/src/wasm.rs|#[wasm_bindgen(js_name = startThreadPool)]|5" data-title="Browser: N Web Workers on shared memory"></div>
+      </div>
+      <p>This needs a WASM build with the <span data-term="atomics-bulk-memory-mutable-globals">atomics target features</span>, the standard library rebuilt with them (<span data-term="z-build-std">-Z build-std</span>), and a page that may create a SharedArrayBuffer (<span data-term="cross-origin-isolation">cross-origin isolated</span>). The page's main thread may not block, so a dedicated <span data-term="coordinator-worker">coordinator worker</span> calls Rust and waits for the pool; see <a href="environments.html#wasm">What WASM threads need</a>.</p>
+    </details>
+
+    <h2 id="rayon">Rayon and work stealing</h2>
+    <p><span data-term="rayon">Rayon</span> is the Rust library that runs loops in parallel. You write almost the same loop as before, and Rayon splits the work across its threads. In the filter, the loop runs over the rows of the output: Rayon hands groups of rows to the threads, and the loop ends when every row is done. That final wait is the <b>join</b>, like <code>await Promise.all(...)</code> over a set of workers.</p>
+    <details class="deeper"><summary>In depth: the filter's parallel region</summary>
+      <div data-code="bench/src/workloads/gaussian.rs|impl Workload for GaussianBlur {|16" data-title="The filter's parallel region" data-highlight="par_chunks_mut|for_each"></div>
+    </details>
+    <p>Rayon does not cut the work into N equal pieces. It keeps splitting the work in halves, every thread keeps a queue of pieces, and a thread whose queue runs out <b>steals</b> half of another thread's queue (<span data-term="work-stealing">work stealing</span>).</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why steal instead of dividing evenly?</b> The threads do not run at the same speed: the browser's own threads take time from some cores, and some rows may be cheaper than others. With fixed shares, every thread would wait for the slowest. With stealing, a fast thread finishes its queue and takes part of a slow one's, and the load balances itself. It is also why the study never pins a thread to a core: a browser cannot, and Rayon does not need it.</p></aside>
+    <p class="def"><b>Fork-join.</b> The shape of every parallel call here: fork (wake N threads and give them work), compute, join (wait for the last one). The caller continues only after the join.</p>
+
+    <h2 id="forkjoin">Fork-join and its cost</h2>
+    <p>Waking eight threads, giving them work and waiting for the last one takes time, and that time does not shrink when the work is small. A parallel region that does almost nothing still pays it in full.</p>
+    <figure class="figure">
+      <svg viewBox="0 0 640 120" role="img" aria-label="Eight thread lanes: a fork segment, then work, then a join; the fork and join are the same width on a big job and a small job">
+        <g font-size="11">
+          <text x="10" y="14" fill="var(--muted)">big job: the fork and the join are a sliver</text>
+          <rect class="lane fork" x="10" y="20" width="14" height="30"/><rect class="lane" x="24" y="20" width="560" height="30"/><rect class="lane fork" x="584" y="20" width="14" height="30"/>
+          <text x="300" y="39" text-anchor="middle" fill="#fff">work</text>
+          <text x="10" y="74" fill="var(--muted)">small job: the same fork and join are most of the time</text>
+          <rect class="lane fork" x="10" y="80" width="14" height="30"/><rect class="lane" x="24" y="80" width="30" height="30"/><rect class="lane fork" x="54" y="80" width="14" height="30"/>
+          <text x="80" y="99" fill="var(--muted)">fork, work, join</text>
+        </g>
+      </svg>
+      <figcaption>The orange parts cost the same in both. Whether they matter depends on how much blue sits between them.</figcaption>
+    </figure>
+    <p>The study measures this cost in every run, with a parallel region that does nothing, and reports it per
+      environment and thread count. <a href="protocol.html#calibration">The run protocol</a> says how it is
+      measured, <a href="rq1.html#forkjoin">RQ1: scaling</a> has the values, and
+      <a href="extras.html#cutoff">Exploratory campaigns</a> shows it next to the work of a region, for a large and a
+      small image.</p>
+
+    <h2 id="grain">Grain size</h2>
+    <p>Inside one region, the work is cut into tasks, and a task has a small cost of its own: queueing it, taking it, stealing it. Cut too fine and those costs add up; cut too coarse and some threads sit idle at the end with nothing left to steal. The best size is in between.</p>
+    <p>There are two costs on two scales: the fork-join is paid once per region, the task cost once per task
+      inside a running region. The study sweeps the task size, reports the best one per workload and environment,
+      and compares it with Rayon's own automatic splitting in
+      <a href="extras.html#grain">Exploratory campaigns</a>.</p>
+
+    <p class="takeaway"><strong>In summary.</strong> In the browser a thread is a Web Worker on shared memory. Starting and joining a parallel region has a fixed cost, which is small next to a large region and most of a small one. That is why the main campaign uses a large image, and why a separate campaign measures where parallelism stops paying.</p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // This page has no widget: its numbers live on the Study and Results pages.
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

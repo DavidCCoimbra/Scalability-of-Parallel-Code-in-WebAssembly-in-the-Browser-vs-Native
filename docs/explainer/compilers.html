@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>From source to machine code - WASM threads vs native</title>
+<meta name="description" content="What compiling is, why the same Rust source becomes different machine code natively and in each browser, and what a JIT does.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .figure svg text { font-family: inherit; fill: var(--ink); }
+  .figure svg .box { fill: var(--panel); stroke: var(--edge); stroke-width: 1.5; }
+  .figure svg .hot { fill: var(--chrome-soft); stroke: var(--chrome); stroke-width: 1.5; }
+  .figure svg .cool { fill: var(--native-soft); stroke: var(--native); stroke-width: 1.5; }
+  .figure svg .ok { fill: color-mix(in srgb, var(--good) 15%, var(--panel)); stroke: var(--good); stroke-width: 1.5; }
+  .figure svg .muted { fill: var(--muted); }
+  .figure svg .line { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+  .figure svg .arrow { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#ah); }
+  .figure svg .acc { fill: var(--accent); }
+</style>
+</head>
+<body data-page="compilers">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>From source to machine code</h1>
+
+    <p class="lead">The study runs "the same code" natively and in two browsers. That is true of the source, not of the instructions the CPU executes: those are produced three times, by three compilers. This page explains what a compiler does, what WebAssembly is, and why each browser ends up with its own machine code for the same program.</p>
+
+    <h2 id="source">Source code and machine code</h2>
+    <p><b>Source code</b> is text written for people: <code>count = count + 1</code>. A chip cannot read text. It runs <b>machine code</b>: a stream of numbers in which each number means one small step, such as "load this", "add these", "store that". Every chip family has its own set of steps; the study's PC uses the x86-64 set.</p>
+    <p>Source code is a recipe in your language. Machine code is the same recipe in the one language the cook on duty speaks, broken into single motions: take the egg, crack it, drop it.</p>
+
+    <h2 id="compile">Compiling ahead of time</h2>
+    <p>A <b>compiler</b> is the translator. It reads the source once and writes the machine code to a file, the <b>binary</b>. Running the program later means running that file; the compiler is no longer involved. This is what "native" means in the study: Rust source, compiled on the PC to x86-64 machine code, and run directly.</p>
+    <p>A compiler does more than translate word for word. It <b>optimizes</b>: it reorders steps, removes useless ones and uses the chip's special instructions. Two compilers, or one compiler with two settings, can produce different machine code from the same source, and one version can be twice as fast as the other. That is why the project fixes one compiler, one version and one release profile (<a href="environments.html#same">Same source, same flags</a>).</p>
+    <figure class="figure"><svg viewBox="0 0 520 110" role="img" aria-label="Rust source compiled to a native binary"><defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 L10 5 L0 10 z" fill="var(--accent)"/></marker></defs>
+      <g font-size="11">
+      <rect class="box" x="20" y="30" width="110" height="50" rx="8"/><text x="75" y="52" text-anchor="middle" font-weight="600">Rust source</text><text x="75" y="70" text-anchor="middle" class="muted">text</text>
+      <path class="arrow" d="M140 55 H 215"/><text x="177" y="45" text-anchor="middle" class="muted">compiler</text>
+      <rect class="cool" x="225" y="30" width="130" height="50" rx="8"/><text x="290" y="52" text-anchor="middle" font-weight="600">native binary</text><text x="290" y="70" text-anchor="middle" class="muted">x86-64 machine code</text>
+      <path class="arrow" d="M365 55 H 430"/><text x="397" y="45" text-anchor="middle" class="muted">run</text>
+      <rect class="ok" x="440" y="30" width="60" height="50" rx="8"/><text x="470" y="60" text-anchor="middle">chip</text>
+      </g>
+    </svg><figcaption>Native: one translation, done once, before the program runs.</figcaption></figure>
+
+    <h2 id="wasm">WebAssembly: a second step inside the browser</h2>
+    <p>A browser cannot run an x86-64 binary: it would not be safe, and a phone's chip uses another set of steps. So for the browser the same compiler produces <b>WebAssembly</b> (WASM): a portable intermediate form, already compiled and optimized, written for a simple machine that no chip is. The browser then translates WASM to the machine code of the real chip before it runs it.</p>
+    <p>The recipe is first translated into a careful international version. The head cook of each restaurant then translates that into instructions for their own staff. Two restaurants, two head cooks, two final versions.</p>
+    <figure class="figure"><svg viewBox="0 0 520 170" role="img" aria-label="Rust source compiled to WASM, then translated by each browser engine">
+      <g font-size="11">
+      <rect class="box" x="20" y="60" width="100" height="50" rx="8"/><text x="70" y="82" text-anchor="middle" font-weight="600">Rust source</text>
+      <path class="arrow" d="M130 85 H 185"/><text x="157" y="75" text-anchor="middle" class="muted">compiler</text>
+      <rect class="box" x="195" y="60" width="90" height="50" rx="8"/><text x="240" y="82" text-anchor="middle" font-weight="600">.wasm</text><text x="240" y="99" text-anchor="middle" class="muted">portable</text>
+      <path class="arrow" d="M295 75 L 360 40"/><path class="arrow" d="M295 95 L 360 130"/>
+      <rect class="hot" x="370" y="15" width="130" height="50" rx="8"/><text x="435" y="37" text-anchor="middle" font-weight="600">Chrome's engine</text><text x="435" y="54" text-anchor="middle" class="muted">its own x86-64 code</text>
+      <rect class="hot" x="370" y="105" width="130" height="50" rx="8"/><text x="435" y="127" text-anchor="middle" font-weight="600">Firefox's engine</text><text x="435" y="144" text-anchor="middle" class="muted">its own x86-64 code</text>
+      </g>
+    </svg><figcaption>In the browser: two translations. The second one is done by the browser, differently in each.</figcaption></figure>
+
+    <h2 id="jit">Engines and JIT</h2>
+    <p>The part of the browser that does this second translation is its <b>engine</b>: V8 in Chrome, SpiderMonkey in Firefox. An engine translates <b>just in time</b> (JIT): when the page loads the WASM, or while it already runs. Most engines have two compilers: a quick one, so that the code can start at once, and a slower, better one whose code replaces the first a moment later. Until then, the program runs slower than it will.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does the study warm up before timing?</b> The first seconds in a browser may run the code of the quick compiler. Timing those would measure the engine's start, not the code. So every run does warm-up iterations first (<a href="protocol.html#warmup">Warm-up inside the run</a>).</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why can the same program behave differently in Chrome and in Firefox?</b> The last translation is theirs, not the author's. For one small operation, adding to a shared counter, the two engines choose different machine instructions, and that choice is behind the largest difference in the study (<a href="rq2.html#code">The machine code of one add</a>). The engine's compiler is part of what is measured.</p></aside>
+
+    <h2 id="remember">What to remember</h2>
+    <p class="takeaway"><strong>In summary.</strong> Source is for people and machine code is for the chip; a compiler turns one into the other. Natively that happens once, in advance. In a browser the engine does it again at run time, in its own way, so "the same code" means the same source, not the same instructions.</p>
+    <p>Next: <a href="threads.html">Thread pools and fork-join</a>. This page is used by <a href="environments.html">Environments and builds</a>, <a href="atomics.html">Atomic operations</a> and <a href="rq2.html#code">RQ2: synchronization</a>.</p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // nothing page-specific
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

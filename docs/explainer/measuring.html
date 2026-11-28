@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Measuring time - WASM threads vs native</title>
+<meta name="description" content="Why the same program takes different times, why we repeat, how a median and a mean differ, what spread and an interval mean, and what makes a comparison fair.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .figure svg text { font-family: inherit; fill: var(--ink); }
+  .figure svg .box { fill: var(--panel); stroke: var(--edge); stroke-width: 1.5; }
+  .figure svg .hot { fill: var(--chrome-soft); stroke: var(--chrome); stroke-width: 1.5; }
+  .figure svg .cool { fill: var(--native-soft); stroke: var(--native); stroke-width: 1.5; }
+  .figure svg .ok { fill: color-mix(in srgb, var(--good) 15%, var(--panel)); stroke: var(--good); stroke-width: 1.5; }
+  .figure svg .muted { fill: var(--muted); }
+  .figure svg .line { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+  .figure svg .arrow { stroke: var(--accent); stroke-width: 2; fill: none; marker-end: url(#ah); }
+  .figure svg .acc { fill: var(--accent); }
+</style>
+</head>
+<body data-page="measuring">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Measuring time</h1>
+
+    <p class="lead">Time a program twice and you get two different numbers. This page explains where the difference comes from, how to summarize many timings with a number that one slow run cannot move, how to say how far that summary could be off, and what makes a comparison fair. The formulas are in <a href="reading.html">Analysis plan and statistics</a>.</p>
+
+    <h2 id="noise">The same program, different times</h2>
+    <p>Run the same program twice on the same computer and the two times differ a little. Another program used the chip. A cache held the data the first time and not the second. The chip was warmer. None of this is the program's doing; together it is called <b>noise</b>.</p>
+    <p>Your commute is "20 minutes". Some days it is 17, some days 26, and once it was 40 because of a parade. "20 minutes" is not any one day; it is what you learned from many.</p>
+
+    <h2 id="repeat">Repeat, then summarize</h2>
+    <p>So the study never times anything once. It runs each configuration <b>30 times</b>, each time from a fresh start, and reduces the 30 numbers to one. The 30 are a <b>sample</b>. The number the study reports is a <b>summary</b> of them.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why 30 and not 3?</b> With 3 runs, one slow run changes the answer. With 30, it is one among many. More runs make the answer steadier, but each run costs machine time, and 30 make the intervals small next to the differences the study looks for (<a href="protocol.html#thirty">30 runs, 10 iterations</a>).</p></aside>
+
+    <h2 id="spread">Median, mean and spread</h2>
+    <p>There are two common ways to reduce 30 numbers to one:</p>
+    <ul>
+      <li>The <b>mean</b>: add them and divide by 30. One day of 40 minutes pulls it up.</li>
+      <li>The <b>median</b>: sort them and take the middle one. The 40-minute day is only "the largest", and it does not move the median.</li>
+    </ul>
+    <figure class="figure"><svg viewBox="0 0 520 110" role="img" aria-label="Ten commute times on a line: the median sits in the middle, the mean is pulled toward the one slow day">
+      <g font-size="11">
+      <line x1="30" y1="60" x2="490" y2="60" class="line"/>
+      <circle cx="80" cy="60" r="5" class="acc"/><circle cx="95" cy="60" r="5" class="acc"/><circle cx="105" cy="60" r="5" class="acc"/><circle cx="118" cy="60" r="5" class="acc"/><circle cx="130" cy="60" r="5" class="acc"/><circle cx="142" cy="60" r="5" class="acc"/><circle cx="158" cy="60" r="5" class="acc"/><circle cx="175" cy="60" r="5" class="acc"/><circle cx="200" cy="60" r="5" class="acc"/><circle cx="470" cy="60" r="5" fill="var(--chrome)"/>
+      <text x="470" y="45" text-anchor="middle" class="muted">the parade day</text>
+      <line x1="136" y1="70" x2="136" y2="90" stroke="var(--good)" stroke-width="2"/><text x="136" y="104" text-anchor="middle" fill="var(--good)">median</text>
+      <line x1="168" y1="30" x2="168" y2="50" stroke="var(--chrome)" stroke-width="2"/><text x="168" y="24" text-anchor="middle" fill="var(--chrome)">mean</text>
+      <text x="30" y="40" class="muted">fast</text><text x="490" y="90" text-anchor="end" class="muted">slow</text>
+      </g>
+    </svg><figcaption>Run times look like this: many close together, a few slow, never a few much faster. The median ignores the tail; the mean does not.</figcaption></figure>
+    <p>Timings always have that shape: a tight group and a tail of slow values, never a tail of fast ones, because nothing runs faster than the code allows. So inside one run the study takes the median of the measured iterations. Across runs it uses an average that respects ratios, explained in <a href="ratios.html">Ratios, speedup and intervals</a> and <a href="reading.html">Analysis plan and statistics</a>.</p>
+    <p>The <b>spread</b> is how far apart the 30 numbers are. With a tight spread the summary means a lot; with a wide one you read it with care. The study reports the spread of every configuration and looks at the wide ones.</p>
+
+    <h2 id="sure">How sure the result is</h2>
+    <p>Thirty runs give one summary. Thirty <i>other</i> runs would give a slightly different one. So the answer is not one number but a <b>range</b>: "the summary is about here, and with another thirty runs it would land between here and here". That range is an <b>interval</b>. The narrower it is, the surer the result.</p>
+    <p>"My commute is 20 minutes, give or take 2" says more than "20 minutes". And if yours is 20 give or take 2, and mine is 21 give or take 2, nobody can say that yours is shorter: the ranges overlap.</p>
+    <p>The study decides the same way: two configurations are called different only when their ranges do not overlap. And "the measurement cannot tell them apart" is <b>not</b> "they are the same": with wider ranges, a real difference can hide. <a href="reading.html#sure">How sure: the interval</a> shows the intervals on the measured data.</p>
+
+    <h2 id="fair">A fair comparison</h2>
+    <p>Repeating fixes noise. It does not fix <b>bias</b>: a difference that is there every time, for a reason that is not what you want to compare. Three rules keep the study's comparisons fair:</p>
+    <ul>
+      <li><b>Same machine, same settings.</b> Native, Chrome and Firefox run on the same PC, on the same cores, at the same clock, with nothing else running (<a href="machine.html">The machine and environment control</a>). A faster machine for one of them would decide the result before the measurement.</li>
+      <li><b>Mixed order.</b> The 30 runs of every configuration are shuffled together with all the others. If the machine drifts over the hours, the drift falls on all of them equally, not on whichever ran last (<a href="protocol.html#order">Random interleaved order</a>).</li>
+      <li><b>Warm up first.</b> The first iterations of a run are slower for reasons that are not the code (<a href="compilers.html#jit">Engines and JIT</a>). A run executes them and does not count them (<a href="protocol.html#warmup">Warm-up inside the run</a>).</li>
+    </ul>
+    <p>To compare two routes to work, you drive both in the same car in the same weeks, not one in July and the other in a January snowstorm, and you do not count the day you were still learning the way.</p>
+
+    <h2 id="remember">What to remember</h2>
+    <p class="takeaway"><strong>In summary.</strong> One timing is a sample. Repeat it 30 times, summarize it with a number that a slow outlier cannot move, report a range and not a point, call two things different only when the ranges do not overlap, and measure everything the same way on the same machine, in a shuffled order, after a warm-up.</p>
+    <p>Next: <a href="ratios.html">Ratios, speedup and intervals</a>. This page is used by <a href="protocol.html">The run protocol</a>, <a href="reading.html">Analysis plan and statistics</a> and <a href="threats.html">Threats to validity</a>.</p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // nothing page-specific
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

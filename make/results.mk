@@ -1,7 +1,7 @@
 SENSITIVITY = data/tables/campaign-$(MEASURED)/sensitivity/campaign-$(MEASURED)
 RESULTS = python3 -m analysis.results data/raw/campaign-$(MEASURED) --max-threads 8 --strict
 
-.PHONY: results sensitivity extras-results extras-workloads-results hybrid-results weak-results simd-results cutoff-results grain-results perf-results v3-results all-results tables-check
+.PHONY: results sensitivity extras-results extras-workloads-results hybrid-results weak-results simd-results cutoff-results grain-results perf-results v3-results explainer all-results tables-check
 
 ##@ Tables and figures of the paper
 
@@ -104,6 +104,9 @@ v3-results: ## The tables of the campaigns that only measured/v3 has
 	python3 -m analysis.datacheck data/raw/grain-threads-$(MEASURED) --output data/tables/grain-threads-$(MEASURED)/grain-threads-$(MEASURED)-quality.md
 	python3 -m analysis.extras.variants data/raw/grain-threads-$(MEASURED) --by grain --strict --output data/tables/grain-threads-$(MEASURED)/grain-threads-$(MEASURED)-grains.csv
 	python3 -m analysis.extras.perf_loop data/raw/perf-loop1-$(MEASURED) data/raw/perf-loop8-$(MEASURED) --strict --output data/tables/perf-loop-$(MEASURED)/perf-loop-$(MEASURED)-counters.csv --rises data/tables/perf-loop-$(MEASURED)/perf-loop-$(MEASURED)-rises.csv
+
+explainer: ## docs/explainer/assets/data.js from the measured/v3 tables and the code excerpts the pages ask for
+	python3 -m scripts.explainer_data
 
 all-results: results extras-results cutoff-results grain-results perf-results v3-results ## Every table and figure of every campaign
 

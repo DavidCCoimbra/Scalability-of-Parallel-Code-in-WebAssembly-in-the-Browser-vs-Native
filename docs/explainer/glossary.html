@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glossary - WASM threads vs native</title>
+<meta name="description" content="Every word the documentation uses, explained in one plain sentence and one short paragraph with an example, grouped by the page that explains it or from A to Z.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .terms { display: grid; grid-template-columns: minmax(0, 1fr); gap: 0; margin: 0; }
+  .terms dt { font-weight: 700; color: var(--ink); scroll-margin-top: 80px; }
+  .terms dd { margin: 0; }
+  .terms dd .more { display: block; margin-top: 6px; font-size: var(--fs-sm); color: var(--body); }
+  .terms .entry { border-bottom: 1px solid var(--edge); padding: 10px 0; min-width: 0; }
+  .terms .entry:target { background: var(--accent-soft); }
+  .group-head { margin: 26px 0 8px; font-size: 1.05rem; }
+  .group-head small { color: var(--muted); font-weight: 400; }
+  .letters { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 18px; }
+  .letters a { min-width: 32px; text-align: center; padding: 4px 6px; border: 1px solid var(--edge); border-radius: 6px; text-decoration: none; background: var(--panel); }
+  .filter-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 14px 0; }
+  .filter-row input { height: 40px; border-radius: 8px; border: 1px solid var(--edge); background: var(--panel); color: var(--ink); padding: 0 12px; font: inherit; width: min(360px, 100%); }
+</style>
+</head>
+<body data-page="glossary">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Glossary</h1>
+    <p class="lead">Every term of the documentation that a newcomer may not know, from thread and cache to Holm and systemd scope. Each has a one-sentence definition and a paragraph with an example from this project. You can list the terms by the page that explains them or from A to Z.</p>
+    <p>On every page, a term with a dotted underline is one of these. Hover or tap it to see its definition in one sentence; the link in that box brings you here, to the example. No page assumes a term before it is explained, so a term that is missing here is a bug.</p>
+
+    <div class="filter-row">
+      <div id="mode"></div>
+      <label for="filter" class="sr">Filter terms</label>
+      <input id="filter" type="search" placeholder="Filter terms">
+      <span id="count" class="muted"></span>
+    </div>
+    <div class="letters" id="letters"></div>
+    <div id="terms"></div>
+    <noscript><p>This list needs JavaScript; the terms are in <code>docs/explainer/assets/glossary.js</code>.</p></noscript>
+    <p class="src" data-files="docs/explainer/assets/glossary.js"></p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var el = UI.el, $ = UI.$, $$ = UI.$$;
+  var pages = {}, order = {};
+  UI.PAGES.forEach(function (p, i) { pages[p.id] = p; order[p.id] = i; });
+  function sortKey(t) { return t.term.replace(/^\W+/, ""); }
+  var terms = UI.G.slice().sort(function (a, b) { return sortKey(a).localeCompare(sortKey(b), "en", { sensitivity: "base" }); });
+  var host = $("#terms"), letters = $("#letters"), count = $("#count"), filterBox = $("#filter");
+
+  function entry(t, withId) {
+    var e = el("div", { class: "entry" });
+    if (withId) e.id = t.id;
+    e.appendChild(el("dt", { text: t.term }));
+    var dd = el("dd", {}, [t.def + " "]);
+    var p = pages[t.page];
+    if (p) dd.appendChild(el("a", { href: p.file, text: p.title }));
+    if (t.more) dd.appendChild(el("span", { class: "more", text: t.more }));
+    e.appendChild(dd);
+    return e;
+  }
+
+  // By topic: one list per page that explains the terms, in reading order.
+  function byTopic() {
+    letters.hidden = true;
+    var groups = {};
+    terms.forEach(function (t) { (groups[t.page] = groups[t.page] || []).push(t); });
+    Object.keys(groups).sort(function (a, b) { return (order[a] == null ? 999 : order[a]) - (order[b] == null ? 999 : order[b]); }).forEach(function (id) {
+      var p = pages[id];
+      var head = el("h3", { class: "group-head", id: "terms-" + id }, [p ? p.title : id]);
+      var dl = el("dl", { class: "terms" });
+      groups[id].forEach(function (t) { dl.appendChild(entry(t, true)); });
+      host.append(head, dl);
+    });
+  }
+
+  // A to Z, with a letter index.
+  function alphabetical() {
+    letters.hidden = false;
+    letters.innerHTML = "";
+    var dl = el("dl", { class: "terms" }), seen = {};
+    terms.forEach(function (t) {
+      var first = sortKey(t).charAt(0).toUpperCase();
+      if (!seen[first]) {
+        seen[first] = true;
+        letters.appendChild(el("a", { href: "#letter-" + first, text: first }));
+        if (dl.children.length) host.appendChild(dl);
+        dl = el("dl", { class: "terms" });
+        host.appendChild(el("h3", { class: "group-head", id: "letter-" + first, text: first }));
+      }
+      dl.appendChild(entry(t, true));
+    });
+    host.appendChild(dl);
+  }
+
+  function filter() {
+    var q = filterBox.value.trim().toLowerCase(), n = 0;
+    $$(".entry", host).forEach(function (e) {
+      var show = !q || e.textContent.toLowerCase().indexOf(q) >= 0;
+      e.hidden = !show;
+      if (show) n++;
+    });
+    $$(".group-head", host).forEach(function (h) {
+      var dl = h.nextElementSibling;
+      h.hidden = !$$(".entry", dl).some(function (e) { return !e.hidden; });
+    });
+    count.textContent = n + " of " + terms.length + " terms";
+  }
+
+  var mode = UI.store("glossaryMode") === "az" ? "az" : "topic";
+  UI.segmented($("#mode"), [{ label: "By topic", value: "topic" }, { label: "A to Z", value: "az" }], function (v) {
+    UI.store("glossaryMode", v);
+    host.innerHTML = "";
+    if (v === "az") alphabetical(); else byTopic();
+    filter();
+    UI.outline();
+  }, mode);
+  filterBox.addEventListener("input", filter);
+  if (location.hash) { var target = document.getElementById(location.hash.slice(1)); if (target) target.scrollIntoView(); }
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

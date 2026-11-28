@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data files, CSV schema and tables - WASM threads vs native</title>
+<meta name="description" content="What a campaign leaves in data/raw, the tables derived from it in data/tables, the run record and the CSV row field by field, and the figures the paper reads.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .t td { vertical-align: top; }
+  .t td:first-child code, .t td:nth-child(2) > code:only-child { white-space: nowrap; }
+  pre.tree { padding: 10px 12px; overflow-x: auto; background: var(--panel-2); border: 1px solid var(--edge); border-radius: 8px; font-size: var(--fs-sm); line-height: 1.5; }
+</style>
+</head>
+<body data-page="data">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Data files, CSV schema and tables</h1>
+
+    <p class="lead">Every run leaves a pair of files in <code>data/raw/&lt;campaign&gt;/</code>: a CSV of times and a JSON of context. Every derived number is in a table in <code>data/tables/&lt;campaign&gt;/</code>. This page describes each folder, each column of the CSV, each field of the run context and each table. Nothing in <code>data/raw/</code> is ever edited; everything in <code>data/tables/</code> can be deleted and made again.</p>
+
+    <h2 id="onerow">One row, read aloud</h2>
+    <p>Start with one line of one file. This is a measured iteration of run 4646 of the main campaign: native, the filter, eight threads, repetition 11:</p>
+    <div data-code="data/raw/campaign-v3/campaign-v3-0047-native-filter-noise-n8-r11.csv|8,measured,0,|1" data-title="One row of a run's CSV"></div>
+    <p>Read it left to right with the names of the header. <code>env</code> native; <code>workload</code> filter; <code>input</code> noise (<code>k</code> is empty, because noise has no k); <code>width</code> and <code>height</code> 8192; the <code>seed</code> of the input; <code>threads</code> 8; <code>phase</code> measured, so this row counts; <code>iter</code> 0, the first measured iteration; <code>ns</code>, the time of that iteration in nanoseconds, about 3.3 million, or 3.3 ms. Then come two hashes, which show that the input was the same image and the output the same filtered image as in every other environment, and addresses and memory sizes kept for the record. <a href="setup.html#firstrow">Installation and first run</a> reads a row like this one field by field.</p>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why does every row repeat the whole configuration?</b> So that a row can be read alone. A thousand files later, you do not need to remember which folder meant what: the row says native, filter, 8 threads. The joined table of <code>harness.collect</code> is all the rows of all the runs with the run id added, and it needs no other key.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why two files per run and not one?</b> The CSV holds what the measured program wrote and nothing else; the JSON holds what the harness knew about the machine around it. Kept apart, the Rust code never needs to know about governors or scopes, and the harness never parses a time (<a href="code.html#boundaries">What crosses each boundary</a>).</p></aside>
+
+    <h2 id="raw">data/raw</h2>
+    <p>One folder per campaign, named after the <code>name</code> of the spec. These are the files of the main campaign of the final build:</p>
+    <pre class="tree">data/raw/campaign-v3/
+├── campaign.json                                   spec, build identity, the planned run ids
+├── campaign.jsonl                                  one line per run, as it was logged
+├── campaign-v3-0000-native-hist-local-k4-n8-r19.csv   the run's rows: one per iteration
+├── campaign-v3-0000-native-hist-local-k4-n8-r19.json  the run's context
+├── ...                                             5310 runs × 2 files
+├── discarded/                                      the discarded first launches
+└── sysinfo/                                        the machine state at the start of each session</pre>
+    <details class="deeper"><summary>In depth: every file in the folder, who writes it</summary>
+<div class="scroll-x"><table class="t">
+      <thead><tr><th>File or folder</th><th>Who writes it</th><th>What it holds</th></tr></thead>
+      <tbody>
+        <tr><td><code>&lt;run&gt;.csv</code></td><td>The Rust code: the native runner on stdout, or the page through the results server</td><td>One row per calibration sample, warm-up and measured iteration (<a href="#json">schema below</a>)</td></tr>
+        <tr><td><code>&lt;run&gt;.json</code></td><td>The harness, after the run</td><td>The run's context: build, machine state, mask, launch command, order, times, CPU time, shield</td></tr>
+        <tr><td><code>&lt;run&gt;.error.json</code></td><td>The harness, when a run fails</td><td>The same context and the error; the run counts as failed</td></tr>
+        <tr><td><code>&lt;run&gt;.browser.log</code></td><td>The launcher</td><td>The browser's output, kept only when a browser run did not finish</td></tr>
+        <tr><td><code>campaign.json</code>, <code>campaign.jsonl</code></td><td>The campaign journal</td><td>See <a href="campaigns.html#resume">Sessions, status and resume</a></td></tr>
+        <tr><td><code>sysinfo/</code></td><td>The environment check of a strict campaign</td><td>CPU model, kernel, distro, microcode, governor, turbo, SMT, P-core mask, frequencies, shield, quiet mode, perf access, tool versions and load, at each session start, with any problem found</td></tr>
+        <tr><td><code>discarded/</code></td><td>The campaign</td><td>The first launch of each browser per session, not analysed</td></tr>
+        <tr><td><code>failed/</code></td><td><code>--retry-failed</code></td><td>The files of a failed run, moved aside before it runs again</td></tr>
+        <tr><td><code>excluded/</code></td><td>By hand, recorded in an ADR</td><td>Runs replaced by a re-run. No campaign of <code>measured/v3</code> has one, so the folder does not exist</td></tr>
+        <tr><td><code>counters/</code></td><td><code>scripts/perf-counters.sh</code></td><td><code>perf-v3</code>, <code>perf-loop1-v3</code> and <code>perf-loop8-v3</code> only: the 100 ms <code>perf stat</code> intervals of the whole campaign and their start time (ADR 0072, ADR 0090)</td></tr>
+      </tbody>
+    </table></div>
+</details>
+    <p>Other folders of <code>data/</code>: <code>probes/</code> holds one-off measurements and disassemblies (the store-forwarding chain, the V8 and native loops of ADR 0060). <code>data/raw/quick-*</code> and <code>data/mac-smoke/</code> are ignored by git, because they are never results. <code>python3 -m harness.collect</code> writes a joined table such as <code>data/campaign-v3.csv</code> on demand; it is not kept.</p>
+    <p class="def"><b>Raw is never edited.</b> A wrong run is not fixed in place. It is excluded by a rule fixed before the analysis (D7 of the plan), or run again and moved to <code>excluded/</code> with an ADR that says why. So every table traces back to the files as the runs wrote them.</p>
+
+    <h2 id="tables">data/tables</h2>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why a second folder?</b> Raw is what happened; tables are what was computed from it, by a command that can run again. Delete <code>data/tables/</code>, and <code>make all-results</code> writes it back identical, except for the time stamp in each sidecar. If a number in the paper is doubted, that command is the answer.</p></aside>
+    <p>One folder per campaign, or per family of campaigns, written by the <code>*-results</code> make targets. Every folder ends in <code>-v3</code>: the final build, and the only one that this documentation and the paper read. The tables of the earlier build are at the tag <code>data/v2</code>.</p>
+    <details class="deeper"><summary>In depth: every table suffix and its columns</summary>
+<div class="scroll-x"><table class="t">
+      <thead><tr><th>Suffix</th><th>Written by</th><th>One row per</th><th>Main columns</th></tr></thead>
+      <tbody>
+        <tr><td><code>-quality.md</code></td><td><code>analysis.datacheck</code></td><td>-</td><td>The data check report</td></tr>
+        <tr><td><code>-scaling.csv</code></td><td><code>analysis.v0</code></td><td>environment, workload, input, k, N</td><td><code>center_ns</code> (geometric mean over runs of each run's median), <code>speedup</code>, <code>efficiency</code>, with 95 % bounds; weak scaling: <code>weak_efficiency</code></td></tr>
+        <tr><td><code>-scaling.json</code></td><td><code>analysis.v0</code></td><td>-</td><td>Sidecar: summary, centre, bootstrap settings, commit, clock warnings</td></tr>
+        <tr><td><code>-contrasts.csv</code></td><td><code>analysis.results</code></td><td>contrast</td><td><code>question</code> (RQ1, RQ2, ABS), <code>effect</code> with 95 % bounds, <code>primary</code> and its 99.5 % bounds, <code>p</code>, <code>holm_p</code>, <code>rejected</code></td></tr>
+        <tr><td><code>-shape.csv</code></td><td><code>analysis.results</code></td><td>configuration</td><td>Skewness of the run values, raw and in logs</td></tr>
+        <tr><td><code>-robustness.csv</code></td><td><code>analysis.robustness</code></td><td>primary contrast</td><td>Mann-Whitney U, z, p, Holm, Cliff's δ, agreement with the bootstrap</td></tr>
+        <tr><td><code>-karp-flatt.csv</code></td><td><code>analysis.karp_flatt</code></td><td>configuration, N &gt; 1</td><td><code>serial_fraction</code> with bounds</td></tr>
+        <tr><td><code>-distributions.csv</code></td><td><code>analysis.distributions</code></td><td>cell of the violin figure</td><td>Quartiles of the per-run medians in ms</td></tr>
+        <tr><td><code>-iteration-drift.csv</code></td><td><code>analysis.iteration_drift</code></td><td>configuration</td><td>First over last measured iterations</td></tr>
+        <tr><td><code>simd-v3-variants.csv</code></td><td><code>analysis.extras.build_variants</code></td><td>build, environment, N</td><td>Efficiency, excess time, time over the baseline and over native</td></tr>
+        <tr><td><code>cutoff-table/estimates/model.csv</code></td><td><code>analysis.cutoff</code></td><td>size, or criterion</td><td>Speedup against work per region, break-even and worth-it sizes, the fork-join model</td></tr>
+        <tr><td><code>grain-points/best.csv</code></td><td><code>analysis.grain</code></td><td>grain, or configuration</td><td>Time per grain, best grain, flat region, 100:1 grain</td></tr>
+        <tr><td><code>perf-v3-runs/counters/retries.csv</code></td><td><code>analysis.extras.perf_counters</code></td><td>run, cell, or cell pair</td><td>Counters per atomic add; their means with bounds; locked loads above N = 1</td></tr>
+      </tbody>
+    </table></div>
+</details>
+    <p>Every <code>-v3</code> table, as this documentation reads it:</p>
+    <div id="table-list"></div>
+    <p>The first rows of the main scaling table:</p>
+    <div id="scaling"></div>
+    <p class="src" data-src="campaign-v3-scaling"></p>
+
+    <h2 id="json">The run record</h2>
+    <h3>The CSV: one row per iteration</h3>
+    <p>The Rust code writes the same schema natively and in the browser. Each row has the whole configuration, so one row says what it measured:</p>
+    <div data-code="bench/src/results.rs|pub const CSV_HEADER|1" data-title="The header, shared by native and WASM"></div>
+    <div data-code="data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.csv|calibration-pause|3" data-title="The first rows of a Chrome run: the pause, then warm fork-join samples"></div>
+    <details class="deeper"><summary>In depth: every CSV column</summary>
+<div class="scroll-x"><table class="t">
+      <thead><tr><th>Column</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>env</code>, <code>workload</code>, <code>input</code>, <code>k</code>, <code>width</code>, <code>height</code>, <code>seed</code>, <code>threads</code></td><td>The configuration (<code>k</code> empty for the noise input)</td></tr>
+        <tr><td><code>phase</code></td><td><code>calibration-pause</code>, <code>calibration-warm</code>, <code>calibration-cold</code>, <code>warmup</code> or <code>measured</code>; only <code>measured</code> rows make the run's value</td></tr>
+        <tr><td><code>iter</code>, <code>ns</code></td><td>Index within the phase; time in nanoseconds (per pass when <code>passes</code> &gt; 1). The browser's clock has 5 µs (Chrome) or 20 µs (Firefox) steps</td></tr>
+        <tr><td><code>input_fingerprint</code>, <code>checksum</code></td><td>FNV-1a hashes of the input and of the output: equal across environments and N, or the run is wrong</td></tr>
+        <tr><td><code>probe</code></td><td>Calibration rows: <code>broadcast</code> (an empty <code>rayon::broadcast</code>) or <code>par-iter</code> (an empty parallel loop)</td></tr>
+        <tr><td><code>mem_before_bytes</code>, <code>mem_after_bytes</code></td><td>Memory before the warm-up and after the last iteration (WASM linear memory, native resident set)</td></tr>
+        <tr><td><code>input_addr_mod4096/64</code>, <code>output_addr_mod4096/64</code></td><td>Where the buffers start, modulo a page and a cache line: alignment is recorded, not assumed</td></tr>
+        <tr><td><code>pitch</code>, <code>palette</code>, <code>passes</code>, <code>grain</code></td><td>Row stride, value palette of <code>few</code>, passes per sample, fixed task size</td></tr>
+        <tr><td><code>schema</code></td><td>2 on <code>measured/v3</code>; rows without it are schema 1, the first 13 columns</td></tr>
+      </tbody>
+    </table></div>
+</details>
+    <p class="src" data-files="bench/src/results/README.md, bench/src/results.rs, harness/native/row_schema.py"></p>
+
+    <h3>The JSON: the run's context</h3>
+    <p>The harness writes it around the run. It lets the analysis refuse a run that was not taken under the conditions it claims (strict validation, ADR 0027):</p>
+    <div data-code="data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.json|^{|34" data-title="Build, clock and machine state"></div>
+    <div data-code="data/raw/campaign-v3/campaign-v3-2666-chrome-filter-noise-n8-r27.json|orderSeed|30" data-title="Order, times, artifact hash, shield and CPU time"></div>
+    <details class="deeper"><summary>In depth: every key of the run's JSON</summary>
+<div class="scroll-x"><table class="t">
+      <thead><tr><th>Key</th><th>Meaning</th></tr></thead>
+      <tbody>
+        <tr><td><code>build</code></td><td>rustc, wasm-bindgen and the exact <code>RUSTFLAGS</code> of the artifact</td></tr>
+        <tr><td><code>clockResolutionNs</code>, <code>clockSmallestStepNs</code></td><td>The browser clock's resolution, measured by the page</td></tr>
+        <tr><td><code>commit</code></td><td>The git commit; a <code>-dirty</code> one fails strict validation</td></tr>
+        <tr><td><code>cpuModel</code>, <code>governor</code>, <code>turbo</code>, <code>kernel</code>, <code>smt</code></td><td>Machine state read just before the run</td></tr>
+        <tr><td><code>environment</code>, <code>browserVersion</code>, <code>headless</code></td><td>Environment and its exact version (checked against the pin)</td></tr>
+        <tr><td><code>cpuMask</code>, <code>pCpus</code>, <code>maskSiblings</code></td><td>The mask the run got and the topology behind it: one CPU per physical P-core</td></tr>
+        <tr><td><code>launchFlags</code></td><td>The full command: <code>systemd-run --scope</code> with <code>AllowedCPUs</code>, <code>taskset</code>, the browser and its flags, the URL with the configuration</td></tr>
+        <tr><td><code>orderSeed</code>, <code>orderPosition</code></td><td>Seed and place in the shuffled order</td></tr>
+        <tr><td><code>startedAt</code>, <code>finishedAt</code>, <code>launchSeconds</code></td><td>Wall times of the run</td></tr>
+        <tr><td><code>artifactSha256</code></td><td>Hash of the binary or WASM module that ran: the same for every run of the build</td></tr>
+        <tr><td><code>loadavgBefore</code>, <code>loadavgAfter</code></td><td>System load around the run</td></tr>
+        <tr><td><code>shield</code></td><td>Which CPUs the other systemd slices could use (the E-cores)</td></tr>
+        <tr><td><code>runCpuSeconds</code>, <code>runCpuMethod</code>, <code>foreignCpuSeconds</code></td><td>CPU time of the run's scope, and the CPU time of anything else on the measured cores during it (excluded above 0.25 s, ADR 0051)</td></tr>
+        <tr><td><code>startDelayMs</code>, <code>passes</code>, <code>grain</code></td><td>Settings of the run</td></tr>
+        <tr><td><code>leftoverProcesses</code>, <code>escapedProcesses</code></td><td>Browser processes left after teardown, or that left the run scope (ADR 0045)</td></tr>
+      </tbody>
+    </table></div>
+</details>
+    <p class="src" data-files="harness/context/record.py, harness/context/validation.py, harness/context/README.md"></p>
+
+    <h2 id="figures">Figures</h2>
+    <p>Every figure is a PDF in <code>paper/figures/</code>, written by an analysis command from the raw runs, never drawn by hand. The paper includes three; the others are for the exploratory sections, the slides and the defence.</p>
+    <div class="scroll-x"><table class="t">
+      <thead><tr><th>Figure</th><th>Written by</th><th>In the paper</th></tr></thead>
+      <tbody>
+        <tr><td><code>campaign-speedup.pdf</code></td><td><code>analysis.figures</code> (<code>make results</code>)</td><td>Yes: speedup against N per workload and environment</td></tr>
+        <tr><td><code>campaign-rq2-ends.pdf</code></td><td><code>analysis.figures</code> (<code>make results</code>)</td><td>Yes: the RQ2 metric at k = 1 and 256 (the other k are in its table)</td></tr>
+        <tr><td><code>grain-ucurve-8192.pdf</code></td><td><code>analysis.grain --paper-figure</code> (<code>make grain-results</code>)</td><td>Yes: the grain U-curve at 8192 squared</td></tr>
+        <tr><td><code>campaign-distributions.pdf</code></td><td><code>analysis.distributions</code> (<code>make results</code>)</td><td>No: the 30 per-run values of four cells; its numbers are in the text</td></tr>
+        <tr><td><code>campaign-rq2.pdf</code>, <code>campaign-efficiency.pdf</code>, <code>campaign-absolute.pdf</code></td><td><code>analysis.figures</code></td><td>No (every k, efficiency, absolute ratios)</td></tr>
+        <tr><td><code>extras-*.pdf</code>, <code>weak-absolute.pdf</code>, <code>hybrid-*.pdf</code>, <code>simd-efficiency.pdf</code></td><td><code>make extras-results</code></td><td>No (the exploratory numbers are in a table)</td></tr>
+        <tr><td><code>cutoff-speedup.pdf</code>, <code>grain-ucurve.pdf</code></td><td><code>make cutoff-results</code>, <code>make grain-results</code></td><td>No (every size)</td></tr>
+      </tbody>
+    </table></div>
+    <p class="src" data-files="paper/final/paper.tex, analysis/figures/README.md"></p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  var el = UI.el, $ = UI.$, D = UI.D;
+  var names = Object.keys(D.tables || {}).sort();
+  $("#table-list").appendChild(UI.table(names.map(function (n) {
+    var rows = D.tables[n] || [];
+    return { name: n, file: (D.sources || {})[n], rows: rows.length, cols: rows.length ? Object.keys(rows[0]).length : 0 };
+  }), [
+    { label: "Table", value: function (r) { return UI.repoLink(r.file); } },
+    { label: "Rows", key: "rows", num: true },
+    { label: "Columns", key: "cols", num: true }
+  ]));
+  var first = UI.rows("campaign-v3-scaling").filter(function (r) { return r.workload === "filter"; });
+  $("#scaling").appendChild(UI.table(first, [
+    { label: "Environment", key: "environment" },
+    { label: "N", key: "threads", num: true },
+    { label: "Runs", key: "runs", num: true },
+    { label: "Centre (ms)", value: function (r) { return UI.fmt(r.center_ns / 1e6, 2); }, num: true },
+    { label: "Speedup", value: function (r) { return UI.fmt(r.speedup, 3) + " [" + UI.fmt(r.speedup_low, 3) + ", " + UI.fmt(r.speedup_high, 3) + "]"; }, num: true },
+    { label: "Efficiency", value: function (r) { return UI.fmt(r.efficiency, 3); }, num: true }
+  ]));
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>

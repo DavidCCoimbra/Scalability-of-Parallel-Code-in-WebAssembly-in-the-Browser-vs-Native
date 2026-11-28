@@ -104,6 +104,7 @@ python3 ../scripts/check_simd.py bench.wasm.dis wasm32
 | `analysis/` | Statistics, inference, quality checks, tables and figures |
 | `data/` | `raw/` (one folder per campaign, the measured runs) and `tables/` (derived from them) |
 | `docs/adr/` | The decision records, with those of the exploratory campaigns in `extras/` |
+| `docs/explainer/` | The documentation: concepts, design, results, guides and reference. Open `docs/explainer/index.html` |
 | `scripts/` | Repository checks: ADR structure, SIMD, codegen diff, hardware counters |
 | `paper/` | LaTeX: `final/` (the paper), `pilot/`, `proposal/`, with shared `figures/` and `bib/` |
 

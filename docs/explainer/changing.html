@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Change the measured path safely - WASM threads vs native</title>
+<meta name="description" content="The rules that protect the measurements, the reason for each, and the procedure for changing the code that is timed.">
+<link rel="stylesheet" href="assets/style.css">
+<script>try{var t=JSON.parse(localStorage.getItem("ppc.theme"));if(t==="light"||t==="dark")document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<style>
+  .steps li { margin: 6px 0; }
+</style>
+</head>
+<body data-page="changing">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="topbar">
+  <button class="icon-btn menu-btn" id="menu-btn" aria-expanded="false" aria-controls="nav" aria-label="Menu">Menu</button>
+  <a class="brand" href="index.html">WASM threads vs native <span>docs</span></a>
+  <div class="search" id="search" role="search">
+    <input type="search" placeholder="Search" aria-label="Search the documentation">
+    <kbd>/</kbd>
+    <div class="results" role="listbox"></div>
+  </div>
+  <div class="spacer"></div>
+  <a class="top-link" href="https://github.com/DavidCCoimbra/Scalability-of-Parallel-Code-in-WebAssembly-in-the-Browser-vs-Native">Repository</a>
+  <button class="icon-btn" id="theme-btn" title="Theme: auto, light, dark">Auto</button>
+</header>
+<div class="shell">
+  <nav class="sidebar" id="nav" aria-label="Documentation">
+    <noscript><ol><li><a href="index.html">Introduction</a></li><li><a href="rq1.html">RQ1: scaling</a></li><li><a href="rq2.html">RQ2: synchronization</a></li><li><a href="glossary.html">Glossary</a></li></ol></noscript>
+  </nav>
+  <main id="main">
+  <article class="page">
+    <h1>Change the measured path safely</h1>
+    <p class="lead">Most changes to this repository are ordinary. A few touch the code that is timed, and that code
+      is the experiment: it changes only with a record. This page gives the rules that protect the measurements,
+      the reason for each, and the procedure for a change to the measured path.</p>
+
+    <h2 id="rules">The rules</h2>
+    <p>Each rule exists because of one way the study could go wrong.</p>
+    <div class="scroll-x"><table>
+      <thead><tr><th>Rule</th><th>What goes wrong without it</th></tr></thead>
+      <tbody>
+        <tr><td>Never edit a file in <code>data/raw/</code></td><td>A run is what the machine wrote at that moment. A number fixed by hand cannot be told from a real one later, and every table it feeds becomes suspect. A wrong run is excluded by a rule written before the analysis (<a href="campaigns.html#quality">the data check</a>), or run again and the old one moved to <code>excluded/</code> with an ADR that says why.</td></tr>
+        <tr><td>Regenerate every table; never edit one</td><td>You can delete <code>data/tables/</code> and remake it with <code>make all-results</code>. If a number in the paper and a number in a table disagree, one <code>make</code> shows which one moved (<a href="reproduce.html">Reproduce the tables and figures</a>).</td></tr>
+        <tr><td>Never mix runs of two builds in one comparison</td><td>The compiler lays code out differently after almost any change, and the layout alone can move a time by a few percent. Two builds compared with each other measure the change, not the environment. Every reported campaign ran on the build tagged <code>measured/v3</code>, and every run records the digest of its binary (<a href="environments.html#builds">Builds and tags</a>, <a href="environments.html#v2">The build history</a>).</td></tr>
+        <tr><td>Change the measured code only with an ADR and a codegen diff</td><td>The timed region, the workload kernels and the checksum are the experiment. A refactor there leaves the machine code the same (<span data-term="codegen-neutral">codegen-neutral</span>) or it makes a new build. See <a href="#hotpath">the procedure below</a>.</td></tr>
+        <tr><td><code>mypy --strict</code>, and types for domain concepts</td><td>The harness and the analysis are Python that runs unattended for 14 hours. A typo in a key name found at run 3000 of 5310 costs an afternoon; the type checker finds it before the campaign starts. Enums and dataclasses (<code>Workload</code>, <code>PlannedRun</code>, <code>Interval</code>) instead of strings and tuples mean a wrong value cannot be built.</td></tr>
+        <tr><td>One struct per file, one concept per module, a README with a Mermaid flowchart per folder</td><td>A file that holds one thing can be opened from a question ("where is the padding?") and read whole. The README answers "which file holds what" before you open any (<a href="code.html">Repository tour</a>).</td></tr>
+        <tr><td>Named constants; comments only for a why</td><td>You can search for <code>CACHE_LINE_BYTES</code>; you cannot search for <code>128</code>. A comment that repeats the code goes stale the first time the code changes; a comment that says why does not.</td></tr>
+        <tr><td>No em dash, and every document in English</td><td>The author's rule, applied to every file so that the repository reads as one text.</td></tr>
+      </tbody>
+    </table></div>
+
+    <h2 id="hotpath">Change the measured code</h2>
+    <p>The measured path is the timed region (<code>bench/src/measurement/</code>), the workload kernels and the
+      checksum. You may change it: refactors, new parameters, rewritten loops and closures. Follow these steps.</p>
+    <ol class="steps">
+      <li><b>Write the ADR first.</b> Say what changes, why, and what it could do to the comparison.</li>
+      <li><b>Run the codegen diff.</b> It builds the base and your tree at the same path, in every variant, and
+        reports which functions' machine code differ. Put the list of hot functions that changed in the ADR.</li>
+      <li><b>If no hot function changed</b>, the change is a readability refactor and the build stays the same
+        (ADR 0062).</li>
+      <li><b>If one did</b>, it is a new build. Tag it, and run again every campaign that is compared with another.
+        The second build did so (ADR 0069), and so did <code>measured/v3</code>: 27,150 runs (ADR 0084,
+        <a href="session.html">The session of a build</a>).</li>
+    </ol>
+    <pre data-lang="shell">bash scripts/codegen_diff.sh measured/v3</pre>
+    <aside class="callout warning"><p class="callout-title">Warning</p><p>Adding code can change code you did not
+      touch. The first draft of the sequential filter called a helper of the parallel filter; with two callers the
+      compiler stopped inlining that helper, and the machine code of the parallel filter changed although its source
+      had not (ADR 0086). Run the codegen diff after every change in <code>bench/src</code>, not only after changes
+      to a kernel.</p></aside>
+    <aside class="callout why"><p class="callout-title">Why</p><p><b>Why so careful about a few instructions?</b>
+      The study's differences are a few percent, and the layout of the code in memory alone moves times by that
+      much. Mytkowicz and others showed in 2009 that changing the link order or an environment variable can swing a
+      benchmark more than the optimization being tested. A one-line change in the loop is a change to the
+      experiment, and the only sound way to keep comparing is to measure everything again on the new build.</p></aside>
+
+    <h2 id="next">Related guides</h2>
+    <ul>
+      <li><a href="workload.html">Add a workload</a>: a new kernel, its campaign and its analysis.</li>
+      <li><a href="workflow.html#adr">When a decision needs an ADR</a>.</li>
+    </ul>
+    <p class="takeaway"><strong>In summary.</strong> Raw data is read-only, tables are disposable, and the timed
+      code is the experiment: it changes with an ADR and a codegen diff, and a change that is not codegen-neutral
+      makes a new build that is measured again from the start.</p>
+    <p class="src" data-files="CLAUDE.md, scripts/codegen_diff.sh, scripts/codegen_diff.py, docs/adr/0062-bench-refactor-codegen-neutral.md, docs/adr/0069-v2-build.md, docs/adr/0086-v3-build.md"></p>
+
+    <footer class="pager" id="pager"></footer>
+  </article>
+  </main>
+  <aside class="outline" id="outline" aria-label="On this page"></aside>
+</div>
+
+<script src="assets/data.js"></script>
+<script src="assets/glossary.js"></script>
+<script>
+window.page = function (UI) {
+  // nothing page-specific
+};
+</script>
+<script src="assets/app.js"></script>
+</body>
+</html>
