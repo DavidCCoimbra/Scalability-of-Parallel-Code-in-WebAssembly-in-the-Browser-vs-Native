@@ -157,3 +157,4 @@ specs are at the tag `data/v2`. Work goes in small PRs.
 | `data/` | `raw/<campaign>-v3/` (the measured runs) and `tables/<campaign>-v3/` (tables derived from them), with `probes/`, `checks/` and `sessions/` (evidence that is not results) |
 | `docs/adr/` | Architecture and experimental-design decisions |
 | `paper/` | LaTeX, ACM template: `final/` (the paper), `pilot/` (pilot report), `proposal/`, with shared `figures/`, `bib/` and the kept PDFs in `pdf/` |
+| `presentation/` | The slides of the final presentation (`index.html`, offline) and the script that embeds its data |
