@@ -2,7 +2,7 @@ import math
 import unittest
 
 from analysis.configuration import Configuration
-from analysis.figures.points import absolute_ratios, rq2_ratios, scaling_curves
+from analysis.figures.points import absolute_ratios, rq2_effects, rq2_ratios, scaling_curves
 from analysis.figures.spread import CAMPAIGN_PANELS, Spread, panel_spreads
 from analysis.runs import RunSummary
 
@@ -34,6 +34,21 @@ class FiguresTest(unittest.TestCase):
         self.assertAlmostEqual(point.value, 5.0)
         self.assertAlmostEqual(math.log(point.high), math.log(5.0))
 
+
+    def test_rq2_effect_is_the_browser_ratio_over_the_native_ratio_at_each_n(self) -> None:
+        data = runs("chrome", "hist-atomic", 1, 1, [12.0, 12.0]) + runs("chrome", "hist-local", 1, 1, [2.0, 2.0])
+        data += runs("native", "hist-atomic", 1, 1, [9.0, 9.0]) + runs("native", "hist-local", 1, 1, [3.0, 3.0])
+        data += runs("chrome", "hist-atomic", 1, 8, [40.0, 40.0]) + runs("chrome", "hist-local", 1, 8, [1.0, 1.0])
+        data += runs("native", "hist-atomic", 1, 8, [20.0, 20.0]) + runs("native", "hist-local", 1, 8, [2.0, 2.0])
+        one_thread, eight_threads = rq2_effects(data)["chrome"][1]
+        self.assertEqual((one_thread.threads, eight_threads.threads), (1, 8))
+        self.assertAlmostEqual(one_thread.value, 2.0)
+        self.assertAlmostEqual(eight_threads.value, 4.0)
+        self.assertAlmostEqual(eight_threads.low, 4.0)
+
+    def test_rq2_effect_needs_the_native_cells(self) -> None:
+        data = runs("firefox", "hist-atomic", 4, 8, [10.0, 10.0]) + runs("firefox", "hist-local", 4, 8, [2.0, 2.0])
+        self.assertEqual(rq2_effects(data), {})
 
 class SpreadTest(unittest.TestCase):
     def test_panel_holds_run_values_in_milliseconds_per_present_environment(self) -> None:

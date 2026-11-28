@@ -156,4 +156,4 @@ specs are at the tag `data/v2`. Work goes in small PRs.
 | `scripts/` | Repository checks (SIMD, codegen diff, ADRs) |
 | `data/` | `raw/<campaign>-v3/` (the measured runs) and `tables/<campaign>-v3/` (tables derived from them), with `probes/`, `checks/` and `sessions/` (evidence that is not results) |
 | `docs/adr/` | Architecture and experimental-design decisions |
-| `paper/` | LaTeX, ACM template: `final/` (the paper), `pilot/` (pilot report), `proposal/`, with shared `figures/`, `bib/` and the kept PDFs in `pdf/` |
+| `paper/` | LaTeX, ACM template: `final/` (the paper), with `figures/`, `bib/` and the kept PDFs in `pdf/` |
